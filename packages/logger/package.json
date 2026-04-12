@@ -1,0 +1,21 @@
+{
+  "name": "@sycom/logger",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0"
+  },
+  "devDependencies": {
+    "@sycom/config": "workspace:*",
+    "typescript": "^6.0.2"
+  }
+}
