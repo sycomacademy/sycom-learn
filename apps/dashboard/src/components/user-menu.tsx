@@ -1,4 +1,4 @@
-import { Button } from "@sycom/ui/components/button";
+import { Button } from "@sycom-lms/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,8 +7,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@sycom/ui/components/dropdown-menu";
-import { Skeleton } from "@sycom/ui/components/skeleton";
+} from "@sycom-lms/ui/components/dropdown-menu";
+import { Skeleton } from "@sycom-lms/ui/components/skeleton";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";

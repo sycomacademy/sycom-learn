@@ -1,29 +1,20 @@
-import { Toaster } from "@sycom/ui/components/sonner";
+import type { AppRouter } from "@sycom-lms/api/routers/index";
+import { Toaster } from "@sycom-lms/ui/components/sonner";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import {
-  ClientOnly,
-  HeadContent,
-  Outlet,
-  Scripts,
-  createRootRouteWithContext,
-} from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import type { ReactNode } from "react";
+import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
-import Header from "@/components/header";
-import { ThemeProvider } from "@/components/theme-provider";
-import type { trpc } from "@/lib/trpc";
+import Header from "../components/header";
 
-import "../index.css";
-
+import appCss from "../index.css?url";
 export interface RouterAppContext {
-  trpc: typeof trpc;
+  trpc: TRPCOptionsProxy<AppRouter>;
   queryClient: QueryClient;
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-  component: RootComponent,
   head: () => ({
     meta: [
       {
@@ -34,57 +25,34 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "sycom",
-      },
-      {
-        name: "description",
-        content: "sycom is a web application",
+        title: "My App",
       },
     ],
     links: [
       {
-        rel: "icon",
-        href: "/favicon.ico",
+        rel: "stylesheet",
+        href: appCss,
       },
     ],
   }),
+
+  component: RootDocument,
 });
 
-function RootComponent() {
+function RootDocument() {
   return (
-    <RootDocument>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        disableTransitionOnChange
-        storageKey="vite-ui-theme"
-      >
+    <html lang="en" className="dark">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
         <div className="grid h-svh grid-rows-[auto_1fr]">
           <Header />
           <Outlet />
         </div>
         <Toaster richColors />
-      </ThemeProvider>
-      {import.meta.env.DEV ? (
-        <ClientOnly>
-          <>
-            <TanStackRouterDevtools position="bottom-left" />
-            <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
-          </>
-        </ClientOnly>
-      ) : null}
-    </RootDocument>
-  );
-}
-
-function RootDocument({ children }: { readonly children: ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
+        <TanStackRouterDevtools position="bottom-left" />
+        <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
         <Scripts />
       </body>
     </html>

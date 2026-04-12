@@ -1,19 +1,19 @@
-import { Button } from "@sycom/ui/components/button";
+import { Button } from "@sycom-lms/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@sycom/ui/components/card";
-import { Checkbox } from "@sycom/ui/components/checkbox";
-import { Input } from "@sycom/ui/components/input";
+} from "@sycom-lms/ui/components/card";
+import { Checkbox } from "@sycom-lms/ui/components/checkbox";
+import { Input } from "@sycom-lms/ui/components/input";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/utils/trpc";
 
 export const Route = createFileRoute("/todos")({
   component: TodosRoute,
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/todos")({
 
 function TodosRoute() {
   const [newTodoText, setNewTodoText] = useState("");
+
+  const trpc = useTRPC();
 
   const todos = useQuery(trpc.todo.getAll.queryOptions());
   const createMutation = useMutation(

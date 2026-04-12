@@ -1,1 +1,2 @@
-@import "@sycom/ui/globals.css";
+@import "@sycom-lms/ui/globals.css";
+@source "../node_modules/streamdown/dist/*.js";
