@@ -1,6 +1,6 @@
-import { Button } from "@sycom-lms/ui/components/button";
-import { Input } from "@sycom-lms/ui/components/input";
-import { Label } from "@sycom-lms/ui/components/label";
+import { Button } from "@sycom/ui/components/button";
+import { Input } from "@sycom/ui/components/input";
+import { Label } from "@sycom/ui/components/label";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
   }
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
+    <div className="mx-auto mt-10 w-full max-w-md p-6">
       <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
 
       <form

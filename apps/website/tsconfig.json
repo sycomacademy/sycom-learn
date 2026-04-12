@@ -23,7 +23,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@sycom-lms/ui/*": ["../../packages/ui/src/*"]
+      "@sycom/ui/*": ["../../packages/ui/src/*"]
     }
   }
 }

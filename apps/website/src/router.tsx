@@ -1,5 +1,5 @@
-import type { AppRouter } from "@sycom-lms/api/routers/index";
-import { env } from "@sycom-lms/env/web";
+import type { AppRouter } from "@sycom/trpc/routers/index";
+import { env } from "@sycom/env/web";
 
 import "./index.css";
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";

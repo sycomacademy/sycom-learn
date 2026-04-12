@@ -1,4 +1,4 @@
-import { env } from "@sycom-lms/env/web";
+import { env } from "@sycom/env/web";
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({

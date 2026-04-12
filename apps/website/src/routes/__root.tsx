@@ -1,5 +1,5 @@
-import type { AppRouter } from "@sycom-lms/api/routers/index";
-import { Toaster } from "@sycom-lms/ui/components/sonner";
+import type { AppRouter } from "@sycom/trpc/routers/index";
+import { Toaster } from "@sycom/ui/components/sonner";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
