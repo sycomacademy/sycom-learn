@@ -1,18 +1,17 @@
 import { trpcServer } from "@hono/trpc-server";
 import { auth } from "@sycom/auth";
 import { env } from "@sycom/env/server";
-import { createContext } from "@sycom/trpc";
+import { closeLogger, logger } from "@sycom/logger";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 
+import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
 
 const app = new Hono();
 
-app.use(logger());
 app.use(secureHeaders());
 
 app.use(
@@ -21,12 +20,7 @@ app.use(
     origin: env.CORS_ORIGIN,
     credentials: true,
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: [
-      "Authorization",
-      "Content-Type",
-      "x-trpc-source",
-      "trpc-accept",
-    ],
+    allowHeaders: ["Authorization", "Content-Type", "x-trpc-source", "trpc-accept"],
     maxAge: 86400,
   }),
 );
@@ -39,7 +33,7 @@ app.use(
     router: appRouter,
     createContext: (_opts, context) => createContext({ context }),
     onError: ({ error, path }) => {
-      console.error(`[tRPC] ${path ?? "unknown"}`, {
+      logger.error(`[tRPC] ${path ?? "unknown"}`, {
         code: error.code,
         message: error.message,
       });
@@ -55,12 +49,19 @@ app.onError((err, c) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
   }
-  console.error(`[Hono] ${c.req.method} ${c.req.path}`, err);
+  logger.error(`[Hono] ${c.req.method} ${c.req.path}`, {
+    message: err.message,
+    stack: err.stack,
+  });
   return c.json({ error: "Internal Server Error" }, 500);
 });
 
-const shutdown = (signal: string) => {
-  console.log(`Received ${signal}, shutting down...`);
+let shuttingDown = false;
+const shutdown = async (signal: string) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info(`Received ${signal}, shutting down...`);
+  await closeLogger();
   process.exit(0);
 };
 

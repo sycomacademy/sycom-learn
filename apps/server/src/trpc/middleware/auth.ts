@@ -1,13 +1,11 @@
 import { TRPCError } from "@trpc/server";
+import { t } from "../t";
 
-import { t } from "../init";
-
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+export const authMiddleware = t.middleware(async ({ next, ctx }) => {
   if (!ctx.session) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "Authentication required",
-      cause: "No session",
     });
   }
   return next({

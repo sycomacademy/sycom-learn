@@ -1,16 +1,11 @@
 import pino from "pino";
 
-const isPretty = process.env.LOG_PRETTY === "true";
+const isPretty =
+  process.env.LOG_PRETTY === "true" ||
+  (process.env.LOG_PRETTY !== "false" && process.env.NODE_ENV !== "production");
 
-const baseLogger = pino({
-  level: process.env.LOG_LEVEL || "info",
-  serializers: {
-    req: pino.stdSerializers.req,
-    res: pino.stdSerializers.res,
-    err: pino.stdSerializers.err,
-  },
-  ...(isPretty && {
-    transport: {
+const transport = isPretty
+  ? pino.transport({
       target: "pino-pretty",
       options: {
         colorize: true,
@@ -21,10 +16,22 @@ const baseLogger = pino({
         singleLine: false,
         useLevelLabels: true,
         levelFirst: true,
+        sync: false,
       },
+    })
+  : undefined;
+
+const baseLogger = pino(
+  {
+    level: process.env.LOG_LEVEL || "info",
+    serializers: {
+      req: pino.stdSerializers.req,
+      res: pino.stdSerializers.res,
+      err: pino.stdSerializers.err,
     },
-  }),
-});
+  },
+  transport,
+);
 
 type Level = "info" | "error" | "warn" | "debug";
 
@@ -75,6 +82,21 @@ export function createLoggerWithContext(context: string) {
 
 export function setLogLevel(level: string) {
   baseLogger.level = level;
+}
+
+export async function closeLogger(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    const done = () => resolve();
+    const fallback = setTimeout(done, 500);
+    baseLogger.flush(() => {
+      clearTimeout(fallback);
+      if (transport) {
+        transport.end(done);
+      } else {
+        done();
+      }
+    });
+  });
 }
 
 export default logger;

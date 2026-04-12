@@ -1,4 +1,5 @@
 import { auth } from "@sycom/auth";
+import { db } from "@sycom/db";
 import type { Context as HonoContext } from "hono";
 
 export type CreateContextOptions = {
@@ -6,12 +7,14 @@ export type CreateContextOptions = {
 };
 
 export async function createContext({ context }: CreateContextOptions) {
+  const _headers = context.req.raw.headers;
   const session = await auth.api.getSession({
-    headers: context.req.raw.headers,
+    headers: _headers,
   });
   return {
-    auth: null,
+    headers: _headers,
     session,
+    db,
   };
 }
 

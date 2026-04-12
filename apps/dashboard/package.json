@@ -11,7 +11,6 @@
     "@ai-sdk/react": "catalog:",
     "@sycom/auth": "workspace:*",
     "@sycom/env": "workspace:*",
-    "@sycom/trpc": "workspace:*",
     "@sycom/ui": "workspace:*",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-form": "^1.29.0",
@@ -33,6 +32,7 @@
     "server": "workspace:*",
     "sonner": "catalog:",
     "streamdown": "^1.6.11",
+    "superjson": "^2.2.2",
     "tailwindcss": "catalog:",
     "vite-tsconfig-paths": "^5.1.4",
     "zod": "catalog:"
