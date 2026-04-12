@@ -1,0 +1,24 @@
+{
+  "name": "@sycom/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@sycom/db": "workspace:*",
+    "@sycom/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@sycom/config": "workspace:*",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@sycom/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@sycom/auth": "workspace:*",
+    "@sycom/db": "workspace:*",
+    "@sycom/env": "workspace:*",
+    "@trpc/client": "catalog:",
+    "@trpc/server": "catalog:",
+    "@types/pg": "^8.16.0",
+    "dotenv": "catalog:",
+    "drizzle-orm": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@sycom/config": "workspace:*",
+    "hono": "catalog:",
+    "typescript": "^5"
+  }
+}
