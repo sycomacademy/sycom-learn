@@ -23,17 +23,18 @@ The template already provides:
 
 ### Hosting
 
-| Subdomain | App | Host |
-|---|---|---|
-| `learn.sycomsolutions.com` | Website (marketing/SEO) | Azure Static Web App #1 |
-| `app.learn.sycomsolutions.com` | Dashboard (all users) | Azure Static Web App #2 |
-| `api.learn.sycomsolutions.com` | Hono server | Azure Container Apps |
+| Subdomain                      | App                     | Host                    |
+| ------------------------------ | ----------------------- | ----------------------- |
+| `learn.sycomsolutions.com`     | Website (marketing/SEO) | Azure Static Web App #1 |
+| `app.learn.sycomsolutions.com` | Dashboard (all users)   | Azure Static Web App #2 |
+| `api.learn.sycomsolutions.com` | Hono server             | Azure Container Apps    |
 
 DNS records configured in Hostinger. No wildcard subdomains for now — tenants are resolved after login via org membership, not URLs.
 
 ### Multi-Tenancy Model
 
 Single login at `app.learn.sycomsolutions.com/login`. After auth:
+
 - 0 orgs → onboarding (create org or enter invite code)
 - 1 org → auto-redirect to org dashboard
 - 2+ orgs → org picker screen
@@ -51,16 +52,19 @@ A special "public" org exists for the open course catalog that any user can auto
 Better Auth has a built-in `organization` plugin that handles orgs, members, invites, and roles. Use it instead of building from scratch.
 
 **File: `packages/auth/src/index.ts`**
+
 - Add the `organization` plugin to the Better Auth config
 - Configure roles: `owner`, `admin`, `instructor`, `learner`
 - Enable invitation support
 
 **File: `apps/dashboard/src/lib/auth-client.ts`**
+
 - Add the organization client plugin to the Better Auth client
 
 **Reference**: https://www.better-auth.com/docs/plugins/organization
 
 The plugin auto-creates these tables (via Better Auth's Drizzle adapter):
+
 - `organization` — id, name, slug, logo, metadata, createdAt
 - `member` — id, organizationId, userId, role, createdAt
 - `invitation` — id, organizationId, email, role, status, inviterId, expiresAt
@@ -70,6 +74,7 @@ Run `bunx @better-auth/cli generate` then `bun run db:push` to sync the schema.
 ### 1.2 — Org Context in tRPC
 
 **File: `packages/trpc/src/context.ts`**
+
 - After resolving the session, also read the active `orgId` from a request header (e.g., `x-org-id`)
 - Validate that the user is a member of that org
 - Add `orgId` and `orgRole` to the tRPC context
@@ -77,37 +82,43 @@ Run `bunx @better-auth/cli generate` then `bun run db:push` to sync the schema.
 ```ts
 // Pseudocode for new context shape
 type Context = {
-  session: Session | null
-  org: { id: string; role: "owner" | "admin" | "instructor" | "learner" } | null
-}
+  session: Session | null;
+  org: { id: string; role: "owner" | "admin" | "instructor" | "learner" } | null;
+};
 ```
 
 **Files: `apps/server/src/trpc/init.ts`**, **`apps/server/src/trpc/middleware/`** (add org/role-gated procedures here or in dedicated middleware modules)
+
 - Create a new `orgProcedure` that extends `protectedProcedure` and enforces `ctx.org` is not null
 - Create role-gated procedures: `instructorProcedure`, `adminProcedure`
 
 ### 1.3 — Dashboard Org State
 
 **File: `apps/dashboard/src/utils/trpc.ts`**
+
 - Read the active orgId from app state (React context or URL param) and send it as the `x-org-id` header on every tRPC request
 
 **New file: `apps/dashboard/src/components/org-switcher.tsx`**
+
 - Dropdown in the header showing current org, listing all user's orgs
 - Calls Better Auth's `organization.list()` client method
 - On switch, updates app state and refetches queries
 
 **New file: `apps/dashboard/src/routes/select-org.tsx`**
+
 - Full-page org picker shown after login when user has 2+ orgs
 - "Create new organization" option at the bottom
 
 ### 1.4 — Invite Flow
 
 **New file: `apps/dashboard/src/routes/invite.$token.tsx`**
+
 - Route that handles invite link clicks
 - If logged in → accept invite, redirect to org dashboard
 - If not logged in → redirect to signup, then accept invite after account creation
 
 **tRPC routers to add (`apps/server/src/trpc/routers/org.ts`)**:
+
 - `org.create` — admin procedure, creates org
 - `org.invite` — admin procedure, sends invite (creates invitation record + sends email)
 - `org.acceptInvite` — protected procedure, accepts an invite token
@@ -118,6 +129,7 @@ type Context = {
 ### 1.5 — Public Org (Seed)
 
 Create a database seed script that creates a special organization:
+
 - slug: `public`
 - name: `Sycom Public`
 - Flagged as the default org (add a `isDefault` boolean column or use env var `PUBLIC_ORG_ID`)
@@ -234,6 +246,7 @@ certificate
 ```
 
 **Update: `packages/db/src/schema/index.ts`**
+
 - Export all new schemas
 
 ### 2.2 — Remove Todo (Cleanup)
@@ -251,6 +264,7 @@ certificate
 ### 3.1 — tRPC Routers
 
 **New file: `apps/server/src/trpc/routers/course.ts`**
+
 - `course.list` — orgProcedure, list courses for current org. Support filters: status, difficulty, search text. For learners, only show `published`. For instructors/admins, show all
 - `course.getBySlug` — orgProcedure, get single course with modules and lessons
 - `course.create` — instructorProcedure, create course (draft status)
@@ -260,6 +274,7 @@ certificate
 - `course.delete` — adminProcedure, soft or hard delete
 
 **New file: `apps/server/src/trpc/routers/module.ts`**
+
 - `module.list` — orgProcedure, list modules for a course (ordered)
 - `module.create` — instructorProcedure
 - `module.update` — instructorProcedure
@@ -267,6 +282,7 @@ certificate
 - `module.delete` — instructorProcedure
 
 **New file: `apps/server/src/trpc/routers/lesson.ts`**
+
 - `lesson.get` — orgProcedure, get lesson with content
 - `lesson.create` — instructorProcedure
 - `lesson.update` — instructorProcedure
@@ -291,6 +307,7 @@ routes/
 ```
 
 **Course builder features:**
+
 - Rich text editor for text lessons (use Tiptap or MDXEditor — pick one, add to `@sycom/ui` or dashboard-local)
 - Video lessons: URL input (YouTube/Vimeo embed or direct URL). File upload is Phase 6
 - Quiz lessons: JSON-based question builder UI (multiple choice, true/false, fill-in-the-blank)
@@ -303,16 +320,19 @@ routes/
 ### 4.1 — tRPC Routers
 
 **New file: `apps/server/src/trpc/routers/enrollment.ts`**
+
 - `enrollment.enroll` — orgProcedure (learner), enroll in a published course
 - `enrollment.drop` — orgProcedure, drop enrollment
 - `enrollment.myCourses` — orgProcedure, list user's enrollments with progress percentage
 - `enrollment.courseProgress` — orgProcedure, detailed progress for one enrollment
 
 **New file: `apps/server/src/trpc/routers/progress.ts`**
+
 - `progress.markComplete` — orgProcedure, mark a lesson as completed
 - `progress.getLessonStatus` — orgProcedure, get status for a lesson
 
 **New file: `apps/server/src/trpc/routers/assessment.ts`**
+
 - `assessment.start` — orgProcedure, create a new attempt (enforce maxAttempts)
 - `assessment.submit` — orgProcedure, submit answers, auto-grade, return score
 - `assessment.getAttempts` — orgProcedure, list user's attempts for an assessment
@@ -336,6 +356,7 @@ routes/
 ```
 
 **Key UI components to build:**
+
 - `course-card.tsx` — Card showing title, cover, difficulty badge, progress bar
 - `course-sidebar.tsx` — Collapsible module/lesson navigation with completion checkmarks
 - `lesson-viewer.tsx` — Renders lesson content by type
@@ -353,19 +374,23 @@ When all lessons in a course are marked complete (and all quizzes passed), auto-
 ### 5.1 — Certificate Generation
 
 **New file: `apps/server/src/trpc/routers/certificate.ts`**
+
 - `certificate.getMyCertificates` — orgProcedure, list user's certificates
 - `certificate.verify` — publicProcedure, look up by verificationCode (public endpoint for verification)
 
 ### 5.2 — Certificate UI
 
 **New route: `apps/dashboard/src/routes/certificates/index.tsx`**
+
 - List of earned certificates with download button
 
 **New route: `apps/website/src/routes/verify.$code.tsx`**
+
 - Public certificate verification page on the website (no auth needed)
 - Shows: learner name, course title, org name, issue date, "Verified" badge
 
 **Certificate PDF generation:**
+
 - Use a library like `@react-pdf/renderer` to generate downloadable PDF certificates
 - Or generate server-side with a template and return as a file from a Hono route
 
@@ -378,10 +403,12 @@ When all lessons in a course are marked complete (and all quizzes passed), auto-
 Add Azure Blob Storage (since you're already on Azure) or Cloudflare R2. Create a new package or add to server:
 
 **New file: `apps/server/src/trpc/routers/upload.ts`**
+
 - `upload.getPresignedUrl` — instructorProcedure, returns a presigned upload URL for the client to upload directly to blob storage
 - Store the resulting URL in the lesson content JSON
 
 **Use cases:**
+
 - Course cover images
 - Video files (if self-hosting instead of YouTube/Vimeo)
 - PDF/document attachments for lessons
@@ -390,6 +417,7 @@ Add Azure Blob Storage (since you're already on Azure) or Cloudflare R2. Create 
 ### 6.2 — Env Update
 
 **File: `packages/env/src/server.ts`**
+
 - Add `AZURE_STORAGE_CONNECTION_STRING` or equivalent storage credentials
 
 ---
@@ -419,11 +447,13 @@ skill_path_course (join table)
 ```
 
 **Router: `apps/server/src/trpc/routers/skill-path.ts`**
+
 - CRUD for skill paths (admin/instructor)
 - Assign/reorder courses within a path
 - Learner progress across a full path
 
 **UI: `apps/dashboard/src/routes/paths/`**
+
 - Path catalog view
 - Path detail view showing course sequence with overall progress
 
@@ -463,12 +493,14 @@ ctf_leaderboard (materialized view or computed)
 ```
 
 **Router: `apps/server/src/trpc/routers/ctf.ts`**
+
 - `ctf.list` — list challenges (hide flags)
 - `ctf.submit` — validate flag (hash comparison), record submission
 - `ctf.leaderboard` — computed ranking for the org
 - `ctf.create` / `ctf.update` / `ctf.delete` — instructor procedures
 
 **UI:**
+
 - Challenge list with category/difficulty filters
 - Challenge detail with flag submission input
 - Leaderboard table
@@ -478,12 +510,14 @@ ctf_leaderboard (materialized view or computed)
 Labs are the hardest feature. Options in order of complexity:
 
 **Option A: External Lab Provider (Recommended for v1)**
+
 - Integrate with a service like TryHackMe, HackTheBox, or Cyber Ranges via their API
 - Lesson content stores the lab URL/config
 - "Launch Lab" button opens in new tab or iframe
 - Completion callback or polling to sync status
 
 **Option B: Container-Based Labs (Self-hosted)**
+
 - Each lab is a Docker Compose config
 - Server provisions containers on demand (Azure Container Instances)
 - User gets a web terminal (via ttyd or wetty) proxied through the server
@@ -491,6 +525,7 @@ Labs are the hardest feature. Options in order of complexity:
 - Requires significant infrastructure work: container orchestration, networking, security isolation, cost management
 
 **Option C: Browser-Based Simulations**
+
 - WebAssembly-based terminal emulators
 - Pre-built scenarios with scripted responses
 - Limited realism but zero infrastructure cost
@@ -526,6 +561,7 @@ This lets instructors tag courses/lessons with framework objectives, and learner
 ### 8.1 — Analytics Router
 
 **New file: `apps/server/src/trpc/routers/analytics.ts`**
+
 - `analytics.orgOverview` — adminProcedure: total users, active learners, courses, enrollments, completion rate
 - `analytics.courseStats` — instructorProcedure: per-course enrollment count, avg progress, avg quiz score, completion rate
 - `analytics.learnerReport` — adminProcedure: per-user progress across all courses, activity timeline
@@ -558,6 +594,7 @@ routes/
 Add a transactional email service (Resend, Postmark, or Azure Communication Services).
 
 **Emails to send:**
+
 - Org invitation
 - Welcome after signup
 - Course enrollment confirmation
@@ -565,6 +602,7 @@ Add a transactional email service (Resend, Postmark, or Azure Communication Serv
 - (Optional) Weekly progress digest
 
 **New package or add to server:**
+
 - Email templates (React Email or simple HTML)
 - Send function called from tRPC mutations
 
@@ -643,6 +681,7 @@ api.learn.sycomsolutions.com       CNAME → <container-app>.azurecontainerapps.
 ### CI/CD
 
 Set up GitHub Actions (or Azure DevOps):
+
 - On push to `main`: build + deploy server container, build + deploy both frontends
 - Use Turborepo's `--affected` flag to only rebuild what changed
 - Run `bun run check-types` and `bun run check` as CI gates
@@ -651,18 +690,18 @@ Set up GitHub Actions (or Azure DevOps):
 
 ## Recommended Build Order
 
-| Phase | What | Depends On | Estimated Scope |
-|-------|------|-----------|-----------------|
-| 1 | Multi-tenancy (org plugin, context, org switcher) | Nothing | Foundation — do first |
-| 2 | LMS schema (courses, modules, lessons, enrollments) | Phase 1 | Data model |
-| 3 | Course builder (instructor CRUD + editor UI) | Phase 2 | First real feature |
-| 4 | Learner experience (catalog, player, progress) | Phase 2 | Core user-facing flow |
-| 5 | Certificates | Phase 4 | Small, high-value |
-| 6 | File storage | Phase 3 | Enables rich content |
-| 7 | Cyber features (paths, CTF, labs, tags) | Phase 4 | Differentiator |
-| 8 | Analytics | Phase 4 | Admin value |
-| 9 | Email & notifications | Phase 1 | Polish |
-| 10 | Billing | Phase 8 | Monetization |
+| Phase | What                                                | Depends On | Estimated Scope       |
+| ----- | --------------------------------------------------- | ---------- | --------------------- |
+| 1     | Multi-tenancy (org plugin, context, org switcher)   | Nothing    | Foundation — do first |
+| 2     | LMS schema (courses, modules, lessons, enrollments) | Phase 1    | Data model            |
+| 3     | Course builder (instructor CRUD + editor UI)        | Phase 2    | First real feature    |
+| 4     | Learner experience (catalog, player, progress)      | Phase 2    | Core user-facing flow |
+| 5     | Certificates                                        | Phase 4    | Small, high-value     |
+| 6     | File storage                                        | Phase 3    | Enables rich content  |
+| 7     | Cyber features (paths, CTF, labs, tags)             | Phase 4    | Differentiator        |
+| 8     | Analytics                                           | Phase 4    | Admin value           |
+| 9     | Email & notifications                               | Phase 1    | Polish                |
+| 10    | Billing                                             | Phase 8    | Monetization          |
 
 **Do Phases 1–4 before anything else.** That gives you a functional multi-tenant LMS. Everything after is incremental value.
 

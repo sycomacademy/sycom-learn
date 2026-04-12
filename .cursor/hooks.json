@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "bun .cursor/hooks/format-after-file-edit.ts"
+      }
+    ]
+  }
+}

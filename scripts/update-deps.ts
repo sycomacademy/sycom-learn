@@ -17,12 +17,16 @@ interface SemVer {
 function parseSemVer(version: string): SemVer | null {
   const match = version.match(/^(\d+)\.(\d+)\.(\d+)(.+)?$/);
   if (!match) return null;
+  const majorStr = match[1];
+  const minorStr = match[2];
+  const patchStr = match[3];
+  if (majorStr === undefined || minorStr === undefined || patchStr === undefined) return null;
   return {
-    major: Number.parseInt(match[1]!),
-    minor: Number.parseInt(match[2]!),
-    patch: Number.parseInt(match[3]!),
+    major: Number.parseInt(majorStr, 10),
+    minor: Number.parseInt(minorStr, 10),
+    patch: Number.parseInt(patchStr, 10),
     prerelease: !!match[4],
-    raw: `${match[1]}.${match[2]}.${match[3]}`,
+    raw: `${majorStr}.${minorStr}.${patchStr}`,
   };
 }
 
@@ -38,7 +42,9 @@ function parseRange(range: string): { prefix: string; version: string } {
 }
 
 function isUpdatable(version: string): boolean {
-  return !version.startsWith("catalog:") && !version.startsWith("workspace:") && /^[~^]?\d/.test(version);
+  return (
+    !version.startsWith("catalog:") && !version.startsWith("workspace:") && /^[~^]?\d/.test(version)
+  );
 }
 
 function isWithinRange(v: SemVer, current: SemVer, prefix: string): boolean {
@@ -65,7 +71,8 @@ interface PkgInfo {
 const pkgInfoCache = new Map<string, PkgInfo | null>();
 
 async function getPkgInfo(name: string): Promise<PkgInfo | null> {
-  if (pkgInfoCache.has(name)) return pkgInfoCache.get(name)!;
+  const cached = pkgInfoCache.get(name);
+  if (cached !== undefined) return cached;
   try {
     const res = await fetch(`https://registry.npmjs.org/${name}`, {
       headers: { Accept: "application/vnd.npm.install-v1+json" },
@@ -74,7 +81,10 @@ async function getPkgInfo(name: string): Promise<PkgInfo | null> {
       pkgInfoCache.set(name, null);
       return null;
     }
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as {
+      "dist-tags"?: { latest?: string };
+      versions?: Record<string, unknown>;
+    };
     const info: PkgInfo = {
       latest: data["dist-tags"]?.latest ?? "",
       versions: Object.keys(data.versions ?? {}),
@@ -128,20 +138,30 @@ async function resolveDep(
   return { updated: true, newRange, skippedMajor };
 }
 
-function formatResult(name: string, currentRange: string, newRange?: string, skippedMajor?: string): string {
+function formatResult(
+  name: string,
+  currentRange: string,
+  newRange?: string,
+  skippedMajor?: string,
+): string {
   if (!newRange) return `  = ${name} ${currentRange}`;
   let msg = `  ^ ${name} ${currentRange} -> ${newRange}`;
   if (skippedMajor) msg += ` (latest: ${skippedMajor}, use --major)`;
   return msg;
 }
 
-async function updateSingleDep(deps: Record<string, string>, name: string, allowMajor: boolean): Promise<boolean> {
+async function updateSingleDep(
+  deps: Record<string, string>,
+  name: string,
+  allowMajor: boolean,
+): Promise<boolean> {
   const currentRange = deps[name];
-  if (!currentRange || currentRange.startsWith("workspace:") || currentRange.startsWith("catalog:")) return false;
+  if (!currentRange || currentRange.startsWith("workspace:") || currentRange.startsWith("catalog:"))
+    return false;
 
   const { updated, newRange, skippedMajor } = await resolveDep(name, currentRange, allowMajor);
   console.log(formatResult(name, currentRange, updated ? newRange : undefined, skippedMajor));
-  if (updated) deps[name] = newRange!;
+  if (updated && newRange) deps[name] = newRange;
   return updated;
 }
 
@@ -158,9 +178,11 @@ async function updateAllDeps(deps: Record<string, string>, allowMajor: boolean):
 
   let updated = 0;
   for (const r of results) {
-    console.log(formatResult(r.name, r.currentRange, r.updated ? r.newRange : undefined, r.skippedMajor));
-    if (r.updated) {
-      deps[r.name] = r.newRange!;
+    console.log(
+      formatResult(r.name, r.currentRange, r.updated ? r.newRange : undefined, r.skippedMajor),
+    );
+    if (r.updated && r.newRange) {
+      deps[r.name] = r.newRange;
       updated++;
     }
   }
@@ -169,7 +191,13 @@ async function updateAllDeps(deps: Record<string, string>, allowMajor: boolean):
 
 // --- Audit ---
 
-async function runAudit(rootPkg: any, workspaceFiles: PkgFile[]): Promise<void> {
+interface RootPackageJson {
+  workspaces?: { catalog?: Record<string, string> };
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
+async function runAudit(rootPkg: RootPackageJson, workspaceFiles: PkgFile[]): Promise<void> {
   const catalog: Record<string, string> = rootPkg.workspaces?.catalog ?? {};
   const packages = new Map<string, string>();
 
@@ -212,19 +240,29 @@ async function runAudit(rootPkg: any, workspaceFiles: PkgFile[]): Promise<void> 
     }
 
     const data = (await res.json()) as {
-      results: Array<{ vulns?: Array<{ id: string; summary?: string; database_specific?: { severity?: string } }> }>;
+      results: Array<{
+        vulns?: Array<{ id: string; summary?: string; database_specific?: { severity?: string } }>;
+      }>;
     };
 
     const packageList = Array.from(packages.entries());
-    const vulnerable: Array<{ name: string; version: string; id: string; summary: string; severity: string }> = [];
+    const vulnerable: Array<{
+      name: string;
+      version: string;
+      id: string;
+      summary: string;
+      severity: string;
+    }> = [];
 
     for (let i = 0; i < data.results.length; i++) {
       const result = data.results[i];
-      if (result?.vulns?.length) {
+      const pkgEntry = packageList[i];
+      if (result?.vulns?.length && pkgEntry) {
+        const [pkgName, pkgVersion] = pkgEntry;
         for (const vuln of result.vulns) {
           vulnerable.push({
-            name: packageList[i]![0],
-            version: packageList[i]![1],
+            name: pkgName,
+            version: pkgVersion,
             id: vuln.id,
             summary: vuln.summary ?? "No description",
             severity: vuln.database_specific?.severity ?? "unknown",
@@ -269,9 +307,15 @@ function findWorkspacePackages(): string[] {
   return paths;
 }
 
+interface WorkspacePackageJson {
+  name?: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
 interface PkgFile {
   path: string;
-  data: any;
+  data: WorkspacePackageJson;
   dirty: boolean;
 }
 
@@ -284,7 +328,7 @@ async function main() {
   const audit = args.includes("--audit");
   const filterPkg = args.find((a) => !a.startsWith("-"));
 
-  const rootPkg = JSON.parse(readFileSync(PKG_PATH, "utf-8"));
+  const rootPkg = JSON.parse(readFileSync(PKG_PATH, "utf-8")) as RootPackageJson;
   const catalog: Record<string, string> | undefined = rootPkg.workspaces?.catalog;
 
   const workspaceFiles: PkgFile[] = findWorkspacePackages().map((p) => ({
@@ -306,11 +350,20 @@ async function main() {
     if (catalog && filterPkg in catalog) {
       found = true;
       console.log("Catalog:");
-      const { updated, newRange, skippedMajor } = await resolveDep(filterPkg, catalog[filterPkg]!, allowMajor);
-      console.log(formatResult(filterPkg, catalog[filterPkg]!, updated ? newRange : undefined, skippedMajor));
-      if (updated) {
-        catalog[filterPkg] = newRange!;
-        totalUpdated++;
+      const catalogRange = catalog[filterPkg];
+      if (catalogRange !== undefined) {
+        const { updated, newRange, skippedMajor } = await resolveDep(
+          filterPkg,
+          catalogRange,
+          allowMajor,
+        );
+        console.log(
+          formatResult(filterPkg, catalogRange, updated ? newRange : undefined, skippedMajor),
+        );
+        if (updated && newRange) {
+          catalog[filterPkg] = newRange;
+          totalUpdated++;
+        }
       }
     }
 
@@ -329,7 +382,9 @@ async function main() {
 
         if (deps[filterPkg].startsWith("catalog:")) {
           if (!catalog || !(filterPkg in catalog)) {
-            console.log(`\n${pkgFile.data.name} ${field}: references catalog but ${filterPkg} not in catalog`);
+            console.log(
+              `\n${pkgFile.data.name} ${field}: references catalog but ${filterPkg} not in catalog`,
+            );
           }
           found = true;
           continue;

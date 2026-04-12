@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "server": "workspace:*",
     "@sycom/auth": "workspace:*",
     "@sycom/env": "workspace:*",
     "@sycom/ui": "workspace:*",
@@ -29,6 +28,7 @@
     "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "server": "workspace:*",
     "sonner": "catalog:",
     "zod": "catalog:"
   },
