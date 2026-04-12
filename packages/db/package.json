@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@sycom/config": "workspace:*",
-    "drizzle-kit": "^0.31.8",
-    "typescript": "^5"
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^6.0.2"
   }
 }

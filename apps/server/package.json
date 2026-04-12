@@ -10,7 +10,7 @@
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
-    "@hono/trpc-server": "^0.4.0",
+    "@hono/trpc-server": "^0.4.2",
     "@sycom/api": "workspace:*",
     "@sycom/auth": "workspace:*",
     "@sycom/db": "workspace:*",
@@ -24,7 +24,7 @@
   "devDependencies": {
     "@sycom/config": "workspace:*",
     "@types/bun": "catalog:",
-    "tsdown": "^0.16.5",
-    "typescript": "^5"
+    "tsdown": "^0.21.7",
+    "typescript": "^6.0.2"
   }
 }

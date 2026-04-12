@@ -1,0 +1,56 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Every Monday at 9am UTC
+  workflow_dispatch: # Manual trigger from Actions tab
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install
+
+      - name: Update deps and audit
+        id: update
+        run: |
+          output=$(bun run scripts/update-deps.ts --audit 2>&1)
+          echo "$output"
+          echo "log<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$output" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Reinstall
+        run: bun install
+
+      - name: Type check
+        run: bun run check-types
+        continue-on-error: true
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
+          body: |
+            Automated weekly dependency updates (semver-safe).
+
+            <details>
+            <summary>Update log</summary>
+
+            ```
+            ${{ steps.update.outputs.log }}
+            ```
+
+            </details>
+
+            Review the diff and run tests before merging.
+          branch: chore/update-deps
+          delete-branch: true

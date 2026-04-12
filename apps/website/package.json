@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@sycom/ui": "workspace:*",
-    "@tailwindcss/vite": "^4.1.18",
-    "@tanstack/react-router": "^1.141.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/react-router": "^1.168.18",
     "lucide-react": "catalog:",
     "next-themes": "catalog:",
     "react": "catalog:",
@@ -22,14 +22,14 @@
   },
   "devDependencies": {
     "@sycom/config": "workspace:*",
-    "@tanstack/router-plugin": "^1.141.1",
-    "@types/node": "^22.13.14",
+    "@tanstack/router-plugin": "^1.167.18",
+    "@types/node": "^25.6.0",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "^4.3.4",
-    "postcss": "^8.5.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "postcss": "^8.5.9",
     "tailwindcss": "catalog:",
-    "typescript": "^5",
-    "vite": "^6.2.2"
+    "typescript": "^6.0.2",
+    "vite": "^8.0.8"
   }
 }
