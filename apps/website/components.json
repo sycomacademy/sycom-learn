@@ -13,8 +13,8 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
-    "utils": "@sycom/ui/lib/utils",
-    "ui": "@sycom/ui/components",
+    "utils": "@sycom-lms/ui/lib/utils",
+    "ui": "@sycom-lms/ui/components",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },

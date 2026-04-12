@@ -1,44 +1,60 @@
-import { Toaster } from "@sycom/ui/components/sonner";
-import { HeadContent, Outlet, createRootRoute } from "@tanstack/react-router";
+import type { AppRouter } from "@sycom-lms/api/routers/index";
+import { Toaster } from "@sycom-lms/ui/components/sonner";
+import type { QueryClient } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
-import { ThemeProvider } from "@/components/theme-provider";
+import Header from "../components/header";
 
-import "../index.css";
+import appCss from "../index.css?url";
+export interface RouterAppContext {
+  trpc: TRPCOptionsProxy<AppRouter>;
+  queryClient: QueryClient;
+}
 
-export const Route = createRootRoute({
-  component: RootComponent,
+export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        title: "sycom",
+        charSet: "utf-8",
       },
       {
-        name: "description",
-        content: "sycom",
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      },
+      {
+        title: "My App",
       },
     ],
     links: [
       {
-        rel: "icon",
-        href: "/favicon.ico",
+        rel: "stylesheet",
+        href: appCss,
       },
     ],
   }),
+
+  component: RootDocument,
 });
 
-function RootComponent() {
+function RootDocument() {
   return (
-    <>
-      <HeadContent />
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        disableTransitionOnChange
-        storageKey="vite-ui-theme"
-      >
-        <Outlet />
+    <html lang="en" className="dark">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <div className="grid h-svh grid-rows-[auto_1fr]">
+          <Header />
+          <Outlet />
+        </div>
         <Toaster richColors />
-      </ThemeProvider>
-    </>
+        <TanStackRouterDevtools position="bottom-left" />
+        <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+        <Scripts />
+      </body>
+    </html>
   );
 }

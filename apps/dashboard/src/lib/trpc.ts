@@ -1,8 +1,7 @@
 import type { AppRouter } from "server/trpc/routers/_app";
-import { env } from "@sycom/env/web";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import { createTRPCContext, createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
 
 export const queryClient = new QueryClient({
@@ -16,12 +15,13 @@ export const queryClient = new QueryClient({
       });
     },
   }),
+  defaultOptions: { queries: { staleTime: 60 * 1000 } },
 });
 
 export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: `${env.VITE_SERVER_URL}/trpc`,
+      url: "/trpc",
       fetch(url, options) {
         return fetch(url, {
           ...options,
@@ -36,3 +36,7 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
   client: trpcClient,
   queryClient,
 });
+
+const trpcContext = createTRPCContext<AppRouter>();
+
+export const TRPCProvider = trpcContext.TRPCProvider;

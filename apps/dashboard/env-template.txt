@@ -1,1 +1,5 @@
+# Used by Vite client + `server.proxy` target (Hono URL, e.g. http://localhost:3000)
 VITE_SERVER_URL=
+
+# Dashboard loads `apps/server/.env` in vite.config (dotenv) so SSR can run `@sycom/auth`
+# with the same DATABASE_URL / BETTER_AUTH_* as the API server.

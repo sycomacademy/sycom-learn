@@ -1,8 +1,15 @@
 import { Toaster } from "@sycom/ui/components/sonner";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { HeadContent, Outlet, createRootRouteWithContext } from "@tanstack/react-router";
+import {
+  ClientOnly,
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRouteWithContext,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import type { ReactNode } from "react";
 
 import Header from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -19,6 +26,13 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
   head: () => ({
     meta: [
+      {
+        charSet: "utf-8",
+      },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      },
       {
         title: "sycom",
       },
@@ -38,8 +52,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootComponent() {
   return (
-    <>
-      <HeadContent />
+    <RootDocument>
       <ThemeProvider
         attribute="class"
         defaultTheme="dark"
@@ -52,8 +65,28 @@ function RootComponent() {
         </div>
         <Toaster richColors />
       </ThemeProvider>
-      <TanStackRouterDevtools position="bottom-left" />
-      <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
-    </>
+      {import.meta.env.DEV ? (
+        <ClientOnly>
+          <>
+            <TanStackRouterDevtools position="bottom-left" />
+            <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+          </>
+        </ClientOnly>
+      ) : null}
+    </RootDocument>
+  );
+}
+
+function RootDocument({ children }: { readonly children: ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
   );
 }
