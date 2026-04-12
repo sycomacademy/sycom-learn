@@ -1,4 +1,5 @@
-import { protectedProcedure, publicProcedure, router } from "../index";
+import { publicProcedure, router } from "../init";
+import { protectedProcedure } from "../middleware/require-session";
 import { todoRouter } from "./todo";
 
 export const appRouter = router({

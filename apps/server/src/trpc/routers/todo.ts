@@ -3,7 +3,7 @@ import { todo } from "@sycom/db/schema/todo";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-import { router, publicProcedure } from "../index";
+import { publicProcedure, router } from "../init";
 
 export const todoRouter = router({
   getAll: publicProcedure.query(async () => {

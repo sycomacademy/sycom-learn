@@ -24,7 +24,6 @@
       "version": "0.0.0",
       "dependencies": {
         "@hookform/resolvers": "^5.2.2",
-        "@sycom/api": "workspace:*",
         "@sycom/auth": "workspace:*",
         "@sycom/env": "workspace:*",
         "@sycom/ui": "workspace:*",
@@ -41,6 +40,7 @@
         "next-themes": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
+        "server": "workspace:*",
         "sonner": "catalog:",
         "zod": "catalog:",
       },
@@ -63,13 +63,14 @@
       "name": "server",
       "dependencies": {
         "@hono/trpc-server": "^0.4.2",
-        "@sycom/api": "workspace:*",
         "@sycom/auth": "workspace:*",
         "@sycom/db": "workspace:*",
         "@sycom/env": "workspace:*",
+        "@sycom/trpc": "workspace:*",
         "@trpc/server": "catalog:",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
+        "drizzle-orm": "catalog:",
         "hono": "catalog:",
         "zod": "catalog:",
       },
@@ -104,25 +105,6 @@
         "tailwindcss": "catalog:",
         "typescript": "^6.0.2",
         "vite": "^8.0.8",
-      },
-    },
-    "packages/api": {
-      "name": "@sycom/api",
-      "dependencies": {
-        "@sycom/auth": "workspace:*",
-        "@sycom/db": "workspace:*",
-        "@sycom/env": "workspace:*",
-        "@trpc/client": "catalog:",
-        "@trpc/server": "catalog:",
-        "@types/pg": "^8.20.0",
-        "dotenv": "catalog:",
-        "drizzle-orm": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@sycom/config": "workspace:*",
-        "hono": "catalog:",
-        "typescript": "^6.0.2",
       },
     },
     "packages/auth": {
@@ -169,6 +151,17 @@
       "devDependencies": {
         "@sycom/config": "workspace:*",
         "@types/bun": "catalog:",
+        "typescript": "^6.0.2",
+      },
+    },
+    "packages/trpc": {
+      "name": "@sycom/trpc",
+      "dependencies": {
+        "@sycom/auth": "workspace:*",
+      },
+      "devDependencies": {
+        "@sycom/config": "workspace:*",
+        "hono": "catalog:",
         "typescript": "^6.0.2",
       },
     },
@@ -548,8 +541,6 @@
 
     "@standard-schema/utils": ["@standard-schema/utils@0.3.0", "", {}, "sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g=="],
 
-    "@sycom/api": ["@sycom/api@workspace:packages/api"],
-
     "@sycom/auth": ["@sycom/auth@workspace:packages/auth"],
 
     "@sycom/config": ["@sycom/config@workspace:packages/config"],
@@ -557,6 +548,8 @@
     "@sycom/db": ["@sycom/db@workspace:packages/db"],
 
     "@sycom/env": ["@sycom/env@workspace:packages/env"],
+
+    "@sycom/trpc": ["@sycom/trpc@workspace:packages/trpc"],
 
     "@sycom/ui": ["@sycom/ui@workspace:packages/ui"],
 

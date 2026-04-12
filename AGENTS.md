@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to agents when working with code in this repository.
 
 ## Commands
 
@@ -25,6 +25,7 @@ turbo -F dashboard <task>
 turbo -F website <task>
 turbo -F server <task>
 turbo -F @sycom/db <task>
+turbo -F @sycom/trpc <task>
 ```
 
 ## Architecture
@@ -35,11 +36,11 @@ Turborepo monorepo using Bun as runtime and package manager.
 
 - **`apps/dashboard`** - Authenticated SPA (React + TanStack Router + tRPC). Auth, dashboard, and app features. Vite dev server on port 3001. Uses `@` path alias for `src/`.
 - **`apps/website`** - Public-facing website for SEO/marketing pages. React + TanStack Router, no auth dependencies. Vite dev server on port 3002. Uses `@` path alias for `src/`.
-- **`apps/server`** - Hono HTTP server with hot reload (`bun run --hot`). Mounts Better Auth at `/api/auth/*` and tRPC at `/trpc/*`. Entry point: `src/index.ts`.
+- **`apps/server`** - Hono HTTP server with hot reload (`bun run --hot`). Mounts Better Auth at `/api/auth/*` and tRPC at `/trpc/*`. Entry point: `src/index.ts`. tRPC routers and middleware live under `src/trpc/` (`routers/_app.ts` merges sub-routers). `src/utils/` for server-only helpers.
 
 ### Packages
 
-- **`@sycom/api`** - tRPC router and procedures. Defines `publicProcedure` and `protectedProcedure` (session-gated). Context is created from Hono request headers via Better Auth session lookup.
+- **`@sycom/trpc`** - Shared tRPC request context only (`packages/trpc/src/context.ts`): `createContext()` resolves the Better Auth session from Hono request headers. Routers and procedures are defined in `apps/server/src/trpc/`.
 - **`@sycom/db`** - Drizzle ORM setup with Neon serverless driver. Schema files in `src/schema/`. Drizzle config reads `.env` from `apps/server/.env`.
 - **`@sycom/auth`** - Better Auth configuration with Drizzle adapter and email/password auth.
 - **`@sycom/env`** - Type-safe env validation via `@t3-oss/env-core`. Exports `env` from `./server` (DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, CORS_ORIGIN) and `./web` (VITE_SERVER_URL).
@@ -48,7 +49,7 @@ Turborepo monorepo using Bun as runtime and package manager.
 
 ### Key data flow
 
-Dashboard creates a tRPC client pointing at `VITE_SERVER_URL/trpc` with credentials included. The server's tRPC middleware calls `createContext()` which resolves the user session from request headers via Better Auth. Protected procedures enforce authentication.
+Dashboard creates a tRPC client pointing at `VITE_SERVER_URL/trpc` with credentials included. It imports the `AppRouter` type from the `server` workspace package (`server/trpc/routers/_app`). The server's tRPC middleware calls `createContext()` from `@sycom/trpc` which resolves the user session from request headers via Better Auth. Protected procedures enforce authentication.
 
 ### shadcn/ui setup
 

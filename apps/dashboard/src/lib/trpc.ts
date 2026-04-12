@@ -1,4 +1,4 @@
-import type { AppRouter } from "@sycom/api/routers/index";
+import type { AppRouter } from "server/trpc/routers/_app";
 import { env } from "@sycom/env/web";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";

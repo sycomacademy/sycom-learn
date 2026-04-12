@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@sycom/api": "workspace:*",
+    "server": "workspace:*",
     "@sycom/auth": "workspace:*",
     "@sycom/env": "workspace:*",
     "@sycom/ui": "workspace:*",

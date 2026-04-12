@@ -1,11 +1,12 @@
 import { trpcServer } from "@hono/trpc-server";
-import { createContext } from "@sycom/api/context";
-import { appRouter } from "@sycom/api/routers/index";
 import { auth } from "@sycom/auth";
+import { createContext } from "@sycom/trpc/context";
 import { env } from "@sycom/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+
+import { appRouter } from "./trpc/routers/_app";
 
 const app = new Hono();
 

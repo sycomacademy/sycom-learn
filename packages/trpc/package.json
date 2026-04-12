@@ -1,5 +1,5 @@
 {
-  "name": "@sycom/api",
+  "name": "@sycom/trpc",
   "type": "module",
   "exports": {
     ".": {
@@ -11,15 +11,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "@sycom/auth": "workspace:*",
-    "@sycom/db": "workspace:*",
-    "@sycom/env": "workspace:*",
-    "@trpc/client": "catalog:",
-    "@trpc/server": "catalog:",
-    "@types/pg": "^8.20.0",
-    "dotenv": "catalog:",
-    "drizzle-orm": "catalog:",
-    "zod": "catalog:"
+    "@sycom/auth": "workspace:*"
   },
   "devDependencies": {
     "@sycom/config": "workspace:*",
