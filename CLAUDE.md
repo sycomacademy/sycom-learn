@@ -1,0 +1,69 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+bun install              # Install dependencies
+bun run dev              # Start all apps (dashboard + website + server) in dev mode
+bun run dev:dashboard    # Start only the dashboard app
+bun run dev:website      # Start only the website app
+bun run dev:server       # Start only the server
+bun run build            # Build all apps
+bun run check-types      # TypeScript type checking across all packages
+bun run check            # Run oxlint + oxfmt (formatting with --write)
+
+# Database (Drizzle + Neon Postgres)
+bun run db:push          # Push schema changes to database
+bun run db:generate      # Generate migration files
+bun run db:migrate       # Run migrations
+bun run db:studio        # Open Drizzle Studio
+
+# Turborepo filtering (run tasks in specific packages)
+turbo -F dashboard <task>
+turbo -F website <task>
+turbo -F server <task>
+turbo -F @sycom/db <task>
+```
+
+## Architecture
+
+Turborepo monorepo using Bun as runtime and package manager.
+
+### Apps
+
+- **`apps/dashboard`** - Authenticated SPA (React + TanStack Router + tRPC). Auth, dashboard, and app features. Vite dev server on port 3001. Uses `@` path alias for `src/`.
+- **`apps/website`** - Public-facing website for SEO/marketing pages. React + TanStack Router, no auth dependencies. Vite dev server on port 3002. Uses `@` path alias for `src/`.
+- **`apps/server`** - Hono HTTP server with hot reload (`bun run --hot`). Mounts Better Auth at `/api/auth/*` and tRPC at `/trpc/*`. Entry point: `src/index.ts`.
+
+### Packages
+
+- **`@sycom/api`** - tRPC router and procedures. Defines `publicProcedure` and `protectedProcedure` (session-gated). Context is created from Hono request headers via Better Auth session lookup.
+- **`@sycom/db`** - Drizzle ORM setup with Neon serverless driver. Schema files in `src/schema/`. Drizzle config reads `.env` from `apps/server/.env`.
+- **`@sycom/auth`** - Better Auth configuration with Drizzle adapter and email/password auth.
+- **`@sycom/env`** - Type-safe env validation via `@t3-oss/env-core`. Exports `env` from `./server` (DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, CORS_ORIGIN) and `./web` (VITE_SERVER_URL).
+- **`@sycom/ui`** - Shared shadcn/ui components (style: `base-lyra`). Import as `@sycom/ui/components/<name>`. Global styles in `src/styles/globals.css`.
+- **`@sycom/config`** - Shared base tsconfig.
+
+### Key data flow
+
+Dashboard creates a tRPC client pointing at `VITE_SERVER_URL/trpc` with credentials included. The server's tRPC middleware calls `createContext()` which resolves the user session from request headers via Better Auth. Protected procedures enforce authentication.
+
+### shadcn/ui setup
+
+Three `components.json` files exist:
+
+- `packages/ui/components.json` - for shared primitives (add with `-c packages/ui`)
+- `apps/dashboard/components.json` - for dashboard-specific components (run from `apps/dashboard`)
+- `apps/website/components.json` - for website-specific components (run from `apps/website`)
+
+All use `base-lyra` style and lucide icons.
+
+## Linting & Formatting
+
+Oxlint (with typescript, unicorn, oxc, react, jsx-a11y plugins) and Oxfmt. Pre-commit hook via Lefthook auto-fixes staged files. No ESLint/Prettier/Biome.
+
+## Environment
+
+Server env lives in `apps/server/.env`. Required variables: `DATABASE_URL`, `BETTER_AUTH_SECRET` (min 32 chars), `BETTER_AUTH_URL`, `CORS_ORIGIN`. Web env uses `VITE_` prefixed variables.
