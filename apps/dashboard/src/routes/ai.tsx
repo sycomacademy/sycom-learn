@@ -79,6 +79,7 @@ function RouteComponent() {
           placeholder="Type your message..."
           className="flex-1"
           autoComplete="off"
+          // oxlint-disable-next-line jsx_a11y/no-autofocus
           autoFocus
         />
         <Button type="submit" size="icon">

@@ -1,4 +1,4 @@
-import type { AppRouter } from "@sycom/trpc/routers/index";
+import type { AppRouter } from "server/trpc/routers/_app";
 import { env } from "@sycom/env/web";
 
 import "./index.css";

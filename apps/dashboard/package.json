@@ -30,6 +30,7 @@
     "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "server": "workspace:*",
     "sonner": "catalog:",
     "streamdown": "^1.6.11",
     "tailwindcss": "catalog:",

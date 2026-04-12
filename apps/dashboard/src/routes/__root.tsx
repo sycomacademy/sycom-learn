@@ -1,4 +1,4 @@
-import type { AppRouter } from "@sycom/trpc/routers/index";
+import type { AppRouter } from "server/trpc/routers/_app";
 import { Toaster } from "@sycom/ui/components/sonner";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";

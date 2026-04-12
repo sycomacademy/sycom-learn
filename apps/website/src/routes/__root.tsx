@@ -1,39 +1,18 @@
-import type { AppRouter } from "@sycom/trpc/routers/index";
-import { Toaster } from "@sycom/ui/components/sonner";
-import type { QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 
 import Header from "../components/header";
 
 import appCss from "../index.css?url";
-export interface RouterAppContext {
-  trpc: TRPCOptionsProxy<AppRouter>;
-  queryClient: QueryClient;
-}
 
-export const Route = createRootRouteWithContext<RouterAppContext>()({
+export const Route = createRootRoute({
   head: () => ({
     meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "My App",
-      },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Sycom" },
+      { name: "description", content: "Sycom — build faster." },
     ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
+    links: [{ rel: "stylesheet", href: appCss }],
   }),
 
   component: RootDocument,
@@ -46,13 +25,13 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body>
-        <div className="grid h-svh grid-rows-[auto_1fr]">
+        <div className="grid min-h-svh grid-rows-[auto_1fr_auto]">
           <Header />
           <Outlet />
+          <footer className="border-t py-6 text-center text-sm text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Sycom. All rights reserved.</p>
+          </footer>
         </div>
-        <Toaster richColors />
-        <TanStackRouterDevtools position="bottom-left" />
-        <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
         <Scripts />
       </body>
     </html>
