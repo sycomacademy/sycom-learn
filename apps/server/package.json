@@ -25,6 +25,7 @@
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "superjson": "^2.2.2",
+    "trpc-ui-zod4": "^1.1.0",
     "zod": "catalog:"
   },
   "devDependencies": {

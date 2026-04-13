@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
+import { renderTrpcPanel } from "trpc-ui-zod4";
 
 import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
@@ -43,7 +44,15 @@ app.use(
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
-app.get("/", (c) => c.text("OK"));
+app.get("/", (c) => {
+  const origin = new URL(c.req.url).origin;
+  return c.html(
+    renderTrpcPanel(appRouter, {
+      url: `${origin}/trpc`,
+      transformer: "superjson",
+    }),
+  );
+});
 
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
