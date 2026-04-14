@@ -39,6 +39,9 @@
     "db:studio": "turbo -F @sycom/db db:studio",
     "db:generate": "turbo -F @sycom/db db:generate",
     "db:migrate": "turbo -F @sycom/db db:migrate",
+    "test": "turbo test",
+    "test:db": "turbo -F @sycom/db test",
+    "test:server": "turbo -F server test",
     "check": "oxlint && oxfmt --write",
     "update-deps": "bun run scripts/update-deps.ts && bun install"
   },
