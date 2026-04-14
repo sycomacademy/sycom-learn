@@ -56,6 +56,7 @@ export const mockDb = createMockDb();
 mock.module("@sycom/db", () => ({
   db: mockDb,
   createDb: () => mockDb,
+  // oxlint-disable-next-line typescript/no-explicit-any
   Database: {} as any,
 }));
 

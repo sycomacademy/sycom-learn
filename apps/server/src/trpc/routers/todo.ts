@@ -1,9 +1,4 @@
-import {
-  createTodo,
-  deleteTodo,
-  getAllTodos,
-  toggleTodo,
-} from "@sycom/db/queries/todo";
+import { createTodo, deleteTodo, getAllTodos, toggleTodo } from "@sycom/db/queries/todo";
 import z from "zod";
 
 import { publicProcedure, router } from "../init";

@@ -3,23 +3,17 @@
     - when we have more tables, we need to add more permissions.
 
 - tests
-    - add tests for db
     - properly test server
-    - add tests for client
-    - decide what type of tests to use
+    - setup stroybook fully
 
 - ci/cd
     - figure out the deployment platform
     - how to connect staging and production safely and switch context easily
 
 - security
-    - run OWASP scan
     - run security audit
 
-- UI/UX
-    - setup dashboard first
-
 - logging
-    - trpc logging and time
-    - db logging and time
     - telemetry
+    - logging standardization
+    - performance and memory

@@ -1,5 +1,6 @@
 import { mock } from "bun:test";
 
+// oxlint-disable-next-line typescript/no-explicit-any
 export type MockFn = ReturnType<typeof mock<(...args: any[]) => any>>;
 
 export const queryMocks = {

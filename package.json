@@ -32,6 +32,8 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
+    "storybook:ui": "turbo -F @sycom/ui storybook",
+    "build-storybook:ui": "turbo -F @sycom/ui build-storybook",
     "dev:dashboard": "turbo -F dashboard dev",
     "dev:website": "turbo -F website dev",
     "dev:server": "turbo -F server dev",
