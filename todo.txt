@@ -18,3 +18,8 @@
 
 - UI/UX
     - setup dashboard first
+
+- logging
+    - trpc logging and time
+    - db logging and time
+    - telemetry

@@ -78,19 +78,4 @@ export function setLogLevel(level: string) {
   baseLogger.level = level;
 }
 
-export async function closeLogger(): Promise<void> {
-  await new Promise<void>((resolve) => {
-    const done = () => resolve();
-    const fallback = setTimeout(done, 500);
-    baseLogger.flush(() => {
-      clearTimeout(fallback);
-      if (transport) {
-        transport.end(done);
-      } else {
-        done();
-      }
-    });
-  });
-}
-
 export default logger;

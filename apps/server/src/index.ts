@@ -1,7 +1,7 @@
 import { trpcServer } from "@hono/trpc-server";
 import { auth } from "@sycom/auth";
 import { env } from "@sycom/env/server";
-import { closeLogger, logger } from "@sycom/logger";
+import { logger } from "@sycom/logger";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
@@ -65,12 +65,29 @@ app.onError((err, c) => {
   return c.json({ error: "Internal Server Error" }, 500);
 });
 
-let shuttingDown = false;
 const shutdown = async (signal: string) => {
-  if (shuttingDown) return;
-  shuttingDown = true;
-  logger.info(`Received ${signal}, shutting down...`);
-  await closeLogger();
+  logger.info(`Received ${signal}, starting graceful shutdown...`);
+
+  const SHUTDOWN_TIMEOUT = 10_000; // 10s
+
+  const shutdownPromise = (async () => {
+    try {
+      logger.info("Graceful shutdown complete");
+    } catch (error) {
+      logger.error("Error during shutdown", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  })();
+
+  const timeoutPromise = new Promise<void>((resolve) => {
+    setTimeout(() => {
+      logger.warn("Shutdown timeout reached, forcing exit");
+      resolve();
+    }, SHUTDOWN_TIMEOUT);
+  });
+
+  await Promise.race([shutdownPromise, timeoutPromise]);
   process.exit(0);
 };
 
