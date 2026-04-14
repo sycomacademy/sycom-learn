@@ -4,7 +4,7 @@
 
 - tests
     - add tests for db
-    - add tests for server
+    - properly test server
     - add tests for client
     - decide what type of tests to use
 
