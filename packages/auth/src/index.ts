@@ -3,6 +3,7 @@ import * as schema from "@sycom/db/schema/auth";
 import { env } from "@sycom/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { dash } from "@better-auth/infra";
 
 export function createAuth() {
   const db = createDb();
@@ -10,7 +11,6 @@ export function createAuth() {
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "pg",
-
       schema: schema,
     }),
     trustedOrigins: env.CORS_ORIGIN,
@@ -26,7 +26,7 @@ export function createAuth() {
         httpOnly: true,
       },
     },
-    plugins: [],
+    plugins: [dash()],
   });
 }
 
