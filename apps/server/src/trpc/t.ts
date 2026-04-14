@@ -11,8 +11,7 @@ export const t = initTRPC.context<Context>().create({
       ...shape,
       data: {
         ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? treeifyError(error.cause) : null,
+        zodError: error.cause instanceof ZodError ? treeifyError(error.cause) : null,
       },
     };
   },

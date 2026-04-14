@@ -7,6 +7,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
 
 import { orgAc, orgRoles, platformAc, platformRoles } from "./permissions";
+import type { UserRole } from "@sycom/db/schema/auth";
 
 // Email stubs — replace with a real provider (Resend/Postmark/SES) before
 // shipping. In dev, they log the URL so you can copy/paste it. In prod, they
@@ -89,11 +90,10 @@ export function createAuth() {
       organization({
         ac: orgAc,
         roles: orgRoles,
-        creatorRole: "platform_admin",
-        allowUserToCreateOrganization: async (_user) => {
-          // const role = user.role as UserRole;
-          // return role === "platform_admin";
-          return true;
+        creatorRole: "owner",
+        allowUserToCreateOrganization: async (user) => {
+          const role = user.role as UserRole;
+          return role === "platform_admin";
         },
         teams: {
           enabled: true,

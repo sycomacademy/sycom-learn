@@ -1,30 +1,25 @@
-import { db } from "@sycom/db";
-import { todo } from "@sycom/db/schema/todo";
-import { eq } from "drizzle-orm";
+import {
+  createTodo,
+  deleteTodo,
+  getAllTodos,
+  toggleTodo,
+} from "@sycom/db/queries/todo";
 import z from "zod";
 
 import { publicProcedure, router } from "../init";
 
 export const todoRouter = router({
-  getAll: publicProcedure.query(async () => {
-    return await db.select().from(todo);
-  }),
+  getAll: publicProcedure.query(() => getAllTodos()),
 
   create: publicProcedure
     .input(z.object({ text: z.string().min(1) }))
-    .mutation(async ({ input }) => {
-      return await db.insert(todo).values({
-        text: input.text,
-      });
-    }),
+    .mutation(({ input }) => createTodo(input)),
 
   toggle: publicProcedure
     .input(z.object({ id: z.number(), completed: z.boolean() }))
-    .mutation(async ({ input }) => {
-      return await db.update(todo).set({ completed: input.completed }).where(eq(todo.id, input.id));
-    }),
+    .mutation(({ input }) => toggleTodo(input)),
 
-  delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
-    return await db.delete(todo).where(eq(todo.id, input.id));
-  }),
+  delete: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deleteTodo(input.id)),
 });

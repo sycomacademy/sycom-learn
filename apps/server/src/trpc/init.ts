@@ -6,6 +6,4 @@ export const router = t.router;
 export const callerFactory = t.createCallerFactory;
 
 export const publicProcedure = t.procedure.use(loggingMiddleware);
-export const protectedProcedure = t.procedure
-  .use(loggingMiddleware)
-  .use(authMiddleware);
+export const protectedProcedure = t.procedure.use(loggingMiddleware).use(authMiddleware);

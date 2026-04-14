@@ -35,10 +35,7 @@ const baseLogger = pino(
 
 type Level = "info" | "error" | "warn" | "debug";
 
-type LoggerAdapter = Record<
-  Level,
-  (message: string, data?: object) => void
->;
+type LoggerAdapter = Record<Level, (message: string, data?: object) => void>;
 
 function formatContext(ctx?: string): string {
   if (!ctx) return "";
@@ -46,10 +43,7 @@ function formatContext(ctx?: string): string {
   return `[${ctx}]`;
 }
 
-function createLoggerAdapter(
-  pinoLogger: pino.Logger,
-  prefixContext?: string,
-): LoggerAdapter {
+function createLoggerAdapter(pinoLogger: pino.Logger, prefixContext?: string): LoggerAdapter {
   const prefix = formatContext(prefixContext);
 
   const log = (level: Level, message: string, data?: object) => {

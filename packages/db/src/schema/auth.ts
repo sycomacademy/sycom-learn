@@ -1,53 +1,68 @@
 import { relations } from "drizzle-orm";
 import {
-  pgTable,
-  text,
-  timestamp,
   boolean,
   index,
+  pgEnum,
+  pgSchema,
+  text,
+  timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export const user = pgTable("user", {
+import { createdAt, updatedAt } from "./_shared";
+
+const auth = pgSchema("auth");
+
+export const userRoleEnum = pgEnum("platform_role", [
+  "platform_admin",
+  "content_creator",
+  "public_student",
+]);
+export type UserRole = (typeof userRoleEnum.enumValues)[number];
+
+export const organizationRoleEnum = pgEnum("organization_role", [
+  "owner",
+  "admin",
+  "teacher",
+  "student",
+]);
+export type OrganizationRole = (typeof organizationRoleEnum.enumValues)[number];
+
+export const user = auth.table("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-  role: text("role"),
+  createdAt,
+  updatedAt,
+  role: userRoleEnum("role"),
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
 });
 
-export const session = pgTable(
+export const session = auth.table(
   "session",
   {
     id: text("id").primaryKey(),
     expiresAt: timestamp("expires_at").notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull(),
+    createdAt,
+    updatedAt,
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    impersonatedBy: text("impersonated_by"),
     activeOrganizationId: text("active_organization_id"),
     activeTeamId: text("active_team_id"),
-    impersonatedBy: text("impersonated_by"),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
 );
 
-export const account = pgTable(
+export const account = auth.table(
   "account",
   {
     id: text("id").primaryKey(),
@@ -63,60 +78,57 @@ export const account = pgTable(
     refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull(),
+    createdAt,
+    updatedAt,
   },
   (table) => [index("account_userId_idx").on(table.userId)],
 );
 
-export const verification = pgTable(
+export const verification = auth.table(
   "verification",
   {
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull(),
+    createdAt,
+    updatedAt,
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const organization = pgTable(
+export const organization = auth.table(
   "organization",
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
     logo: text("logo"),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt,
     metadata: text("metadata"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );
 
-export const cohort = pgTable(
+export const cohort = auth.table(
   "cohort",
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
+    image: text("image"),
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").$onUpdate(
-      () => /* @__PURE__ */ new Date(),
-    ),
+    createdAt,
+    updatedAt,
   },
-  (table) => [index("cohort_organizationId_idx").on(table.organizationId)],
+  (table) => [
+    index("cohort_organizationId_idx").on(table.organizationId),
+    uniqueIndex("cohort_org_name_uidx").on(table.organizationId, table.name),
+  ],
 );
 
-export const cohort_member = pgTable(
+export const cohort_member = auth.table(
   "cohort_member",
   {
     id: text("id").primaryKey(),
@@ -126,15 +138,16 @@ export const cohort_member = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at"),
+    createdAt,
   },
   (table) => [
     index("cohort_member_teamId_idx").on(table.teamId),
     index("cohort_member_userId_idx").on(table.userId),
+    uniqueIndex("cohort_member_team_user_uidx").on(table.teamId, table.userId),
   ],
 );
 
-export const member = pgTable(
+export const member = auth.table(
   "member",
   {
     id: text("id").primaryKey(),
@@ -144,16 +157,17 @@ export const member = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    role: text("role").default("member").notNull(),
-    createdAt: timestamp("created_at").notNull(),
+    role: organizationRoleEnum("role").default("student").notNull(),
+    createdAt,
   },
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
+    uniqueIndex("member_org_user_uidx").on(table.organizationId, table.userId),
   ],
 );
 
-export const invitation = pgTable(
+export const invitation = auth.table(
   "invitation",
   {
     id: text("id").primaryKey(),
@@ -161,11 +175,11 @@ export const invitation = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     email: text("email").notNull(),
-    role: text("role"),
+    role: organizationRoleEnum("role"),
     teamId: text("team_id"),
     status: text("status").default("pending").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt,
     inviterId: text("inviter_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -244,3 +258,30 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export type User = typeof user.$inferSelect;
+export type NewUser = typeof user.$inferInsert;
+
+export type Session = typeof session.$inferSelect;
+export type NewSession = typeof session.$inferInsert;
+
+export type Account = typeof account.$inferSelect;
+export type NewAccount = typeof account.$inferInsert;
+
+export type Verification = typeof verification.$inferSelect;
+export type NewVerification = typeof verification.$inferInsert;
+
+export type Organization = typeof organization.$inferSelect;
+export type NewOrganization = typeof organization.$inferInsert;
+
+export type Cohort = typeof cohort.$inferSelect;
+export type NewCohort = typeof cohort.$inferInsert;
+
+export type CohortMember = typeof cohort_member.$inferSelect;
+export type NewCohortMember = typeof cohort_member.$inferInsert;
+
+export type Member = typeof member.$inferSelect;
+export type NewMember = typeof member.$inferInsert;
+
+export type Invitation = typeof invitation.$inferSelect;
+export type NewInvitation = typeof invitation.$inferInsert;

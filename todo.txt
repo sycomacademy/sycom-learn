@@ -1,3 +1,20 @@
 - fix auth permissions
     - org admin and teachers dont have right roles
-    - when we have more tables, we need to add more permissions
+    - when we have more tables, we need to add more permissions.
+
+- tests
+    - add tests for db
+    - add tests for server
+    - add tests for client
+    - decide what type of tests to use
+
+- ci/cd
+    - figure out the deployment platform
+    - how to connect staging and production safely and switch context easily
+
+- security
+    - run OWASP scan
+    - run security audit
+
+- UI/UX
+    - setup dashboard first

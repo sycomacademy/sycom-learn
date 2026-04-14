@@ -10,3 +10,5 @@ export function createDb() {
 }
 
 export const db = createDb();
+
+export type Database = ReturnType<typeof createDb>;
