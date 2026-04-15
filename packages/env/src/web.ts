@@ -5,6 +5,8 @@ export const env = createEnv({
   clientPrefix: "VITE_",
   client: {
     VITE_SERVER_URL: z.url(),
+    VITE_WEBSITE_URL: z.url(),
+    VITE_DASHBOARD_URL: z.url(),
   },
   // oxlint-disable-next-line typescript/no-explicit-any
   runtimeEnv: (import.meta as any).env,

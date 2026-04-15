@@ -27,6 +27,7 @@
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "lucide-react": "catalog:",
+    "motion": "^12.38.0",
     "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
