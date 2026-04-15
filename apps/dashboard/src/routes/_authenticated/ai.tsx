@@ -8,7 +8,7 @@ import { Send } from "lucide-react";
 import { useRef, useEffect, useState, type FormEvent } from "react";
 import { Streamdown } from "streamdown";
 
-export const Route = createFileRoute("/ai")({
+export const Route = createFileRoute("/_authenticated/ai")({
   component: RouteComponent,
 });
 

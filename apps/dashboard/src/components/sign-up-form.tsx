@@ -1,8 +1,8 @@
-import { Button } from "@sycom/ui/components/button";
+import { Button, buttonVariants } from "@sycom/ui/components/button";
 import { Input } from "@sycom/ui/components/input";
 import { Label } from "@sycom/ui/components/label";
 import { useForm } from "@tanstack/react-form";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -10,7 +10,7 @@ import { authClient } from "@/lib/auth-client";
 
 import Loader from "./loader";
 
-export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
+export default function SignUpForm() {
   const navigate = useNavigate({
     from: "/",
   });
@@ -147,13 +147,12 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
       </form>
 
       <div className="mt-4 text-center">
-        <Button
-          variant="link"
-          onClick={onSwitchToSignIn}
-          className="text-indigo-600 hover:text-indigo-800"
+        <Link
+          to="/login"
+          className={buttonVariants({ variant: "link", className: "text-indigo-600 hover:text-indigo-800" })}
         >
           Already have an account? Sign In
-        </Button>
+        </Link>
       </div>
     </div>
   );

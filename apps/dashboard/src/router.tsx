@@ -11,7 +11,7 @@ import superjson from "superjson";
 
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
-import { TRPCProvider } from "./lib/trpc";
+import { TRPCProvider } from "./lib/trpc-client";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({

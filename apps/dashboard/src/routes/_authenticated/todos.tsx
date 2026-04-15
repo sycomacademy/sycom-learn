@@ -13,9 +13,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import { useTRPC } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc-client";
 
-export const Route = createFileRoute("/todos")({
+export const Route = createFileRoute("/_authenticated/todos")({
   component: TodosRoute,
 });
 

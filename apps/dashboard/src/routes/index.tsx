@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { useTRPC } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc-client";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
