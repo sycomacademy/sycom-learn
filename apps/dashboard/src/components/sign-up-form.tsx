@@ -149,7 +149,10 @@ export default function SignUpForm() {
       <div className="mt-4 text-center">
         <Link
           to="/login"
-          className={buttonVariants({ variant: "link", className: "text-indigo-600 hover:text-indigo-800" })}
+          className={buttonVariants({
+            variant: "link",
+            className: "text-indigo-600 hover:text-indigo-800",
+          })}
         >
           Already have an account? Sign In
         </Link>

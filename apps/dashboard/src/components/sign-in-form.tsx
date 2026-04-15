@@ -124,7 +124,10 @@ export default function SignInForm() {
       <div className="mt-4 text-center">
         <Link
           to="/sign-up"
-          className={buttonVariants({ variant: "link", className: "text-indigo-600 hover:text-indigo-800" })}
+          className={buttonVariants({
+            variant: "link",
+            className: "text-indigo-600 hover:text-indigo-800",
+          })}
         >
           Need an account? Sign Up
         </Link>
