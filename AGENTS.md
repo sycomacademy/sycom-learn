@@ -1,6 +1,24 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to agents when working with code in this repository.
+This file provides guidance to agents (Claude Code, Cursor, OpenCode, etc.) when working with code in this repository. `CLAUDE.md` and `.cursor/rules/main.mdc` both point here — treat this as the single source of truth.
+
+## Rules
+
+These rules override default agent behavior. Apply them by default; only deviate if the user explicitly asks for something different.
+
+1. **Never fetch derivable data.** If auth state or any other value is resolvable via router context, a parent route's `beforeLoad`/`loader`, or existing query cache, read it from there — do not issue a second network call. In the dashboard app, the session is fetched once in the root route and exposed via `Route.useRouteContext()`; components must never call `authClient.useSession()`.
+
+2. **Invalidate, don't re-navigate, on state change.** After auth mutations (`signIn`, `signUp`, `signOut`) or any write that alters session/permissions, call `router.invalidate()`. `beforeLoad` re-runs and handles redirects — avoid manually chaining `navigate()` calls that duplicate routing logic.
+
+3. **Prefer route `loader` / `beforeLoad` over in-component queries for initial data.** Components should render data that's already been fetched by the route. Reserve `useQuery` for interactive refetches, mutations' optimistic invalidation, or data that genuinely loads after mount.
+
+4. **Cache aggressively.** The QueryClient default is `staleTime: 60_000`. Do not set `defaultPreloadStaleTime: 0` — it defeats preloading. Invalidate on writes; never refetch on every navigation.
+
+5. **Lazy-load heavy or non-critical dependencies.** Animation libraries, markdown renderers, chart libraries, and below-the-fold components should be `React.lazy`'d so they stay out of the initial bundle. For `motion`, prefer `m` + `<LazyMotion features={domAnimation}>` over the default `motion` component.
+
+6. **No dead pages.** The dashboard app is fully auth-gated — public marketing/SEO content lives in `apps/website`. If a route has no purpose, delete it or convert it to a redirect. Don't leave health-check placeholders in production routes.
+
+## Commands
 
 ## Commands
 

@@ -8,26 +8,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@sycom/ui/components/dropdown-menu";
-import { Skeleton } from "@sycom/ui/components/skeleton";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useRouteContext, useRouter } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
 
 export default function UserMenu() {
-  const navigate = useNavigate();
-  const { data: session, isPending } = authClient.useSession();
-
-  if (isPending) {
-    return <Skeleton className="h-9 w-24" />;
-  }
-
-  if (!session) {
-    return (
-      <Link to="/login">
-        <Button variant="outline">Sign In</Button>
-      </Link>
-    );
-  }
+  const router = useRouter();
+  const { session } = useRouteContext({ from: "/_authenticated" });
 
   return (
     <DropdownMenu>
@@ -45,9 +32,7 @@ export default function UserMenu() {
               authClient.signOut({
                 fetchOptions: {
                   onSuccess: () => {
-                    navigate({
-                      to: "/",
-                    });
+                    void router.invalidate();
                   },
                 },
               });

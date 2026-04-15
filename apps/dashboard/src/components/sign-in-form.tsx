@@ -2,19 +2,14 @@ import { Button, buttonVariants } from "@sycom/ui/components/button";
 import { Input } from "@sycom/ui/components/input";
 import { Label } from "@sycom/ui/components/label";
 import { useForm } from "@tanstack/react-form";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 
-import Loader from "./loader";
-
 export default function SignInForm() {
-  const navigate = useNavigate({
-    from: "/",
-  });
-  const { isPending } = authClient.useSession();
+  const router = useRouter();
 
   const form = useForm({
     defaultValues: {
@@ -28,11 +23,9 @@ export default function SignInForm() {
           password: value.password,
         },
         {
-          onSuccess: () => {
-            navigate({
-              to: "/dashboard",
-            });
+          onSuccess: async () => {
             toast.success("Sign in successful");
+            await router.invalidate();
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -47,10 +40,6 @@ export default function SignInForm() {
       }),
     },
   });
-
-  if (isPending) {
-    return <Loader />;
-  }
 
   return (
     <div className="w-full">

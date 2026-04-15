@@ -1,7 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { Suspense, lazy } from "react";
 
 import { FlickeringGrid } from "./flickering-grid";
-import { LoginTestimonials } from "./testimonials";
+
+const LoginTestimonials = lazy(() =>
+  import("./testimonials").then((mod) => ({ default: mod.LoginTestimonials })),
+);
 
 export function AuthLeftPanel() {
   return (
@@ -32,7 +36,9 @@ export function AuthLeftPanel() {
 
       <div className="relative z-10 flex h-full w-full items-center justify-center p-8">
         <div className="max-w-lg">
-          <LoginTestimonials />
+          <Suspense fallback={<div className="h-64" />}>
+            <LoginTestimonials />
+          </Suspense>
         </div>
       </div>
 
