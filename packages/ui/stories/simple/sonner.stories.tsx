@@ -41,10 +41,7 @@ export const Playground: Story = {
       <Button variant="outline" onClick={() => toast.success("Event has been created")}>
         Success
       </Button>
-      <Button
-        variant="outline"
-        onClick={() => toast.info("Be at the venue 10 minutes early")}
-      >
+      <Button variant="outline" onClick={() => toast.info("Be at the venue 10 minutes early")}>
         Info
       </Button>
       <Button

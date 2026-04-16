@@ -20,7 +20,7 @@ export function AuthLeftPanel() {
 
       <a
         className="absolute top-6 left-6 z-20 flex items-center gap-2 transition-opacity hover:opacity-80"
-        href="#"
+        href="https://example.com/"
       >
         <div className="flex size-7 items-center justify-center rounded-md bg-white/10">
           <div className="flex size-8 items-center justify-center rounded text-xs font-bold text-white/60">

@@ -13,7 +13,7 @@ function LoginScreen() {
       <div className="flex w-full flex-col items-center justify-center p-8 lg:w-1/2 lg:p-12">
         <div className="flex h-full w-full max-w-md flex-col">
           <div className="mb-8 flex items-center lg:hidden">
-            <a className="flex items-center gap-2" href="#">
+            <a className="flex items-center gap-2" href="https://example.com/">
               <div className="flex size-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
                 S
               </div>
@@ -30,14 +30,14 @@ function LoginScreen() {
                 By signing in you agree to our{" "}
                 <a
                   className="underline underline-offset-4 transition-colors hover:text-foreground"
-                  href="#"
+                  href="https://example.com/terms"
                 >
                   Terms of Service
                 </a>{" "}
                 &amp;{" "}
                 <a
                   className="underline underline-offset-4 transition-colors hover:text-foreground"
-                  href="#"
+                  href="https://example.com/privacy"
                 >
                   Privacy Policy
                 </a>

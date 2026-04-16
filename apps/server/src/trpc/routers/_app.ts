@@ -1,7 +1,6 @@
 import { checkHealth } from "@sycom/db/queries/health";
 
 import { publicProcedure, protectedProcedure, router } from "../init";
-import { todoRouter } from "./todo";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => checkHealth()),
@@ -11,6 +10,5 @@ export const appRouter = router({
       user: ctx.session.user,
     };
   }),
-  todo: todoRouter,
 });
 export type AppRouter = typeof appRouter;

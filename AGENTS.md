@@ -18,7 +18,17 @@ These rules override default agent behavior. Apply them by default; only deviate
 
 6. **No dead pages.** The dashboard app is fully auth-gated — public marketing/SEO content lives in `apps/website`. If a route has no purpose, delete it or convert it to a redirect. Don't leave health-check placeholders in production routes.
 
-## Commands
+7. **Route `loader` / `beforeLoad` are isomorphic (TanStack Start).** They run on the server during SSR and on the client during navigations. Never put secrets, server-only `process.env`, direct database access, or server-only imports in route modules — all server-only work MUST go through `createServerFn` handlers called from loaders/`beforeLoad`. Avoid hydration mismatches for browser-only values (use a stable SSR fallback, `useEffect`, `ClientOnly`, or `useHydrated`).
+
+8. **tRPC for app data; Start server functions for session on the dashboard.** Domain APIs and persistence go through the Hono tRPC router. Session resolution for routing and layout guards uses `createServerFn` plus Start middleware (see `apps/dashboard/src/functions/`, `apps/dashboard/src/middleware/`). Do not duplicate the same server work in both places.
+
+9. **Dashboard auth middleware uses the Better Auth HTTP client by design.** The TanStack Start server resolves the user by forwarding the incoming request's cookies/headers to the Hono app (`authClient.getSession` with `fetchOptions.headers`). The Start process does not host Better Auth or open `DATABASE_URL` for session reads — do not "optimize" this by importing `@sycom/auth` and calling `auth.api.getSession` from Start middleware unless the architecture is changed to colocate auth on the Start server.
+
+10. **Compose middleware; do not inline cross-cutting logic.** Wrap shared concerns (auth, logging, authorization) in `createMiddleware()` from `@tanstack/react-start`, attach chains with `.middleware([...])`, and pass data with `next({ context })`. For role or permission checks, prefer middleware factories that take parameters and compose on top of `authMiddleware` (for example `authorizationMiddleware({ course: ["read"] })`). Do not add global request or global server-function middleware (`src/start.ts` / `createStart`) unless the team explicitly requests it.
+
+11. **File conventions for Start boundaries.** `createServerFn` exports live under `apps/dashboard/src/functions/`. Shared Start middleware lives under `apps/dashboard/src/middleware/`. Server-only helpers that must never ship to the client should live in `*.server.ts` files and only be imported from server function handlers (or other server-only modules).
+
+12. **Prefer query invalidation over one-off `refetch()`.** After tRPC mutations (or other writes), call `queryClient.invalidateQueries({ queryKey: [...] })` or use the tRPC mutation `onSuccess` invalidation pattern so every subscriber updates together — avoid relying on `query.refetch()` only in the component that fired the mutation.
 
 ## Commands
 
@@ -43,31 +53,62 @@ turbo -F dashboard <task>
 turbo -F website <task>
 turbo -F server <task>
 turbo -F @sycom/db <task>
-turbo -F @sycom/trpc <task>
 ```
 
 ## Architecture
 
 Turborepo monorepo using Bun as runtime and package manager.
 
+The **TanStack Start** dev server (dashboard) handles SSR and `createServerFn`; the **Hono** app (`apps/server`) hosts Better Auth and tRPC. The Start runtime talks to Hono over HTTP (session via `authClient`, data via tRPC).
+
+### Execution model
+
+```mermaid
+flowchart LR
+    subgraph browser [Browser]
+        Route[Route beforeLoad/loader]
+        Component[React Component]
+    end
+
+    subgraph startServer [TanStack Start Server]
+        ServerFn[createServerFn]
+        Middleware[Start Middleware]
+    end
+
+    subgraph honoServer [Hono Server]
+        Auth[Better Auth]
+        TRPC[tRPC Router]
+        DB[(Neon Postgres)]
+    end
+
+    Route -->|"SSR: direct call"| ServerFn
+    Route -->|"Navigation: RPC fetch"| ServerFn
+    ServerFn --> Middleware
+    Middleware -->|"authClient.getSession"| Auth
+    Component -->|"tRPC query/mutation"| TRPC
+    Auth --> DB
+    TRPC --> DB
+```
+
 ### Apps
 
-- **`apps/dashboard`** - Authenticated SPA (React + TanStack Router + tRPC). Auth, dashboard, and app features. Vite dev server on port 3001. Uses `@` path alias for `src/`.
+- **`apps/dashboard`** - Authenticated TanStack Start app (SSR + TanStack Router + tRPC client). Session and route guards use `createServerFn` / Start middleware; product data uses tRPC against the Hono server. Vite dev server on port 3001. Path alias: `@/` → `src/`.
 - **`apps/website`** - Public-facing website for SEO/marketing pages. React + TanStack Router, no auth dependencies. Vite dev server on port 3002. Uses `@` path alias for `src/`.
 - **`apps/server`** - Hono HTTP server with hot reload (`bun run --hot`). Mounts Better Auth at `/api/auth/*` and tRPC at `/trpc/*`. Entry point: `src/index.ts`. tRPC routers and middleware live under `src/trpc/` (`routers/_app.ts` merges sub-routers). `src/utils/` for server-only helpers.
 
 ### Packages
 
-- **`@sycom/trpc`** - Shared tRPC request context only (`packages/trpc/src/context.ts`): `createContext()` resolves the Better Auth session from Hono request headers. Routers and procedures are defined in `apps/server/src/trpc/`.
 - **`@sycom/db`** - Drizzle ORM setup with Neon serverless driver. Schema files in `src/schema/`. Drizzle config reads `.env` from `apps/server/.env`.
-- **`@sycom/auth`** - Better Auth configuration with Drizzle adapter and email/password auth.
-- **`@sycom/env`** - Type-safe env validation via `@t3-oss/env-core`. Exports `env` from `./server` (DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, CORS_ORIGIN) and `./web` (VITE_SERVER_URL).
+- **`@sycom/auth`** - Better Auth configuration with Drizzle adapter and email/password auth (used by the Hono server, not imported for session resolution inside TanStack Start middleware).
+- **`@sycom/env`** - Type-safe env validation via `@t3-oss/env-core`. Exports `env` from `./server` (DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, CORS_ORIGIN, NODE_ENV) and `./web` (`VITE_SERVER_URL`, `VITE_WEBSITE_URL`, `VITE_DASHBOARD_URL`).
 - **`@sycom/ui`** - Shared shadcn/ui components (style: `base-lyra`). Import as `@sycom/ui/components/<name>`. Global styles in `src/styles/globals.css`.
 - **`@sycom/config`** - Shared base tsconfig.
 
 ### Key data flow
 
-Dashboard creates a tRPC client pointing at `VITE_SERVER_URL/trpc` with credentials included. It imports the `AppRouter` type from the `server` workspace package (`server/trpc/routers/_app`). The server's tRPC middleware calls `createContext()` from `@sycom/trpc` which resolves the user session from request headers via Better Auth. Protected procedures enforce authentication.
+The **Hono server** (`apps/server`) owns Better Auth and the database. `createContext()` in [`apps/server/src/trpc/context.ts`](apps/server/src/trpc/context.ts) resolves the session from request headers via `auth.api.getSession` and exposes `db` to procedures.
+
+The **dashboard** talks to that server over HTTP: the tRPC client targets `VITE_SERVER_URL/trpc` with `credentials: "include"`. For SSR and navigations, TanStack Start server functions (for example `getUser`) run on the Start server and call Better Auth through `authClient` so cookies reach the same Hono instance. Protected tRPC procedures still enforce auth on the server regardless of any client-side checks.
 
 ### shadcn/ui setup
 

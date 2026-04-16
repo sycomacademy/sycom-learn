@@ -73,38 +73,40 @@ export const Disabled: Story = {
   },
 };
 
-export const FormGroup: Story = {
-  render: () => {
-    const [errors, setErrors] = useState<Record<string, string>>({});
+function FormGroupStory() {
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-    function validate() {
-      const next: Record<string, string> = {};
-      const email = (document.getElementById("email") as HTMLInputElement)?.value;
-      const password = (document.getElementById("password") as HTMLInputElement)?.value;
+  function validate() {
+    const next: Record<string, string> = {};
+    const email = (document.getElementById("email") as HTMLInputElement)?.value;
+    const password = (document.getElementById("password") as HTMLInputElement)?.value;
 
-      if (!email) next.email = "Email is required";
-      if (!password) next.password = "Password is required";
-      else if (password.length < 8) next.password = "Password must be at least 8 characters";
-      setErrors(next);
-    }
+    if (!email) next.email = "Email is required";
+    if (!password) next.password = "Password is required";
+    else if (password.length < 8) next.password = "Password must be at least 8 characters";
+    setErrors(next);
+  }
 
-    return (
-      <form
-        className="w-80 space-y-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          validate();
-        }}
+  return (
+    <form
+      className="w-80 space-y-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        validate();
+      }}
+    >
+      <Field label="Email" type="email" placeholder="you@example.com" error={errors.email} />
+      <Field label="Password" type="password" error={errors.password} />
+      <button
+        type="submit"
+        className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
       >
-        <Field label="Email" type="email" placeholder="you@example.com" error={errors.email} />
-        <Field label="Password" type="password" error={errors.password} />
-        <button
-          type="submit"
-          className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-        >
-          Submit
-        </button>
-      </form>
-    );
-  },
+        Submit
+      </button>
+    </form>
+  );
+}
+
+export const FormGroup: Story = {
+  render: () => <FormGroupStory />,
 };

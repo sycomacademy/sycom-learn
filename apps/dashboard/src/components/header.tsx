@@ -3,11 +3,7 @@ import { Link } from "@tanstack/react-router";
 import UserMenu from "./user-menu";
 
 export default function Header() {
-  const links = [
-    { to: "/dashboard", label: "Dashboard" },
-    { to: "/todos", label: "Todos" },
-    { to: "/ai", label: "AI Chat" },
-  ] as const;
+  const links = [{ to: "/dashboard", label: "Dashboard" }] as const;
 
   return (
     <div>
