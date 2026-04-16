@@ -10,22 +10,15 @@ import { renderTrpcPanel } from "trpc-ui-zod4";
 
 import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
+import { httpLogger } from "@/utils/http-logger";
 
 const app = new Hono();
-const trpcPanelFaviconSvg = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#09090b" />
-  <path
-    d="M18 20c0-3.314 2.686-6 6-6h10c6.627 0 12 5.373 12 12v0c0 6.627-5.373 12-12 12h-4v12h-6a6 6 0 0 1-6-6V20Z"
-    fill="#fafafa"
-  />
-  <path
-    d="M30 26h4a6 6 0 0 1 0 12h-4V26Z"
-    fill="#09090b"
-  />
-</svg>
-`.trim();
-const trpcPanelFaviconHref = `data:image/svg+xml,${encodeURIComponent(trpcPanelFaviconSvg)}`;
+const faviconFile = Bun.file(new URL("../public/favicon.svg", import.meta.url));
+const faviconHref = "/favicon.svg";
+const faviconHeaders = {
+  "content-type": "image/svg+xml; charset=utf-8",
+  "cache-control": "public, max-age=86400",
+};
 
 app.use(secureHeaders());
 
@@ -40,15 +33,7 @@ app.use(
   }),
 );
 
-app.use("*", async (c, next) => {
-  const start = performance.now();
-  await next();
-
-  logger.info(`${c.req.method} ${c.req.path}`, {
-    status: c.res.status,
-    durationMs: Math.round(performance.now() - start),
-  });
-});
+app.use("*", httpLogger());
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
@@ -68,12 +53,9 @@ app.use(
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
-app.get("/favicon.ico", (c) =>
-  c.body(trpcPanelFaviconSvg, 200, {
-    "content-type": "image/svg+xml; charset=utf-8",
-    "cache-control": "public, max-age=86400",
-  }),
-);
+app.get("/favicon.svg", () => new Response(faviconFile, { headers: faviconHeaders }));
+
+app.get("/favicon.ico", () => new Response(faviconFile, { headers: faviconHeaders }));
 
 app.get("/", (c) => {
   const origin = new URL(c.req.url).origin;
@@ -82,7 +64,7 @@ app.get("/", (c) => {
     transformer: "superjson",
   }).replace(
     "</head>",
-    `<link rel="icon" href="${trpcPanelFaviconHref}" sizes="any" type="image/svg+xml" /></head>`,
+    `<link rel="icon" href="${faviconHref}" sizes="any" type="image/svg+xml" /></head>`,
   );
 
   return c.html(trpcPanelHtml);

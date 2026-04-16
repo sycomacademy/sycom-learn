@@ -5,5 +5,9 @@ import { t } from "./t";
 export const router = t.router;
 export const callerFactory = t.createCallerFactory;
 
-export const publicProcedure = t.procedure.use(loggingMiddleware);
-export const protectedProcedure = t.procedure.use(loggingMiddleware).use(authMiddleware);
+const isDebugPerformance = process.env.DEBUG_PERFORMANCE === "true";
+
+const baseProcedure = isDebugPerformance ? t.procedure.use(loggingMiddleware) : t.procedure;
+
+export const publicProcedure = baseProcedure;
+export const protectedProcedure = baseProcedure.use(authMiddleware);

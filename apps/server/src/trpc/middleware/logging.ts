@@ -5,7 +5,7 @@ const trpcLogger = createLoggerWithContext("trpc");
 
 export const loggingMiddleware = t.middleware(async ({ next, path, type, ctx }) => {
   const start = performance.now();
-  const userId = ctx.session?.user?.id ?? "anonymous";
+  const userId = ctx.session?.user?.id;
 
   const result = await next();
 
