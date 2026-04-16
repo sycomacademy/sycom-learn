@@ -2,25 +2,12 @@ import { createDb } from "@sycom/db";
 import * as schema from "@sycom/db/schema/auth";
 import { env } from "@sycom/env/server";
 import { dash } from "@better-auth/infra";
-import { APIError, betterAuth } from "better-auth";
+import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
-
 import { orgAc, orgRoles, platformAc, platformRoles } from "./permissions";
 import type { UserRole } from "@sycom/db/schema/auth";
-
-// Email stubs — replace with a real provider (Resend/Postmark/SES) before
-// shipping. In dev, they log the URL so you can copy/paste it. In prod, they
-// throw loudly so signups fail visibly instead of silently skipping
-// verification.
-const devOrThrow = (label: string, to: string, url: string) => {
-  if (env.NODE_ENV === "production") {
-    throw new APIError("INTERNAL_SERVER_ERROR", {
-      message: `Email provider not configured (${label}). Configure one before enabling in production.`,
-    });
-  }
-  console.log(`[auth:${label}] to=${to} url=${url}`);
-};
+import { betterAuthLogger, devOrThrow } from "./config";
 
 export function createAuth() {
   const db = createDb();
@@ -114,6 +101,7 @@ export function createAuth() {
       }),
       dash(),
     ],
+    ...betterAuthLogger,
   });
 }
 

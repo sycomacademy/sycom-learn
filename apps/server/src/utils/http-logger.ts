@@ -1,7 +1,9 @@
-import { logger } from "@sycom/logger";
+import { createLoggerWithContext } from "@sycom/logger";
 import type { Context, MiddlewareHandler } from "hono";
 
 import { getRequestTrace } from "@/utils/request-trace";
+
+const httpMiddlewareLogger = createLoggerWithContext("http");
 
 export const httpLogger = (): MiddlewareHandler => {
   return async (context: Context, next) => {
@@ -18,15 +20,21 @@ export const httpLogger = (): MiddlewareHandler => {
     const isResponseOk = context.res.ok;
 
     if (isResponseOk) {
-      logger.info(`${method} ${path} ${statusCode} - completed in ${durationMs.toFixed(2)}ms`, {
-        requestId,
-        cfRay,
-      });
+      httpMiddlewareLogger.info(
+        `${method} ${path} ${statusCode} - completed in ${durationMs.toFixed(2)}ms`,
+        {
+          requestId,
+          cfRay,
+        },
+      );
     } else {
-      logger.error(`${method} ${path} ${statusCode} - completed in ${durationMs.toFixed(2)}ms`, {
-        requestId,
-        cfRay,
-      });
+      httpMiddlewareLogger.error(
+        `${method} ${path} ${statusCode} - completed in ${durationMs.toFixed(2)}ms`,
+        {
+          requestId,
+          cfRay,
+        },
+      );
     }
   };
 };

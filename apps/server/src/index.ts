@@ -1,7 +1,7 @@
 import { trpcServer } from "@hono/trpc-server";
 import { auth } from "@sycom/auth";
 import { env } from "@sycom/env/server";
-import { logger } from "@sycom/logger";
+import { createLoggerWithContext } from "@sycom/logger";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
@@ -10,6 +10,8 @@ import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
 import { httpLogger } from "@/utils/http-logger";
 import { consoleText } from "@sycom/ui/lib/constants";
+
+const honoLogger = createLoggerWithContext("hono");
 
 const app = new Hono();
 
@@ -35,7 +37,7 @@ app.use(
     router: appRouter,
     createContext: (_opts, context) => createContext({ context }),
     onError: ({ error, path }) => {
-      logger.error(`[tRPC] ${path ?? "unknown"}`, {
+      honoLogger.error(`[tRPC] ${path ?? "unknown"}`, {
         code: error.code,
         message: error.message,
       });
@@ -79,7 +81,7 @@ app.onError((err, c) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
   }
-  logger.error(`[Hono] ${c.req.method} ${c.req.path}`, {
+  honoLogger.error(`[Hono] ${c.req.method} ${c.req.path}`, {
     message: err.message,
     stack: err.stack,
   });
@@ -87,15 +89,15 @@ app.onError((err, c) => {
 });
 
 const shutdown = async (signal: string) => {
-  logger.info(`Received ${signal}, starting graceful shutdown...`);
+  honoLogger.info(`Received ${signal}, starting graceful shutdown...`);
 
   const SHUTDOWN_TIMEOUT = 10_000; // 10s
 
   const shutdownPromise = (async () => {
     try {
-      logger.info("Graceful shutdown complete");
+      honoLogger.info("Graceful shutdown complete");
     } catch (error) {
-      logger.error("Error during shutdown", {
+      honoLogger.error("Error during shutdown", {
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -103,7 +105,7 @@ const shutdown = async (signal: string) => {
 
   const timeoutPromise = new Promise<void>((resolve) => {
     setTimeout(() => {
-      logger.warn("Shutdown timeout reached, forcing exit");
+      honoLogger.warn("Shutdown timeout reached, forcing exit");
       resolve();
     }, SHUTDOWN_TIMEOUT);
   });
