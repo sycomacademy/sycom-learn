@@ -15,10 +15,18 @@ export const httpLogger = (): MiddlewareHandler => {
 
     const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
     const statusCode = context.res.status;
+    const isResponseOk = context.res.ok;
 
-    logger.info(`${method} ${path} ${statusCode} - completed in ${durationMs.toFixed(2)}ms`, {
-      requestId,
-      cfRay,
-    });
+    if (isResponseOk) {
+      logger.info(`${method} ${path} ${statusCode} - completed in ${durationMs.toFixed(2)}ms`, {
+        requestId,
+        cfRay,
+      });
+    } else {
+      logger.error(`${method} ${path} ${statusCode} - completed in ${durationMs.toFixed(2)}ms`, {
+        requestId,
+        cfRay,
+      });
+    }
   };
 };
