@@ -7,6 +7,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { ThemeProvider } from "next-themes";
 
+import GlobalError from "@/components/layout/global-error";
 import ThemeToggle from "@/components/theme-toggle";
 import { getUser } from "@/functions/get-user";
 
@@ -80,14 +81,7 @@ function RootError() {
         <HeadContent />
       </head>
       <body>
-        <div className="flex min-h-svh items-center justify-center bg-background p-8">
-          <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-            <h1 className="text-2xl font-semibold">Sycom is down</h1>
-            <p className="text-sm text-muted-foreground">
-              We can&rsquo;t reach the server right now. Please try again in a moment.
-            </p>
-          </div>
-        </div>
+        <GlobalError />
         <Scripts />
       </body>
     </html>

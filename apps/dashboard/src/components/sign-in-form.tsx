@@ -12,7 +12,7 @@ import {
 import { Input } from "@sycom/ui/components/input";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
 const signInSchema = z.object({
   email: z.email("Invalid email address"),
@@ -32,6 +33,7 @@ type SignInInput = z.infer<typeof signInSchema>;
 export default function SignInForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { redirect: redirectParam } = useSearch({ from: "/_auth" });
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<SignInInput>({
@@ -50,7 +52,8 @@ export default function SignInForm() {
         onSuccess: async () => {
           toast.success("Signed in");
           await queryClient.invalidateQueries({ queryKey: ["session"] });
-          await router.invalidate();
+          const target = resolvePostAuthRedirect(router, redirectParam);
+          await router.navigate({ href: target, replace: true });
         },
         onError: (error) => {
           toast.error(error.error.message || error.error.statusText || "Something went wrong");

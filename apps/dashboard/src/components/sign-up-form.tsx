@@ -11,7 +11,7 @@ import {
 import { Input } from "@sycom/ui/components/input";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
 const signUpSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -31,6 +32,7 @@ type SignUpInput = z.infer<typeof signUpSchema>;
 export default function SignUpForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { redirect: redirectParam } = useSearch({ from: "/_auth" });
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<SignUpInput>({
@@ -49,7 +51,8 @@ export default function SignUpForm() {
         onSuccess: async () => {
           toast.success("Account created");
           await queryClient.invalidateQueries({ queryKey: ["session"] });
-          await router.invalidate();
+          const target = resolvePostAuthRedirect(router, redirectParam);
+          await router.navigate({ href: target, replace: true });
         },
         onError: (error) => {
           toast.error(error.error.message || error.error.statusText || "Something went wrong");
@@ -148,7 +151,7 @@ export default function SignUpForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/login">
+        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-in">
           Sign in
         </Link>
       </p>

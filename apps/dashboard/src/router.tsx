@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import superjson from "superjson";
 
 import Loader from "./components/loader";
+import NotFound from "./components/layout/not-found";
 import { routeTree } from "./routeTree.gen";
 import { TRPCProvider } from "./lib/trpc-client";
+import GlobalError from "./components/layout/global-error";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -54,7 +56,8 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 0,
     context: { trpc, queryClient },
     defaultPendingComponent: () => <Loader />,
-    defaultNotFoundComponent: () => <div>Not Found</div>,
+    defaultNotFoundComponent: () => <NotFound />,
+    defaultErrorComponent: () => <GlobalError />,
     Wrap: ({ children }) => (
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
