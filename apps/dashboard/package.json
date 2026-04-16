@@ -8,7 +8,6 @@
     "dev": "vite dev"
   },
   "dependencies": {
-    "@better-auth/infra": "^0.2.3",
     "@hookform/resolvers": "catalog:",
     "@sycom/auth": "workspace:*",
     "@sycom/env": "workspace:*",

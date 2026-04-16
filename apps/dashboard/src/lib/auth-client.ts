@@ -1,6 +1,5 @@
 import { env } from "@sycom/env/web";
 import { orgAc, orgRoles, platformAc, platformRoles } from "@sycom/auth/permissions";
-import { sentinelClient } from "@better-auth/infra/client";
 import { adminClient, organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
@@ -16,6 +15,5 @@ export const authClient = createAuthClient({
       ac: platformAc,
       roles: platformRoles,
     }),
-    sentinelClient(),
   ],
 });

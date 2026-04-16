@@ -17,36 +17,31 @@ export const devOrThrow = (label: string, to: string, url: string) => {
   console.log(`[auth:${label}] to=${to} url=${url}`);
 };
 
-export const betterAuthLogger =
-  env.DEBUG_PERFORMANCE === "true"
-    ? {
-        logger: {
-          level: "debug" as const,
-          log: (
-            level: "debug" | "info" | "warn" | "error",
-            message: string,
-            ...args: unknown[]
-          ) => {
-            const logMessage = `[better-auth:${level}] ${message}`;
-            const logData = args.length > 0 ? { args } : undefined;
+export const betterAuthLogger = env.DEBUG_PERFORMANCE
+  ? {
+      logger: {
+        level: "debug" as const,
+        log: (level: "debug" | "info" | "warn" | "error", message: string, ...args: unknown[]) => {
+          const logMessage = `[better-auth:${level}] ${message}`;
+          const logData = args.length > 0 ? { args } : undefined;
 
-            if (level === "debug") {
-              authLogger.debug(logMessage, logData);
-              return;
-            }
+          if (level === "debug") {
+            authLogger.debug(logMessage, logData);
+            return;
+          }
 
-            if (level === "info") {
-              authLogger.info(logMessage, logData);
-              return;
-            }
+          if (level === "info") {
+            authLogger.info(logMessage, logData);
+            return;
+          }
 
-            if (level === "warn") {
-              authLogger.warn(logMessage, logData);
-              return;
-            }
+          if (level === "warn") {
+            authLogger.warn(logMessage, logData);
+            return;
+          }
 
-            authLogger.error(logMessage, logData);
-          },
+          authLogger.error(logMessage, logData);
         },
-      }
-    : {};
+      },
+    }
+  : {};

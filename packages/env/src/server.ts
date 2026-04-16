@@ -18,7 +18,10 @@ export const env = createEnv({
       )
       .pipe(z.array(z.url())),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-    DEBUG_PERFORMANCE: z.enum(["true", "false"]).default("false"),
+    DEBUG_PERFORMANCE: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
