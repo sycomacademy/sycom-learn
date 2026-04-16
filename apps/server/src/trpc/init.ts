@@ -1,11 +1,12 @@
 import { authMiddleware } from "./middleware/auth";
 import { loggingMiddleware } from "./middleware/logging";
 import { t } from "./t";
+import { env } from "@sycom/env/server";
 
 export const router = t.router;
 export const callerFactory = t.createCallerFactory;
 
-const isDebugPerformance = process.env.DEBUG_PERFORMANCE === "true";
+const isDebugPerformance = env.DEBUG_PERFORMANCE;
 
 const baseProcedure = isDebugPerformance ? t.procedure.use(loggingMiddleware) : t.procedure;
 

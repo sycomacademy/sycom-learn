@@ -9,6 +9,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
 import { httpLogger } from "@/utils/http-logger";
+import { consoleText } from "@sycom/ui/lib/constants";
 
 const app = new Hono();
 
@@ -45,19 +46,7 @@ app.use(
 app.get("/health", (c) => c.json({ status: "ok" }));
 
 app.get("/", (c) => {
-  return c.text(`
- ███████╗██╗   ██╗ ██████╗ ██████╗ ███╗   ███╗
- ██╔════╝╚██╗ ██╔╝██╔════╝██╔═══██╗████╗ ████║
- ███████╗ ╚████╔╝ ██║     ██║   ██║██╔████╔██║
- ╚════██║  ╚██╔╝  ██║     ██║   ██║██║╚██╔╝██║
- ███████║   ██║   ╚██████╗╚██████╔╝██║ ╚═╝ ██║
- ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝     ╚═╝
-
- Your Information Technology and Cyber Security Partner.
-
- WE'RE HIRING:       https://sycomsolutions.com/careers
- BEGIN YOUR JOURNEY: https://sycom.academy
-`);
+  return c.text(consoleText);
 });
 
 if (env.NODE_ENV !== "production") {

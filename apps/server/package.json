@@ -21,6 +21,7 @@
     "@sycom/db": "workspace:*",
     "@sycom/env": "workspace:*",
     "@sycom/logger": "workspace:*",
+    "@sycom/ui": "workspace:*",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
