@@ -6,21 +6,14 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
-import { renderTrpcPanel } from "trpc-ui-zod4";
-
 import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
 import { httpLogger } from "@/utils/http-logger";
 
 const app = new Hono();
-const faviconFile = Bun.file(new URL("../public/favicon.svg", import.meta.url));
-const faviconHref = "/favicon.svg";
-const faviconHeaders = {
-  "content-type": "image/svg+xml; charset=utf-8",
-  "cache-control": "public, max-age=86400",
-};
 
 app.use(secureHeaders());
+app.use("*", httpLogger());
 
 app.use(
   "/*",
@@ -32,8 +25,6 @@ app.use(
     maxAge: 86400,
   }),
 );
-
-app.use("*", httpLogger());
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
@@ -53,22 +44,47 @@ app.use(
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
-app.get("/favicon.svg", () => new Response(faviconFile, { headers: faviconHeaders }));
-
-app.get("/favicon.ico", () => new Response(faviconFile, { headers: faviconHeaders }));
-
 app.get("/", (c) => {
-  const origin = new URL(c.req.url).origin;
-  const trpcPanelHtml = renderTrpcPanel(appRouter, {
-    url: `${origin}/trpc`,
-    transformer: "superjson",
-  }).replace(
-    "</head>",
-    `<link rel="icon" href="${faviconHref}" sizes="any" type="image/svg+xml" /></head>`,
-  );
+  return c.text(`
+ ███████╗██╗   ██╗ ██████╗ ██████╗ ███╗   ███╗
+ ██╔════╝╚██╗ ██╔╝██╔════╝██╔═══██╗████╗ ████║
+ ███████╗ ╚████╔╝ ██║     ██║   ██║██╔████╔██║
+ ╚════██║  ╚██╔╝  ██║     ██║   ██║██║╚██╔╝██║
+ ███████║   ██║   ╚██████╗╚██████╔╝██║ ╚═╝ ██║
+ ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝     ╚═╝
 
-  return c.html(trpcPanelHtml);
+ Your Information Technology and Cyber Security Partner.
+
+ WE'RE HIRING:       https://sycomsolutions.com/careers
+ BEGIN YOUR JOURNEY: https://sycom.academy
+`);
 });
+
+if (env.NODE_ENV !== "production") {
+  const faviconFile = Bun.file(new URL("../public/favicon.svg", import.meta.url));
+  const faviconHref = "/favicon.svg";
+  const faviconHeaders = {
+    "content-type": "image/svg+xml; charset=utf-8",
+    "cache-control": "public, max-age=86400",
+  };
+
+  app.get("/favicon.svg", () => new Response(faviconFile, { headers: faviconHeaders }));
+
+  app.get("/favicon.ico", () => new Response(faviconFile, { headers: faviconHeaders }));
+
+  app.get("/docs", async (c) => {
+    const { renderTrpcPanel } = await import("trpc-ui-zod4");
+    const origin = new URL(c.req.url).origin;
+    const trpcPanelHtml = renderTrpcPanel(appRouter, {
+      url: `${origin}/trpc`,
+      transformer: "superjson",
+    }).replace(
+      "</head>",
+      `<link rel="icon" href="${faviconHref}" sizes="any" type="image/svg+xml" /></head>`,
+    );
+    return c.html(trpcPanelHtml);
+  });
+}
 
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
@@ -110,4 +126,7 @@ const shutdown = async (signal: string) => {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-export default app;
+export default {
+  port: 3001,
+  fetch: app.fetch,
+};
