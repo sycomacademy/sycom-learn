@@ -2,6 +2,7 @@ import { Button, buttonVariants } from "@sycom/ui/components/button";
 import { Checkbox } from "@sycom/ui/components/checkbox";
 import { Input } from "@sycom/ui/components/input";
 import { Label } from "@sycom/ui/components/label";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { Link, useRouter } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
@@ -19,6 +20,7 @@ const signInSchema = z.object({
 
 export default function SignInForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({
@@ -37,6 +39,7 @@ export default function SignInForm() {
         {
           onSuccess: async () => {
             toast.success("Signed in");
+            await queryClient.invalidateQueries({ queryKey: ["session"] });
             await router.invalidate();
           },
           onError: (error) => {

@@ -8,11 +8,11 @@ These rules override default agent behavior. Apply them by default; only deviate
 
 1. **Never fetch derivable data.** If auth state or any other value is resolvable via router context, a parent route's `beforeLoad`/`loader`, or existing query cache, read it from there — do not issue a second network call. In the dashboard app, the session is fetched once in the root route and exposed via `Route.useRouteContext()`; components must never call `authClient.useSession()`.
 
-2. **Invalidate, don't re-navigate, on state change.** After auth mutations (`signIn`, `signUp`, `signOut`) or any write that alters session/permissions, call `router.invalidate()`. `beforeLoad` re-runs and handles redirects — avoid manually chaining `navigate()` calls that duplicate routing logic.
+2. **Invalidate, don't re-navigate, on state change.** After auth mutations (`signIn`, `signUp`, `signOut`) or any write that alters session/permissions, invalidate both the session query (`queryClient.invalidateQueries({ queryKey: ["session"] })`) and the router (`router.invalidate()`). `beforeLoad` re-runs, re-reads the session through React Query, and handles redirects — avoid manually chaining `navigate()` calls that duplicate routing logic.
 
 3. **Prefer route `loader` / `beforeLoad` over in-component queries for initial data.** Components should render data that's already been fetched by the route. Reserve `useQuery` for interactive refetches, mutations' optimistic invalidation, or data that genuinely loads after mount.
 
-4. **Cache aggressively.** The QueryClient default is `staleTime: 60_000`. Do not set `defaultPreloadStaleTime: 0` — it defeats preloading. Invalidate on writes; never refetch on every navigation.
+4. **Cache aggressively through React Query.** The QueryClient default is `staleTime: 60_000`. Route loaders and `beforeLoad` should fetch through `queryClient.ensureQueryData({ queryKey, queryFn })` so preloads and navigations hit the cache instead of the network. In this setup, `defaultPreloadStaleTime: 0` is correct — TanStack Router always invokes the loader, but React Query's `staleTime` (not the router's) decides whether a fetch actually happens. The session is already wired this way in `__root.tsx` with `queryKey: ["session"]`; follow the same pattern for other route data. Invalidate on writes; never refetch on every navigation.
 
 5. **Lazy-load heavy or non-critical dependencies.** Animation libraries, markdown renderers, chart libraries, and below-the-fold components should be `React.lazy`'d so they stay out of the initial bundle. For `motion`, prefer `m` + `<LazyMotion features={domAnimation}>` over the default `motion` component.
 

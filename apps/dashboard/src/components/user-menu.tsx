@@ -8,12 +8,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@sycom/ui/components/dropdown-menu";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouteContext, useRouter } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
 
 export default function UserMenu() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { session } = useRouteContext({ from: "/_authenticated" });
 
   return (
@@ -31,8 +33,9 @@ export default function UserMenu() {
             onClick={() => {
               authClient.signOut({
                 fetchOptions: {
-                  onSuccess: () => {
-                    void router.invalidate();
+                  onSuccess: async () => {
+                    await queryClient.invalidateQueries({ queryKey: ["session"] });
+                    await router.invalidate();
                   },
                 },
               });

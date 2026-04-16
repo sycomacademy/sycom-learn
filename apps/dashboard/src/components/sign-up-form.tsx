@@ -1,6 +1,7 @@
 import { Button, buttonVariants } from "@sycom/ui/components/button";
 import { Input } from "@sycom/ui/components/input";
 import { Label } from "@sycom/ui/components/label";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { Link, useRouter } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
@@ -18,6 +19,7 @@ const signUpSchema = z.object({
 
 export default function SignUpForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({
@@ -36,6 +38,7 @@ export default function SignUpForm() {
         {
           onSuccess: async () => {
             toast.success("Account created");
+            await queryClient.invalidateQueries({ queryKey: ["session"] });
             await router.invalidate();
           },
           onError: (error) => {
