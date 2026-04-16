@@ -22,7 +22,7 @@ function ForgotPasswordPage() {
         Password reset isn&apos;t set up yet. Please contact support or try signing in again.
       </p>
       <div className="flex flex-col gap-2">
-        <Link className={buttonVariants({ variant: "outline" })} to="/login">
+        <Link className={buttonVariants({ variant: "outline" })} to="/sign-in">
           Back to sign in
         </Link>
         <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-up">

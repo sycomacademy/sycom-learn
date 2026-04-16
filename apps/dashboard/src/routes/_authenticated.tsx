@@ -5,7 +5,7 @@ import Header from "@/components/header";
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context }) => {
     if (!context.session) {
-      throw redirect({ to: "/login" });
+      throw redirect({ to: "/sign-in" });
     }
     return { session: context.session };
   },

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { AuthLeftPanel } from "./_shared/auth-left-panel";
 import { SignInForm } from "./_shared/sign-in-form";
 
-function LoginScreen() {
+function SignInScreen() {
   return (
     <div className="flex min-h-svh bg-background p-1">
       <div className="relative hidden overflow-hidden bg-foreground lg:flex lg:w-1/2">
@@ -51,12 +51,12 @@ function LoginScreen() {
 }
 
 const meta = {
-  title: "Screens/Login",
-  component: LoginScreen,
+  title: "Screens/Sign-In",
+  component: SignInScreen,
   parameters: {
     layout: "fullscreen",
   },
-} satisfies Meta<typeof LoginScreen>;
+} satisfies Meta<typeof SignInScreen>;
 
 export default meta;
 
