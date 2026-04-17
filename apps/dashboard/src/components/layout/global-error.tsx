@@ -5,12 +5,6 @@ import { GlobalErrorIllustration } from "./global-error-illustration";
 
 const blogUrl = `${env.VITE_WEBSITE_URL}/blog`;
 
-const inlineLink = buttonVariants({
-  className: "h-auto min-h-0 px-0 py-0 text-sm",
-  size: "sm",
-  variant: "link",
-});
-
 export default function GlobalError() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-8">
@@ -25,12 +19,12 @@ export default function GlobalError() {
           </h1>
           <p className="text-pretty text-muted-foreground">
             Sycom is undergoing maintenance. We&apos;ll be back online shortly. You can contact us
-            at{" "}
-            <a className={inlineLink} href="mailto:support@sycom.io">
+            at
+            <a className={buttonVariants({ variant: "link" })} href="mailto:support@sycom.io">
               support@sycom.io
-            </a>{" "}
-            or{" "}
-            <a className={inlineLink} href="tel:+447403064482">
+            </a>
+            or
+            <a className={buttonVariants({ variant: "link" })} href="tel:+447403064482">
               +44 7403 064482
             </a>
             .
@@ -40,7 +34,6 @@ export default function GlobalError() {
         <a
           className={buttonVariants({ size: "lg", variant: "outline" })}
           href={blogUrl}
-          rel="noreferrer"
           target="_blank"
         >
           In the meantime, check out our blog →
