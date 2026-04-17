@@ -1,4 +1,8 @@
-DATABASE_URL=
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=
+BETTER_AUTH_API_KEY=
 CORS_ORIGIN=
+DATABASE_URL=
+
+# Set to "true" to raise Better Auth and tRPC internal log levels to debug (more verbose).
+DEBUG_PERFORMANCE=false
