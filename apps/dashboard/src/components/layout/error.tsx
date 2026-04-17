@@ -1,7 +1,8 @@
 import { Button } from "@sycom/ui/components/button";
 import { useRouter } from "@tanstack/react-router";
-import { CloudOff } from "lucide-react";
 import { useState } from "react";
+
+import { TransientErrorIllustration } from "./transient-error-illustration";
 
 export default function Error() {
   const router = useRouter();
@@ -17,11 +18,12 @@ export default function Error() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="max-w-md space-y-6 text-center">
-        <div className="flex justify-center">
-          <CloudOff className="h-12 w-12 text-muted-foreground" aria-hidden />
-        </div>
+    <main className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background p-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_55%)] opacity-[0.07]" />
+
+      <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-8 text-center">
+        <TransientErrorIllustration className="w-full" />
+
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Service temporarily unavailable
@@ -31,7 +33,7 @@ export default function Error() {
           </p>
         </div>
 
-        <Button onClick={onRetry} size="lg" loading={retrying}>
+        <Button loading={retrying} onClick={onRetry} size="lg">
           {retrying ? "Retrying..." : "Try again"}
         </Button>
       </div>

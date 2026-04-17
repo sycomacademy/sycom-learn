@@ -19,7 +19,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
-import { ForesightLink } from "@/components/foresight-link";
+import { Link } from "@/components/foresight-link";
 import { authClient } from "@/lib/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
@@ -101,12 +101,12 @@ export default function SignInForm() {
                 <Field>
                   <div className="flex items-center justify-between gap-2">
                     <FieldLabel className="text-xs text-muted-foreground">Password</FieldLabel>
-                    <ForesightLink
+                    <Link
                       className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                       to="/forgot-password"
                     >
                       Forgot password?
-                    </ForesightLink>
+                    </Link>
                   </div>
                   <FormControl>
                     <InputGroup>
@@ -167,12 +167,9 @@ export default function SignInForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <ForesightLink
-          className={buttonVariants({ className: "px-0", variant: "link" })}
-          to="/sign-up"
-        >
+        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-up">
           Create account
-        </ForesightLink>
+        </Link>
       </p>
     </div>
   );

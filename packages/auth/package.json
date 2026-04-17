@@ -12,7 +12,9 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@better-auth/infra": "^0.2.3",
     "@sycom/db": "workspace:*",

@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
-import { ForesightLink } from "@/components/foresight-link";
+import { Link } from "@/components/foresight-link";
 import { authClient } from "@/lib/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
@@ -152,12 +152,9 @@ export default function SignUpForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <ForesightLink
-          className={buttonVariants({ className: "px-0", variant: "link" })}
-          to="/sign-in"
-        >
+        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-in">
           Sign in
-        </ForesightLink>
+        </Link>
       </p>
     </div>
   );
