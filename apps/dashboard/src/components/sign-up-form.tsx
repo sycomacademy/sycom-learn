@@ -11,13 +11,14 @@ import {
 import { Input } from "@sycom/ui/components/input";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, useRouter, useSearch } from "@tanstack/react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
+import { ForesightLink } from "@/components/foresight-link";
 import { authClient } from "@/lib/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
@@ -151,9 +152,12 @@ export default function SignUpForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-in">
+        <ForesightLink
+          className={buttonVariants({ className: "px-0", variant: "link" })}
+          to="/sign-in"
+        >
           Sign in
-        </Link>
+        </ForesightLink>
       </p>
     </div>
   );

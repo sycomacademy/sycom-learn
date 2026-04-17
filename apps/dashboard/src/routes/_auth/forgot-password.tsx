@@ -1,5 +1,7 @@
 import { buttonVariants } from "@sycom/ui/components/button";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+
+import { ForesightLink } from "@/components/foresight-link";
 
 export const Route = createFileRoute("/_auth/forgot-password")({
   head: () => ({
@@ -22,12 +24,15 @@ function ForgotPasswordPage() {
         Password reset isn&apos;t set up yet. Please contact support or try signing in again.
       </p>
       <div className="flex flex-col gap-2">
-        <Link className={buttonVariants({ variant: "outline" })} to="/sign-in">
+        <ForesightLink className={buttonVariants({ variant: "outline" })} to="/sign-in">
           Back to sign in
-        </Link>
-        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-up">
+        </ForesightLink>
+        <ForesightLink
+          className={buttonVariants({ className: "px-0", variant: "link" })}
+          to="/sign-up"
+        >
           Create account
-        </Link>
+        </ForesightLink>
       </div>
     </div>
   );

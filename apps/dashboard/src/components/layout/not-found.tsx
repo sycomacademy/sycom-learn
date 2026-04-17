@@ -1,6 +1,6 @@
 import { buttonVariants } from "@sycom/ui/components/button";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeftIcon } from "lucide-react";
+
+import { ForesightLink } from "../foresight-link";
 
 export default function NotFound() {
   return (
@@ -19,20 +19,15 @@ export default function NotFound() {
         </div>
 
         <div className="space-y-2">
-          <p className="font-mono text-xs tracking-[0.2em] text-muted-foreground uppercase">
-            404 &middot; Not found
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight">This page doesn&rsquo;t exist</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Page not found</h1>
           <p className="text-sm text-muted-foreground">
-            The page you&rsquo;re looking for may have been moved or never existed. Head back to
-            your dashboard to keep moving.
+            The page you&rsquo;re looking for doesn&rsquo;t exist or may have been moved.
           </p>
         </div>
 
-        <Link className={buttonVariants({ variant: "default" })} to="/dashboard">
-          <ArrowLeftIcon className="size-4" />
-          Back to dashboard
-        </Link>
+        <ForesightLink className={buttonVariants({ variant: "default" })} to="/dashboard">
+          Go home
+        </ForesightLink>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import Loader from "./components/loader";
 import NotFound from "./components/layout/not-found";
 import { routeTree } from "./routeTree.gen";
 import { TRPCProvider } from "./lib/trpc-client";
-import GlobalError from "./components/layout/global-error";
+import Error from "./components/layout/error";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -53,11 +53,12 @@ export const getRouter = () => {
   const router = createTanStackRouter({
     routeTree,
     scrollRestoration: true,
+    defaultPreload: false,
     defaultPreloadStaleTime: 0,
     context: { trpc, queryClient },
     defaultPendingComponent: () => <Loader />,
     defaultNotFoundComponent: () => <NotFound />,
-    defaultErrorComponent: () => <GlobalError />,
+    defaultErrorComponent: () => <Error />,
     Wrap: ({ children }) => (
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>

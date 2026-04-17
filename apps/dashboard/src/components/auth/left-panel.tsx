@@ -1,6 +1,6 @@
-import { Link } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
 
+import { ForesightLink } from "@/components/foresight-link";
 import { FlickeringGrid } from "./flickering-grid";
 
 const LoginTestimonials = lazy(() =>
@@ -19,7 +19,7 @@ export function AuthLeftPanel() {
         squareSize={24}
       />
 
-      <Link
+      <ForesightLink
         className="absolute top-6 left-6 z-20 flex items-center gap-2 transition-opacity hover:opacity-80"
         to="/"
       >
@@ -32,7 +32,7 @@ export function AuthLeftPanel() {
             width={32}
           />
         </div>
-      </Link>
+      </ForesightLink>
 
       <div className="relative z-10 flex h-full w-full items-center justify-center p-8">
         <div className="max-w-lg">

@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { ForesightLink } from "./foresight-link";
 
 import UserMenu from "./user-menu";
 
@@ -11,9 +11,9 @@ export default function Header() {
         <nav className="flex gap-4 text-lg">
           {links.map(({ to, label }) => {
             return (
-              <Link key={to} to={to}>
+              <ForesightLink key={to} to={to}>
                 {label}
-              </Link>
+              </ForesightLink>
             );
           })}
         </nav>

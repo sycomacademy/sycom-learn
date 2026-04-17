@@ -15,6 +15,9 @@ export const Route = createFileRoute("/_auth/sign-up")({
       },
     ],
   }),
+  loader: async () => {
+    throw new Error("Test error");
+  },
   component: SignUpPage,
 });
 

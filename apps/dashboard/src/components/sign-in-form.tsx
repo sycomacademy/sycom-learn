@@ -12,13 +12,14 @@ import {
 import { Input } from "@sycom/ui/components/input";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, useRouter, useSearch } from "@tanstack/react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
+import { ForesightLink } from "@/components/foresight-link";
 import { authClient } from "@/lib/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
@@ -100,12 +101,12 @@ export default function SignInForm() {
                 <Field>
                   <div className="flex items-center justify-between gap-2">
                     <FieldLabel className="text-xs text-muted-foreground">Password</FieldLabel>
-                    <Link
+                    <ForesightLink
                       className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                       to="/forgot-password"
                     >
                       Forgot password?
-                    </Link>
+                    </ForesightLink>
                   </div>
                   <FormControl>
                     <InputGroup>
@@ -166,9 +167,12 @@ export default function SignInForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-up">
+        <ForesightLink
+          className={buttonVariants({ className: "px-0", variant: "link" })}
+          to="/sign-up"
+        >
           Create account
-        </Link>
+        </ForesightLink>
       </p>
     </div>
   );
