@@ -23,9 +23,12 @@ export function createAuth() {
     trustedOrigins: env.CORS_ORIGIN,
     advanced: {
       defaultCookieAttributes: {
-        sameSite: "none",
+        sameSite: "lax",
         secure: true,
         httpOnly: true,
+      },
+      crossSubDomainCookies: {
+        enabled: true,
       },
       useSecureCookies: env.NODE_ENV === "production",
       //   ipAddress: {

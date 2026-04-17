@@ -51,11 +51,19 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     ],
   }),
 
-  component: RootDocument,
+  component: RootComponent,
   errorComponent: RootError,
 });
 
-function RootDocument() {
+function RootComponent() {
+  return (
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
+  );
+}
+
+function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -64,7 +72,7 @@ function RootDocument() {
       <body>
         <LazyMotion features={domAnimation} strict>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            <Outlet />
+            {children}
             <Toaster richColors />
             <ThemeToggle />
             <TanStackRouterDevtools position="bottom-left" />
@@ -79,16 +87,8 @@ function RootDocument() {
 
 function RootError() {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <LazyMotion features={domAnimation} strict>
-          <GlobalError />
-        </LazyMotion>
-        <Scripts />
-      </body>
-    </html>
+    <RootDocument>
+      <GlobalError />
+    </RootDocument>
   );
 }

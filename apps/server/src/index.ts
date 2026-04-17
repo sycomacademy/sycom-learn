@@ -10,6 +10,7 @@ import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
 import { httpLogger } from "@/utils/http-logger";
 import { consoleText } from "@sycom/ui/lib/constants";
+import { csrf } from "hono/csrf";
 
 const honoLogger = createLoggerWithContext("hono");
 
@@ -17,6 +18,7 @@ const app = new Hono();
 
 app.use(secureHeaders());
 app.use("*", httpLogger());
+app.use(csrf({ origin: env.CORS_ORIGIN }));
 
 app.use(
   "/*",
