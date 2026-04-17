@@ -1,4 +1,3 @@
-import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { ConstructionIcon } from "@sycom/ui/components/animated/icons/construction";
 import { env } from "@sycom/env/web";
 import { contacts } from "@sycom/ui/lib/constants";

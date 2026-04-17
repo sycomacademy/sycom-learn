@@ -11,7 +11,6 @@ import {
   InputGroupInput,
 } from "@sycom/ui/components/input-group";
 import { Input } from "@sycom/ui/components/input";
-import { Spinner } from "@sycom/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
@@ -27,7 +26,7 @@ import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 const signInSchema = z.object({
   email: z.email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  rememberMe: z.boolean(),
+  rememberMe: z.boolean().optional(),
 });
 
 type SignInInput = z.infer<typeof signInSchema>;
@@ -44,24 +43,23 @@ export default function SignInForm() {
   });
 
   const onSubmit = async (data: SignInInput) => {
-    await authClient.signIn.email(
-      {
+    try {
+      const { error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
-      },
-      {
-        onSuccess: async () => {
-          toast.success("Signed in");
-          await queryClient.invalidateQueries({ queryKey: ["session"] });
-          const target = resolvePostAuthRedirect(router, redirectParam);
-          await router.navigate({ href: target, replace: true });
-        },
-        onError: (error) => {
-          toast.error(error.error.message || error.error.statusText || "Something went wrong");
-        },
-      },
-    );
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Signed in");
+      await queryClient.invalidateQueries({ queryKey: ["session"] });
+      const target = resolvePostAuthRedirect(router, redirectParam);
+      await router.navigate({ href: target, replace: true });
+    } catch {
+      toast.error("Couldn't reach server. Check your connection and try again.");
+    }
   };
 
   return (
@@ -79,7 +77,9 @@ export default function SignInForm() {
             render={({ field, fieldState }) => (
               <FormItem>
                 <Field>
-                  <FieldLabel className="text-xs text-muted-foreground">Email address</FieldLabel>
+                  <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                    Email address
+                  </FieldLabel>
                   <FormControl>
                     <Input
                       autoComplete="username"
@@ -101,7 +101,9 @@ export default function SignInForm() {
               <FormItem>
                 <Field>
                   <div className="flex items-center justify-between gap-2">
-                    <FieldLabel className="text-xs text-muted-foreground">Password</FieldLabel>
+                    <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      Password
+                    </FieldLabel>
                     <Link
                       className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                       to="/forgot-password"
@@ -159,8 +161,12 @@ export default function SignInForm() {
             )}
           />
 
-          <Button className="mt-1 w-full" disabled={form.formState.isSubmitting} type="submit">
-            {form.formState.isSubmitting ? <Spinner className="mr-2" /> : null}
+          <Button
+            className="mt-1 w-full"
+            loading={form.formState.isSubmitting}
+            size="lg"
+            type="submit"
+          >
             Continue
           </Button>
         </form>
