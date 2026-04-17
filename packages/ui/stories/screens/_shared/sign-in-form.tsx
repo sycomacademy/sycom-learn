@@ -1,6 +1,6 @@
 import { useState } from "react";
-
-import { Button, buttonVariants } from "../../../src/components/button";
+import { buttonVariants } from "../../../src/components/button-variants";
+import { Button } from "../../../src/components/button";
 import { Input } from "../../../src/components/input";
 import { Label } from "../../../src/components/label";
 

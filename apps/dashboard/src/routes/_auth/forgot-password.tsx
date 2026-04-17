@@ -1,4 +1,4 @@
-import { buttonVariants } from "@sycom/ui/components/button";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Link } from "@/components/foresight-link";

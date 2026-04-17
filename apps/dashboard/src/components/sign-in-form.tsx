@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, buttonVariants } from "@sycom/ui/components/button";
+import { Button } from "@sycom/ui/components/button";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { Checkbox } from "@sycom/ui/components/checkbox";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";

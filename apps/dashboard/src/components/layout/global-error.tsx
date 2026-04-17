@@ -1,4 +1,4 @@
-import { buttonVariants } from "@sycom/ui/components/button";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { ConstructionIcon } from "@sycom/ui/components/animated/icons/construction";
 import { env } from "@sycom/env/web";
 import { contacts } from "@sycom/ui/lib/constants";
@@ -8,8 +8,6 @@ const blogUrl = `${env.VITE_WEBSITE_URL}/blog`;
 export default function GlobalError() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_55%)] opacity-[0.07]" />
-
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
         <div className="flex size-24 items-center justify-center border text-primary">
           <ConstructionIcon color="currentColor" size={56} animate />
@@ -40,13 +38,16 @@ export default function GlobalError() {
           </p>
         </div>
 
-        <a
-          className={buttonVariants({ size: "lg", variant: "outline" })}
-          href={blogUrl}
-          target="_blank"
-        >
-          In the meantime, check out our blog →
-        </a>
+        <p>
+          In the meantime, check out our
+          <a
+            className={buttonVariants({ variant: "link", className: "text-lg" })}
+            href={blogUrl}
+            target="_blank"
+          >
+            blog →
+          </a>
+        </p>
       </div>
     </main>
   );

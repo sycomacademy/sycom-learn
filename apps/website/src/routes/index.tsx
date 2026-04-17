@@ -1,4 +1,4 @@
-import { buttonVariants } from "@sycom/ui/components/button";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { cn } from "@sycom/ui/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Check } from "lucide-react";
@@ -935,7 +935,7 @@ function PricingCard({
       className={cn(
         "flex flex-col gap-6 border p-8",
         highlighted
-          ? "border-primary bg-primary/[0.04] ring-1 ring-primary/20"
+          ? "border-primary bg-primary/4 ring-1 ring-primary/20"
           : "border-border bg-background",
       )}
     >

@@ -1,4 +1,4 @@
-import { buttonVariants } from "@sycom/ui/components/button";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { Compass } from "@sycom/ui/components/animated/icons/compass";
 
 import { Link } from "../foresight-link";

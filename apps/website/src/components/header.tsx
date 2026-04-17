@@ -1,4 +1,4 @@
-import { buttonVariants } from "@sycom/ui/components/button";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { cn } from "@sycom/ui/lib/utils";
 import { Link } from "@tanstack/react-router";
 
