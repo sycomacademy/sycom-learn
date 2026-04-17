@@ -1,15 +1,17 @@
 import { buttonVariants } from "@sycom/ui/components/button";
+import { Compass } from "@sycom/ui/components/animated/icons/compass";
 
 import { Link } from "../foresight-link";
-import { NotFoundIllustration } from "./not-found-illustration";
 
 export default function NotFound() {
   return (
     <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background p-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_60%)] opacity-10" />
 
-      <div className="relative z-10 flex w-full max-w-lg flex-col items-center gap-8 text-center">
-        <NotFoundIllustration className="w-full" />
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
+        <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+          <Compass animate animation="default-loop" loop loopDelay={900} size={56} />
+        </div>
 
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">Page not found</h1>

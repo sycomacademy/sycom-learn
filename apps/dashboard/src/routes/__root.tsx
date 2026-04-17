@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import { LazyMotion, domAnimation } from "motion/react";
 import { ThemeProvider } from "next-themes";
 
 import GlobalError from "@/components/layout/global-error";
@@ -61,13 +62,15 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <Outlet />
-          <Toaster richColors />
-          <ThemeToggle />
-          <TanStackRouterDevtools position="bottom-left" />
-          <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
-        </ThemeProvider>
+        <LazyMotion features={domAnimation} strict>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <Outlet />
+            <Toaster richColors />
+            <ThemeToggle />
+            <TanStackRouterDevtools position="bottom-left" />
+            <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+          </ThemeProvider>
+        </LazyMotion>
         <Scripts />
       </body>
     </html>
@@ -81,7 +84,9 @@ function RootError() {
         <HeadContent />
       </head>
       <body>
-        <GlobalError />
+        <LazyMotion features={domAnimation} strict>
+          <GlobalError />
+        </LazyMotion>
         <Scripts />
       </body>
     </html>

@@ -1,4 +1,5 @@
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { LazyMotion, domAnimation } from "motion/react";
 
 import Header from "../components/header";
 
@@ -41,11 +42,13 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body>
-        <div className="grid min-h-svh grid-rows-[auto_1fr_auto]">
-          <Header />
-          <Outlet />
-          <SiteFooter />
-        </div>
+        <LazyMotion features={domAnimation} strict>
+          <div className="grid min-h-svh grid-rows-[auto_1fr_auto]">
+            <Header />
+            <Outlet />
+            <SiteFooter />
+          </div>
+        </LazyMotion>
         <Scripts />
       </body>
     </html>
