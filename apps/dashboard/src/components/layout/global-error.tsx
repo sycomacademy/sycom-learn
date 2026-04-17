@@ -9,8 +9,8 @@ export default function GlobalError() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-8">
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
-        <div className="flex size-24 items-center justify-center border text-primary">
-          <ConstructionIcon color="currentColor" size={56} animate />
+        <div className="flex size-36 items-center justify-center text-primary">
+          <ConstructionIcon color="currentColor" animate size={100} />
         </div>
 
         <div className="space-y-2">
@@ -18,33 +18,22 @@ export default function GlobalError() {
             We&apos;ll be back in a moment
           </h1>
           <p className="text-pretty text-muted-foreground">
-            Sycom is undergoing maintenance. We&apos;ll be back online shortly.
-            <br />
-            You can contact us at
-            <a
-              className={buttonVariants({ variant: "link" })}
-              href={`mailto:${contacts.support.email.contact}`}
-            >
+            Sycom is undergoing maintenance. We&apos;ll be back online shortly. You can contact us
+            at{" "}
+            <a href={`mailto:${contacts.support.email.contact}`} className="hover:underline">
               {contacts.support.email.contact}
-            </a>
-            or
-            <a
-              className={buttonVariants({ variant: "link" })}
-              href={`tel:${contacts.support.phone.contact}`}
-            >
+            </a>{" "}
+            or by phone at{" "}
+            <a href={`tel:${contacts.support.phone.contact}`} className="hover:underline">
               {contacts.support.phone.contact}
             </a>
             .
           </p>
         </div>
 
-        <p>
-          In the meantime, check out our
-          <a
-            className={buttonVariants({ variant: "link", className: "text-lg" })}
-            href={blogUrl}
-            target="_blank"
-          >
+        <p className="text-sm text-muted-foreground">
+          In the meantime, check out our{" "}
+          <a href={blogUrl} target="_blank" className="hover:underline">
             blog →
           </a>
         </p>

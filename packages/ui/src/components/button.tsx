@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import type * as React from "react";
+import * as React from "react";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { cn } from "@sycom/ui/lib/utils";
 import { type VariantProps } from "class-variance-authority";
@@ -27,12 +27,38 @@ function Button({
   const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] = render
     ? undefined
     : "button";
+  const isIconSize = typeof size === "string" && size.startsWith("icon");
 
   const defaultProps = {
     children: (
       <>
-        {loading && (
-          <Spinner className="pointer-events-none absolute" data-slot="button-loading-indicator" />
+        {isIconSize ? (
+          loading && (
+            <Spinner className="pointer-events-none" data-slot="button-loading-indicator" />
+          )
+        ) : (
+          <span
+            data-loading={loading ? "" : undefined}
+            aria-hidden={!loading}
+            className={cn(
+              "group/spinner pointer-events-none grid items-center overflow-hidden",
+              "grid-cols-[0fr] data-loading:grid-cols-[1fr]",
+              "me-[calc(var(--button-gap,0px)*-1)] data-loading:me-0",
+              "transition-[grid-template-columns,margin-inline-end] duration-220 ease-[cubic-bezier(0.23,1,0.32,1)]",
+              "motion-reduce:transition-none",
+            )}
+          >
+            <span
+              className={cn(
+                "flex min-w-0 scale-75 items-center opacity-0",
+                "group-data-loading/spinner:scale-100 group-data-loading/spinner:opacity-100",
+                "transition-[opacity,transform] duration-220 ease-[cubic-bezier(0.23,1,0.32,1)]",
+                "motion-reduce:transition-none",
+              )}
+            >
+              <Spinner data-slot="button-loading-indicator" />
+            </span>
+          </span>
         )}
         {children}
       </>
