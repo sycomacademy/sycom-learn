@@ -6,6 +6,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "dev": "vite dev",
+    "build:analyze": "BUNDLE_ANALYZE=true vite build",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
@@ -49,6 +50,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^5.2.0",
     "jsdom": "^26.1.0",
+    "rollup-plugin-visualizer": "^7.0.1",
     "typescript": "^6.0.2",
     "vite": "^7.3.2",
     "web-vitals": "^5.2.0"
