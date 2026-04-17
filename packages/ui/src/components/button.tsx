@@ -7,21 +7,23 @@ import { type VariantProps } from "class-variance-authority";
 
 import { buttonVariants } from "./button-variants";
 
-interface ButtonProps
-  extends useRender.ComponentProps<"button">, VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends useRender.ComponentProps<"button"> {
+  variant?: VariantProps<typeof buttonVariants>["variant"];
+  size?: VariantProps<typeof buttonVariants>["size"];
   loading?: boolean;
 }
+
 function Button({
   className,
   variant,
   size,
   render,
+  children,
   loading = false,
   disabled: disabledProp,
-  children,
   ...props
 }: ButtonProps): React.ReactElement {
-  const isDisabled = Boolean(loading || disabledProp);
+  const isDisabled: boolean = Boolean(loading || disabledProp);
   const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] = render
     ? undefined
     : "button";
@@ -29,11 +31,13 @@ function Button({
   const defaultProps = {
     children: (
       <>
-        {loading ? <Spinner data-icon="inline-start" data-slot="button-loading-indicator" /> : null}
+        {loading && (
+          <Spinner className="pointer-events-none absolute" data-slot="button-loading-indicator" />
+        )}
         {children}
       </>
     ),
-    className: cn(buttonVariants({ variant, size, className })),
+    className: cn(buttonVariants({ className, size, variant })),
     "aria-disabled": loading || undefined,
     "data-loading": loading ? "" : undefined,
     "data-slot": "button",

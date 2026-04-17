@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ArrowRightIcon, Loader2Icon, PlusIcon, SendIcon } from "lucide-react";
+import { ArrowRightIcon, PlusIcon, SendIcon } from "lucide-react";
 
-import { Button } from "../../src/components/button";
+import { Button } from "@sycom/ui/components/button";
 
 const meta = {
   title: "Simple/Button",
@@ -11,6 +11,7 @@ const meta = {
     children: "Button",
     variant: "default",
     size: "default",
+    loading: false,
     disabled: false,
   },
   argTypes: {
@@ -48,7 +49,7 @@ export const WithIcon: Story = {
     variant: "outline",
     children: (
       <>
-        <SendIcon /> Send
+        <SendIcon data-icon="inline-start" /> Send
       </>
     ),
   },
@@ -57,13 +58,32 @@ export const WithIcon: Story = {
 export const Loading: Story = {
   args: {
     variant: "outline",
-    disabled: true,
+    loading: true,
+    children: "Please wait",
+  },
+};
+
+export const IconEnd: Story = {
+  args: {
     children: (
       <>
-        <Loader2Icon className="animate-spin" /> Please wait
+        Continue <ArrowRightIcon data-icon="inline-end" />
       </>
     ),
   },
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button variant="default">Default</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Button variant="outline">Outline</Button>
+      <Button variant="ghost">Ghost</Button>
+      <Button variant="destructive">Destructive</Button>
+      <Button variant="link">Link</Button>
+    </div>
+  ),
 };
 
 export const Sizes: Story = {
@@ -88,7 +108,7 @@ export const Sizes: Story = {
             Link
           </Button>
           <Button size={size} variant="outline">
-            <SendIcon /> Send
+            <SendIcon data-icon="inline-start" /> Send
           </Button>
         </div>
       ))}
@@ -106,7 +126,7 @@ export const Sizes: Story = {
           <PlusIcon />
         </Button>
         <Button variant="outline">
-          Learn More <ArrowRightIcon />
+          Learn More <ArrowRightIcon data-icon="inline-end" />
         </Button>
       </div>
     </div>
