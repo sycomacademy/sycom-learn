@@ -19,6 +19,8 @@ import { useForm } from "react-hook-form";
 import { toastManager } from "@sycom/ui/components/toast";
 import z from "zod";
 
+import { cn } from "@sycom/ui/lib/utils";
+
 import { Link } from "@/components/foresight-link";
 import { authClient } from "@/lib/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
@@ -57,11 +59,18 @@ export default function SignInForm() {
       await queryClient.invalidateQueries({ queryKey: ["session"] });
       const target = resolvePostAuthRedirect(router, redirectParam);
       await router.navigate({ href: target, replace: true });
-    } catch {
-      toastManager.add({
-        title: "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
+    } catch (error) {
+      if (error instanceof Error) {
+        toastManager.add({
+          title: error.message,
+          type: "error",
+        });
+      } else {
+        toastManager.add({
+          title: "Couldn't reach server. Check your connection and try again.",
+          type: "error",
+        });
+      }
     }
   };
 
@@ -177,7 +186,7 @@ export default function SignInForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-up">
+        <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-up">
           Create account
         </Link>
       </p>

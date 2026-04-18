@@ -2,6 +2,8 @@ import { env } from "@sycom/env/web";
 import { createFileRoute } from "@tanstack/react-router";
 
 import SignInForm from "@/components/sign-in-form";
+import { cn } from "@sycom/ui/lib/utils";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 
 export const Route = createFileRoute("/_auth/sign-in")({
   head: () => ({
@@ -29,14 +31,20 @@ function LoginPage() {
         <p className="text-xs text-muted-foreground">
           By signing in you agree to our{" "}
           <a
-            className="underline underline-offset-4 transition-colors hover:text-foreground"
+            className={cn(
+              buttonVariants({ variant: "link" }),
+              "px-0 text-muted-foreground transition-colors hover:text-foreground",
+            )}
             href={`${env.VITE_WEBSITE_URL}/terms`}
           >
             Terms of Service
           </a>{" "}
           &amp;{" "}
           <a
-            className="underline underline-offset-4 transition-colors hover:text-foreground"
+            className={cn(
+              buttonVariants({ variant: "link" }),
+              "px-0 text-muted-foreground transition-colors hover:text-foreground",
+            )}
             href={`${env.VITE_WEBSITE_URL}/privacy`}
           >
             Privacy Policy
