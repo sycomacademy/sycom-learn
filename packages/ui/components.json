@@ -11,14 +11,17 @@
     "prefix": ""
   },
   "iconLibrary": "lucide",
+  "menuColor": "default",
+  "menuAccent": "subtle",
   "aliases": {
     "components": "@sycom/ui/components",
     "utils": "@sycom/ui/lib/utils",
-    "hooks": "@sycom/ui/hooks",
+    "ui": "@sycom/ui/components",
     "lib": "@sycom/ui/lib",
-    "ui": "@sycom/ui/components"
+    "hooks": "@sycom/ui/hooks"
   },
-  "menuColor": "default",
-  "menuAccent": "subtle",
-  "registries": {}
+  "registries": {
+    "@coss": "https://coss.com/ui/r/{name}.json",
+    "@animate-ui": "https://animate-ui.com/r/{name}.json"
+  }
 }

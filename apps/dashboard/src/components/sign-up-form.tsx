@@ -16,7 +16,7 @@ import { useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "@sycom/ui/components/toast";
+import { toastManager } from "@sycom/ui/components/toast";
 import z from "zod";
 
 import { Link } from "@/components/foresight-link";
@@ -51,13 +51,16 @@ export default function SignUpForm() {
       },
       {
         onSuccess: async () => {
-          toast.success("Account created");
+          toastManager.add({ title: "Account created", type: "success" });
           await queryClient.invalidateQueries({ queryKey: ["session"] });
           const target = resolvePostAuthRedirect(router, redirectParam);
           await router.navigate({ href: target, replace: true });
         },
         onError: (error) => {
-          toast.error(error.error.message || error.error.statusText || "Something went wrong");
+          toastManager.add({
+            title: error.error.message || error.error.statusText || "Something went wrong",
+            type: "error",
+          });
         },
       },
     );

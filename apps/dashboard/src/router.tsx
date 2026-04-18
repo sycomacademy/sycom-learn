@@ -6,7 +6,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
-import { toast } from "@sycom/ui/components/toast";
+import { toastManager } from "@sycom/ui/components/toast";
 import superjson from "superjson";
 
 import Loader from "./components/loader";
@@ -18,10 +18,15 @@ import Error from "./components/layout/error";
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
-      toast.error(error.message, {
-        action: {
-          label: "retry",
-          onClick: query.invalidate,
+      toastManager.add({
+        id: `query-error:${query.queryHash}`,
+        title: error.message,
+        type: "error",
+        actionProps: {
+          children: "Retry",
+          onClick: () => {
+            query.invalidate();
+          },
         },
       });
     },

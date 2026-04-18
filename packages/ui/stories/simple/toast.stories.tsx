@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 
 import { Button } from "@sycom/ui/components/button";
-import { ToastProvider, type ToastPosition, toast } from "@sycom/ui/components/toast";
+import { ToastProvider, type ToastPosition, toastManager } from "@sycom/ui/components/toast";
 
 const POSITIONS: ToastPosition[] = [
   "top-left",
@@ -38,154 +39,209 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Playground: Story = {
+export const Default: Story = {
+  render: () => (
+    <Button
+      onClick={() => {
+        toastManager.add({
+          description: "Monday, January 3rd at 6:00pm",
+          title: "Event has been created",
+        });
+      }}
+      variant="outline"
+    >
+      Default Toast
+    </Button>
+  ),
+};
+
+export const WithStatus: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" onClick={() => toast("Event has been created")}>
-        Default
+      <Button
+        onClick={() => {
+          toastManager.add({
+            description: "Your changes have been saved.",
+            title: "Success!",
+            type: "success",
+          });
+        }}
+        variant="outline"
+      >
+        Success Toast
       </Button>
       <Button
+        onClick={() => {
+          toastManager.add({
+            description: "There was a problem with your request.",
+            title: "Uh oh! Something went wrong.",
+            type: "error",
+          });
+        }}
         variant="outline"
-        onClick={() =>
-          toast.message("Event has been created", {
-            description: "Monday, January 3rd at 6:00pm",
-          })
-        }
       >
-        Description
-      </Button>
-      <Button variant="outline" onClick={() => toast.success("Changes saved")}>
-        Success
-      </Button>
-      <Button variant="outline" onClick={() => toast.info("Be at the venue 10 minutes early")}>
-        Info
+        Error Toast
       </Button>
       <Button
+        onClick={() => {
+          toastManager.add({
+            description: "You can add components to your app using the cli.",
+            title: "Heads up!",
+            type: "info",
+          });
+        }}
         variant="outline"
-        onClick={() => toast.warning("Start time cannot be earlier than 8am")}
       >
-        Warning
+        Info Toast
       </Button>
-      <Button variant="outline" onClick={() => toast.error("Something went wrong")}>
-        Error
+      <Button
+        onClick={() => {
+          toastManager.add({
+            description: "Your session is about to expire.",
+            title: "Warning!",
+            type: "warning",
+          });
+        }}
+        variant="outline"
+      >
+        Warning Toast
       </Button>
     </div>
+  ),
+};
+
+export const Loading: Story = {
+  render: () => (
+    <Button
+      onClick={() => {
+        toastManager.add({
+          description: "Please wait while we process your request.",
+          title: "Loading…",
+          type: "loading",
+        });
+      }}
+      variant="outline"
+    >
+      Loading Toast
+    </Button>
   ),
 };
 
 export const WithAction: Story = {
   render: () => (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        onClick={() =>
-          toast("File deleted", {
-            description: "report.pdf was moved to trash",
-            action: {
-              label: "Undo",
-              onClick: () => toast.success("Restored report.pdf"),
+    <Button
+      onClick={() => {
+        const id = toastManager.add({
+          actionProps: {
+            children: "Undo",
+            onClick: () => {
+              toastManager.close(id);
+              toastManager.add({
+                description: "The action has been reverted.",
+                title: "Action undone",
+                type: "info",
+              });
             },
-          })
-        }
-      >
-        Undoable delete
-      </Button>
-      <Button
-        variant="outline"
-        onClick={() =>
-          toast.error("Failed to publish", {
-            action: {
-              label: "Retry",
-              onClick: () => toast.loading("Retrying…"),
-            },
-          })
-        }
-      >
-        Retry on error
-      </Button>
-    </div>
+          },
+          description: "You can undo this action.",
+          timeout: 1_000_000,
+          title: "Action performed",
+          type: "success",
+        });
+      }}
+      variant="outline"
+    >
+      Perform Action
+    </Button>
   ),
 };
 
 export const Promise: Story = {
   render: () => (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        onClick={() =>
-          toast.promise(
-            new window.Promise<{ name: string }>((resolve) => {
-              setTimeout(() => resolve({ name: "coss.ui" }), 1500);
+    <Button
+      onClick={() => {
+        toastManager.promise(
+          new window.Promise<string>((resolve, reject) => {
+            const shouldSucceed = Math.random() > 0.3;
+            setTimeout(() => {
+              if (shouldSucceed) {
+                resolve("Data loaded successfully");
+              } else {
+                reject(new Error("Failed to load data"));
+              }
+            }, 2000);
+          }),
+          {
+            error: () => ({
+              description: "Please try again.",
+              title: "Something went wrong",
             }),
-            {
-              loading: "Loading…",
-              success: (data) => `${data.name} toast has been added`,
-              error: "Failed to load",
+            loading: {
+              description: "The promise is loading.",
+              title: "Loading…",
             },
-          )
-        }
-      >
-        Resolve after 1.5s
-      </Button>
-      <Button
-        variant="outline"
-        onClick={() =>
-          toast.promise(
-            new window.Promise<never>((_, reject) => {
-              setTimeout(() => reject(new Error("Network error")), 1500);
+            success: (data: string) => ({
+              description: `Success: ${data}`,
+              title: "This is a success toast!",
             }),
-            {
-              loading: "Submitting…",
-              success: "Done",
-              error: (err) => (err instanceof Error ? err.message : "Failed"),
-            },
-          )
-        }
-      >
-        Reject after 1.5s
-      </Button>
-    </div>
+          },
+        );
+      }}
+      variant="outline"
+    >
+      Run Promise
+    </Button>
   ),
 };
 
-export const Persistent: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        onClick={() =>
-          toast.loading("Uploading…", {
-            id: "upload",
-            duration: 0,
-          })
-        }
-      >
-        Start upload
-      </Button>
-      <Button variant="outline" onClick={() => toast.success("Upload complete", { id: "upload" })}>
-        Finish upload
-      </Button>
-      <Button variant="outline" onClick={() => toast.dismiss("upload")}>
-        Dismiss upload
-      </Button>
-    </div>
-  ),
+const VARYING_HEIGHT_TEXTS = [
+  "Short message.",
+  "A bit longer message that spans two lines.",
+  "This is a longer description that intentionally takes more vertical space to demonstrate stacking with varying heights.",
+  "An even longer description that should span multiple lines so we can verify the clamped collapsed height and smooth expansion animation when hovering or focusing the viewport.",
+];
+
+function VaryingHeightsTrigger() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <Button
+      onClick={() => {
+        setCount((prev) => prev + 1);
+        const description =
+          VARYING_HEIGHT_TEXTS[Math.floor(Math.random() * VARYING_HEIGHT_TEXTS.length)];
+        toastManager.add({
+          description,
+          title: `Toast ${count + 1} created`,
+        });
+      }}
+      variant="outline"
+    >
+      With Varying Heights
+    </Button>
+  );
+}
+
+export const VaryingHeights: Story = {
+  render: () => <VaryingHeightsTrigger />,
 };
 
-export const Stacking: Story = {
+const DEDUP_ID = "coss-demo-dedup-toast";
+
+export const Deduplicated: Story = {
   render: () => (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        onClick={() => {
-          toast.success("First");
-          setTimeout(() => toast.info("Second"), 200);
-          setTimeout(() => toast.warning("Third"), 400);
-          setTimeout(() => toast.error("Fourth"), 600);
-        }}
-      >
-        Fire four toasts
-      </Button>
-    </div>
+    <Button
+      onClick={() => {
+        toastManager.add({
+          description: "Repeated clicks update this toast instead of stacking another.",
+          id: DEDUP_ID,
+          title: "Saved",
+          type: "success",
+        });
+      }}
+      variant="outline"
+    >
+      One Success Toast
+    </Button>
   ),
 };

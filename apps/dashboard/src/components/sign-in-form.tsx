@@ -16,7 +16,7 @@ import { useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "@sycom/ui/components/toast";
+import { toastManager } from "@sycom/ui/components/toast";
 import z from "zod";
 
 import { Link } from "@/components/foresight-link";
@@ -50,15 +50,18 @@ export default function SignInForm() {
         rememberMe: data.rememberMe,
       });
       if (error) {
-        toast.error(error.message);
+        toastManager.add({ title: error.message, type: "error" });
         return;
       }
-      toast.success("Signed in");
+      toastManager.add({ title: "Signed in", type: "success" });
       await queryClient.invalidateQueries({ queryKey: ["session"] });
       const target = resolvePostAuthRedirect(router, redirectParam);
       await router.navigate({ href: target, replace: true });
     } catch {
-      toast.error("Couldn't reach server. Check your connection and try again.");
+      toastManager.add({
+        title: "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
     }
   };
 
