@@ -17,10 +17,10 @@ export const Route = createFileRoute("/_auth/sign-in")({
       },
     ],
   }),
-  component: LoginPage,
+  component: SignInPage,
 });
 
-function LoginPage() {
+function SignInPage() {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex h-full w-full items-center justify-center">

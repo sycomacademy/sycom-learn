@@ -10,7 +10,6 @@ import {
   InputGroupInput,
 } from "@sycom/ui/components/input-group";
 import { Input } from "@sycom/ui/components/input";
-import { Spinner } from "@sycom/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
@@ -19,12 +18,21 @@ import { useForm } from "react-hook-form";
 import { toastManager } from "@sycom/ui/components/toast";
 import z from "zod";
 
+import { cn } from "@sycom/ui/lib/utils";
+
 import { Link } from "@/components/foresight-link";
 import { authClient } from "@/lib/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
 const signUpSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  firstName: z
+    .string()
+    .min(1, "First name is required")
+    .min(3, "First name must be at least 3 characters"),
+  lastName: z
+    .string()
+    .min(1, "Last name is required")
+    .min(3, "Last name must be at least 3 characters"),
   email: z.email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
@@ -39,31 +47,37 @@ export default function SignUpForm() {
 
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "" },
   });
 
   const onSubmit = async (data: SignUpInput) => {
-    await authClient.signUp.email(
-      {
+    try {
+      const { error } = await authClient.signUp.email({
         email: data.email,
         password: data.password,
-        name: data.name,
-      },
-      {
-        onSuccess: async () => {
-          toastManager.add({ title: "Account created", type: "success" });
-          await queryClient.invalidateQueries({ queryKey: ["session"] });
-          const target = resolvePostAuthRedirect(router, redirectParam);
-          await router.navigate({ href: target, replace: true });
-        },
-        onError: (error) => {
-          toastManager.add({
-            title: error.error.message || error.error.statusText || "Something went wrong",
-            type: "error",
-          });
-        },
-      },
-    );
+        name: `${data.firstName.trim()} ${data.lastName.trim()}`,
+      });
+      if (error) {
+        toastManager.add({ title: error.message, type: "error" });
+        return;
+      }
+      toastManager.add({ title: "Account created", type: "success" });
+      await queryClient.invalidateQueries({ queryKey: ["session"] });
+      const target = resolvePostAuthRedirect(router, redirectParam);
+      await router.navigate({ href: target, replace: true });
+    } catch (error) {
+      if (error instanceof Error) {
+        toastManager.add({
+          title: error.message,
+          type: "error",
+        });
+      } else {
+        toastManager.add({
+          title: "Couldn't reach server. Check your connection and try again.",
+          type: "error",
+        });
+      }
+    }
   };
 
   return (
@@ -75,21 +89,43 @@ export default function SignUpForm() {
 
       <Form {...form}>
         <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onSubmit)}>
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field, fieldState }) => (
-              <FormItem>
-                <Field>
-                  <FieldLabel className="text-xs text-muted-foreground">Name</FieldLabel>
-                  <FormControl>
-                    <Input autoComplete="name" placeholder="Your name" {...field} />
-                  </FormControl>
-                  <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                </Field>
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="firstName"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <Field>
+                    <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      First name
+                    </FieldLabel>
+                    <FormControl>
+                      <Input autoComplete="given-name" placeholder="Ada" {...field} />
+                    </FormControl>
+                    <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                  </Field>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <Field>
+                    <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      Last name
+                    </FieldLabel>
+                    <FormControl>
+                      <Input autoComplete="family-name" placeholder="Lovelace" {...field} />
+                    </FormControl>
+                    <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                  </Field>
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}
@@ -97,7 +133,9 @@ export default function SignUpForm() {
             render={({ field, fieldState }) => (
               <FormItem>
                 <Field>
-                  <FieldLabel className="text-xs text-muted-foreground">Email address</FieldLabel>
+                  <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                    Email address
+                  </FieldLabel>
                   <FormControl>
                     <Input
                       autoComplete="email"
@@ -118,12 +156,14 @@ export default function SignUpForm() {
             render={({ field, fieldState }) => (
               <FormItem>
                 <Field>
-                  <FieldLabel className="text-xs text-muted-foreground">Password</FieldLabel>
+                  <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                    Password
+                  </FieldLabel>
                   <FormControl>
                     <InputGroup>
                       <InputGroupInput
                         autoComplete="new-password"
-                        placeholder="Choose a password"
+                        placeholder="Min. 8 characters"
                         type={showPassword ? "text" : "password"}
                         {...field}
                       />
@@ -141,22 +181,32 @@ export default function SignUpForm() {
                       </InputGroupAddon>
                     </InputGroup>
                   </FormControl>
-                  <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                  <FieldError reserveSpace>
+                    {fieldState.error?.message ?? (
+                      <span className="text-muted-foreground/70">
+                        Tip: mix uppercase, lowercase, and a number for a stronger password.
+                      </span>
+                    )}
+                  </FieldError>
                 </Field>
               </FormItem>
             )}
           />
 
-          <Button className="mt-1 w-full" disabled={form.formState.isSubmitting} type="submit">
-            {form.formState.isSubmitting ? <Spinner className="mr-2" /> : null}
-            Continue
+          <Button
+            className="mt-1 w-full"
+            loading={form.formState.isSubmitting}
+            size="lg"
+            type="submit"
+          >
+            Create account
           </Button>
         </form>
       </Form>
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link className={buttonVariants({ className: "px-0", variant: "link" })} to="/sign-in">
+        <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-in">
           Sign in
         </Link>
       </p>
