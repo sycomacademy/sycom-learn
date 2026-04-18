@@ -1,48 +1,89 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import z from "zod";
 
+import { Field, FieldError, FieldLabel } from "../../src/components/field";
+import { Form, FormControl, FormField, FormItem } from "../../src/components/form";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "../../src/components/input-group";
 import { Input } from "../../src/components/input";
-import { Label } from "../../src/components/label";
 
-function Field({
-  label,
-  type = "text",
-  placeholder,
-  error,
-  disabled,
+const emailSchema = z.object({
+  email: z.email("Invalid email address"),
+});
+type EmailInput = z.infer<typeof emailSchema>;
+
+function EmailFieldStory({
+  label = "Email address",
+  placeholder = "you@example.com",
+  defaultValue = "",
+  disabled = false,
+  triggerOnMount = false,
 }: {
-  label: string;
-  type?: string;
+  label?: string;
   placeholder?: string;
-  error?: string;
+  defaultValue?: string;
   disabled?: boolean;
+  triggerOnMount?: boolean;
 }) {
-  const id = label.toLowerCase().replace(/\s+/g, "-");
+  const form = useForm<EmailInput>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: defaultValue },
+    mode: "onBlur",
+  });
+
+  useEffect(() => {
+    if (triggerOnMount) void form.trigger();
+  }, [form, triggerOnMount]);
+
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        disabled={disabled}
-        aria-invalid={!!error}
-      />
-      {error && <p className="text-sm text-red-500">{error}</p>}
-    </div>
+    <Form {...form}>
+      <div className="w-80">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <Field>
+                <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                  {label}
+                </FieldLabel>
+                <FormControl>
+                  <Input
+                    autoComplete="email"
+                    disabled={disabled}
+                    placeholder={placeholder}
+                    type="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+              </Field>
+            </FormItem>
+          )}
+        />
+      </div>
+    </Form>
   );
 }
 
 const meta = {
   title: "Composite/Field",
-  component: Field,
+  component: EmailFieldStory,
   tags: ["autodocs"],
+  parameters: { layout: "centered" },
   args: {
-    label: "Email",
-    type: "email",
+    label: "Email address",
     placeholder: "you@example.com",
   },
-} satisfies Meta<typeof Field>;
+} satisfies Meta<typeof EmailFieldStory>;
 
 export default meta;
 
@@ -52,58 +93,142 @@ export const Default: Story = {};
 
 export const WithError: Story = {
   args: {
-    label: "Email",
-    error: "Invalid email address",
-  },
-};
-
-export const Password: Story = {
-  args: {
-    label: "Password",
-    type: "password",
-    placeholder: "Enter your password",
+    defaultValue: "not-an-email",
+    triggerOnMount: true,
   },
 };
 
 export const Disabled: Story = {
   args: {
-    label: "Email",
     disabled: true,
     placeholder: "Disabled field",
   },
 };
 
-function FormGroupStory() {
-  const [errors, setErrors] = useState<Record<string, string>>({});
+const passwordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+type PasswordInput = z.infer<typeof passwordSchema>;
 
-  function validate() {
-    const next: Record<string, string> = {};
-    const email = (document.getElementById("email") as HTMLInputElement)?.value;
-    const password = (document.getElementById("password") as HTMLInputElement)?.value;
-
-    if (!email) next.email = "Email is required";
-    if (!password) next.password = "Password is required";
-    else if (password.length < 8) next.password = "Password must be at least 8 characters";
-    setErrors(next);
-  }
+function PasswordFieldStory() {
+  const [showPassword, setShowPassword] = useState(false);
+  const form = useForm<PasswordInput>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { password: "" },
+    mode: "onBlur",
+  });
 
   return (
-    <form
-      className="w-80 space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        validate();
-      }}
-    >
-      <Field label="Email" type="email" placeholder="you@example.com" error={errors.email} />
-      <Field label="Password" type="password" error={errors.password} />
-      <button
-        type="submit"
-        className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-      >
-        Submit
-      </button>
-    </form>
+    <Form {...form}>
+      <div className="w-80">
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <Field>
+                <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                  Password
+                </FieldLabel>
+                <FormControl>
+                  <InputGroup>
+                    <InputGroupInput
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      type={showPassword ? "text" : "password"}
+                      {...field}
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowPassword((s) => !s)}
+                      >
+                        {showPassword ? (
+                          <EyeOffIcon className="size-3.5" />
+                        ) : (
+                          <EyeIcon className="size-3.5" />
+                        )}
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </FormControl>
+                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+              </Field>
+            </FormItem>
+          )}
+        />
+      </div>
+    </Form>
+  );
+}
+
+export const Password: Story = {
+  render: () => <PasswordFieldStory />,
+};
+
+const loginSchema = z.object({
+  email: z.email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+type LoginInput = z.infer<typeof loginSchema>;
+
+function FormGroupStory() {
+  const form = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+    mode: "onBlur",
+  });
+
+  return (
+    <Form {...form}>
+      <div className="flex w-80 flex-col gap-3">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <Field>
+                <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                  Email address
+                </FieldLabel>
+                <FormControl>
+                  <Input
+                    autoComplete="username"
+                    placeholder="you@example.com"
+                    type="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+              </Field>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <Field>
+                <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                  Password
+                </FieldLabel>
+                <FormControl>
+                  <Input
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    type="password"
+                    {...field}
+                  />
+                </FormControl>
+                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+              </Field>
+            </FormItem>
+          )}
+        />
+      </div>
+    </Form>
   );
 }
 
