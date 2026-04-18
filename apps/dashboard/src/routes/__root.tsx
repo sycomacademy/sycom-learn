@@ -1,5 +1,5 @@
 import type { AppRouter } from "server/trpc/routers/_app";
-import { Toaster } from "@sycom/ui/components/sonner";
+import { ToastProvider } from "@sycom/ui/components/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
@@ -72,11 +72,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <LazyMotion features={domAnimation} strict>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            {children}
-            <Toaster richColors />
-            <ThemeToggle />
-            <TanStackRouterDevtools position="bottom-left" />
-            <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+            <ToastProvider>
+              {children}
+              <ThemeToggle />
+              <TanStackRouterDevtools position="bottom-left" />
+              <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+            </ToastProvider>
           </ThemeProvider>
         </LazyMotion>
         <Scripts />

@@ -6,7 +6,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
-import { toast } from "sonner";
+import { toast } from "@sycom/ui/components/toast";
 import superjson from "superjson";
 
 import Loader from "./components/loader";

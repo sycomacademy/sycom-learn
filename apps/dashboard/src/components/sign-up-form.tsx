@@ -16,7 +16,7 @@ import { useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { toast } from "@sycom/ui/components/toast";
 import z from "zod";
 
 import { Link } from "@/components/foresight-link";

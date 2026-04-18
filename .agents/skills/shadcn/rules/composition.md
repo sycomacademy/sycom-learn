@@ -5,7 +5,7 @@
 - Items always inside their Group component
 - Callouts use Alert
 - Empty states use Empty component
-- Toast notifications use sonner
+- Toast notifications use the coss.ui toast from `@sycom/ui/components/toast`
 - Choosing between overlay components
 - Dialog, Sheet, and Drawer always need a Title
 - Card structure
@@ -84,10 +84,10 @@ This applies to all group-based components:
 
 ---
 
-## Toast notifications use sonner
+## Toast notifications use the coss.ui toast
 
 ```tsx
-import { toast } from "sonner";
+import { toast } from "@sycom/ui/components/toast";
 
 toast.success("Changes saved.");
 toast.error("Something went wrong.");
@@ -95,6 +95,8 @@ toast("File deleted.", {
   action: { label: "Undo", onClick: () => undoDelete() },
 });
 ```
+
+Mount `<ToastProvider>` once at the root (already wired in `apps/dashboard/src/routes/__root.tsx`).
 
 ---
 

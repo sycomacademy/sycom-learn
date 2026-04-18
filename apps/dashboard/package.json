@@ -34,7 +34,6 @@
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "server": "workspace:*",
-    "sonner": "catalog:",
     "superjson": "^2.2.6",
     "tailwindcss": "catalog:",
     "vite-tsconfig-paths": "^5.1.4",
