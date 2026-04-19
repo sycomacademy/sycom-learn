@@ -15,6 +15,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 const checkEmailSearchSchema = z.object({
   email: z.email().optional(),
+  flow: z.enum(["verify", "reset"]).optional(),
 });
 
 export const Route = createFileRoute("/_auth/check-email")({
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/_auth/check-email")({
       { title: "Check your email | Sycom LMS" },
       {
         name: "description",
-        content: "Verify your email to finish creating your Sycom account.",
+        content: "Check your email to continue with your Sycom account.",
       },
     ],
   }),
@@ -32,7 +33,8 @@ export const Route = createFileRoute("/_auth/check-email")({
 });
 
 function CheckEmailPage() {
-  const { email } = useSearch({ from: "/_auth/check-email" });
+  const { email, flow = "verify" } = useSearch({ from: "/_auth/check-email" });
+  const isReset = flow === "reset";
   const [cooldown, setCooldown] = useState(0);
   const [resending, setResending] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -57,15 +59,23 @@ function CheckEmailPage() {
     if (!email || cooldown > 0 || resending) return;
     setResending(true);
     try {
-      const { error } = await authClient.sendVerificationEmail({
-        email,
-        callbackURL: `${env.VITE_DASHBOARD_URL}/dashboard`,
-      });
+      const { error } = isReset
+        ? await authClient.requestPasswordReset({
+            email,
+            redirectTo: `${env.VITE_DASHBOARD_URL}/reset-password`,
+          })
+        : await authClient.sendVerificationEmail({
+            email,
+            callbackURL: `${env.VITE_DASHBOARD_URL}/dashboard`,
+          });
       if (error) {
         toastManager.add({ title: error.message, type: "error" });
         return;
       }
-      toastManager.add({ title: "Verification email sent", type: "success" });
+      toastManager.add({
+        title: isReset ? "Reset email sent" : "Verification email sent",
+        type: "success",
+      });
       setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch {
       toastManager.add({
@@ -76,6 +86,12 @@ function CheckEmailPage() {
       setResending(false);
     }
   };
+
+  const subcopy = isReset
+    ? "If an account exists for that email, we sent a reset link. Click it to choose a new password."
+    : email
+      ? undefined
+      : "We sent a verification link to your email. Click it to finish setting up your account.";
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -88,16 +104,11 @@ function CheckEmailPage() {
           <div className="space-y-2">
             <h1 className="text-lg font-medium tracking-tight">Check your email</h1>
             <p className="text-sm text-muted-foreground">
-              {email ? (
+              {subcopy ?? (
                 <>
                   We sent a verification link to{" "}
                   <span className="font-medium text-foreground">{email}</span>. Click the link to
                   finish setting up your account.
-                </>
-              ) : (
-                <>
-                  We sent a verification link to your email. Click it to finish setting up your
-                  account.
                 </>
               )}
             </p>
@@ -112,18 +123,28 @@ function CheckEmailPage() {
                 size="lg"
                 variant="outline"
               >
-                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend verification email"}
+                {cooldown > 0
+                  ? `Resend in ${cooldown}s`
+                  : isReset
+                    ? "Resend reset email"
+                    : "Resend verification email"}
               </Button>
               <p className="text-xs text-muted-foreground">
                 Wrong email?{" "}
-                <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-up">
-                  Use a different address
+                <Link
+                  className={cn(buttonVariants({ variant: "link" }), "px-0")}
+                  to={isReset ? "/forgot-password" : "/sign-up"}
+                >
+                  {isReset ? "Try a different address" : "Use a different address"}
                 </Link>
               </p>
             </div>
           ) : (
-            <Link className={buttonVariants({ variant: "outline" })} to="/sign-up">
-              Back to sign up
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              to={isReset ? "/forgot-password" : "/sign-up"}
+            >
+              {isReset ? "Back to reset" : "Back to sign up"}
             </Link>
           )}
         </div>
@@ -131,7 +152,7 @@ function CheckEmailPage() {
 
       <div className="mt-auto pt-6 text-center">
         <p className="text-xs text-muted-foreground">
-          Already verified?{" "}
+          {isReset ? "Remembered your password? " : "Already verified? "}
           <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-in">
             Sign in
           </Link>

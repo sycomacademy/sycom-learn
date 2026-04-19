@@ -34,7 +34,7 @@
   "devDependencies": {
     "@sycom/config": "workspace:*",
     "@types/bun": "catalog:",
-    "tsdown": "^0.21.8",
-    "typescript": "^6.0.2"
+    "tsdown": "^0.21.9",
+    "typescript": "^6.0.3"
   }
 }
