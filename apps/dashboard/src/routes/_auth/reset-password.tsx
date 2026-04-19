@@ -134,113 +134,115 @@ function ResetPasswordForm({ token }: { token: string }) {
   };
 
   return (
-    <div className="w-full space-y-3">
-      <div className="space-y-2 text-center">
-        <h1 className="text-lg font-medium tracking-tight">Choose a new password</h1>
-        <p className="text-sm text-muted-foreground">
-          Pick something you haven&apos;t used before.
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="w-full space-y-3">
+        <div className="space-y-2 text-center">
+          <h1 className="text-lg font-medium tracking-tight">Choose a new password</h1>
+          <p className="text-sm text-muted-foreground">
+            Pick something you haven&apos;t used before.
+          </p>
+        </div>
+
+        <Form {...form}>
+          <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onSubmit)}>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <Field>
+                    <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      New password
+                    </FieldLabel>
+                    <FormControl>
+                      <InputGroup>
+                        <InputGroupInput
+                          autoComplete="new-password"
+                          placeholder="Min. 8 characters"
+                          type={showPassword ? "text" : "password"}
+                          {...field}
+                        />
+                        <InputGroupAddon align="inline-end">
+                          <InputGroupButton
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            onClick={() => setShowPassword((s) => !s)}
+                          >
+                            {showPassword ? (
+                              <EyeOffIcon className="size-3.5" />
+                            ) : (
+                              <EyeIcon className="size-3.5" />
+                            )}
+                          </InputGroupButton>
+                        </InputGroupAddon>
+                      </InputGroup>
+                    </FormControl>
+                    <FieldError reserveSpace>
+                      {fieldState.error?.message ?? (
+                        <span className="text-muted-foreground/70">
+                          Tip: mix uppercase, lowercase, and a number for a stronger password.
+                        </span>
+                      )}
+                    </FieldError>
+                  </Field>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <Field>
+                    <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      Confirm password
+                    </FieldLabel>
+                    <FormControl>
+                      <InputGroup>
+                        <InputGroupInput
+                          autoComplete="new-password"
+                          placeholder="Re-enter password"
+                          type={showConfirm ? "text" : "password"}
+                          {...field}
+                        />
+                        <InputGroupAddon align="inline-end">
+                          <InputGroupButton
+                            aria-label={showConfirm ? "Hide password" : "Show password"}
+                            onClick={() => setShowConfirm((s) => !s)}
+                          >
+                            {showConfirm ? (
+                              <EyeOffIcon className="size-3.5" />
+                            ) : (
+                              <EyeIcon className="size-3.5" />
+                            )}
+                          </InputGroupButton>
+                        </InputGroupAddon>
+                      </InputGroup>
+                    </FormControl>
+                    <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                  </Field>
+                </FormItem>
+              )}
+            />
+
+            <Button
+              className="mt-1 w-full"
+              loading={form.formState.isSubmitting}
+              size="lg"
+              type="submit"
+            >
+              Reset password
+            </Button>
+          </form>
+        </Form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Remembered your password?{" "}
+          <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-in">
+            Sign in
+          </Link>
         </p>
       </div>
-
-      <Form {...form}>
-        <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onSubmit)}>
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field, fieldState }) => (
-              <FormItem>
-                <Field>
-                  <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                    New password
-                  </FieldLabel>
-                  <FormControl>
-                    <InputGroup>
-                      <InputGroupInput
-                        autoComplete="new-password"
-                        placeholder="Min. 8 characters"
-                        type={showPassword ? "text" : "password"}
-                        {...field}
-                      />
-                      <InputGroupAddon align="inline-end">
-                        <InputGroupButton
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                          onClick={() => setShowPassword((s) => !s)}
-                        >
-                          {showPassword ? (
-                            <EyeOffIcon className="size-3.5" />
-                          ) : (
-                            <EyeIcon className="size-3.5" />
-                          )}
-                        </InputGroupButton>
-                      </InputGroupAddon>
-                    </InputGroup>
-                  </FormControl>
-                  <FieldError reserveSpace>
-                    {fieldState.error?.message ?? (
-                      <span className="text-muted-foreground/70">
-                        Tip: mix uppercase, lowercase, and a number for a stronger password.
-                      </span>
-                    )}
-                  </FieldError>
-                </Field>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field, fieldState }) => (
-              <FormItem>
-                <Field>
-                  <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                    Confirm password
-                  </FieldLabel>
-                  <FormControl>
-                    <InputGroup>
-                      <InputGroupInput
-                        autoComplete="new-password"
-                        placeholder="Re-enter password"
-                        type={showConfirm ? "text" : "password"}
-                        {...field}
-                      />
-                      <InputGroupAddon align="inline-end">
-                        <InputGroupButton
-                          aria-label={showConfirm ? "Hide password" : "Show password"}
-                          onClick={() => setShowConfirm((s) => !s)}
-                        >
-                          {showConfirm ? (
-                            <EyeOffIcon className="size-3.5" />
-                          ) : (
-                            <EyeIcon className="size-3.5" />
-                          )}
-                        </InputGroupButton>
-                      </InputGroupAddon>
-                    </InputGroup>
-                  </FormControl>
-                  <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                </Field>
-              </FormItem>
-            )}
-          />
-
-          <Button
-            className="mt-1 w-full"
-            loading={form.formState.isSubmitting}
-            size="lg"
-            type="submit"
-          >
-            Reset password
-          </Button>
-        </form>
-      </Form>
-
-      <p className="text-center text-sm text-muted-foreground">
-        Remembered your password?{" "}
-        <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-in">
-          Sign in
-        </Link>
-      </p>
     </div>
   );
 }
