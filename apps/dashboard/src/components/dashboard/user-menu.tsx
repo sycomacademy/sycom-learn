@@ -8,33 +8,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@sycom/ui/components/dropdown-menu";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouteContext, useRouter } from "@tanstack/react-router";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
+import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { useTRPC } from "@/lib/trpc/client";
 
 export default function UserMenu() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session } = useRouteContext({ from: "/_authenticated" });
+  const trpc = useTRPC();
+  const { data: me } = useSuspenseQuery(trpc.me.get.queryOptions());
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" />}>
-        {session.user.name}
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger render={<Button variant="outline" />}>{me.name}</DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuGroup>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+          <DropdownMenuItem>{me.email}</DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             onClick={() => {
               authClient.signOut({
                 fetchOptions: {
                   onSuccess: async () => {
-                    await queryClient.invalidateQueries({ queryKey: ["session"] });
+                    await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
                     router.navigate({ to: "/sign-in" });
                   },
                 },

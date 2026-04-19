@@ -3,21 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { DashboardPending } from "@/components/dashboard/pending";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { useTRPC } from "@/lib/trpc-client";
+import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(context.trpc.dashboard.me.queryOptions()),
-      context.queryClient.ensureQueryData(context.trpc.dashboard.stats.queryOptions()),
-    ]),
+    context.queryClient.ensureQueryData(context.trpc.dashboard.stats.queryOptions()),
   pendingComponent: DashboardPending,
   component: DashboardPage,
 });
 
 function DashboardPage() {
   const trpc = useTRPC();
-  const { data: me } = useSuspenseQuery(trpc.dashboard.me.queryOptions());
+  const { data: me } = useSuspenseQuery(trpc.me.get.queryOptions());
   const { data: stats } = useSuspenseQuery(trpc.dashboard.stats.queryOptions());
 
   const firstName = me.name.split(" ")[0] ?? me.name;

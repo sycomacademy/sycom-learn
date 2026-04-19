@@ -1,17 +1,20 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import Header from "@/components/dashboard/header";
+import { sessionQueryOptions } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: ({ context, location }) => {
-    if (!context.session) {
+  beforeLoad: async ({ context, location }) => {
+    const session = await context.queryClient.ensureQueryData(sessionQueryOptions());
+    if (!session) {
       throw redirect({
         to: "/sign-in",
         search: { redirect: location.href },
       });
     }
-    return { session: context.session };
+    return { session: session.session, user: session.user };
   },
+  loader: ({ context }) => context.queryClient.ensureQueryData(context.trpc.me.get.queryOptions()),
   component: AuthenticatedLayout,
 });
 

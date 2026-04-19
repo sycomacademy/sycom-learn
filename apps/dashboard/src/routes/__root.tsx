@@ -10,7 +10,6 @@ import { ThemeProvider } from "next-themes";
 
 import GlobalError from "@/components/layout/global-error";
 import ThemeToggle from "@/components/theme-toggle";
-import { getUser } from "@/functions/get-user";
 
 import appCss from "../index.css?url";
 export interface RouterAppContext {
@@ -19,13 +18,6 @@ export interface RouterAppContext {
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-  beforeLoad: async ({ context }) => {
-    const session = await context.queryClient.ensureQueryData({
-      queryKey: ["session"],
-      queryFn: () => getUser(),
-    });
-    return { session };
-  },
   head: () => ({
     meta: [
       {

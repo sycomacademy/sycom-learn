@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { Link } from "@/components/layout/foresight-link";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 

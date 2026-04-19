@@ -11,9 +11,9 @@ import superjson from "superjson";
 
 import Loader from "./components/loader";
 import NotFound from "./components/layout/not-found";
+import RouteError from "./components/layout/route-error";
 import { routeTree } from "./routeTree.gen";
-import { TRPCProvider } from "./lib/trpc-client";
-import Error from "./components/layout/error";
+import { TRPCProvider } from "./lib/trpc/client";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -31,7 +31,7 @@ export const queryClient = new QueryClient({
       });
     },
   }),
-  defaultOptions: { queries: { staleTime: 60 * 1000 } },
+  defaultOptions: { queries: { staleTime: 3 * 60 * 1000 } },
 });
 
 const trpcClient = createTRPCClient<AppRouter>({
@@ -63,7 +63,7 @@ export const getRouter = () => {
     context: { trpc, queryClient },
     defaultPendingComponent: () => <Loader />,
     defaultNotFoundComponent: () => <NotFound />,
-    defaultErrorComponent: () => <Error />,
+    defaultErrorComponent: RouteError,
     Wrap: ({ children }) => (
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>

@@ -23,20 +23,19 @@ describe("tRPC: healthCheck", () => {
   });
 });
 
-describe("tRPC: privateData", () => {
-  test("returns user data for authenticated caller", async () => {
+describe("tRPC: me.get", () => {
+  test("returns the authenticated user", async () => {
     const caller = createCaller(createTestContext({ userName: "Asa" }));
-    const result = await caller.privateData();
+    const result = await caller.me.get();
 
-    expect(result.message).toBe("This is private");
-    expect(result.user.name).toBe("Asa");
+    expect(result.name).toBe("Asa");
   });
 
   test("throws UNAUTHORIZED for unauthenticated caller", async () => {
     const caller = createCaller(createUnauthenticatedContext());
 
     try {
-      await caller.privateData();
+      await caller.me.get();
       expect.unreachable("Should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(TRPCError);

@@ -1,15 +1,23 @@
+import { auth } from "@sycom/auth";
 import { createMiddleware } from "@tanstack/react-start";
 
-import { authClient } from "@/lib/auth-client";
-
-export const authMiddleware = createMiddleware().server(async ({ next, request }) => {
-  const session = await authClient.getSession({
-    fetchOptions: {
-      headers: request.headers,
-      throw: true,
+export const sessionMiddleware = createMiddleware().server(async ({ next, request }) => {
+  const data = await auth.api.getSession({ headers: request.headers });
+  return next({
+    context: {
+      session: data?.session ?? null,
+      user: data?.user ?? null,
     },
   });
-  return next({
-    context: { session },
-  });
 });
+
+export const requireSessionMiddleware = createMiddleware()
+  .middleware([sessionMiddleware])
+  .server(async ({ next, context }) => {
+    if (!context.session || !context.user) {
+      throw new Error("UNAUTHORIZED");
+    }
+    return next({
+      context: { session: context.session, user: context.user },
+    });
+  });

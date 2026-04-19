@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Link } from "@/components/layout/foresight-link";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 
 const forgotPasswordSchema = z.object({
   email: z.email("Invalid email address"),

@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { AuthLeftPanel } from "@/components/auth/left-panel";
 import { Link } from "@/components/layout/foresight-link";
-import { safeRedirectPath } from "@/lib/post-auth-redirect";
+import { safeRedirectPath } from "@/lib/auth/post-auth-redirect";
+import { sessionQueryOptions } from "@/lib/auth/session";
 
 const authSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -11,8 +12,9 @@ const authSearchSchema = z.object({
 
 export const Route = createFileRoute("/_auth")({
   validateSearch: authSearchSchema,
-  beforeLoad: ({ context, search }) => {
-    if (context.session) {
+  beforeLoad: async ({ context, search }) => {
+    const session = await context.queryClient.ensureQueryData(sessionQueryOptions());
+    if (session) {
       const safe = safeRedirectPath(search.redirect);
       if (safe) throw redirect({ href: safe });
       throw redirect({ to: "/dashboard" });

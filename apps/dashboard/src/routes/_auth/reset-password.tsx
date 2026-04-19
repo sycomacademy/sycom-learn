@@ -11,6 +11,7 @@ import {
 } from "@sycom/ui/components/input-group";
 import { toastManager } from "@sycom/ui/components/toast";
 import { cn } from "@sycom/ui/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter, useSearch } from "@tanstack/react-router";
 import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
@@ -18,7 +19,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Link } from "@/components/layout/foresight-link";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
+import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 
 const resetPasswordSearchSchema = z.object({
   token: z.string().optional(),
@@ -102,6 +104,7 @@ function ResetPasswordError() {
 
 function ResetPasswordForm({ token }: { token: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -124,6 +127,7 @@ function ResetPasswordForm({ token }: { token: string }) {
         title: "Password reset. Sign in with your new password.",
         type: "success",
       });
+      await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
       await router.navigate({ to: "/sign-in", replace: true });
     } catch (error) {
       if (error instanceof Error) {
