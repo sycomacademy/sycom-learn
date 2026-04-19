@@ -125,11 +125,18 @@ function ResetPasswordForm({ token }: { token: string }) {
         type: "success",
       });
       await router.navigate({ to: "/sign-in", replace: true });
-    } catch {
-      toastManager.add({
-        title: "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
+    } catch (error) {
+      if (error instanceof Error) {
+        toastManager.add({
+          title: error.message,
+          type: "error",
+        });
+      } else {
+        toastManager.add({
+          title: "Couldn't reach server. Check your connection and try again.",
+          type: "error",
+        });
+      }
     }
   };
 

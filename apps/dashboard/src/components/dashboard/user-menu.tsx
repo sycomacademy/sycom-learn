@@ -35,7 +35,7 @@ export default function UserMenu() {
                 fetchOptions: {
                   onSuccess: async () => {
                     await queryClient.invalidateQueries({ queryKey: ["session"] });
-                    await router.invalidate();
+                    router.navigate({ to: "/sign-in" });
                   },
                 },
               });
