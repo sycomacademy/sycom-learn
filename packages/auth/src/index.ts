@@ -24,13 +24,14 @@ export function createAuth() {
     advanced: {
       defaultCookieAttributes: {
         sameSite: "lax",
-        secure: true,
         httpOnly: true,
       },
-      crossSubDomainCookies: {
-        enabled: true,
-      },
       useSecureCookies: env.NODE_ENV === "production",
+      // TODO(deploy): re-enable crossSubDomainCookies with an explicit `domain`
+      // crossSubDomainCookies: {
+      //   enabled: true,
+      // },
+      // (e.g. ".sycom.com") when deploying dashboard + api to subdomains.
       //   ipAddress: {
       //     ipAddressHeaders: [
       //       process.env.NODE_ENV === "production"

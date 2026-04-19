@@ -1,4 +1,4 @@
-import { Link } from "./foresight-link";
+import { Link } from "../layout/foresight-link";
 
 import UserMenu from "./user-menu";
 

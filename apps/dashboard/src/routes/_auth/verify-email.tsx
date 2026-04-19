@@ -12,7 +12,7 @@ import { TriangleAlertIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Link } from "@/components/foresight-link";
+import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth-client";
 
 const verifyEmailErrorEnum = z.enum(["token_expired", "invalid_token", "unknown"]);

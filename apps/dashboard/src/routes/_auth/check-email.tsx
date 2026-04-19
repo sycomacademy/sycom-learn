@@ -8,7 +8,7 @@ import { MailCheckIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import { Link } from "@/components/foresight-link";
+import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth-client";
 
 const RESEND_COOLDOWN_SECONDS = 60;

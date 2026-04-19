@@ -2,7 +2,7 @@ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 
 import { AuthLeftPanel } from "@/components/auth/left-panel";
-import { Link } from "@/components/foresight-link";
+import { Link } from "@/components/layout/foresight-link";
 import { safeRedirectPath } from "@/lib/post-auth-redirect";
 
 const authSearchSchema = z.object({

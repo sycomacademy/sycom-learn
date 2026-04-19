@@ -11,7 +11,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Link } from "@/components/foresight-link";
+import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth-client";
 
 const forgotPasswordSchema = z.object({

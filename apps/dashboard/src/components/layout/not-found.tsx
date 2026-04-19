@@ -1,7 +1,7 @@
 import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { Compass } from "@sycom/ui/components/animated/icons/compass";
 
-import { Link } from "../foresight-link";
+import { Link } from "./foresight-link";
 
 export default function NotFound() {
   return (

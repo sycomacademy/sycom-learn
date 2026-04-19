@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 
-import { Link } from "@/components/foresight-link";
+import { Link } from "@/components/layout/foresight-link";
 import { FlickeringGrid } from "./flickering-grid";
 
 const LoginTestimonials = lazy(() =>
