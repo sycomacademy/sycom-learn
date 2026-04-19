@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776034831685,
-      "tag": "0000_public_devos",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1744819200000,
-      "tag": "0001_drop_todo",
+      "when": 1776544480587,
+      "tag": "0000_daily_iceman",
       "breakpoints": true
     }
   ]

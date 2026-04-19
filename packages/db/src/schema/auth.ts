@@ -1,26 +1,18 @@
 import { relations } from "drizzle-orm";
-import {
-  boolean,
-  index,
-  pgEnum,
-  pgSchema,
-  text,
-  timestamp,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { boolean, index, pgSchema, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { createdAt, updatedAt } from "./_shared";
 
 const auth = pgSchema("auth");
 
-export const userRoleEnum = pgEnum("platform_role", [
+export const userRoleEnum = auth.enum("platform_role", [
   "platform_admin",
   "content_creator",
   "public_student",
 ]);
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
 
-export const organizationRoleEnum = pgEnum("organization_role", [
+export const organizationRoleEnum = auth.enum("organization_role", [
   "owner",
   "admin",
   "teacher",
@@ -40,6 +32,7 @@ export const user = auth.table("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
+  onboardedAt: timestamp("onboarded_at"),
 });
 
 export const session = auth.table(

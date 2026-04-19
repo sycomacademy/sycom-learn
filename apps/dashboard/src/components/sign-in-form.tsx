@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { env } from "@sycom/env/web";
 import { Button } from "@sycom/ui/components/button";
 import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { Checkbox } from "@sycom/ui/components/checkbox";
@@ -52,6 +53,22 @@ export default function SignInForm() {
         rememberMe: data.rememberMe,
       });
       if (error) {
+        if (error.code === "EMAIL_NOT_VERIFIED") {
+          await authClient.sendVerificationEmail({
+            email: data.email,
+            callbackURL: `${env.VITE_DASHBOARD_URL}/dashboard`,
+          });
+          toastManager.add({
+            title: "Please verify your email — we sent you a fresh link.",
+            type: "info",
+          });
+          await router.navigate({
+            to: "/check-email",
+            search: { email: data.email },
+            replace: true,
+          });
+          return;
+        }
         toastManager.add({ title: error.message, type: "error" });
         return;
       }

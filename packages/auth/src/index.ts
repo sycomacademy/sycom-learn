@@ -72,8 +72,25 @@ export function createAuth() {
     emailVerification: {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
+      expiresIn: 60 * 60 * 24,
       sendVerificationEmail: async ({ user, url }) => {
         devOrThrow("verify-email", user.email, url);
+      },
+    },
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 60,
+      customRules: {
+        "/sign-up/email": { window: 60 * 60, max: 5 },
+        "/send-verification-email": { window: 60 * 60, max: 3 },
+        "/sign-in/email": { window: 60, max: 10 },
+        "/forget-password": { window: 60 * 60, max: 3 },
+      },
+    },
+    user: {
+      additionalFields: {
+        onboardedAt: { type: "date", required: false, input: false },
       },
     },
     plugins: [

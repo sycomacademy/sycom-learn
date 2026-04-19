@@ -38,6 +38,8 @@ These rules override default agent behavior. Apply them by default; only deviate
     - **Loading state comes from `form.formState.isSubmitting`**, wired into the submit button's `loading` prop. Do not add a parallel `useState` for pending state. Do not wrap the call in `useMutation` just to get `isPending` — only reach for `useMutation` when you need cache invalidation co-location, global `MutationCache.onError`, or multiple subscribers observing the same write.
     - **Accessibility defaults carried over**: `autoComplete` on every credential/identity input, `aria-label` on icon-only buttons, `htmlFor` pairing on checkboxes via `FieldLabel`.
 
+14. **Drizzle: migrations over push.** For schema changes, default to `bun run db:generate` then `bun run db:migrate` so the database stays aligned with committed migration history. Do not suggest or use `bun run db:push` unless the user explicitly asks for it (push bypasses migration files and can drift from `migrate`).
+
 ## Commands
 
 ```bash
@@ -50,10 +52,10 @@ bun run build            # Build all apps
 bun run check-types      # TypeScript type checking across all packages
 bun run check            # Run oxlint + oxfmt (formatting with --write)
 
-# Database (Drizzle + Neon Postgres)
-bun run db:push          # Push schema changes to database
+# Database (Drizzle + Neon Postgres) — prefer generate + migrate (see rule 14)
 bun run db:generate      # Generate migration files
 bun run db:migrate       # Run migrations
+bun run db:push          # Push schema directly (avoid unless explicitly requested)
 bun run db:studio        # Open Drizzle Studio
 
 # Turborepo filtering (run tasks in specific packages)

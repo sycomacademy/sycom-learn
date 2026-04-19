@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { env } from "@sycom/env/web";
 import { Button } from "@sycom/ui/components/button";
 import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
@@ -10,8 +11,7 @@ import {
   InputGroupInput,
 } from "@sycom/ui/components/input-group";
 import { Input } from "@sycom/ui/components/input";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter, useSearch } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,7 +22,6 @@ import { cn } from "@sycom/ui/lib/utils";
 
 import { Link } from "@/components/foresight-link";
 import { authClient } from "@/lib/auth-client";
-import { resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
 const signUpSchema = z.object({
   firstName: z
@@ -41,8 +40,6 @@ type SignUpInput = z.infer<typeof signUpSchema>;
 
 export default function SignUpForm() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { redirect: redirectParam } = useSearch({ from: "/_auth" });
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<SignUpInput>({
@@ -56,15 +53,18 @@ export default function SignUpForm() {
         email: data.email,
         password: data.password,
         name: `${data.firstName.trim()} ${data.lastName.trim()}`,
+        callbackURL: `${env.VITE_DASHBOARD_URL}/dashboard`,
       });
       if (error) {
         toastManager.add({ title: error.message, type: "error" });
         return;
       }
-      toastManager.add({ title: "Account created", type: "success" });
-      await queryClient.invalidateQueries({ queryKey: ["session"] });
-      const target = resolvePostAuthRedirect(router, redirectParam);
-      await router.navigate({ href: target, replace: true });
+      toastManager.add({ title: "Check your email to verify your account", type: "success" });
+      await router.navigate({
+        to: "/check-email",
+        search: { email: data.email },
+        replace: true,
+      });
     } catch (error) {
       if (error instanceof Error) {
         toastManager.add({
