@@ -14,5 +14,4 @@
     - run security audit
 
 - logging {started}
-    - fix the request trace to be azure compatible
-    - do the client logging
+    - make logs readable and searchable
