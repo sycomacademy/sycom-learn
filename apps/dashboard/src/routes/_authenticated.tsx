@@ -2,6 +2,7 @@ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import Header from "@/components/dashboard/header";
 import { sessionQueryOptions } from "@/lib/auth/session";
+import Sidebar from "@/components/dashboard/sidebar";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
@@ -12,17 +13,24 @@ export const Route = createFileRoute("/_authenticated")({
         search: { redirect: location.href },
       });
     }
-    return { session: session.session, user: session.user };
+    const me = await context.queryClient.ensureQueryData(context.trpc.me.get.queryOptions());
+    return { me, session: session.session, user: session.user };
   },
-  loader: ({ context }) => context.queryClient.ensureQueryData(context.trpc.me.get.queryOptions()),
   component: AuthenticatedLayout,
 });
 
 function AuthenticatedLayout() {
   return (
-    <div className="grid h-svh grid-rows-[auto_1fr]">
-      <Header />
-      <Outlet />
+    <div className="flex h-svh bg-muted/20">
+      <Sidebar />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Header />
+
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

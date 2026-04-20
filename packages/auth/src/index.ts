@@ -57,8 +57,8 @@ export function createAuth() {
     //   },
     // },
     session: {
-      expiresIn: 60 * 60 * 24,
-      updateAge: 60 * 60 * 1,
+      expiresIn: 60 * 60 * 8,
+      updateAge: 60 * 30,
       // Disable cookie cache to avoid getSession returning null in API routes (better-auth#7008)
       cookieCache: { enabled: false },
     },

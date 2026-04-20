@@ -13,6 +13,8 @@ import { Route as AuthenticatedRouteImport } from "./routes/_authenticated";
 import { Route as AuthRouteImport } from "./routes/_auth";
 import { Route as SplatRouteImport } from "./routes/$";
 import { Route as IndexRouteImport } from "./routes/index";
+import { Route as AuthenticatedSettingsRouteImport } from "./routes/_authenticated/settings";
+import { Route as AuthenticatedHelpRouteImport } from "./routes/_authenticated/help";
 import { Route as AuthenticatedDashboardRouteImport } from "./routes/_authenticated/dashboard";
 import { Route as AuthVerifyEmailRouteImport } from "./routes/_auth/verify-email";
 import { Route as AuthSignUpRouteImport } from "./routes/_auth/sign-up";
@@ -20,6 +22,9 @@ import { Route as AuthSignInRouteImport } from "./routes/_auth/sign-in";
 import { Route as AuthResetPasswordRouteImport } from "./routes/_auth/reset-password";
 import { Route as AuthForgotPasswordRouteImport } from "./routes/_auth/forgot-password";
 import { Route as AuthCheckEmailRouteImport } from "./routes/_auth/check-email";
+import { Route as AuthenticatedSettingsIndexRouteImport } from "./routes/_authenticated/settings.index";
+import { Route as AuthenticatedSettingsProfileRouteImport } from "./routes/_authenticated/settings.profile";
+import { Route as AuthenticatedSettingsPasswordRouteImport } from "./routes/_authenticated/settings.password";
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: "/_authenticated",
@@ -38,6 +43,16 @@ const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRouteImport,
+} as any);
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: "/settings",
+  path: "/settings",
+  getParentRoute: () => AuthenticatedRoute,
+} as any);
+const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
+  id: "/help",
+  path: "/help",
+  getParentRoute: () => AuthenticatedRoute,
 } as any);
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: "/dashboard",
@@ -74,6 +89,21 @@ const AuthCheckEmailRoute = AuthCheckEmailRouteImport.update({
   path: "/check-email",
   getParentRoute: () => AuthRoute,
 } as any);
+const AuthenticatedSettingsIndexRoute = AuthenticatedSettingsIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AuthenticatedSettingsRoute,
+} as any);
+const AuthenticatedSettingsProfileRoute = AuthenticatedSettingsProfileRouteImport.update({
+  id: "/profile",
+  path: "/profile",
+  getParentRoute: () => AuthenticatedSettingsRoute,
+} as any);
+const AuthenticatedSettingsPasswordRoute = AuthenticatedSettingsPasswordRouteImport.update({
+  id: "/password",
+  path: "/password",
+  getParentRoute: () => AuthenticatedSettingsRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
@@ -85,6 +115,11 @@ export interface FileRoutesByFullPath {
   "/sign-up": typeof AuthSignUpRoute;
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard": typeof AuthenticatedDashboardRoute;
+  "/help": typeof AuthenticatedHelpRoute;
+  "/settings": typeof AuthenticatedSettingsRouteWithChildren;
+  "/settings/password": typeof AuthenticatedSettingsPasswordRoute;
+  "/settings/profile": typeof AuthenticatedSettingsProfileRoute;
+  "/settings/": typeof AuthenticatedSettingsIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
@@ -96,6 +131,10 @@ export interface FileRoutesByTo {
   "/sign-up": typeof AuthSignUpRoute;
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard": typeof AuthenticatedDashboardRoute;
+  "/help": typeof AuthenticatedHelpRoute;
+  "/settings/password": typeof AuthenticatedSettingsPasswordRoute;
+  "/settings/profile": typeof AuthenticatedSettingsProfileRoute;
+  "/settings": typeof AuthenticatedSettingsIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -110,6 +149,11 @@ export interface FileRoutesById {
   "/_auth/sign-up": typeof AuthSignUpRoute;
   "/_auth/verify-email": typeof AuthVerifyEmailRoute;
   "/_authenticated/dashboard": typeof AuthenticatedDashboardRoute;
+  "/_authenticated/help": typeof AuthenticatedHelpRoute;
+  "/_authenticated/settings": typeof AuthenticatedSettingsRouteWithChildren;
+  "/_authenticated/settings/password": typeof AuthenticatedSettingsPasswordRoute;
+  "/_authenticated/settings/profile": typeof AuthenticatedSettingsProfileRoute;
+  "/_authenticated/settings/": typeof AuthenticatedSettingsIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -122,7 +166,12 @@ export interface FileRouteTypes {
     | "/sign-in"
     | "/sign-up"
     | "/verify-email"
-    | "/dashboard";
+    | "/dashboard"
+    | "/help"
+    | "/settings"
+    | "/settings/password"
+    | "/settings/profile"
+    | "/settings/";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -133,7 +182,11 @@ export interface FileRouteTypes {
     | "/sign-in"
     | "/sign-up"
     | "/verify-email"
-    | "/dashboard";
+    | "/dashboard"
+    | "/help"
+    | "/settings/password"
+    | "/settings/profile"
+    | "/settings";
   id:
     | "__root__"
     | "/"
@@ -146,7 +199,12 @@ export interface FileRouteTypes {
     | "/_auth/sign-in"
     | "/_auth/sign-up"
     | "/_auth/verify-email"
-    | "/_authenticated/dashboard";
+    | "/_authenticated/dashboard"
+    | "/_authenticated/help"
+    | "/_authenticated/settings"
+    | "/_authenticated/settings/password"
+    | "/_authenticated/settings/profile"
+    | "/_authenticated/settings/";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -185,6 +243,20 @@ declare module "@tanstack/react-router" {
       fullPath: "/";
       preLoaderRoute: typeof IndexRouteImport;
       parentRoute: typeof rootRouteImport;
+    };
+    "/_authenticated/settings": {
+      id: "/_authenticated/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport;
+      parentRoute: typeof AuthenticatedRoute;
+    };
+    "/_authenticated/help": {
+      id: "/_authenticated/help";
+      path: "/help";
+      fullPath: "/help";
+      preLoaderRoute: typeof AuthenticatedHelpRouteImport;
+      parentRoute: typeof AuthenticatedRoute;
     };
     "/_authenticated/dashboard": {
       id: "/_authenticated/dashboard";
@@ -235,6 +307,27 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthCheckEmailRouteImport;
       parentRoute: typeof AuthRoute;
     };
+    "/_authenticated/settings/": {
+      id: "/_authenticated/settings/";
+      path: "/";
+      fullPath: "/settings/";
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport;
+      parentRoute: typeof AuthenticatedSettingsRoute;
+    };
+    "/_authenticated/settings/profile": {
+      id: "/_authenticated/settings/profile";
+      path: "/profile";
+      fullPath: "/settings/profile";
+      preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport;
+      parentRoute: typeof AuthenticatedSettingsRoute;
+    };
+    "/_authenticated/settings/password": {
+      id: "/_authenticated/settings/password";
+      path: "/password";
+      fullPath: "/settings/password";
+      preLoaderRoute: typeof AuthenticatedSettingsPasswordRouteImport;
+      parentRoute: typeof AuthenticatedSettingsRoute;
+    };
   }
 }
 
@@ -258,12 +351,32 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsPasswordRoute: typeof AuthenticatedSettingsPasswordRoute;
+  AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute;
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute;
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
+  AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+};
+
+const AuthenticatedSettingsRouteWithChildren = AuthenticatedSettingsRoute._addFileChildren(
+  AuthenticatedSettingsRouteChildren,
+);
+
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute;
+  AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute;
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren;
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedHelpRoute: AuthenticatedHelpRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
 };
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

@@ -1,27 +1,41 @@
-import { Link } from "../layout/foresight-link";
+import { useRouterState } from "@tanstack/react-router";
+
+import { useAuthSession, useUser } from "@/lib/auth/authenticated-context";
 
 import UserMenu from "./user-menu";
 
 export default function Header() {
-  const links = [{ to: "/dashboard", label: "Dashboard" }] as const;
+  const me = useUser();
+  const session = useAuthSession();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const sectionTitle = pathname.startsWith("/settings")
+    ? "Settings"
+    : pathname.startsWith("/help")
+      ? "Help"
+      : "Dashboard";
+
+  const sessionExpiry = new Date(session.expiresAt).toLocaleString();
 
   return (
-    <div>
-      <div className="flex flex-row items-center justify-between px-2 py-1">
-        <nav className="flex gap-4 text-lg">
-          {links.map(({ to, label }) => {
-            return (
-              <Link key={to} to={to}>
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="flex items-center gap-2">
+    <header className="border-b bg-background/80 px-4 py-3 backdrop-blur md:px-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="truncate text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            {sectionTitle}
+          </h1>
+          <p className="truncate text-lg font-semibold">
+            Welcome back, {me.name.split(" ")[0] ?? me.name}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <p className="hidden text-xs text-muted-foreground lg:block">
+            Session active until {sessionExpiry}
+          </p>
           <UserMenu />
         </div>
       </div>
-      <hr />
-    </div>
+    </header>
   );
 }
