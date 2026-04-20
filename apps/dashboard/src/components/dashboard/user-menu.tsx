@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@sycom/ui/components/dropdown-menu";
+import { toastManager } from "@sycom/ui/components/toast";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 
@@ -31,15 +32,22 @@ export default function UserMenu() {
           <DropdownMenuItem>{me.email}</DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
-            onClick={() => {
-              authClient.signOut({
-                fetchOptions: {
-                  onSuccess: async () => {
-                    await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
-                    router.navigate({ to: "/sign-in" });
-                  },
-                },
-              });
+            onClick={async () => {
+              try {
+                const { error } = await authClient.signOut();
+                if (error) {
+                  toastManager.add({ title: error.message, type: "error" });
+                  return;
+                }
+                toastManager.add({ title: "Signed out", type: "success" });
+                queryClient.setQueryData(SESSION_QUERY_KEY, null);
+                await router.navigate({ to: "/sign-in", replace: true });
+              } catch {
+                toastManager.add({
+                  title: "Couldn't reach server. Check your connection and try again.",
+                  type: "error",
+                });
+              }
             }}
           >
             Sign Out

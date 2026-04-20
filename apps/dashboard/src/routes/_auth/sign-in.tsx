@@ -24,7 +24,7 @@ import z from "zod";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/auth/post-auth-redirect";
-import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { SESSION_QUERY_KEY, sessionQueryOptions } from "@/lib/auth/session";
 
 const signInSchema = z.object({
   email: z.email("Invalid email address"),
@@ -88,7 +88,8 @@ function SignInPage() {
         return;
       }
       toastManager.add({ title: "Signed in", type: "success" });
-      await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+      queryClient.removeQueries({ queryKey: SESSION_QUERY_KEY });
+      await queryClient.prefetchQuery(sessionQueryOptions());
       const target = resolvePostAuthRedirect(router, redirectParam);
       await router.navigate({ href: target, replace: true });
     } catch (error) {
