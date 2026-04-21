@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { InfoIcon } from "lucide-react";
 
 import { Button } from "@sycom/ui/components/button";
 import {
@@ -12,7 +13,6 @@ const meta = {
   title: "Simple/Tooltip",
   component: Tooltip,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
   decorators: [
     (Story) => (
       <TooltipProvider>
@@ -32,6 +32,22 @@ export const Playground: Story = {
       <TooltipTrigger render={<Button variant="outline" />}>Hover or focus</TooltipTrigger>
       <TooltipContent>
         <p>Contextual help appears on hover or keyboard focus.</p>
+      </TooltipContent>
+    </Tooltip>
+  ),
+};
+
+export const IconOnlyButton: Story = {
+  name: "Icon-only button",
+  render: () => (
+    <Tooltip>
+      <TooltipTrigger
+        render={<Button variant="outline" size="icon" aria-label="How rankings are calculated" />}
+      >
+        <InfoIcon aria-hidden />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">
+        <p>Rankings combine recency, engagement, and your workspace rules.</p>
       </TooltipContent>
     </Tooltip>
   ),

@@ -37,7 +37,6 @@ const meta = {
   title: "Simple/Command",
   component: Command,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof Command>;
 
 export default meta;
@@ -104,5 +103,4 @@ export const CommandDialogStory: Story = {
       </CommandDialog>
     </div>
   ),
-  parameters: { layout: "fullscreen" },
 };

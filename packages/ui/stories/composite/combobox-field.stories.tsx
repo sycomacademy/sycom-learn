@@ -83,7 +83,6 @@ const meta = {
   title: "Composite/Combobox Field",
   component: ComboboxFieldStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof ComboboxFieldStory>;
 
 export default meta;

@@ -87,7 +87,6 @@ const meta = {
   title: "Composite/Autocomplete Field",
   component: AutocompleteFieldStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof AutocompleteFieldStory>;
 
 export default meta;

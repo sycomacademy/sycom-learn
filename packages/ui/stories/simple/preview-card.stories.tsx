@@ -11,7 +11,6 @@ const meta = {
   title: "Simple/PreviewCard",
   component: PreviewCard,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof PreviewCard>;
 
 export default meta;

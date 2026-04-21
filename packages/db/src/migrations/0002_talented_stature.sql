@@ -1,0 +1,2 @@
+ALTER TABLE "profile" ADD COLUMN "bio" text DEFAULT '';--> statement-breakpoint
+ALTER TABLE "profile" ADD COLUMN "settings" jsonb DEFAULT '{"useDeviceTimezone":true,"enableFacehash":true,"marketingEmails":true}'::jsonb;

@@ -23,7 +23,6 @@ const meta = {
   title: "Simple/Menu",
   component: Menu,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof Menu>;
 
 export default meta;

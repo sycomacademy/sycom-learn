@@ -18,7 +18,7 @@ const honoLogger = createLoggerWithContext("hono");
 const app = new Hono();
 const authRateLimiter = createRateLimitMiddleware({
   windowMs: 60_000,
-  limit: 20,
+  limit: 60,
   keyFn: byIp,
   name: "auth",
   message: "Too many authentication attempts. Please try again in a minute.",

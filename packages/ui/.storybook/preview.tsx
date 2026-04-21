@@ -12,7 +12,10 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
-    layout: "centered",
+    // Fullscreen so Storybook does not paint a separate light "canvas" around centered
+    // stories; the themed wrapper below uses design-token bg-background for both modes.
+    layout: "fullscreen",
+    backgrounds: { disable: true },
   },
   decorators: [
     withThemeByClassName({
@@ -25,7 +28,9 @@ const preview: Preview = {
     }),
     (Story) => (
       <ToastProvider>
-        <Story />
+        <div className="box-border flex w-full items-center justify-center bg-background p-8 text-foreground">
+          <Story />
+        </div>
       </ToastProvider>
     ),
   ],

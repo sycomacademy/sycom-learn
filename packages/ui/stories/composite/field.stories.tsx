@@ -78,7 +78,6 @@ const meta = {
   title: "Composite/Field",
   component: EmailFieldStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
   args: {
     label: "Email address",
     placeholder: "you@example.com",

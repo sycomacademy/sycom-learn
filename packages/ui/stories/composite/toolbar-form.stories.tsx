@@ -132,7 +132,6 @@ const meta = {
   title: "Composite/Toolbar Form",
   component: ToolbarFormStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof ToolbarFormStory>;
 
 export default meta;

@@ -66,7 +66,6 @@ const meta = {
   title: "Composite/Checkbox Field",
   component: CheckboxFieldStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
   args: {
     label: "Accept terms and conditions",
     description: "You agree to our Terms of Service and Privacy Policy.",

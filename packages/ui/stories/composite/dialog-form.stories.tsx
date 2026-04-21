@@ -83,7 +83,6 @@ const meta = {
   title: "Composite/Dialog Form",
   component: DialogFormStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof DialogFormStory>;
 
 export default meta;

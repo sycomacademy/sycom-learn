@@ -41,7 +41,6 @@ const meta = {
   title: "Simple/Autocomplete",
   component: Autocomplete,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof Autocomplete>;
 
 export default meta;

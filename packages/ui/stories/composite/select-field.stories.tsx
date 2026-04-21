@@ -79,7 +79,6 @@ const meta = {
   title: "Composite/Select Field",
   component: SelectFieldStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof SelectFieldStory>;
 
 export default meta;

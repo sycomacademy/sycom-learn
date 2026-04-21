@@ -119,7 +119,6 @@ const meta = {
   title: "Composite/Input Group",
   component: UrlFieldStory,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
 } satisfies Meta<typeof UrlFieldStory>;
 
 export default meta;
