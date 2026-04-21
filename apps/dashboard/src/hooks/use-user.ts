@@ -1,4 +1,5 @@
 import { getRouteApi } from "@tanstack/react-router";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 const authenticatedRouteApi = getRouteApi("/_authenticated");
 
@@ -7,7 +8,8 @@ export function useAuthenticatedContext() {
 }
 
 export function useUser() {
-  return useAuthenticatedContext().profile;
+  const { profile } = useAuthenticatedContext();
+  return profile as AppRouterOutputs["profile"]["get"];
 }
 
 // export function useUpdateUserProfileMutation() {

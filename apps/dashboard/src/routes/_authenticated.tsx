@@ -1,11 +1,12 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
-
-import Header from "@/components/dashboard/header";
 import { sessionQueryOptions } from "@/lib/auth/session";
-import Sidebar from "@/components/dashboard/sidebar";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ context, location }) => {
+  beforeLoad: async ({
+    context,
+    location,
+  }): Promise<{ profile: AppRouterOutputs["profile"]["get"] }> => {
     const session = await context.queryClient.ensureQueryData(sessionQueryOptions());
     if (!session) {
       throw redirect({
@@ -24,11 +25,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   return (
     <div className="flex h-svh bg-muted/20">
-      <Sidebar />
-
       <div className="flex min-w-0 flex-1 flex-col">
-        <Header />
-
         <main className="min-h-0 flex-1 overflow-y-auto">
           <Outlet />
         </main>
