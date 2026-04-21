@@ -43,6 +43,7 @@
     "test": "turbo test",
     "test:server": "turbo -F server test",
     "check": "oxlint && oxfmt --write",
+    "dev:emails": "turbo -F @sycom/emails dev",
     "update-deps": "bun run scripts/update-deps.ts && bun install"
   },
   "dependencies": {

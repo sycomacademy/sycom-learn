@@ -1,6 +1,7 @@
 import { toastManager } from "@sycom/ui/components/toast";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
+
 import { useTRPC } from "@/lib/trpc/client";
 
 const authenticatedRouteApi = getRouteApi("/_authenticated");
@@ -9,13 +10,31 @@ export function useAuthenticatedContext() {
   return authenticatedRouteApi.useRouteContext();
 }
 
+function useProfileState() {
+  const trpc = useTRPC();
+  const context = useAuthenticatedContext();
+  const { data } = useSuspenseQuery({
+    ...trpc.profile.get.queryOptions(),
+    initialData: {
+      profile: context.profile,
+      session: context.session,
+      user: context.user,
+    },
+  });
+
+  return data;
+}
+
+export function useAuthSession() {
+  return useProfileState().session;
+}
+
+export function useUser() {
+  return useProfileState().user;
+}
+
 export function useUserProfile() {
-  const { profile, session, user } = useAuthenticatedContext();
-  return {
-    profile,
-    session,
-    user,
-  };
+  return useProfileState().profile;
 }
 
 export function useUpdateUserProfileMutation() {
@@ -24,36 +43,15 @@ export function useUpdateUserProfileMutation() {
   const profileQueryKey = trpc.profile.get.queryKey();
 
   return useMutation({
-    ...trpc.user.update.mutationOptions({
-      onMutate: async (newData: UpdateAccountInput) => {
+    ...trpc.profile.update.mutationOptions({
+      onMutate: async (newData: { name?: string }) => {
         await queryClient.cancelQueries({ queryKey: profileQueryKey });
         const previousData = queryClient.getQueryData(profileQueryKey);
-        type ProfileData = RouterOutputs["user"]["me"];
-        queryClient.setQueryData(profileQueryKey, (old: ProfileData | undefined) => {
-          if (!old || typeof old !== "object") {
-            return old;
-          }
-          return {
-            ...old,
-            user:
-              newData.name !== undefined || newData.email !== undefined
-                ? { ...old.user, ...newData }
-                : old.user,
-            profile:
-              newData.bio !== undefined || newData.settings !== undefined
-                ? {
-                    ...old.profile,
-                    ...(newData.bio !== undefined && { bio: newData.bio }),
-                    ...(newData.settings !== undefined && {
-                      settings: {
-                        ...old.profile?.settings,
-                        ...newData.settings,
-                      },
-                    }),
-                  }
-                : old.profile,
-          } as ProfileData;
-        });
+        queryClient.setQueryData(profileQueryKey, (old) =>
+          old && newData.name !== undefined
+            ? { ...old, user: { ...old.user, name: newData.name } }
+            : old,
+        );
         return { previousData };
       },
       onError: (_err, _vars, context) => {

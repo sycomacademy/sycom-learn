@@ -61,7 +61,7 @@ function SettingsPasswordPage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const changePassword = useMutation(trpc.me.changePassword.mutationOptions());
+  const changePassword = useMutation(trpc.profile.changePassword.mutationOptions());
 
   const form = useForm<PasswordInput>({
     resolver: zodResolver(passwordSchema),

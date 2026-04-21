@@ -49,22 +49,24 @@ function SettingsProfilePage() {
   const { data: preferences } = useSuspenseQuery(trpc.settings.preferences.queryOptions());
 
   const updateMe = useMutation({
-    mutationFn: (input: { name?: string }) => trpcClient.me.update.mutate(input),
+    mutationFn: (input: { name?: string }) => trpcClient.profile.update.mutate(input),
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: trpc.me.get.queryKey() });
-      const previous = queryClient.getQueryData(trpc.me.get.queryKey());
-      queryClient.setQueryData(trpc.me.get.queryKey(), (old) =>
-        old && variables.name !== undefined ? { ...old, name: variables.name } : old,
+      await queryClient.cancelQueries({ queryKey: trpc.profile.get.queryKey() });
+      const previous = queryClient.getQueryData(trpc.profile.get.queryKey());
+      queryClient.setQueryData(trpc.profile.get.queryKey(), (old) =>
+        old && variables.name !== undefined
+          ? { ...old, user: { ...old.user, name: variables.name } }
+          : old,
       );
       return { previous };
     },
     onError: (_err, _variables, context) => {
       if (context?.previous !== undefined) {
-        queryClient.setQueryData(trpc.me.get.queryKey(), context.previous);
+        queryClient.setQueryData(trpc.profile.get.queryKey(), context.previous);
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: trpc.me.get.queryKey() });
+      void queryClient.invalidateQueries({ queryKey: trpc.profile.get.queryKey() });
     },
   });
 

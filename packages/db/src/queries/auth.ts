@@ -17,6 +17,16 @@ export async function getUserById(id: string, database: Database = db): Promise<
   return row;
 }
 
+export async function updateUserNameById(
+  input: { id: string; name: string },
+  database: Database = db,
+): Promise<void> {
+  await database
+    .update(user)
+    .set({ name: input.name, updatedAt: new Date() })
+    .where(eq(user.id, input.id));
+}
+
 export async function getUserByEmail(
   email: string,
   database: Database = db,
