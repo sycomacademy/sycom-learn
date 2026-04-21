@@ -8,7 +8,12 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
 import { orgAc, orgRoles, platformAc, platformRoles } from "./permissions";
 import type { UserRole } from "@sycom/db/schema/auth";
-import { betterAuthLogger, devOrThrow } from "./config";
+import {
+  betterAuthLogger,
+  devOrThrow,
+  sendResetPasswordEmail,
+  sendVerificationEmail,
+} from "./config";
 
 export function createAuth() {
   const db = createDb();
@@ -68,7 +73,7 @@ export function createAuth() {
       requireEmailVerification: true,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
-        devOrThrow("reset-password", user.email, url);
+        await sendResetPasswordEmail(user, url);
       },
     },
     emailVerification: {
@@ -76,7 +81,7 @@ export function createAuth() {
       autoSignInAfterVerification: true,
       expiresIn: 60 * 60 * 24,
       sendVerificationEmail: async ({ user, url }) => {
-        devOrThrow("verify-email", user.email, url);
+        await sendVerificationEmail(user, url);
       },
     },
     rateLimit: {

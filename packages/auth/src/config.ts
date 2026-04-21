@@ -1,3 +1,4 @@
+import { render, ResetPasswordEmail, sendEmail, VerifyEmail } from "@sycom/emails";
 import { env } from "@sycom/env/server";
 import { APIError } from "better-auth";
 import { createLoggerWithContext } from "@sycom/logger";
@@ -15,6 +16,63 @@ export const devOrThrow = (label: string, to: string, url: string) => {
     });
   }
   console.log(`[auth:${label}] to=${to} url=${url}`);
+};
+
+type AuthEmailUser = {
+  email: string;
+  name?: string | null;
+};
+
+const sendAuthEmail = async ({
+  to,
+  subject,
+  html,
+  label,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+  label: string;
+}) => {
+  const response = await sendEmail({ to, subject, html });
+
+  if (response.error) {
+    throw new APIError("INTERNAL_SERVER_ERROR", {
+      message: `Failed to send ${label} email.`,
+    });
+  }
+};
+
+export const sendResetPasswordEmail = async (user: AuthEmailUser, url: string) => {
+  const html = await render(
+    ResetPasswordEmail({
+      name: user.name || user.email,
+      resetUrl: url,
+    }),
+  );
+
+  await sendAuthEmail({
+    to: user.email,
+    subject: "Reset your Sycom LMS password",
+    html,
+    label: "password reset",
+  });
+};
+
+export const sendVerificationEmail = async (user: AuthEmailUser, url: string) => {
+  const html = await render(
+    VerifyEmail({
+      name: user.name || user.email,
+      verifyUrl: url,
+    }),
+  );
+
+  await sendAuthEmail({
+    to: user.email,
+    subject: "Verify your email for Sycom LMS",
+    html,
+    label: "email verification",
+  });
 };
 
 const logLevel = env.DEBUG_PERFORMANCE ? ("debug" as const) : ("info" as const);

@@ -5,12 +5,15 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./templates/*": {
+      "default": "./src/templates/*.tsx"
+    },
     "./*": {
       "default": "./src/*.ts"
     }
   },
   "scripts": {
-    "dev": "email dev --port 3003 --dir src",
+    "dev": "DOTENV_CONFIG_PATH=../../apps/server/.env email dev --port 3005 --dir src",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
