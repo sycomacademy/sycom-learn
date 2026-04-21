@@ -9,12 +9,24 @@ import { secureHeaders } from "hono/secure-headers";
 import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/routers/_app";
 import { httpLogger } from "@/utils/http-logger";
+import { byIp, createRateLimitMiddleware } from "@/utils/rate-limit";
 import { consoleText } from "@sycom/ui/lib/constants";
 import { csrf } from "hono/csrf";
 
 const honoLogger = createLoggerWithContext("hono");
 
 const app = new Hono();
+const authRateLimiter = createRateLimitMiddleware({
+  windowMs: 60_000,
+  limit: 20,
+  keyFn: byIp,
+  name: "auth",
+  message: "Too many authentication attempts. Please try again in a minute.",
+});
+const trpcRateLimiter = createRateLimitMiddleware({
+  windowMs: 60_000,
+  limit: 120,
+});
 
 app.use(secureHeaders());
 app.use("*", httpLogger());
@@ -30,6 +42,9 @@ app.use(
     maxAge: 86400,
   }),
 );
+
+app.use("/api/auth/*", authRateLimiter);
+app.use("/trpc/*", trpcRateLimiter);
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 

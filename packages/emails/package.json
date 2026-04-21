@@ -19,7 +19,7 @@
     "@sycom/env": "workspace:*",
     "@sycom/logger": "workspace:*",
     "react": "catalog:",
-    "resend": "^6.3.0"
+    "resend": "^6.12.2"
   },
   "devDependencies": {
     "@react-email/ui": "^6.0.0",
