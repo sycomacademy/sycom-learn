@@ -7,6 +7,8 @@ import { type VariantProps } from "class-variance-authority";
 
 import { buttonVariants } from "./button-variants";
 
+export { buttonVariants };
+
 export interface ButtonProps extends useRender.ComponentProps<"button"> {
   variant?: VariantProps<typeof buttonVariants>["variant"];
   size?: VariantProps<typeof buttonVariants>["size"];
@@ -43,7 +45,7 @@ function Button({
             className={cn(
               "group/spinner pointer-events-none grid items-center overflow-hidden",
               "grid-cols-[0fr] data-loading:grid-cols-[1fr]",
-              "me-[calc(var(--button-gap,0px)*-1)] data-loading:me-0",
+              "-me-(--button-gap,0) data-loading:me-0",
               "transition-[grid-template-columns,margin-inline-end] duration-220 ease-[cubic-bezier(0.23,1,0.32,1)]",
               "motion-reduce:transition-none",
             )}

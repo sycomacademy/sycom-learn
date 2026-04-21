@@ -1,150 +1,84 @@
-import { cloneElement, createContext, useContext, useId } from "react";
+"use client";
+
+import * as React from "react";
 import {
   Controller,
-  type ControllerProps,
-  type FieldPath,
-  type FieldValues,
   FormProvider,
   useFormContext,
   useFormState,
+  type ControllerProps,
+  type FieldPath,
+  type FieldValues,
 } from "react-hook-form";
-import { Label } from "./label";
-import { cn } from "../lib/utils";
+
+import { cn } from "@sycom/ui/lib/utils";
 
 const Form = FormProvider;
 
-interface FormFieldContextValue<
+type FormFieldContextValue = {
+  name: FieldPath<FieldValues>;
+};
+
+const FormFieldContext = React.createContext<FormFieldContextValue | null>(null);
+const FormItemContext = React.createContext<string | null>(null);
+
+function FormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> {
-  name: TName;
-}
-
-const FormFieldContext = createContext<FormFieldContextValue>({} as FormFieldContextValue);
-
-const FormField = <
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
->({
-  ...props
-}: ControllerProps<TFieldValues, TName>) => {
+>(props: ControllerProps<TFieldValues, TName>) {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
-};
-
-const useFormField = () => {
-  const fieldContext = useContext(FormFieldContext);
-  const itemContext = useContext(FormItemContext);
-  const { getFieldState } = useFormContext();
-  const formState = useFormState({ name: fieldContext.name });
-  const fieldState = getFieldState(fieldContext.name, formState);
-
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>");
-  }
-
-  const { id } = itemContext;
-
-  return {
-    id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-description`,
-    formMessageId: `${id}-form-item-message`,
-    ...fieldState,
-  };
-};
-
-interface FormItemContextValue {
-  id: string;
 }
 
-const FormItemContext = createContext<FormItemContextValue>({} as FormItemContextValue);
-
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
-  const id = useId();
+  const id = React.useId();
 
   return (
-    <FormItemContext.Provider value={{ id }}>
+    <FormItemContext.Provider value={id}>
       <div className={cn("grid gap-2", className)} data-slot="form-item" {...props} />
     </FormItemContext.Provider>
   );
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
-  const { error, formItemId } = useFormField();
+function useFormField() {
+  const fieldContext = React.useContext(FormFieldContext);
+  const itemId = React.useContext(FormItemContext);
+  const { getFieldState } = useFormContext();
+  const formState = useFormState({ name: fieldContext?.name ?? "" });
 
-  return (
-    <Label
-      className={cn("data-[error=true]:text-destructive", className)}
-      data-error={!!error}
-      data-slot="form-label"
-      htmlFor={formItemId}
-      {...props}
-    />
-  );
-}
-
-function FormControl({
-  children,
-  ...props
-}: React.ComponentProps<"div"> & { children: React.ReactElement }) {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
-
-  const controlProps = {
-    "aria-describedby": error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId,
-    "aria-invalid": !!error,
-    "data-slot": "form-control",
-    id: formItemId,
-    ...props,
-  } as React.Attributes & Record<string, unknown>;
-
-  return cloneElement(children, controlProps);
-}
-
-function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
-  const { formDescriptionId } = useFormField();
-
-  return (
-    <p
-      className={cn("text-sm text-muted-foreground", className)}
-      data-slot="form-description"
-      id={formDescriptionId}
-      {...props}
-    />
-  );
-}
-
-function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
-  const { error, formMessageId } = useFormField();
-  const body = error ? String(error?.message ?? "") : props.children;
-
-  if (!body) {
-    return null;
+  if (!fieldContext) {
+    throw new Error("useFormField should be used within <FormField>");
+  }
+  if (itemId === null) {
+    throw new Error("useFormField should be used within <FormItem>");
   }
 
-  return (
-    <p
-      className={cn("text-sm text-destructive", className)}
-      data-slot="form-message"
-      id={formMessageId}
-      {...props}
-    >
-      {body}
-    </p>
-  );
+  const fieldState = getFieldState(fieldContext.name, formState);
+
+  return {
+    id: itemId,
+    name: fieldContext.name,
+    formItemId: `${itemId}-form-item`,
+    formDescriptionId: `${itemId}-form-item-description`,
+    formMessageId: `${itemId}-form-item-message`,
+    ...fieldState,
+  };
 }
 
-export {
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
-};
+function FormControl({ children }: { children: React.ReactElement }) {
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
+
+  const childProps = children.props as Record<string, unknown>;
+
+  return React.cloneElement(children, {
+    ...childProps,
+    id: formItemId,
+    "aria-describedby": error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId,
+    "aria-invalid": !!error,
+  } as never);
+}
+
+export { Form, FormField, FormItem, FormControl, useFormField };

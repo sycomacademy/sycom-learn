@@ -3,6 +3,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import { cn } from "@sycom/ui/lib/utils";
+import { Button } from "@sycom/ui/components/button";
 import { Input, type InputProps } from "@sycom/ui/components/input";
 import { Textarea, type TextareaProps } from "@sycom/ui/components/textarea";
 
@@ -84,6 +85,24 @@ export function InputGroupText({
         "line-clamp-1 flex items-center gap-2 leading-none whitespace-nowrap text-muted-foreground [&_svg]:pointer-events-none [&_svg]:-mx-0.5 in-[[data-slot=input-group]:has([data-slot=input-control],[data-slot=textarea-control])]:[&_svg:not([class*='size-'])]:size-4.5 sm:in-[[data-slot=input-group]:has([data-slot=input-control],[data-slot=textarea-control])]:[&_svg:not([class*='size-'])]:size-4",
         className,
       )}
+      {...props}
+    />
+  );
+}
+
+export function InputGroupButton({
+  className,
+  ...props
+}: React.ComponentProps<typeof Button>): React.ReactElement {
+  return (
+    <Button
+      className={cn(
+        "relative z-10 -mx-1 h-7 min-w-7 rounded-none px-1.5 text-muted-foreground hover:bg-transparent hover:text-foreground sm:h-6",
+        className,
+      )}
+      size="icon-sm"
+      type="button"
+      variant="ghost"
       {...props}
     />
   );

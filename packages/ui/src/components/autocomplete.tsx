@@ -4,6 +4,7 @@ import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomple
 import { ChevronsUpDownIcon, XIcon } from "lucide-react";
 import type React from "react";
 import { cn } from "@sycom/ui/lib/utils";
+import { Input } from "@sycom/ui/components/input";
 import { ScrollArea } from "@sycom/ui/components/scroll-area";
 
 export const Autocomplete: typeof AutocompletePrimitive.Root = AutocompletePrimitive.Root;
@@ -52,7 +53,7 @@ export function AutocompleteInput({
           className,
         )}
         data-slot="autocomplete-input"
-        // render={<Input nativeInput size={sizeValue} />}
+        render={<Input nativeInput size={sizeValue} />}
         {...props}
       />
       {showTrigger && (

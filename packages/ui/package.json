@@ -36,6 +36,7 @@
   "devDependencies": {
     "@storybook/addon-a11y": "^10.3.5",
     "@storybook/addon-docs": "^10.3.5",
+    "@storybook/addon-themes": "^10.3.5",
     "@storybook/react-vite": "^10.3.5",
     "@sycom/config": "workspace:*",
     "@tailwindcss/postcss": "^4.2.4",
