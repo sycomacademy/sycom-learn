@@ -57,7 +57,6 @@
   --animate-toast-success-even: toast-success-even 0.32s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-error-odd: toast-error-odd 0.28s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-error-even: toast-error-even 0.28s cubic-bezier(0.5, 1, 0.89, 1);
-
   @keyframes toast-success-odd {
     0% {
       scale: 1;
@@ -120,6 +119,27 @@
       translate: 0 0;
     }
   }
+  --animate-skeleton: skeleton 2s -1s infinite linear;
+  --animate-caret-blink: 1s ease-out infinite caret-blink;
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success-foreground: var(--success-foreground);
+  --color-info-foreground: var(--info-foreground);
+  @keyframes skeleton {
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes caret-blink {
+    0%,
+    70%,
+    to {
+      opacity: 1;
+    }
+    20%,
+    50% {
+      opacity: 0;
+    }
+  }
 }
 
 :root {
@@ -159,6 +179,9 @@
   --destructive-foreground: var(--color-red-700);
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
+  --info-foreground: var(--color-blue-700);
+  --success-foreground: var(--color-emerald-700);
+  --warning-foreground: var(--color-amber-700);
 }
 
 .dark {
@@ -197,6 +220,9 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
   --destructive-foreground: var(--color-red-400);
+  --info-foreground: var(--color-blue-400);
+  --success-foreground: var(--color-emerald-400);
+  --warning-foreground: var(--color-amber-400);
 }
 
 @layer base {

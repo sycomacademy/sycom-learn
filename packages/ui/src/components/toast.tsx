@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { cn } from "@sycom/ui/lib/utils";
-import { buttonVariants } from "@sycom/ui/components/button-variants";
+import { buttonVariants } from "@sycom/ui/components/button";
 
 const TOAST_ICONS = {
   error: CircleAlertIcon,
