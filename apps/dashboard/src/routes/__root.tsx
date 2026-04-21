@@ -13,6 +13,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { LazyMotion, domAnimation } from "motion/react";
 import { ThemeProvider } from "next-themes";
+import { TooltipProvider } from "@sycom/ui/components/tooltip";
 
 import GlobalError from "@/components/layout/global-error";
 import ThemeToggle from "@/components/theme-toggle";
@@ -71,14 +72,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <LazyMotion features={domAnimation} strict>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            <ToastProvider>
-              <AnchoredToastProvider>
-                {children}
-                <ThemeToggle />
-                <TanStackRouterDevtools position="bottom-left" />
-                <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
-              </AnchoredToastProvider>
-            </ToastProvider>
+            <TooltipProvider>
+              <ToastProvider>
+                <AnchoredToastProvider>
+                  {children}
+                  <ThemeToggle />
+                  <TanStackRouterDevtools position="bottom-left" />
+                  <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+                </AnchoredToastProvider>
+              </ToastProvider>
+            </TooltipProvider>
           </ThemeProvider>
         </LazyMotion>
         <Scripts />
