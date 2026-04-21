@@ -1,5 +1,6 @@
 import { createDb } from "@sycom/db";
 import * as schema from "@sycom/db/schema/auth";
+import { profile } from "@sycom/db/schema/profile";
 import { env } from "@sycom/env/server";
 import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
@@ -90,9 +91,15 @@ export function createAuth() {
         "/reset-password": { window: 60 * 60, max: 5 },
       },
     },
-    user: {
-      additionalFields: {
-        onboardedAt: { type: "date", required: false, input: false },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (createdUser) => {
+            await db.insert(profile).values({
+              userId: createdUser.id,
+            });
+          },
+        },
       },
     },
     plugins: [

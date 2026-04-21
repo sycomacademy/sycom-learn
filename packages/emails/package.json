@@ -1,0 +1,27 @@
+{
+  "name": "@sycom/emails",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-email/render": "^1.4.0",
+    "@sycom/env": "workspace:*",
+    "@sycom/logger": "workspace:*",
+    "react": "catalog:",
+    "resend": "^6.3.0"
+  },
+  "devDependencies": {
+    "@sycom/config": "workspace:*",
+    "@types/react": "catalog:",
+    "typescript": "^6.0.3"
+  }
+}

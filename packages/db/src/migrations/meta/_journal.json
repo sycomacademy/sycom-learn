@@ -8,6 +8,13 @@
       "when": 1776544480587,
       "tag": "0000_daily_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776716369854,
+      "tag": "0001_aromatic_vision",
+      "breakpoints": true
     }
   ]
 }

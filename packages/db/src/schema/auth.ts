@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import { boolean, index, pgSchema, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { createdAt, updatedAt } from "./_shared";
+import { profile } from "./profile";
 
 const auth = pgSchema("auth");
 
@@ -32,7 +33,6 @@ export const user = auth.table("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
-  onboardedAt: timestamp("onboarded_at"),
 });
 
 export const session = auth.table(
@@ -183,12 +183,16 @@ export const invitation = auth.table(
   ],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
   cohort_members: many(cohort_member),
   members: many(member),
   invitations: many(invitation),
+  profile: one(profile, {
+    fields: [user.id],
+    references: [profile.userId],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
