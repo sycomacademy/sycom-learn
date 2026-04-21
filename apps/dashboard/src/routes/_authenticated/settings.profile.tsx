@@ -18,7 +18,7 @@ import { Suspense } from "react";
 import z from "zod";
 
 import { SettingsProfilePending } from "@/components/dashboard/settings-pending";
-import { useUser } from "@/lib/auth/authenticated-context";
+import { useUser } from "@/lib/auth/use-user";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 
 const profileSchema = z.object({

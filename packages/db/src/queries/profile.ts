@@ -1,12 +1,9 @@
 import { eq } from "drizzle-orm";
 
 import type { Database } from "..";
-import { profile, type Profile } from "../schema/profile";
+import { profile } from "../schema/profile";
 
-export async function getProfileByUserId(
-  database: Database,
-  input: { userId: string },
-): Promise<Profile | null> {
+export async function getProfileByUserId(database: Database, input: { userId: string }) {
   const [row] = await database
     .select()
     .from(profile)

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 import { DashboardPending } from "@/components/dashboard/pending";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { useUser } from "@/lib/auth/authenticated-context";
+import { useUser } from "@/lib/auth/use-user";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({

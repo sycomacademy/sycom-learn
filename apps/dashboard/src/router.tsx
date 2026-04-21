@@ -4,6 +4,7 @@ import { env } from "@sycom/env/web";
 import "./index.css";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
+
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
@@ -58,12 +59,20 @@ export const getRouter = () => {
     queryClient,
   });
 
-  const router = createTanStackRouter({
+  let router!: ReturnType<typeof createTanStackRouter>;
+
+  router = createTanStackRouter({
     routeTree,
     scrollRestoration: true,
     defaultPreload: false,
     defaultPreloadStaleTime: 0,
-    context: { trpc, queryClient },
+    context: {
+      trpc,
+      queryClient,
+      get router() {
+        return router;
+      },
+    },
     defaultPendingComponent: () => <Loader />,
     defaultNotFoundComponent: () => <NotFound />,
     defaultErrorComponent: RouteError,

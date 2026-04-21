@@ -2,7 +2,13 @@ import type { AppRouter } from "server/trpc/routers/_app";
 import { AnchoredToastProvider, ToastProvider } from "@sycom/ui/components/toast";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRouteWithContext,
+  type RegisteredRouter,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { LazyMotion, domAnimation } from "motion/react";
@@ -15,6 +21,7 @@ import appCss from "../index.css?url";
 export interface RouterAppContext {
   trpc: TRPCOptionsProxy<AppRouter>;
   queryClient: QueryClient;
+  router: RegisteredRouter;
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({

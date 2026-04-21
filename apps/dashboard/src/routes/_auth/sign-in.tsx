@@ -23,7 +23,7 @@ import z from "zod";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
-import { resolvePostAuthRedirect } from "@/lib/auth/post-auth-redirect";
+import { resolvePostAuthRedirect } from "@/lib/auth/auth-redirect";
 import { SESSION_QUERY_KEY, sessionQueryOptions } from "@/lib/auth/session";
 
 const signInSchema = z.object({

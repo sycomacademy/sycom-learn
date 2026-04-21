@@ -13,14 +13,10 @@ export const Route = createFileRoute("/_authenticated")({
         search: { redirect: location.href },
       });
     }
-    const authState = await context.queryClient.ensureQueryData(
+    const profile = await context.queryClient.ensureQueryData(
       context.trpc.profile.get.queryOptions(),
     );
-    return {
-      profile: authState.profile,
-      session: authState.session,
-      user: authState.user,
-    };
+    return { profile };
   },
   component: AuthenticatedLayout,
 });

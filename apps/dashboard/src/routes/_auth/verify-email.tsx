@@ -40,7 +40,9 @@ export const Route = createFileRoute("/_auth/verify-email")({
   component: VerifyEmailPage,
 });
 
-const errorCopy: Record<z.infer<typeof verifyEmailErrorEnum>, { title: string; body: string }> = {
+type VerifyEmailErrorKey = z.infer<typeof verifyEmailErrorEnum>;
+
+const errorCopy: Record<VerifyEmailErrorKey, { title: string; body: string }> = {
   token_expired: {
     title: "This link expired",
     body: "Verification links expire after 24 hours. Enter your email and we'll send a fresh one.",
@@ -55,10 +57,17 @@ const errorCopy: Record<z.infer<typeof verifyEmailErrorEnum>, { title: string; b
   },
 };
 
+function verifyEmailErrorKey(value: unknown): VerifyEmailErrorKey {
+  if (value === "token_expired" || value === "invalid_token" || value === "unknown") {
+    return value;
+  }
+  return "unknown";
+}
+
 function VerifyEmailPage() {
   const router = useRouter();
   const { error } = useSearch({ from: "/_auth/verify-email" });
-  const copy = errorCopy[error ?? "unknown"];
+  const copy = errorCopy[verifyEmailErrorKey(error)];
 
   const form = useForm<ResendInput>({
     resolver: zodResolver(resendSchema),

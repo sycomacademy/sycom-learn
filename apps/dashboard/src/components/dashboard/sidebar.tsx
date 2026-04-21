@@ -2,7 +2,7 @@ import { cn } from "@sycom/ui/lib/utils";
 import { CircleHelp, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
 import { useMatchRoute, useRouterState } from "@tanstack/react-router";
 
-import { useUser } from "@/lib/auth/authenticated-context";
+import { useUser } from "@/lib/auth/use-user";
 import { Link } from "../layout/foresight-link";
 
 type NavItem = {

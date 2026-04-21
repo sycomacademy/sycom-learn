@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth/auth-client";
-import { useUser } from "@/lib/auth/authenticated-context";
+import { useUser } from "@/lib/auth/use-user";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 
 export default function UserMenu() {

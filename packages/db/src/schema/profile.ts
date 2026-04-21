@@ -1,16 +1,29 @@
-import { relations } from "drizzle-orm";
-import { pgSchema, text, timestamp } from "drizzle-orm/pg-core";
-
+import { relations, sql } from "drizzle-orm";
+import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createdAt, updatedAt } from "./_shared";
 import { user } from "./auth";
 
-const publicSchema = pgSchema("public");
+export const profileSettingsDefault = {
+  enableFacehash: true,
+  marketingEmails: true,
+  useDeviceTimezone: true,
+} as const;
 
-export const profile = publicSchema.table("profile", {
+export interface ProfileSettings {
+  enableFacehash?: boolean;
+  marketingEmails?: boolean;
+  useDeviceTimezone?: boolean;
+}
+
+export const profile = pgTable("profile", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
   onboardedAt: timestamp("onboarded_at"),
+  bio: text("bio").default(""),
+  settings: jsonb("settings")
+    .$type<ProfileSettings>()
+    .default(sql`'{"useDeviceTimezone":true,"enableFacehash":true,"marketingEmails":true}'::jsonb`),
   createdAt,
   updatedAt,
 });

@@ -1,6 +1,6 @@
 import { useRouterState } from "@tanstack/react-router";
 
-import { useAuthSession, useUser } from "@/lib/auth/authenticated-context";
+import { useAuthSession, useUser } from "@/lib/auth/use-user";
 
 import UserMenu from "./user-menu";
 
