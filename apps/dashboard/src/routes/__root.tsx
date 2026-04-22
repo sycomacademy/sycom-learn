@@ -12,6 +12,8 @@ import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { LazyMotion, domAnimation } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@sycom/ui/components/tooltip";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import GlobalError from "@/components/layout/global-error";
 
@@ -73,9 +75,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <ToastProvider>
                 <AnchoredToastProvider>
                   {children}
-                  {/* <ThemeToggle />
                   <TanStackRouterDevtools position="bottom-left" />
-                  <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" /> */}
+                  <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
                 </AnchoredToastProvider>
               </ToastProvider>
             </TooltipProvider>
