@@ -25,7 +25,7 @@ import { Link } from "@/components/layout/foresight-link";
 type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  to: "/dashboard" | "/settings" | "/";
+  to: "/dashboard" | "/dashboard/settings" | "/";
 };
 
 type NavGroup = {
@@ -44,7 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "General",
     items: [
-      { icon: SettingsIcon, label: "Settings", to: "/settings" },
+      { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
       { icon: MessageCircleQuestionIcon, label: "Support", to: "/" },
     ],
   },

@@ -1,15 +1,14 @@
-import { cn } from "@sycom/ui/lib/utils";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
-
+import { cn } from "@sycom/ui/lib/utils";
 import { Link } from "@/components/layout/foresight-link";
 
-export const Route = createFileRoute("/_authenticated/settings")({
+export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsLayout,
 });
 
 const tabs = [
-  { to: "/settings/profile", label: "Profile" },
-  { to: "/settings/password", label: "Password" },
+  { to: "/dashboard/settings/profile", label: "Profile" },
+  { to: "/dashboard/settings/password", label: "Password" },
 ] as const;
 
 function SettingsLayout() {

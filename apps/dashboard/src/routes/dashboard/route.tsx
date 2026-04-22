@@ -3,7 +3,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { sessionQueryOptions } from "@/lib/auth/session";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-export const Route = createFileRoute("/_authenticated")({
+export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({
     context,
     location,
@@ -20,10 +20,10 @@ export const Route = createFileRoute("/_authenticated")({
     );
     return { profile };
   },
-  component: AuthenticatedLayout,
+  component: DashboardLayout,
 });
 
-function AuthenticatedLayout() {
+function DashboardLayout() {
   return (
     <DashboardShell>
       <Outlet />

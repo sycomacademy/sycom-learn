@@ -1,7 +1,7 @@
-import { useUser } from "@/hooks/use-user";
 import { createFileRoute } from "@tanstack/react-router";
+import { useUser } from "@/hooks/use-user";
 
-export const Route = createFileRoute("/_authenticated/dashboard")({
+export const Route = createFileRoute("/dashboard/")({
   component: RouteComponent,
 });
 

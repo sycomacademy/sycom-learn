@@ -91,7 +91,7 @@ export function DashboardUserMenu(): React.ReactElement {
             <UserIcon />
             <span className="flex-1">Dashboard</span>
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link to="/settings" />}>
+          <DropdownMenuItem render={<Link to="/dashboard/settings" />}>
             <SettingsIcon />
             <span className="flex-1">Settings</span>
           </DropdownMenuItem>

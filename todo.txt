@@ -15,3 +15,10 @@
 
 - logging {started}
     - make logs readable and searchable
+
+- SEO and performance
+    - metadata,ogs, sitemap, robots.txt, etc.
+    - optimize media like <Image /> component in nextjs
+    - Proper suspense handling
+    - FCP, LCP, TTFB etc. and lighthouse scores stuff
+    - bundle size optimization and request waterfalls
