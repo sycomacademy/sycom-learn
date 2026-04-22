@@ -19,6 +19,13 @@ const countrySchema = z.object({
 });
 type CountryInput = z.infer<typeof countrySchema>;
 
+const countries = [
+  { value: "us", label: "United States" },
+  { value: "ca", label: "Canada" },
+  { value: "mx", label: "Mexico" },
+  { value: "uk", label: "United Kingdom" },
+];
+
 function SelectFieldStory({
   defaultValue = "",
   disabled = false,
@@ -53,15 +60,17 @@ function SelectFieldStory({
                 disabled={disabled}
                 onValueChange={field.onChange}
                 value={field.value || null}
+                items={countries}
               >
                 <SelectTrigger aria-invalid={!!fieldState.error}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectPopup>
-                  <SelectItem value="us">United States</SelectItem>
-                  <SelectItem value="ca">Canada</SelectItem>
-                  <SelectItem value="mx">Mexico</SelectItem>
-                  <SelectItem value="uk">United Kingdom</SelectItem>
+                  {countries.map((country) => (
+                    <SelectItem key={country.value} value={country.value}>
+                      {country.label}
+                    </SelectItem>
+                  ))}
                 </SelectPopup>
               </Select>
               <FieldError reserveSpace>{fieldState.error?.message}</FieldError>

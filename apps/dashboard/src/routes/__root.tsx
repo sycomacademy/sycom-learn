@@ -1,7 +1,6 @@
 import type { AppRouter } from "server/trpc/routers/_app";
 import { AnchoredToastProvider, ToastProvider } from "@sycom/ui/components/toast";
 import type { QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   HeadContent,
   Outlet,
@@ -9,14 +8,12 @@ import {
   createRootRouteWithContext,
   type RegisteredRouter,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { LazyMotion, domAnimation } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@sycom/ui/components/tooltip";
 
 import GlobalError from "@/components/layout/global-error";
-import ThemeToggle from "@/components/theme-toggle";
 
 import appCss from "../index.css?url";
 export interface RouterAppContext {
@@ -76,9 +73,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <ToastProvider>
                 <AnchoredToastProvider>
                   {children}
-                  <ThemeToggle />
+                  {/* <ThemeToggle />
                   <TanStackRouterDevtools position="bottom-left" />
-                  <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+                  <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" /> */}
                 </AnchoredToastProvider>
               </ToastProvider>
             </TooltipProvider>

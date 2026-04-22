@@ -1,4 +1,7 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { SidebarInset, SidebarProvider } from "@sycom/ui/components/sidebar";
+import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { sessionQueryOptions } from "@/lib/auth/session";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
@@ -24,12 +27,14 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   return (
-    <div className="flex h-svh bg-muted/20">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <main className="min-h-0 flex-1 overflow-y-auto">
+    <SidebarProvider>
+      <DashboardSidebar />
+      <SidebarInset>
+        <DashboardHeader />
+        <main className="min-h-0 flex-1 overflow-y-auto bg-muted/20">
           <Outlet />
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
