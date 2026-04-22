@@ -35,7 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Main",
     items: [
       { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" },
-      { icon: BlocksIcon, label: "Home", to: "/" },
+      { icon: BlocksIcon, label: "Settings", to: "/dashboard/settings" },
     ],
   },
 ];
@@ -59,6 +59,21 @@ const groupLabelStableClass = cn(
 
 export function AppSidebar(): React.ReactElement {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  const activeTo = React.useMemo(() => {
+    let bestMatch: TRoutes | undefined;
+    let bestLength = -1;
+    for (const group of NAV_GROUPS) {
+      for (const item of group.items) {
+        const matches = pathname === item.to || pathname.startsWith(`${item.to}/`);
+        if (matches && item.to.length > bestLength) {
+          bestMatch = item.to;
+          bestLength = item.to.length;
+        }
+      }
+    }
+    return bestMatch;
+  }, [pathname]);
 
   return (
     <Sidebar className="border-sidebar-border" collapsible="icon" variant="inset">
@@ -87,11 +102,7 @@ export function AppSidebar(): React.ReactElement {
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton
                       className={cn(menuButtonStableClass, menuButtonLabelFadeClass)}
-                      isActive={
-                        item.to === "/"
-                          ? pathname === "/"
-                          : pathname === item.to || pathname.startsWith(`${item.to}/`)
-                      }
+                      isActive={activeTo === item.to}
                       render={<Link to={item.to} />}
                       tooltip={item.label}
                     >
