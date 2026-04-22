@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon } from "@sycom/ui/components/animated/icons/log-out";
 import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
 import { Button } from "@sycom/ui/components/button";
@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  // DropdownMenuShortcut,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@sycom/ui/components/dropdown-menu";
 import { toastManager } from "@sycom/ui/components/toast";
@@ -23,6 +23,7 @@ import { authClient } from "@/lib/auth/auth-client";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 import { getInitials, snakeCaseToTitleCase } from "@sycom/ui/lib/string";
 import { Facehash } from "facehash";
+import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
 
 export function DashboardUserMenu(): React.ReactElement {
   const { user, profile } = useUser();
@@ -32,11 +33,7 @@ export function DashboardUserMenu(): React.ReactElement {
 
   const enableFacehash = profile.settings?.enableFacehash;
 
-  const handleSignOut = () => {
-    void signOut();
-  };
-
-  const signOut = async () => {
+  const handleSignOut = async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
     try {
@@ -96,11 +93,15 @@ export function DashboardUserMenu(): React.ReactElement {
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
-
-        <DropdownMenuItem disabled={isSigningOut} onClick={handleSignOut} variant="destructive">
-          <LogOutIcon />
-          <span>{isSigningOut ? "Signing out..." : "Log out"}</span>
-        </DropdownMenuItem>
+        <AnimateIcon animateOnHover>
+          <DropdownMenuItem disabled={isSigningOut} onClick={handleSignOut} variant="destructive">
+            <LogOutIcon />
+            <span>{isSigningOut ? "Signing out..." : "Log out"}</span>
+            <DropdownMenuShortcut className="text-destructive group-focus/dropdown-menu-item:text-destructive">
+              Q
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        </AnimateIcon>
       </DropdownMenuContent>
     </DropdownMenu>
   );

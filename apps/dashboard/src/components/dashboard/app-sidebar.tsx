@@ -2,12 +2,10 @@
 
 import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
-import {
-  BlocksIcon,
-  LayoutDashboardIcon,
-  MessageCircleQuestionIcon,
-  SettingsIcon,
-} from "lucide-react";
+import { BlocksIcon } from "lucide-react";
+import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
+import { MessageCircleQuestionIcon } from "@sycom/ui/components/animated/icons/message-circle-question";
+import { SettingsIcon } from "@sycom/ui/components/animated/icons/settings";
 import {
   Sidebar,
   SidebarContent,
