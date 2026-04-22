@@ -4,8 +4,6 @@ import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { BlocksIcon } from "lucide-react";
 import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
-import { MessageCircleQuestionIcon } from "@sycom/ui/components/animated/icons/message-circle-question";
-import { SettingsIcon } from "@sycom/ui/components/animated/icons/settings";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +17,15 @@ import {
 } from "@sycom/ui/components/sidebar";
 import { Link } from "@/components/layout/foresight-link";
 import type { TRoutes } from "@/router";
+import { cn } from "@sycom/ui/lib/utils";
+
+const menuButtonIconClass = "[&_svg]:size-5";
+
+const menuButtonCollapseClass =
+  "group-data-[collapsible=icon]:size-auto! group-data-[collapsible=icon]:h-12! group-data-[collapsible=icon]:min-h-12! group-data-[collapsible=icon]:w-full! group-data-[collapsible=icon]:p-2!  group-data-[collapsible=icon]:[&>span:last-child]:hidden";
+
+const groupLabelCollapseClass =
+  "group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:opacity-100";
 
 type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
@@ -39,56 +46,49 @@ const NAV_GROUPS: NavGroup[] = [
       { icon: BlocksIcon, label: "Home", to: "/" },
     ],
   },
-  {
-    label: "General",
-    items: [
-      { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
-      { icon: MessageCircleQuestionIcon, label: "Support", to: "/" },
-    ],
-  },
 ];
 
 export function AppSidebar(): React.ReactElement {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isActiveRoute = React.useCallback(
-    (to: NavItem["to"]) => {
-      if (to === "/") {
-        return pathname === "/";
-      }
-      return pathname === to || pathname.startsWith(`${to}/`);
-    },
-    [pathname],
-  );
 
   return (
     <Sidebar className="border-sidebar-border" collapsible="icon" variant="inset">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton render={<Link to="/dashboard" />}>
-              <div className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground">
-                <LayoutDashboardIcon className="size-3" />
-              </div>
-              <span className="truncate font-semibold">Sycom</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <Link
+          className="flex items-center gap-2 text-sm font-semibold text-sidebar-foreground"
+          href="/dashboard"
+        >
+          <img
+            alt="Sycom Solutions logo"
+            className="h-10 w-auto"
+            height={40}
+            src="/logos/logo.jpg"
+            width={160}
+          />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
         {NAV_GROUPS.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className={cn(groupLabelCollapseClass)}>
+              {group.label}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton
-                      isActive={isActiveRoute(item.to)}
+                      className={cn(menuButtonIconClass, menuButtonCollapseClass)}
+                      isActive={
+                        item.to === "/"
+                          ? pathname === "/"
+                          : pathname === item.to || pathname.startsWith(`${item.to}/`)
+                      }
                       render={<Link to={item.to} />}
                       tooltip={item.label}
                     >
-                      <item.icon />
+                      <item.icon className="size-5" />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
