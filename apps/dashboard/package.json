@@ -26,6 +26,7 @@
     "@trpc/tanstack-react-query": "^11.16.0",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "facehash": "^0.1.0",
     "js.foresight": "^3.5.0",
     "lucide-react": "catalog:",
     "motion": "^12.38.0",

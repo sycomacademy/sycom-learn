@@ -8,7 +8,7 @@ export function Avatar({ className, ...props }: AvatarPrimitive.Root.Props): Rea
   return (
     <AvatarPrimitive.Root
       className={cn(
-        "inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background align-middle text-xs font-medium select-none",
+        "inline-flex size-8 shrink-0 items-center justify-center overflow-hidden bg-background align-middle text-xs font-medium select-none",
         className,
       )}
       data-slot="avatar"
@@ -36,7 +36,7 @@ export function AvatarFallback({
 }: AvatarPrimitive.Fallback.Props): React.ReactElement {
   return (
     <AvatarPrimitive.Fallback
-      className={cn("flex size-full items-center justify-center rounded-full bg-muted", className)}
+      className={cn("flex size-full items-center justify-center bg-muted", className)}
       data-slot="avatar-fallback"
       {...props}
     />
