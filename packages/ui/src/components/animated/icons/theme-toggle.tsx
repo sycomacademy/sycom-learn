@@ -11,50 +11,12 @@ import {
 
 type ThemeToggleProps = IconProps<keyof typeof animations>;
 
-const rotateTransition = {
-  duration: 0.35,
-  ease: "easeInOut",
-} as const;
-
 const animations = {
   default: {
     group: {
-      initial: {
-        rotate: 0,
-      },
-      animate: {
-        rotate: [0, 20, -14, 12, 0],
-        transition: {
-          duration: 0.55,
-          ease: "easeInOut",
-        },
-      },
+      initial: { rotate: 0, transition: { duration: 0.35, ease: "easeInOut" } },
+      animate: { rotate: 180, transition: { duration: 0.35, ease: "easeInOut" } },
     },
-    circle: {},
-  } satisfies Record<string, Variants>,
-  light: {
-    group: {
-      initial: {
-        rotate: 180,
-      },
-      animate: {
-        rotate: 0,
-        transition: rotateTransition,
-      },
-    },
-    circle: {},
-  } satisfies Record<string, Variants>,
-  dark: {
-    group: {
-      initial: {
-        rotate: 0,
-      },
-      animate: {
-        rotate: 180,
-        transition: rotateTransition,
-      },
-    },
-    circle: {},
   } satisfies Record<string, Variants>,
 } as const;
 
@@ -75,24 +37,39 @@ function IconComponent({ size, ...props }: ThemeToggleProps) {
       strokeLinejoin="round"
       {...props}
     >
-      <m.circle
-        cx={12}
-        cy={12}
-        r={9}
-        variants={variants.circle}
-        initial="initial"
-        animate={controls}
-      />
       <m.g
         variants={variants.group}
         initial="initial"
         animate={controls}
         style={{ originX: "50%", originY: "50%", transformBox: "fill-box" }}
       >
-        <path d="M12 3v18" />
-        <path d="m12 9 4.65-4.65" />
-        <path d="m12 14.3 7.37-7.37" />
-        <path d="m12 19.6 8.85-8.85" />
+        <m.circle
+          cx={12}
+          cy={12}
+          r={9}
+          variants={variants.circle}
+          initial="initial"
+          animate={controls}
+        />
+        <m.path d="M12 3v18" variants={variants.path1} initial="initial" animate={controls} />
+        <m.path
+          d="M12 9l4.65-4.65"
+          variants={variants.path2}
+          initial="initial"
+          animate={controls}
+        />
+        <m.path
+          d="M12 14.3l7.37-7.37"
+          variants={variants.path3}
+          initial="initial"
+          animate={controls}
+        />
+        <m.path
+          d="M12 19.6l8.85-8.85"
+          variants={variants.path4}
+          initial="initial"
+          animate={controls}
+        />
       </m.g>
     </m.svg>
   );

@@ -24,10 +24,13 @@ import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 import { getInitials, snakeCaseToTitleCase } from "@sycom/ui/lib/string";
 import { Facehash } from "facehash";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
+import { ThemeToggleIcon } from "@sycom/ui/components/animated/icons/theme-toggle";
+import { useTheme } from "next-themes";
 
 export function DashboardUserMenu(): React.ReactElement {
   const { user, profile } = useUser();
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
   const queryClient = useQueryClient();
   const [isSigningOut, setIsSigningOut] = React.useState(false);
 
@@ -91,10 +94,28 @@ export function DashboardUserMenu(): React.ReactElement {
             </Badge>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <AnimateIcon>
+            <DropdownMenuItem
+              closeOnClick={false}
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            >
+              <ThemeToggleIcon animate={resolvedTheme === "dark"} />
+              <span className="flex-1">Toggle theme</span>
+              <DropdownMenuShortcut>Y</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </AnimateIcon>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
         <AnimateIcon animateOnHover>
-          <DropdownMenuItem disabled={isSigningOut} onClick={handleSignOut} variant="destructive">
+          <DropdownMenuItem
+            closeOnClick={false}
+            disabled={isSigningOut}
+            onClick={handleSignOut}
+            variant="destructive"
+          >
             <LogOutIcon />
             <span>{isSigningOut ? "Signing out..." : "Log out"}</span>
             <DropdownMenuShortcut className="text-destructive group-focus/dropdown-menu-item:text-destructive">

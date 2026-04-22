@@ -70,7 +70,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <LazyMotion features={domAnimation} strict>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
             <TooltipProvider>
               <ToastProvider>
                 <AnchoredToastProvider>
