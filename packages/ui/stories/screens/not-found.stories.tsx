@@ -1,9 +1,10 @@
-import { buttonVariants } from "@sycom/ui/components/button-variants";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { Compass } from "@sycom/ui/components/animated/icons/compass";
+import { buttonVariants } from "@sycom/ui/components/button-variants";
 
-import { Link } from "./foresight-link";
-
-export default function NotFound() {
+/** Mirrors `apps/dashboard/src/components/layout/not-found.tsx` with a plain link (no TanStack Router). */
+function NotFoundScreen() {
   return (
     <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background p-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_60%)] opacity-10" />
@@ -20,10 +21,28 @@ export default function NotFound() {
           </p>
         </div>
 
-        <Link className={buttonVariants({ size: "lg", variant: "default" })} to="/dashboard">
+        <a
+          className={buttonVariants({ size: "lg", variant: "default" })}
+          href="/dashboard"
+          onClick={(event) => event.preventDefault()}
+        >
           Go home
-        </Link>
+        </a>
       </div>
     </div>
   );
 }
+
+const meta = {
+  title: "Screens/Not found",
+  component: NotFoundScreen,
+  parameters: {
+    layout: "fullscreen",
+  },
+} satisfies Meta<typeof NotFoundScreen>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

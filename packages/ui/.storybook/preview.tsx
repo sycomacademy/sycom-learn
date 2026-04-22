@@ -3,6 +3,7 @@ import type { Preview } from "@storybook/react-vite";
 
 import { ToastProvider } from "../src/components/toast";
 import "../src/styles/globals.css";
+import { domAnimation, LazyMotion } from "motion/react";
 
 const preview: Preview = {
   parameters: {
@@ -28,9 +29,11 @@ const preview: Preview = {
     }),
     (Story) => (
       <ToastProvider>
-        <div className="box-border flex w-full items-center justify-center bg-background p-8 text-foreground">
-          <Story />
-        </div>
+        <LazyMotion features={domAnimation}>
+          <div className="box-border flex w-full items-center justify-center bg-background p-8 text-foreground">
+            <Story />
+          </div>
+        </LazyMotion>
       </ToastProvider>
     ),
   ],

@@ -127,7 +127,7 @@ function VerifyEmailPage() {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <Field>
-                      <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      <FieldLabel className="text-xs text-muted-foreground">
                         Email address
                       </FieldLabel>
                       <FormControl>

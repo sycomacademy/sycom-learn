@@ -112,7 +112,7 @@ function SignUpPage() {
                   render={({ field, fieldState }) => (
                     <FormItem>
                       <Field>
-                        <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                        <FieldLabel className="text-xs text-muted-foreground">
                           First name
                         </FieldLabel>
                         <FormControl>
@@ -130,9 +130,7 @@ function SignUpPage() {
                   render={({ field, fieldState }) => (
                     <FormItem>
                       <Field>
-                        <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                          Last name
-                        </FieldLabel>
+                        <FieldLabel className="text-xs text-muted-foreground">Last name</FieldLabel>
                         <FormControl>
                           <Input autoComplete="family-name" placeholder="Lovelace" {...field} />
                         </FormControl>
@@ -149,7 +147,7 @@ function SignUpPage() {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <Field>
-                      <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      <FieldLabel className="text-xs text-muted-foreground">
                         Email address
                       </FieldLabel>
                       <FormControl>
@@ -172,9 +170,7 @@ function SignUpPage() {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <Field>
-                      <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                        Password
-                      </FieldLabel>
+                      <FieldLabel className="text-xs text-muted-foreground">Password</FieldLabel>
                       <FormControl>
                         <InputGroup>
                           <InputGroupInput

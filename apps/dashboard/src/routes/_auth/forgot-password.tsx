@@ -72,56 +72,83 @@ function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="w-full space-y-3">
-        <div className="space-y-2 text-center">
-          <h1 className="text-lg font-medium tracking-tight">Reset your password</h1>
-          <p className="text-sm text-muted-foreground">
-            Enter your email and we&apos;ll send you a link to choose a new password.
+    <div className="flex h-full w-full flex-col">
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="w-full space-y-3">
+          <div className="space-y-2 text-center">
+            <h1 className="text-lg font-medium tracking-tight">Reset your password</h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your email and we&apos;ll send you a link to choose a new password.
+            </p>
+          </div>
+
+          <Form {...form} className="flex w-full flex-col gap-4">
+            <form className="contents" onSubmit={form.handleSubmit(onSubmit)}>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <Field>
+                      <FieldLabel className="text-xs text-muted-foreground">
+                        Email address
+                      </FieldLabel>
+                      <FormControl>
+                        <Input
+                          autoComplete="username"
+                          placeholder="you@example.com"
+                          type="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                    </Field>
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                className="mt-1 w-full"
+                loading={form.formState.isSubmitting}
+                size="lg"
+                type="submit"
+              >
+                Send reset link
+              </Button>
+            </form>
+          </Form>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Remembered your password?{" "}
+            <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-in">
+              Sign in
+            </Link>
           </p>
         </div>
+      </div>
 
-        <Form {...form} className="flex w-full flex-col gap-4">
-          <form className="contents" onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <Field>
-                    <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                      Email address
-                    </FieldLabel>
-                    <FormControl>
-                      <Input
-                        autoComplete="username"
-                        placeholder="you@example.com"
-                        type="email"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                  </Field>
-                </FormItem>
-              )}
-            />
-
-            <Button
-              className="mt-1 w-full"
-              loading={form.formState.isSubmitting}
-              size="lg"
-              type="submit"
-            >
-              Send reset link
-            </Button>
-          </form>
-        </Form>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Remembered your password?{" "}
-          <Link className={cn(buttonVariants({ variant: "link" }), "px-0")} to="/sign-in">
-            Sign in
-          </Link>
+      <div className="mt-auto pt-6 text-center">
+        <p className="text-xs text-muted-foreground">
+          By continuing, you agree to our{" "}
+          <a
+            className={cn(
+              buttonVariants({ variant: "link" }),
+              "px-0 text-muted-foreground transition-colors hover:text-foreground",
+            )}
+            href={`${env.VITE_WEBSITE_URL}/terms`}
+          >
+            Terms of Service
+          </a>{" "}
+          &amp;{" "}
+          <a
+            className={cn(
+              buttonVariants({ variant: "link" }),
+              "px-0 text-muted-foreground transition-colors hover:text-foreground",
+            )}
+            href={`${env.VITE_WEBSITE_URL}/privacy`}
+          >
+            Privacy Policy
+          </a>
         </p>
       </div>
     </div>

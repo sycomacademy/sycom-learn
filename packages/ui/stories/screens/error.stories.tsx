@@ -1,16 +1,17 @@
-import { Button } from "@sycom/ui/components/button";
-import { CloudLightning } from "@sycom/ui/components/animated/icons/cloud-lightning";
-import { useRouter } from "@tanstack/react-router";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 
-export default function Error() {
-  const router = useRouter();
+import { CloudLightning } from "@sycom/ui/components/animated/icons/cloud-lightning";
+import { Button } from "@sycom/ui/components/button";
+
+/** Mirrors `apps/dashboard/src/components/layout/error.tsx` without router invalidation (demo retry delay only). */
+function RouteErrorScreen() {
   const [retrying, setRetrying] = useState(false);
 
   const onRetry = async () => {
     setRetrying(true);
     try {
-      await router.invalidate();
+      await new Promise((r) => setTimeout(r, 800));
     } finally {
       setRetrying(false);
     }
@@ -34,10 +35,24 @@ export default function Error() {
           </p>
         </div>
 
-        <Button loading={retrying} onClick={onRetry} size="lg">
+        <Button loading={retrying} onClick={() => void onRetry()} size="lg">
           {retrying ? "Retrying..." : "Try again"}
         </Button>
       </div>
     </main>
   );
 }
+
+const meta = {
+  title: "Screens/Error",
+  component: RouteErrorScreen,
+  parameters: {
+    layout: "fullscreen",
+  },
+} satisfies Meta<typeof RouteErrorScreen>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

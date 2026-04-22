@@ -71,9 +71,7 @@ export function SignInForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <Field>
-                  <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                    Email address
-                  </FieldLabel>
+                  <FieldLabel className="text-xs text-muted-foreground">Email address</FieldLabel>
                   <FormControl>
                     <Input
                       autoComplete="username"
@@ -94,10 +92,8 @@ export function SignInForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <Field>
-                  <div className="flex items-center justify-between gap-2">
-                    <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                      Password
-                    </FieldLabel>
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <FieldLabel className="text-xs text-muted-foreground">Password</FieldLabel>
                     <a
                       className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                       href="#forgot-password"
