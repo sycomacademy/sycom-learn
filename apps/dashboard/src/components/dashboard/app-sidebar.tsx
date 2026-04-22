@@ -19,14 +19,6 @@ import { Link } from "@/components/layout/foresight-link";
 import type { TRoutes } from "@/router";
 import { cn } from "@sycom/ui/lib/utils";
 
-const menuButtonIconClass = "[&_svg]:size-5";
-
-const menuButtonCollapseClass =
-  "group-data-[collapsible=icon]:size-auto! group-data-[collapsible=icon]:h-12! group-data-[collapsible=icon]:min-h-12! group-data-[collapsible=icon]:w-full! group-data-[collapsible=icon]:p-2!  group-data-[collapsible=icon]:[&>span:last-child]:hidden";
-
-const groupLabelCollapseClass =
-  "group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:opacity-100";
-
 type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -47,6 +39,23 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/** Cancel primitive icon-mode size/padding so the row keeps h-8 + p-2; width follows the narrowing rail. */
+const menuButtonStableClass = cn(
+  "group-data-[collapsible=icon]:!h-8",
+  "group-data-[collapsible=icon]:!w-full",
+  "group-data-[collapsible=icon]:!p-2",
+  "group-data-[collapsible=icon]:justify-start",
+);
+
+const menuButtonLabelFadeClass = "group-data-[collapsible=icon]:[&>span:last-child]:opacity-0";
+
+/** Cancel -mt-8 slide; keep label row height so nav items do not jump vertically. */
+const groupLabelStableClass = cn(
+  "group-data-[collapsible=icon]:!mt-0",
+  "group-data-[collapsible=icon]:opacity-0",
+  "group-data-[collapsible=icon]:pointer-events-none",
+);
 
 export function AppSidebar(): React.ReactElement {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -71,15 +80,13 @@ export function AppSidebar(): React.ReactElement {
       <SidebarContent>
         {NAV_GROUPS.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className={cn(groupLabelCollapseClass)}>
-              {group.label}
-            </SidebarGroupLabel>
+            <SidebarGroupLabel className={groupLabelStableClass}>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton
-                      className={cn(menuButtonIconClass, menuButtonCollapseClass)}
+                      className={cn(menuButtonStableClass, menuButtonLabelFadeClass)}
                       isActive={
                         item.to === "/"
                           ? pathname === "/"
