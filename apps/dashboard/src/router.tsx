@@ -16,7 +16,11 @@ import NotFound from "./components/layout/not-found";
 import RouteError from "./components/layout/route-error";
 import { getForwardedCookieHeader } from "./functions/forward-cookie";
 import { TRPCProvider } from "./lib/trpc/client";
-import { routeTree } from "./routeTree.gen";
+import { routeTree, type FileRoutesByTo } from "./routeTree.gen";
+/**
+ * Type for the routes in the dashboard.
+ */
+export type TRoutes = keyof FileRoutesByTo;
 
 export const getRouter = () => {
   const queryClient = new QueryClient({

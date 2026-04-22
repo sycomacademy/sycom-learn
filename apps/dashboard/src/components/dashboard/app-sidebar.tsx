@@ -16,14 +16,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@sycom/ui/components/sidebar";
 import { Link } from "@/components/layout/foresight-link";
+import type { TRoutes } from "@/router";
 
 type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  to: "/dashboard" | "/dashboard/settings" | "/";
+  to: TRoutes;
 };
 
 type NavGroup = {
@@ -74,7 +74,6 @@ export function AppSidebar(): React.ReactElement {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarSeparator />
 
       <SidebarContent>
         {NAV_GROUPS.map((group) => (
