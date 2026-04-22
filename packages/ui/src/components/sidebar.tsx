@@ -3,7 +3,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { PanelLeftIcon } from "lucide-react";
+import { PanelLeftCloseIcon } from "@sycom/ui/components/animated/icons/panel-left-close";
 import * as React from "react";
 import { useMediaQuery } from "@sycom/ui/hooks/use-media-query";
 import { cn } from "@sycom/ui/lib/utils";
@@ -20,6 +20,9 @@ import {
 } from "@sycom/ui/components/sheet";
 import { Skeleton } from "@sycom/ui/components/skeleton";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@sycom/ui/components/tooltip";
+import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
+import { PanelLeftOpenIcon } from "@sycom/ui/components/animated/icons/panel-left-open";
+import { MenuIcon } from "lucide-react";
 
 const SIDEBAR_COOKIE_NAME: string = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE: number = 60 * 60 * 24 * 7;
@@ -249,8 +252,8 @@ export function Sidebar({
         className={cn(
           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left"
-            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+            ? "left-0 group-data-[collapsible=offcanvas]:-left-(--sidebar-width)"
+            : "right-0 group-data-[collapsible=offcanvas]:-right-(--sidebar-width)",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -277,24 +280,28 @@ export function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>): React.ReactElement {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, isMobile, open } = useSidebar();
 
   return (
-    <Button
-      className={cn("size-7", className)}
-      data-sidebar="trigger"
-      data-slot="sidebar-trigger"
-      onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event);
-        toggleSidebar();
-      }}
-      size="icon"
-      variant="ghost"
-      {...props}
-    >
-      <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    <AnimateIcon animateOnHover>
+      <Button
+        className={cn("size-7", className)}
+        data-sidebar="trigger"
+        data-slot="sidebar-trigger"
+        onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+          onClick?.(event);
+          toggleSidebar();
+        }}
+        size="icon"
+        variant="ghost"
+        {...props}
+      >
+        {isMobile && <MenuIcon />}
+        {!isMobile && open && <PanelLeftCloseIcon />}
+        {!(isMobile || open) && <PanelLeftOpenIcon />}
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
+    </AnimateIcon>
   );
 }
 
