@@ -50,7 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export function DashboardSidebar(): React.ReactElement {
+export function AppSidebar(): React.ReactElement {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isActiveRoute = React.useCallback(
     (to: NavItem["to"]) => {
@@ -67,14 +67,11 @@ export function DashboardSidebar(): React.ReactElement {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link to="/dashboard" />}>
-              <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <LayoutDashboardIcon className="size-4" />
+            <SidebarMenuButton render={<Link to="/dashboard" />}>
+              <div className="flex size-4 shrink-0 items-center justify-center rounded-sm bg-sidebar-primary text-sidebar-primary-foreground">
+                <LayoutDashboardIcon className="size-3" />
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Sycom</span>
-                <span className="truncate text-xs">Dashboard</span>
-              </div>
+              <span className="truncate font-semibold">Sycom</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -90,10 +87,8 @@ export function DashboardSidebar(): React.ReactElement {
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton
-                      className="[&_svg]:size-5"
                       isActive={isActiveRoute(item.to)}
                       render={<Link to={item.to} />}
-                      size="lg"
                       tooltip={item.label}
                     >
                       <item.icon />
