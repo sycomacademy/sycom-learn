@@ -103,8 +103,8 @@ function SignUpPage() {
             <p className="text-sm text-muted-foreground">Get started with Sycom</p>
           </div>
 
-          <Form {...form}>
-            <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onSubmit)}>
+          <Form {...form} className="flex w-full flex-col gap-4">
+            <form className="contents" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}

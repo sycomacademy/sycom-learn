@@ -50,43 +50,41 @@ function UrlFieldStory({
   }, [form, triggerOnMount]);
 
   return (
-    <Form {...form}>
-      <div className="w-80">
-        <FormField
-          control={form.control}
-          name="site"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  Website
-                </FieldLabel>
-                <FormControl>
-                  <InputGroup>
-                    <InputGroupAddon align="inline-start">
-                      <InputGroupText>https://</InputGroupText>
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      autoComplete="url"
-                      disabled={disabled}
-                      inputMode="url"
-                      placeholder="example.com"
-                      type="text"
-                      {...field}
-                    />
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupButton aria-label="Search" type="button">
-                        <SearchIcon className="size-3.5" />
-                      </InputGroupButton>
-                    </InputGroupAddon>
-                  </InputGroup>
-                </FormControl>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
-      </div>
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="site"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                Website
+              </FieldLabel>
+              <FormControl>
+                <InputGroup>
+                  <InputGroupAddon align="inline-start">
+                    <InputGroupText>https://</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    autoComplete="url"
+                    disabled={disabled}
+                    inputMode="url"
+                    placeholder="example.com"
+                    type="text"
+                    {...field}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton aria-label="Search" type="button">
+                      <SearchIcon className="size-3.5" />
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }

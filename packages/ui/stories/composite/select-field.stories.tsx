@@ -39,38 +39,36 @@ function SelectFieldStory({
   }, [form, triggerOnMount]);
 
   return (
-    <Form {...form}>
-      <div className="w-80">
-        <FormField
-          control={form.control}
-          name="country"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field invalid={!!fieldState.error}>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  Country
-                </FieldLabel>
-                <Select
-                  disabled={disabled}
-                  onValueChange={field.onChange}
-                  value={field.value || null}
-                >
-                  <SelectTrigger aria-invalid={!!fieldState.error}>
-                    <SelectValue placeholder="Select a country" />
-                  </SelectTrigger>
-                  <SelectPopup>
-                    <SelectItem value="us">United States</SelectItem>
-                    <SelectItem value="ca">Canada</SelectItem>
-                    <SelectItem value="mx">Mexico</SelectItem>
-                    <SelectItem value="uk">United Kingdom</SelectItem>
-                  </SelectPopup>
-                </Select>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
-      </div>
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="country"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field invalid={!!fieldState.error}>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                Country
+              </FieldLabel>
+              <Select
+                disabled={disabled}
+                onValueChange={field.onChange}
+                value={field.value || null}
+              >
+                <SelectTrigger aria-invalid={!!fieldState.error}>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectItem value="us">United States</SelectItem>
+                  <SelectItem value="ca">Canada</SelectItem>
+                  <SelectItem value="mx">Mexico</SelectItem>
+                  <SelectItem value="uk">United Kingdom</SelectItem>
+                </SelectPopup>
+              </Select>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }

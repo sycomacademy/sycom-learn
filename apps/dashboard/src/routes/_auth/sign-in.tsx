@@ -116,15 +116,15 @@ function SignInPage() {
             <p className="text-sm text-muted-foreground">Sign in to your account</p>
           </div>
 
-          <Form {...form}>
-            <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onSubmit)}>
+          <Form {...form} className="flex w-full flex-col gap-4">
+            <form className="contents" onSubmit={form.handleSubmit(onSubmit)}>
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <Field>
-                      <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                      <FieldLabel className="text-xs text-muted-foreground">
                         Email address
                       </FieldLabel>
                       <FormControl>
@@ -147,10 +147,8 @@ function SignInPage() {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <Field>
-                      <div className="flex items-center justify-between gap-2">
-                        <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                          Password
-                        </FieldLabel>
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <FieldLabel className="text-xs text-muted-foreground">Password</FieldLabel>
                         <Link
                           className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                           to="/forgot-password"

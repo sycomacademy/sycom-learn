@@ -30,34 +30,32 @@ function CheckboxFieldStory({
   });
 
   return (
-    <Form {...form}>
-      <div className="w-80">
-        <FormField
-          control={form.control}
-          name="accept"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field orientation="horizontal">
-                <Checkbox
-                  checked={field.value}
-                  disabled={disabled}
-                  id="accept"
-                  onCheckedChange={(checked) => field.onChange(checked === true)}
-                />
-                <div className="grid gap-1 leading-none">
-                  <FieldLabel className="text-xs font-semibold" htmlFor="accept">
-                    {label}
-                  </FieldLabel>
-                  {description ? (
-                    <p className="text-xs text-muted-foreground">{description}</p>
-                  ) : null}
-                </div>
-              </Field>
-              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-            </FormItem>
-          )}
-        />
-      </div>
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="accept"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field orientation="horizontal">
+              <Checkbox
+                checked={field.value}
+                disabled={disabled}
+                id="accept"
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+              />
+              <div className="grid gap-1 leading-none">
+                <FieldLabel className="text-xs font-semibold" htmlFor="accept">
+                  {label}
+                </FieldLabel>
+                {description ? (
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                ) : null}
+              </div>
+            </Field>
+            <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }
@@ -127,33 +125,31 @@ function PrefsListStory() {
   ];
 
   return (
-    <Form {...form}>
-      <div className="flex w-96 flex-col gap-4">
-        {items.map((item) => (
-          <FormField
-            key={item.name}
-            control={form.control}
-            name={item.name}
-            render={({ field }) => (
-              <FormItem>
-                <Field orientation="horizontal">
-                  <Checkbox
-                    checked={field.value}
-                    id={item.name}
-                    onCheckedChange={(checked) => field.onChange(checked === true)}
-                  />
-                  <div className="grid gap-1 leading-none">
-                    <FieldLabel className="text-xs font-semibold" htmlFor={item.name}>
-                      {item.label}
-                    </FieldLabel>
-                    <p className="text-xs text-muted-foreground">{item.description}</p>
-                  </div>
-                </Field>
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
+    <Form {...form} className="flex w-full max-w-96 flex-col gap-4">
+      {items.map((item) => (
+        <FormField
+          key={item.name}
+          control={form.control}
+          name={item.name}
+          render={({ field }) => (
+            <FormItem>
+              <Field orientation="horizontal">
+                <Checkbox
+                  checked={field.value}
+                  id={item.name}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                />
+                <div className="grid gap-1 leading-none">
+                  <FieldLabel className="text-xs font-semibold" htmlFor={item.name}>
+                    {item.label}
+                  </FieldLabel>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                </div>
+              </Field>
+            </FormItem>
+          )}
+        />
+      ))}
     </Form>
   );
 }

@@ -36,44 +36,50 @@ function DialogFormStory({ submitDisabled = false }: { submitDisabled?: boolean 
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger render={<Button variant="outline" />}>Edit profile</DialogTrigger>
       <DialogPopup>
-        <form
-          className="flex max-h-full min-h-0 flex-1 flex-col"
-          onSubmit={form.handleSubmit(() => {
-            setOpen(false);
-            form.reset();
-          })}
-        >
+        <div className="flex max-h-full min-h-0 flex-1 flex-col">
           <DialogHeader>
             <DialogTitle>Profile</DialogTitle>
             <DialogDescription>Update how your name appears to others.</DialogDescription>
           </DialogHeader>
-          <DialogPanel>
-            <Form {...form}>
-              <FormField
-                control={form.control}
-                name="displayName"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <Field>
-                      <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                        Display name
-                      </FieldLabel>
-                      <FormControl>
-                        <Input autoComplete="name" placeholder="Ada Lovelace" {...field} />
-                      </FormControl>
-                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                    </Field>
-                  </FormItem>
-                )}
-              />
+          <form
+            className="contents"
+            onSubmit={form.handleSubmit(() => {
+              setOpen(false);
+              form.reset();
+            })}
+          >
+            <Form {...form} className="contents">
+              <DialogPanel>
+                <FormField
+                  control={form.control}
+                  name="displayName"
+                  render={({ field, fieldState }) => (
+                    <FormItem>
+                      <Field>
+                        <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                          Display name
+                        </FieldLabel>
+                        <FormControl>
+                          <Input autoComplete="name" placeholder="Ada Lovelace" {...field} />
+                        </FormControl>
+                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                      </Field>
+                    </FormItem>
+                  )}
+                />
+              </DialogPanel>
+              <DialogFooter>
+                <Button
+                  disabled={submitDisabled}
+                  loading={form.formState.isSubmitting}
+                  type="submit"
+                >
+                  Save
+                </Button>
+              </DialogFooter>
             </Form>
-          </DialogPanel>
-          <DialogFooter>
-            <Button disabled={submitDisabled} loading={form.formState.isSubmitting} type="submit">
-              Save
-            </Button>
-          </DialogFooter>
-        </form>
+          </form>
+        </div>
       </DialogPopup>
     </Dialog>
   );

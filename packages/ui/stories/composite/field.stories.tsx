@@ -44,32 +44,30 @@ function EmailFieldStory({
   }, [form, triggerOnMount]);
 
   return (
-    <Form {...form}>
-      <div className="w-80">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  {label}
-                </FieldLabel>
-                <FormControl>
-                  <Input
-                    autoComplete="email"
-                    disabled={disabled}
-                    placeholder={placeholder}
-                    type="email"
-                    {...field}
-                  />
-                </FormControl>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
-      </div>
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="email"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                {label}
+              </FieldLabel>
+              <FormControl>
+                <Input
+                  autoComplete="email"
+                  disabled={disabled}
+                  placeholder={placeholder}
+                  type="email"
+                  {...field}
+                />
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }
@@ -118,45 +116,43 @@ function PasswordFieldStory() {
   });
 
   return (
-    <Form {...form}>
-      <div className="w-80">
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  Password
-                </FieldLabel>
-                <FormControl>
-                  <InputGroup>
-                    <InputGroupInput
-                      autoComplete="current-password"
-                      placeholder="Enter your password"
-                      type={showPassword ? "text" : "password"}
-                      {...field}
-                    />
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupButton
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        onClick={() => setShowPassword((s) => !s)}
-                      >
-                        {showPassword ? (
-                          <EyeOffIcon className="size-3.5" />
-                        ) : (
-                          <EyeIcon className="size-3.5" />
-                        )}
-                      </InputGroupButton>
-                    </InputGroupAddon>
-                  </InputGroup>
-                </FormControl>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
-      </div>
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="password"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                Password
+              </FieldLabel>
+              <FormControl>
+                <InputGroup>
+                  <InputGroupInput
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    type={showPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowPassword((s) => !s)}
+                    >
+                      {showPassword ? (
+                        <EyeOffIcon className="size-3.5" />
+                      ) : (
+                        <EyeIcon className="size-3.5" />
+                      )}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }
@@ -179,54 +175,52 @@ function FormGroupStory() {
   });
 
   return (
-    <Form {...form}>
-      <div className="flex w-80 flex-col gap-3">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  Email address
-                </FieldLabel>
-                <FormControl>
-                  <Input
-                    autoComplete="username"
-                    placeholder="you@example.com"
-                    type="email"
-                    {...field}
-                  />
-                </FormControl>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="email"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                Email address
+              </FieldLabel>
+              <FormControl>
+                <Input
+                  autoComplete="username"
+                  placeholder="you@example.com"
+                  type="email"
+                  {...field}
+                />
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  Password
-                </FieldLabel>
-                <FormControl>
-                  <Input
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    type="password"
-                    {...field}
-                  />
-                </FormControl>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
-      </div>
+      <FormField
+        control={form.control}
+        name="password"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">
+                Password
+              </FieldLabel>
+              <FormControl>
+                <Input
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  type="password"
+                  {...field}
+                />
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }

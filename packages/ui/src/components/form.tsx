@@ -9,11 +9,34 @@ import {
   type ControllerProps,
   type FieldPath,
   type FieldValues,
+  type UseFormReturn,
 } from "react-hook-form";
 
 import { cn } from "@sycom/ui/lib/utils";
 
-const Form = FormProvider;
+function Form<
+  TFieldValues extends FieldValues,
+  TContext = unknown,
+  TTransformedValues extends FieldValues | undefined = undefined,
+>({
+  children,
+  className,
+  ...form
+}: React.PropsWithChildren<
+  UseFormReturn<TFieldValues, TContext, TTransformedValues> & { className?: string }
+>) {
+  return (
+    <FormProvider {...form}>
+      {className != null && className !== "" ? (
+        <div className={cn(className)} data-slot="form-root">
+          {children}
+        </div>
+      ) : (
+        children
+      )}
+    </FormProvider>
+  );
+}
 
 type FormFieldContextValue = {
   name: FieldPath<FieldValues>;

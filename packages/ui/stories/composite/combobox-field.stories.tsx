@@ -41,40 +41,36 @@ function ComboboxFieldStory({
   }, [form, triggerOnMount]);
 
   return (
-    <Form {...form}>
-      <div className="w-80">
-        <FormField
-          control={form.control}
-          name="fruit"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field invalid={!!fieldState.error}>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  Fruit
-                </FieldLabel>
-                <Combobox
-                  disabled={disabled}
-                  items={[...FRUITS]}
-                  onValueChange={(v) => field.onChange(v ?? "")}
-                  value={field.value ? field.value : null}
-                >
-                  <ComboboxInput aria-invalid={!!fieldState.error} placeholder="Search fruits…" />
-                  <ComboboxPopup>
-                    <ComboboxList>
-                      {(item: string) => (
-                        <ComboboxItem key={item} value={item}>
-                          {item}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxPopup>
-                </Combobox>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
-      </div>
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="fruit"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field invalid={!!fieldState.error}>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">Fruit</FieldLabel>
+              <Combobox
+                disabled={disabled}
+                items={[...FRUITS]}
+                onValueChange={(v) => field.onChange(v ?? "")}
+                value={field.value ? field.value : null}
+              >
+                <ComboboxInput aria-invalid={!!fieldState.error} placeholder="Search fruits…" />
+                <ComboboxPopup>
+                  <ComboboxList>
+                    {(item: string) => (
+                      <ComboboxItem key={item} value={item}>
+                        {item}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxPopup>
+              </Combobox>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }

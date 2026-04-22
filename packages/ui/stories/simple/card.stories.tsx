@@ -45,7 +45,7 @@ export const LoginCard: Story = {
         <CardDescription>Enter your email below to login.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="flex flex-col gap-4">
+        <form className="flex w-full flex-col gap-4">
           <div className="grid gap-2">
             <Label htmlFor="card-email">Email</Label>
             <Input id="card-email" type="email" placeholder="m@example.com" />

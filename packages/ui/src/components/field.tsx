@@ -1,7 +1,7 @@
 "use client";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
-import type React from "react";
+import * as React from "react";
 import { cn } from "@sycom/ui/lib/utils";
 
 export function Field({
@@ -58,23 +58,30 @@ export function FieldDescription({
   );
 }
 
-export function FieldError({
-  className,
-  reserveSpace,
-  ...props
-}: FieldPrimitive.Error.Props & { reserveSpace?: boolean }): React.ReactElement {
+/** Renders RHF (or other) error text. Base UI `Field.Error` only shows native/FormContext validity and drops `children`. */
+export const FieldError = React.forwardRef(function FieldError(
+  {
+    className,
+    reserveSpace,
+    children,
+    ...rest
+  }: React.ComponentProps<"div"> & { reserveSpace?: boolean },
+  ref: React.ForwardedRef<HTMLDivElement>,
+) {
+  const hasStringError = typeof children === "string" && children.trim() !== "";
   return (
-    <FieldPrimitive.Error
-      className={cn(
-        "text-xs text-destructive-foreground",
-        reserveSpace && "min-h-[1.25rem]",
-        className,
-      )}
+    <div
+      ref={ref}
+      className={cn("text-xs text-destructive-foreground", reserveSpace && "min-h-5", className)}
       data-slot="field-error"
-      {...props}
-    />
+      role={hasStringError ? "alert" : undefined}
+      {...rest}
+    >
+      {children}
+    </div>
   );
-}
+});
+FieldError.displayName = "FieldError";
 
 export const FieldControl: typeof FieldPrimitive.Control = FieldPrimitive.Control;
 export const FieldValidity: typeof FieldPrimitive.Validity = FieldPrimitive.Validity;

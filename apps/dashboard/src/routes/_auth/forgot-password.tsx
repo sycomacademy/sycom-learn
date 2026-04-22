@@ -81,8 +81,8 @@ function ForgotPasswordPage() {
           </p>
         </div>
 
-        <Form {...form}>
-          <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onSubmit)}>
+        <Form {...form} className="flex w-full flex-col gap-4">
+          <form className="contents" onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="email"

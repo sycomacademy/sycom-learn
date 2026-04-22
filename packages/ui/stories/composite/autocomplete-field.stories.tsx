@@ -41,44 +41,40 @@ function AutocompleteFieldStory({
   }, [form, triggerOnMount]);
 
   return (
-    <Form {...form}>
-      <div className="w-80">
-        <FormField
-          control={form.control}
-          name="city"
-          render={({ field, fieldState }) => (
-            <FormItem>
-              <Field invalid={!!fieldState.error}>
-                <FieldLabel className="text-xs font-semibold text-muted-foreground">
-                  City
-                </FieldLabel>
-                <Autocomplete
-                  disabled={disabled}
-                  items={[...CITIES]}
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <AutocompleteInput
-                    aria-invalid={!!fieldState.error}
-                    placeholder="Start typing…"
-                    showTrigger
-                  />
-                  <AutocompletePopup>
-                    <AutocompleteList>
-                      {(item: string) => (
-                        <AutocompleteItem key={item} value={item}>
-                          {item}
-                        </AutocompleteItem>
-                      )}
-                    </AutocompleteList>
-                  </AutocompletePopup>
-                </Autocomplete>
-                <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-              </Field>
-            </FormItem>
-          )}
-        />
-      </div>
+    <Form {...form} className="flex w-full max-w-80 flex-col gap-4">
+      <FormField
+        control={form.control}
+        name="city"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field invalid={!!fieldState.error}>
+              <FieldLabel className="text-xs font-semibold text-muted-foreground">City</FieldLabel>
+              <Autocomplete
+                disabled={disabled}
+                items={[...CITIES]}
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <AutocompleteInput
+                  aria-invalid={!!fieldState.error}
+                  placeholder="Start typing…"
+                  showTrigger
+                />
+                <AutocompletePopup>
+                  <AutocompleteList>
+                    {(item: string) => (
+                      <AutocompleteItem key={item} value={item}>
+                        {item}
+                      </AutocompleteItem>
+                    )}
+                  </AutocompleteList>
+                </AutocompletePopup>
+              </Autocomplete>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
     </Form>
   );
 }
