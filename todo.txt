@@ -1,4 +1,4 @@
-- fix auth permissions {started}
+-  auth & permissions {started}
     - org admin and teachers dont have right roles
     - when we have more tables, we need to add more permissions.
 
@@ -16,9 +16,13 @@
 - logging {started}
     - make logs readable and searchable
 
-- SEO and performance
+- SEO and performance {started}
     - metadata,ogs, sitemap, robots.txt, etc.
     - optimize media like <Image /> component in nextjs
     - Proper suspense handling
     - FCP, LCP, TTFB etc. and lighthouse scores stuff
     - bundle size optimization and request waterfalls
+
+- cool features
+    - keyboard shortcuts
+    - 404 page stuff
