@@ -22,6 +22,13 @@
       "when": 1776804966646,
       "tag": "0002_talented_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776940070973,
+      "tag": "0003_classy_starjammers",
+      "breakpoints": true
     }
   ]
 }
