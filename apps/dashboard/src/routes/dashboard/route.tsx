@@ -1,13 +1,10 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { getSidebarStateFromCookie } from "@/functions/sidebar-state-cookie";
 import { sessionQueryOptions } from "@/lib/auth/session";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 export const Route = createFileRoute("/dashboard")({
-  beforeLoad: async ({
-    context,
-    location,
-  }): Promise<{ profile: AppRouterOutputs["profile"]["get"] }> => {
+  beforeLoad: async ({ context, location }) => {
     const session = await context.queryClient.ensureQueryData(sessionQueryOptions());
     if (!session) {
       throw redirect({
@@ -15,17 +12,21 @@ export const Route = createFileRoute("/dashboard")({
         search: { redirect: location.href },
       });
     }
+  },
+  loader: async ({ context }) => {
     const profile = await context.queryClient.ensureQueryData(
       context.trpc.profile.get.queryOptions(),
     );
-    return { profile };
+    const sidebarDefaultOpen = getSidebarStateFromCookie() ?? true;
+    return { profile, sidebarDefaultOpen };
   },
   component: DashboardLayout,
 });
 
 function DashboardLayout() {
+  const { sidebarDefaultOpen } = Route.useLoaderData();
   return (
-    <DashboardShell>
+    <DashboardShell defaultOpen={sidebarDefaultOpen}>
       <Outlet />
     </DashboardShell>
   );

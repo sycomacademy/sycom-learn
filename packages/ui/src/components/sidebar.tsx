@@ -32,7 +32,7 @@ const SIDEBAR_WIDTH_ICON: string = "3.5rem";
 const SIDEBAR_KEYBOARD_SHORTCUT: string = "b";
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground motion-reduce:transition-none [&>span:last-child]:truncate [&>span:last-child]:transition-opacity [&>span:last-child]:duration-150 [&>span:last-child]:ease-out motion-reduce:[&>span:last-child]:transition-none [&>svg]:shrink-0 [&>svg:not([class*='size-'])]:size-4",
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground motion-reduce:transition-none [&>span:last-child]:truncate [&>span:last-child]:transition-opacity [&>span:last-child]:duration-150 [&>span:last-child]:ease-out motion-reduce:[&>span:last-child]:transition-none [&>svg]:shrink-0 [&>svg:not([class*='size-'])]:size-4",
   {
     defaultVariants: {
       size: "default",
@@ -239,7 +239,7 @@ export function Sidebar({
       {/* This is what handles the sidebar gap on desktop */}
       <div
         className={cn(
-          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
           "group-data-[collapsible=offcanvas]:w-0",
           "group-data-[side=right]:rotate-180",
           variant === "floating" || variant === "inset"
@@ -250,7 +250,7 @@ export function Sidebar({
       />
       <div
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none md:flex",
+          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none md:flex",
           side === "left"
             ? "left-0 group-data-[collapsible=offcanvas]:-left-(--sidebar-width)"
             : "right-0 group-data-[collapsible=offcanvas]:-right-(--sidebar-width)",
@@ -447,7 +447,7 @@ export function SidebarGroupLabel({
 }: useRender.ComponentProps<"div">): React.ReactElement {
   const defaultProps = {
     className: cn(
-      "flex h-8 shrink-0 items-center rounded-lg px-2 text-xs font-medium text-sidebar-foreground ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] focus-visible:ring-2 motion-reduce:transition-none [&>svg]:size-4 [&>svg]:shrink-0",
+      "flex h-8 shrink-0 items-center rounded-lg px-2 text-xs font-medium text-sidebar-foreground ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 motion-reduce:transition-none [&>svg]:size-4 [&>svg]:shrink-0",
       "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
       className,
     ),

@@ -8,11 +8,11 @@ export function useDashboardContext() {
 }
 
 export function useUser() {
-  const { profile } = useDashboardContext();
+  const { profile } = dashboardRouteApi.useLoaderData();
   return profile as AppRouterOutputs["profile"]["get"];
 }
 
-// export function useUpdateUserProfileMutation() {
+// export function useUpdateUserProfileMutatioan() {
 //   const trpc = useTRPC();
 //   const queryClient = useQueryClient();
 //   const profileQueryKey = trpc.profile.get.queryKey();

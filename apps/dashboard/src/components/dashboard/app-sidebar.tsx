@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { BlocksIcon } from "lucide-react";
 import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
+import { SettingsIcon } from "@sycom/ui/components/animated/icons/settings";
 import {
   Sidebar,
   SidebarContent,
@@ -18,9 +18,12 @@ import {
 import { Link } from "@/components/layout/foresight-link";
 import type { TRoutes } from "@/router";
 import { cn } from "@sycom/ui/lib/utils";
+import { AnimateIcon, type IconProps } from "@sycom/ui/components/animated/icons/icon";
+
+type NavIcon = React.ComponentType<IconProps<never>>;
 
 type NavItem = {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: NavIcon;
   label: string;
   to: TRoutes;
 };
@@ -35,14 +38,14 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Main",
     items: [
       { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" },
-      { icon: BlocksIcon, label: "Settings", to: "/dashboard/settings" },
+      { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
     ],
   },
 ];
 
 /** Cancel primitive icon-mode size/padding so the row keeps h-8 + p-2; width follows the narrowing rail. */
 const menuButtonStableClass = cn(
-  "group-data-[collapsible=icon]:!h-8",
+  "group-data-[collapsible=icon]:!h-12",
   "group-data-[collapsible=icon]:!w-full",
   "group-data-[collapsible=icon]:!p-2",
   "group-data-[collapsible=icon]:justify-start",
@@ -52,7 +55,7 @@ const menuButtonLabelFadeClass = "group-data-[collapsible=icon]:[&>span:last-chi
 
 /** Cancel -mt-8 slide; keep label row height so nav items do not jump vertically. */
 const groupLabelStableClass = cn(
-  "group-data-[collapsible=icon]:!mt-0",
+  "group-data-[collapsible=icon]:mt-0",
   "group-data-[collapsible=icon]:opacity-0",
   "group-data-[collapsible=icon]:pointer-events-none",
 );
@@ -98,19 +101,24 @@ export function AppSidebar(): React.ReactElement {
             <SidebarGroupLabel className={groupLabelStableClass}>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      className={cn(menuButtonStableClass, menuButtonLabelFadeClass)}
-                      isActive={activeTo === item.to}
-                      render={<Link to={item.to} />}
-                      tooltip={item.label}
-                    >
-                      <item.icon className="size-5" />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {group.items.map(({ to, label, icon: Icon }) => {
+                  return (
+                    <SidebarMenuItem key={label}>
+                      <AnimateIcon animateOnHover>
+                        <SidebarMenuButton
+                          className={cn(menuButtonStableClass, menuButtonLabelFadeClass)}
+                          isActive={activeTo === to}
+                          render={<Link to={to} />}
+                          tooltip={label}
+                          size="lg"
+                        >
+                          <Icon className="size-6" />
+                          <span>{label}</span>
+                        </SidebarMenuButton>
+                      </AnimateIcon>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

@@ -4,8 +4,8 @@ import { m, type Variants } from "motion/react";
 
 import {
   getVariants,
-  IconWrapper,
   useAnimateIconContext,
+  IconWrapper,
   type IconProps,
 } from "@sycom/ui/components/animated/icons/icon";
 
@@ -13,10 +13,35 @@ type SettingsProps = IconProps<keyof typeof animations>;
 
 const animations = {
   default: {
-    path1: {
-      initial: { rotate: 0 },
-      animate: { rotate: 30, transition: { duration: 0.55, ease: "easeInOut" } },
+    group: {
+      initial: {
+        rotate: 0,
+      },
+      animate: {
+        rotate: [0, 90, 180],
+        transition: {
+          duration: 1.25,
+          ease: "easeInOut",
+        },
+      },
     },
+    path: {},
+    circle: {},
+  } satisfies Record<string, Variants>,
+  rotate: {
+    group: {
+      initial: {
+        rotate: 0,
+      },
+      animate: {
+        rotate: 360,
+        transition: {
+          duration: 2,
+          ease: "linear",
+        },
+      },
+    },
+    path: {},
     circle: {},
   } satisfies Record<string, Variants>,
 } as const;
@@ -38,21 +63,22 @@ function IconComponent({ size, ...props }: SettingsProps) {
       strokeLinejoin="round"
       {...props}
     >
-      <m.path
-        d="M12.22 2h-.44a2 2 0 0 0-2 1.72l-.09.66a2 2 0 0 1-1.43 1.66 2 2 0 0 1-2.02-.43l-.49-.46a2 2 0 0 0-2.83 0l-.31.31a2 2 0 0 0 0 2.83l.46.49a2 2 0 0 1 .43 2.02 2 2 0 0 1-1.66 1.43l-.66.09a2 2 0 0 0-1.72 2v.44a2 2 0 0 0 1.72 2l.66.09a2 2 0 0 1 1.66 1.43 2 2 0 0 1-.43 2.02l-.46.49a2 2 0 0 0 0 2.83l.31.31a2 2 0 0 0 2.83 0l.49-.46a2 2 0 0 1 2.02-.43 2 2 0 0 1 1.43 1.66l.09.66a2 2 0 0 0 2 1.72h.44a2 2 0 0 0 2-1.72l.09-.66a2 2 0 0 1 1.43-1.66 2 2 0 0 1 2.02.43l.49.46a2 2 0 0 0 2.83 0l.31-.31a2 2 0 0 0 0-2.83l-.46-.49a2 2 0 0 1-.43-2.02 2 2 0 0 1 1.66-1.43l.66-.09a2 2 0 0 0 1.72-2v-.44a2 2 0 0 0-1.72-2l-.66-.09a2 2 0 0 1-1.66-1.43 2 2 0 0 1 .43-2.02l.46-.49a2 2 0 0 0 0-2.83l-.31-.31a2 2 0 0 0-2.83 0l-.49.46a2 2 0 0 1-2.02.43 2 2 0 0 1-1.43-1.66l-.09-.66A2 2 0 0 0 12.22 2z"
-        variants={variants.path1}
-        initial="initial"
-        animate={controls}
-        style={{ originX: "50%", originY: "50%", transformBox: "fill-box" }}
-      />
-      <m.circle
-        cx={12}
-        cy={12}
-        r={3}
-        variants={variants.circle}
-        initial="initial"
-        animate={controls}
-      />
+      <m.g variants={variants.group} initial="initial" animate={controls}>
+        <m.path
+          d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+          variants={variants.path}
+          initial="initial"
+          animate={controls}
+        />
+        <m.circle
+          cx={12}
+          cy={12}
+          r={3}
+          variants={variants.circle}
+          initial="initial"
+          animate={controls}
+        />
+      </m.g>
     </m.svg>
   );
 }
