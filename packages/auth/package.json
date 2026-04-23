@@ -13,7 +13,8 @@
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@better-auth/infra": "^0.2.4",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@sycom/config": "workspace:*",
+    "@types/bun": "catalog:",
     "typescript": "^6.0.3"
   }
 }

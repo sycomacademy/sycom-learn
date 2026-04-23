@@ -31,6 +31,7 @@
     "dev": "turbo -F dashboard -F server dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
+    "test": "turbo test",
     "storybook:ui": "turbo -F @sycom/ui storybook",
     "build-storybook:ui": "turbo -F @sycom/ui build-storybook",
     "dev:dashboard": "turbo -F dashboard dev",
@@ -40,8 +41,6 @@
     "db:studio": "turbo -F @sycom/db db:studio",
     "db:generate": "turbo -F @sycom/db db:generate",
     "db:migrate": "turbo -F @sycom/db db:migrate",
-    "test": "turbo test",
-    "test:server": "turbo -F server test",
     "check": "oxlint && oxfmt --write",
     "dev:emails": "turbo -F @sycom/emails dev",
     "update-deps": "bun run scripts/update-deps.ts && bun install"

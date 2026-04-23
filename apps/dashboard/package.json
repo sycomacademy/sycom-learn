@@ -7,7 +7,8 @@
     "serve": "vite preview",
     "dev": "vite dev",
     "build:analyze": "BUNDLE_ANALYZE=true vite build",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",
@@ -46,6 +47,7 @@
     "@tanstack/react-router-devtools": "^1.166.13",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
+    "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^5.2.0",
