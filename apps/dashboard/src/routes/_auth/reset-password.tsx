@@ -17,26 +17,28 @@ import { createFileRoute, redirect, useRouter, useSearch } from "@tanstack/react
 import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 
 const resetPasswordSearchSchema = z.object({
-  token: z.string().optional(),
-  error: z.string().optional(),
+  token: z.optional(z.string()),
+  error: z.optional(z.string()),
 });
 
 const resetPasswordSchema = z
   .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z.string().check(z.minLength(8, "Password must be at least 8 characters")),
     confirmPassword: z.string(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+  .check(
+    z.refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    }),
+  );
 
 type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 

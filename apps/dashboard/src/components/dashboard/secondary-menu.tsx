@@ -4,16 +4,16 @@ import { useRouterState } from "@tanstack/react-router";
 import { Link } from "@/components/layout/foresight-link";
 import type { TRoutes } from "@/router";
 
-export interface SecondaryMenuItem {
+export type SecondaryMenuItem = {
   path: TRoutes;
   label: string;
-}
+};
 
-interface SecondaryMenuProps {
+type SecondaryMenuProps = {
   label: string;
   base: TRoutes;
   items: SecondaryMenuItem[];
-}
+};
 
 function getActivePath(pathname: string, base: string, items: SecondaryMenuItem[]): string {
   const active = items.find(({ path }) => {

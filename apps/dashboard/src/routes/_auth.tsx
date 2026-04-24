@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
-import { z } from "zod";
+import * as z from "zod/mini";
 
 import { AuthLeftPanel } from "@/components/auth/left-panel";
 import { Link } from "@/components/layout/foresight-link";
@@ -7,7 +7,7 @@ import { resolvePostAuthRedirect } from "@/lib/auth/auth-redirect";
 import { sessionQueryOptions } from "@/lib/auth/session";
 
 const authSearchSchema = z.object({
-  redirect: z.string().optional(),
+  redirect: z.optional(z.string()),
 });
 
 export const Route = createFileRoute("/_auth")({

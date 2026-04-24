@@ -18,11 +18,11 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import GlobalError from "@/components/layout/global-error";
 
 import appCss from "../index.css?url";
-export interface RouterAppContext {
+export type RouterAppContext = {
   trpc: TRPCOptionsProxy<AppRouter>;
   queryClient: QueryClient;
   router: RegisteredRouter;
-}
+};
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({

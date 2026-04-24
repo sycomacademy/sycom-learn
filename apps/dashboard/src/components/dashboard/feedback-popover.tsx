@@ -10,7 +10,7 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { MessageSquareMoreIcon } from "@sycom/ui/components/animated/icons/message-square-more";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import * as z from "zod/mini";
 import { useUser } from "@/hooks/use-user";
 import { useTRPCClient } from "@/lib/trpc/client";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
@@ -18,9 +18,11 @@ import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
 const submitFeedbackSchema = z.object({
   message: z
     .string()
-    .trim()
-    .min(5, "Feedback must be at least 5 characters")
-    .max(2000, "Feedback must be less than 2000 characters"),
+    .check(
+      z.trim(),
+      z.minLength(5, "Feedback must be at least 5 characters"),
+      z.maxLength(2000, "Feedback must be less than 2000 characters"),
+    ),
 });
 type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
 

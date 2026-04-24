@@ -6,7 +6,7 @@ import { cn } from "@sycom/ui/lib/utils";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { MailCheckIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
+import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
@@ -14,8 +14,8 @@ import { authClient } from "@/lib/auth/auth-client";
 const RESEND_COOLDOWN_SECONDS = 60;
 
 const checkEmailSearchSchema = z.object({
-  email: z.email().optional(),
-  flow: z.enum(["verify", "reset"]).optional(),
+  email: z.optional(z.email()),
+  flow: z.optional(z.enum(["verify", "reset"])),
 });
 
 export const Route = createFileRoute("/_auth/check-email")({

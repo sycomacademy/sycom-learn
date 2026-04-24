@@ -19,7 +19,7 @@ import { createFileRoute, useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import z from "zod";
+import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
@@ -28,8 +28,8 @@ import { SESSION_QUERY_KEY, sessionQueryOptions } from "@/lib/auth/session";
 
 const signInSchema = z.object({
   email: z.email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  rememberMe: z.boolean().optional(),
+  password: z.string().check(z.minLength(8, "Password must be at least 8 characters")),
+  rememberMe: z.optional(z.boolean()),
 });
 
 type SignInInput = z.infer<typeof signInSchema>;

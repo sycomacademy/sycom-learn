@@ -17,7 +17,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import z from "zod";
+import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
@@ -25,14 +25,18 @@ import { authClient } from "@/lib/auth/auth-client";
 const signUpSchema = z.object({
   firstName: z
     .string()
-    .min(1, "First name is required")
-    .min(3, "First name must be at least 3 characters"),
+    .check(
+      z.minLength(1, "First name is required"),
+      z.minLength(3, "First name must be at least 3 characters"),
+    ),
   lastName: z
     .string()
-    .min(1, "Last name is required")
-    .min(3, "Last name must be at least 3 characters"),
+    .check(
+      z.minLength(1, "Last name is required"),
+      z.minLength(3, "Last name must be at least 3 characters"),
+    ),
   email: z.email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().check(z.minLength(8, "Password must be at least 8 characters")),
 });
 
 type SignUpInput = z.infer<typeof signUpSchema>;

@@ -10,7 +10,7 @@ import { cn } from "@sycom/ui/lib/utils";
 import { createFileRoute, useRouter, useSearch } from "@tanstack/react-router";
 import { TriangleAlertIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
@@ -18,7 +18,7 @@ import { authClient } from "@/lib/auth/auth-client";
 const verifyEmailErrorEnum = z.enum(["token_expired", "invalid_token", "unknown"]);
 
 const verifyEmailSearchSchema = z.object({
-  error: verifyEmailErrorEnum.optional(),
+  error: z.optional(verifyEmailErrorEnum),
 });
 
 const resendSchema = z.object({
