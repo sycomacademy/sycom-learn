@@ -6,23 +6,13 @@ This file provides guidance to agents (Claude Code, Cursor, OpenCode, etc.) when
 
 These rules override default agent behavior. Apply them by default; only deviate if the user explicitly asks for something different.
 
-1. **Never fetch derivable data.** If auth state or any other value is resolvable via router context, a parent route's `beforeLoad`/`loader`, or existing query cache, read it from there — do not issue a second network call. In the dashboard app, the session is fetched lazily inside the `_auth` and `_authenticated` layouts (both call `ensureQueryData(sessionQueryOptions())` — see [`apps/dashboard/src/lib/auth/session.ts`](apps/dashboard/src/lib/auth/session.ts)); within `_authenticated`'s subtree use [`useAuthenticatedContext`](apps/dashboard/src/lib/auth/authenticated-context.ts) / [`useUser`](apps/dashboard/src/lib/auth/authenticated-context.ts) (backed by `trpc.profile.get` + route context) instead of ad-hoc `getRouteApi` calls. Do not call `authClient.useSession()` for layout/session state and do not refetch the session query on every navigation.
+1. **Use a standard tRPC router file shape.** In each file under `apps/server/src/trpc/routers/`, define imports first, then all Zod schemas and inferred types at the top, then export the router object. Prefer named schemas/types (for example `updateProfileSchema`, `UpdateProfileInput`, `ProfileGetOutput`) over inline `z.object(...)` inside procedure chains so the contract is obvious and reusable.
 
-2. **Prefer route `loader` / `beforeLoad` over in-component queries for initial data.** Components should render data that's already been fetched by the route. Reserve `useQuery` for interactive refetches, mutations' optimistic invalidation, or data that genuinely loads after mount.
+2. **All DB interactions go through query modules.** In the server app, route handlers and tRPC routers must not issue raw Drizzle queries directly. Put database reads/writes in `packages/db/src/queries/*.ts`, export them via `packages/db/src/queries/index.ts`, and call those functions from routers/server code. Keep auth provider calls (e.g. Better Auth APIs) in the router layer; keep SQL in the DB query layer.
 
-3. **Cache aggressively through React Query.** The QueryClient default is `staleTime: 2 * 60 * 1000` (2 min) with `refetchOnWindowFocus: false`. Session uses a 5 min override via `sessionQueryOptions()` in [`apps/dashboard/src/lib/auth/session.ts`](apps/dashboard/src/lib/auth/session.ts). Route loaders and `beforeLoad` must fetch through `queryClient.ensureQueryData(...)` so preloads and navigations hit the cache instead of the network. With `defaultPreloadStaleTime: 0`, TanStack Router always invokes the loader, but React Query's `staleTime` decides whether a fetch actually happens. **Session cache writes:** after sign-in, the standard is `removeQueries(SESSION_QUERY_KEY)` then `prefetchQuery(sessionQueryOptions())` before navigating so the next guarded `beforeLoad` hits a warm cache; otherwise prefer `invalidateQueries` when session might have changed. Per-query staleTime overrides are allowed but should be co-located in a query options factory, never sprinkled at call sites.
+3. **Drizzle: migrations over push.** For schema changes, default to `bun run db:generate` then `bun run db:migrate` so the database stays aligned with committed migration history. Do not suggest or use `bun run db:push` unless the user explicitly asks for it (push bypasses migration files and can drift from `migrate`).
 
-4. **Lazy-load heavy or non-critical dependencies.** Animation libraries, markdown renderers, chart libraries, and below-the-fold components should be `React.lazy`'d so they stay out of the initial bundle. For `motion`, prefer `m` + `<LazyMotion features={domAnimation}>` over the default `motion` component.
-
-5. **Route `loader` / `beforeLoad` are isomorphic (TanStack Start).** They run on the server during SSR and on the client during navigations. Never put secrets, server-only `process.env`, direct database access, or server-only imports in route modules — all server-only work MUST go through `createServerFn` handlers called from loaders/`beforeLoad`. Avoid hydration mismatches for browser-only values (use a stable SSR fallback, `useEffect`, `ClientOnly`, or `useHydrated`).
-
-6. **tRPC for app data; Start server functions for session on the dashboard.** Domain APIs and persistence go through the Hono tRPC router. Session resolution for routing and layout guards uses `createServerFn` plus Start middleware (see `apps/dashboard/src/functions/`, `apps/dashboard/src/middleware/`). Hono resolves sessions in-process via `auth.api.getSession({ headers })` in `apps/server/src/trpc/context.ts`; Start resolves sessions by forwarding the incoming `request.headers` to Hono via `authClient.getSession` (same source of truth, no duplicate DB access in the Start process). Do not duplicate the same server work in both places.
-
-7. **Compose middleware; do not inline cross-cutting logic.** Wrap shared concerns (auth, logging, authorization) in `createMiddleware()` from `@tanstack/react-start`, attach chains with `.middleware([...])`, and pass data with `next({ context })`. For role or permission checks, prefer middleware factories that take parameters and compose on top of `authMiddleware` (for example `authorizationMiddleware({ course: ["read"] })`). Do not add global request or global server-function middleware (`src/start.ts` / `createStart`) unless the team explicitly requests it.
-
-8. **File conventions for Start boundaries.** `createServerFn` exports live under `apps/dashboard/src/functions/`. Shared Start middleware lives under `apps/dashboard/src/middleware/`. Server-only helpers that must never ship to the client should live in `*.server.ts` files and only be imported from server function handlers (or other server-only modules).
-
-9. **Forms follow the sign-in form template.** The form in [`apps/dashboard/src/routes/_auth/sign-in.tsx`](apps/dashboard/src/routes/_auth/sign-in.tsx) (lines 28–255) is the canonical shape for every form in the dashboard. Auth forms live inline in their route files alongside the schema; only extract a form into `components/` when it's reused or embedded inside a larger, non-form page. New forms mirror the sign-in pattern unless there's a concrete reason not to:
+4. **Forms follow the sign-in form template.** The form in [`apps/dashboard/src/routes/_auth/sign-in.tsx`](apps/dashboard/src/routes/_auth/sign-in.tsx) (lines 28–255) is the canonical shape for every form in the dashboard. Auth forms live inline in their route files alongside the schema; only extract a form into `components/` when it's reused or embedded inside a larger, non-form page. New forms mirror the sign-in pattern unless there's a concrete reason not to:
    - **Zod schema + inferred type at the top of the file**: `const xSchema = z.object({ ... })` followed by `type XInput = z.infer<typeof xSchema>`. Keep it co-located with the form; don't hoist it to a shared module until a second caller exists.
    - **`useForm` with `zodResolver(xSchema)` and explicit `defaultValues`** for every field (no implicit `undefined`).
    - **shadcn `Form` composition for every field**: `FormField` → `FormItem` → `Field` → `FieldLabel` + `FormControl` (wrapping the input) + `FieldError reserveSpace` fed by `fieldState.error?.message`. Use `InputGroup` for affordances like password toggles; don't hand-roll absolute-positioned buttons over inputs.
@@ -30,13 +20,9 @@ These rules override default agent behavior. Apply them by default; only deviate
    - **Loading state comes from `form.formState.isSubmitting`**, wired into the submit button's `loading` prop. Do not add a parallel `useState` for pending state. Do not wrap the call in `useMutation` just to get `isPending` — only reach for `useMutation` when you need cache invalidation co-location, global `MutationCache.onError`, or multiple subscribers observing the same write.
    - **Accessibility defaults carried over**: `autoComplete` on every credential/identity input, `aria-label` on icon-only buttons, `htmlFor` pairing on checkboxes via `FieldLabel`.
 
-10. **Drizzle: migrations over push.** For schema changes, default to `bun run db:generate` then `bun run db:migrate` so the database stays aligned with committed migration history. Do not suggest or use `bun run db:push` unless the user explicitly asks for it (push bypasses migration files and can drift from `migrate`).
+5. **Prefer route `loader` / `beforeLoad` over in-component queries for initial data.**
 
-11. **Two tRPC clients in the dashboard, one source of procedures.** Browser components use `useTRPC()` / `useTRPCClient()` from `@/lib/trpc/client` (the `createTRPCContext` instance wired through `TRPCProvider`). Server functions that need to call procedures use `createServerTRPC(headers)` from `@/lib/trpc/server` — instantiate it inside the handler, pass the incoming `request.headers`, and the helper forwards the `cookie` header so protected procedures see the session. Never instantiate `createTRPCClient` ad-hoc inside a server function; never import `appRouter` for in-process calls (Hono stays the single execution path for procedures).
-
-12. **All DB interactions go through query modules.** In the server app, route handlers and tRPC routers must not issue raw Drizzle queries directly. Put database reads/writes in `packages/db/src/queries/*.ts`, export them via `packages/db/src/queries/index.ts`, and call those functions from routers/server code. Keep auth provider calls (e.g. Better Auth APIs) in the router layer; keep SQL in the DB query layer.
-
-13. **Use a standard tRPC router file shape.** In each file under `apps/server/src/trpc/routers/`, define imports first, then all Zod schemas and inferred types at the top, then export the router object. Prefer named schemas/types (for example `updateProfileSchema`, `UpdateProfileInput`, `ProfileGetOutput`) over inline `z.object(...)` inside procedure chains so the contract is obvious and reusable.
+6. **Never fetch derivable data.**
 
 ## Commands
 
@@ -101,23 +87,27 @@ flowchart LR
 
 ### Apps
 
-- **`apps/dashboard`** - Authenticated TanStack Start app (SSR + TanStack Router + tRPC client). Session and route guards use `createServerFn` / Start middleware; product data uses tRPC against the Hono server. Vite dev server on port 3000. Path alias: `@/` → `src/`.
-- **`apps/website`** - Public-facing website for SEO/marketing pages. React + TanStack Router, no auth dependencies. Vite dev server on port 3002. Uses `@` path alias for `src/`.
-- **`apps/server`** - Hono HTTP server with hot reload (`bun run --hot`). Runs on port 3001. Mounts Better Auth at `/api/auth/*` and tRPC at `/trpc/*`. tRPC panel available at `/docs` in non-production environments. Entry point: `src/index.ts`. tRPC routers and middleware live under `src/trpc/` (`routers/_app.ts` merges sub-routers). `src/utils/` for server-only helpers.
+- **`apps/dashboard`** - Authenticated TanStack Start app. Uses SSR, TanStack Router, and a tRPC client. Session and route guards use `createServerFn` and Start middleware. Product data is fetched via tRPC from the Hono server. Vite dev server on port 3000. Path alias: `@/` → `src/`.
+- **`apps/website`** - Public-facing website for SEO and marketing. React + TanStack Router. No auth dependencies. Vite dev server on port 3002. Uses `@` path alias for `src/`.
+- **`apps/server`** - Hono HTTP server with hot reload (`bun run --hot`). Runs on port 3001. Mounts Better Auth at `/api/auth/*` and tRPC at `/trpc/*`. Acts as the single source of truth for backend logic and database access.
 
 ### Packages
 
-- **`@sycom/db`** - Drizzle ORM setup with Neon serverless driver. Schema files in `src/schema/`. Drizzle config reads `.env` from `apps/server/.env`.
-- **`@sycom/auth`** - Better Auth configuration with Drizzle adapter and email/password auth. The `auth` instance is imported only by the Hono server (HTTP auth routes + tRPC context). The dashboard imports `@sycom/auth/permissions` (pure access-control constants) for its `authClient` plugin config — not the `auth` instance itself.
-- **`@sycom/env`** - Type-safe env validation via `@t3-oss/env-core`. Exports `env` from `./server` (DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, CORS_ORIGIN, NODE_ENV) and `./web` (`VITE_SERVER_URL`, `VITE_WEBSITE_URL`, `VITE_DASHBOARD_URL`).
-- **`@sycom/ui`** - Shared shadcn/ui components (style: `base-lyra`). Import as `@sycom/ui/components/<name>`. Global styles in `src/styles/globals.css`.
-- **`@sycom/config`** - Shared base tsconfig.
+- **`@sycom/db`** - Drizzle ORM setup with Neon serverless driver. Contains schema definitions and database query modules.
+- **`@sycom/auth`** - Better Auth configuration. Imported only by the Hono server for HTTP auth routes and tRPC context.
+- **`@sycom/env`** - Type-safe environment variable validation via `@t3-oss/env-core`.
+- **`@sycom/ui`** - Shared shadcn/ui components (`base-lyra` style).
+- **`@sycom/config`** - Shared base TypeScript configurations.
 
 ### Key data flow
 
 The **Hono server** (`apps/server`) owns Better Auth and the database. `createContext()` in [`apps/server/src/trpc/context.ts`](apps/server/src/trpc/context.ts) resolves the session from request headers via `auth.api.getSession` and exposes `db` to procedures.
 
-The **dashboard** talks to that server over HTTP for both session and tRPC. For tRPC, the browser uses `useTRPC()` from `@/lib/trpc/client` (httpBatchLink to `VITE_SERVER_URL/trpc` with `credentials: "include"`); server functions use `createServerTRPC(headers)` from `@/lib/trpc/server` (per-request httpBatchLink that forwards the incoming `cookie` header). For session, TanStack Start server functions forward the incoming `request.headers` to Hono via `authClient.getSession` in `apps/dashboard/src/middleware/auth.ts` (`sessionMiddleware` / `requireSessionMiddleware`); the canonical session server function is `getSession` in `apps/dashboard/src/functions/get-session.ts`. The session query is centralised behind `sessionQueryOptions()` in `apps/dashboard/src/lib/auth/session.ts` (5 min staleTime). Protected tRPC procedures still enforce auth on the server regardless of any client-side checks.
+The **dashboard** talks to that server over HTTP for both session and tRPC:
+
+- **Client tRPC**: Browser components use `useTRPC()` from `@/lib/trpc/client` (`httpBatchLink` to `VITE_SERVER_URL/trpc` with `credentials: "include"`).
+- **Server tRPC**: Server functions use the `serverTRPC` client from `@/lib/trpc/server`. It uses `getForwardedCookieHeader()` to automatically forward the incoming `cookie` header to Hono, ensuring protected procedures see the user's session.
+- **Session**: TanStack Start server functions forward the incoming `request.headers` to Hono via `authClient.getSession` in `apps/dashboard/src/middleware/auth.ts`. The canonical session server function is `getSession` in `apps/dashboard/src/functions/get-session.ts`. Protected tRPC procedures still enforce auth on the server regardless of any client-side checks.
 
 ### shadcn/ui setup
 
@@ -135,4 +125,4 @@ Oxlint (with typescript, unicorn, oxc, react, jsx-a11y plugins) and Oxfmt. Pre-c
 
 ## Environment
 
-Server env lives in `apps/server/.env`. Required variables: `DATABASE_URL`, `BETTER_AUTH_SECRET` (min 32 chars), `BETTER_AUTH_URL`, `CORS_ORIGIN`. The dashboard's Start server does not hold these — it reaches Better Auth over HTTP. Web env (both apps) uses `VITE_` prefixed variables.
+Server environment variables live in `apps/server/.env` (e.g., `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`). The dashboard's Start server does not hold these—it reaches Better Auth over HTTP. Web environment variables use the `VITE_` prefix. All variables are strictly validated through the `@sycom/env` package.

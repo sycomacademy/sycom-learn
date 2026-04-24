@@ -1,6 +1,6 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { getSidebarState } from "@/functions/sidebar-state-cookie";
+import { getSidebarState } from "@/functions/get-sidebar-state";
 import { sessionQueryOptions } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/dashboard")({

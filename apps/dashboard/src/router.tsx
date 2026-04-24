@@ -14,7 +14,7 @@ import superjson from "superjson";
 import Loader from "./components/loader";
 import NotFound from "./components/layout/not-found";
 import RouteError from "./components/layout/route-error";
-import { getForwardedCookieHeader } from "./functions/forward-cookie";
+import { getForwardedCookieHeader } from "./functions/forward-header-cookies";
 import { TRPCProvider } from "./lib/trpc/client";
 import { routeTree, type FileRoutesByTo } from "./routeTree.gen";
 /**
