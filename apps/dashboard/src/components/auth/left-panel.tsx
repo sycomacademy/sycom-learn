@@ -1,4 +1,5 @@
 import { Suspense, lazy } from "react";
+import { BRAND, Image } from "@sycom/ui/image";
 
 import { Link } from "@/components/layout/foresight-link";
 import { FlickeringGrid } from "./flickering-grid";
@@ -23,13 +24,13 @@ export function AuthLeftPanel() {
         className="absolute top-6 left-6 z-20 flex items-center gap-2 transition-opacity hover:opacity-80"
         to="/"
       >
-        <div className="flex size-7 items-center justify-center rounded-md bg-white/10">
-          <img
+        <div className="flex size-10 items-center justify-center rounded-md bg-white/10">
+          <Image
             alt="Sycom Solutions logo"
-            className="size-8 object-contain"
-            height={32}
-            src="/sycom-logo.png"
-            width={32}
+            className="size-10 object-contain"
+            height={40}
+            src={BRAND.LOGO}
+            width={40}
           />
         </div>
       </Link>

@@ -21,6 +21,7 @@
     "@react-email/render": "^1.4.0",
     "@sycom/env": "workspace:*",
     "@sycom/logger": "workspace:*",
+    "@sycom/ui": "workspace:*",
     "react": "catalog:",
     "resend": "^6.12.2"
   },

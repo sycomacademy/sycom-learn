@@ -1,4 +1,5 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { BRAND, Image } from "@sycom/ui/image";
 import * as z from "zod/mini";
 
 import { AuthLeftPanel } from "@/components/auth/left-panel";
@@ -33,12 +34,12 @@ function AuthLayout() {
         <div className="flex h-full w-full max-w-md flex-col">
           <div className="mb-8 flex items-center lg:hidden">
             <Link className="flex items-center gap-2" to="/sign-in">
-              <div className="flex size-8 items-center justify-center rounded-md bg-primary">
-                <img
+              <div className="flex size-8 items-center justify-center rounded bg-primary">
+                <Image
                   alt="Sycom Solutions logo"
                   className="size-8 object-contain"
                   height={32}
-                  src="/sycom-logo.png"
+                  src={BRAND.LOGO}
                   width={32}
                 />
               </div>

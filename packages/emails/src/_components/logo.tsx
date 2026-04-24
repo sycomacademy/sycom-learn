@@ -1,7 +1,6 @@
 import { Img, Section } from "@react-email/components";
-import { getWebsiteUrl } from "./urls";
-
-const baseUrl = getWebsiteUrl();
+import { BRAND } from "@sycom/ui/image/assets";
+import { buildImageUrl } from "@sycom/ui/image/cdn";
 
 export function Logo() {
   return (
@@ -9,7 +8,7 @@ export function Logo() {
       <Img
         alt="Sycom Solutions"
         className="mx-auto my-0 block"
-        src={`${baseUrl}/sycom-logo.png`}
+        src={buildImageUrl(BRAND.LOGO)}
         width="146"
       />
     </Section>

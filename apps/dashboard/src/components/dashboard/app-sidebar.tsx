@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
 import { SettingsIcon } from "@sycom/ui/components/animated/icons/settings";
+import { BRAND, Image } from "@sycom/ui/image";
 import {
   Sidebar,
   SidebarContent,
@@ -49,7 +50,6 @@ const menuButtonStableClass = cn(
 
 const menuButtonLabelFadeClass = cn("group-data-[collapsible=icon]:[&>span:last-child]:opacity-0");
 
-/** Cancel -mt-8 slide; keep label row height so nav items do not jump vertically. */
 const groupLabelStableClass = cn(
   "group-data-[collapsible=icon]:mt-0",
   "group-data-[collapsible=icon]:opacity-0",
@@ -59,20 +59,17 @@ const groupLabelStableClass = cn(
 export function AppSidebar(): React.ReactElement {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  const activeTo = React.useMemo(() => {
-    let bestMatch: TRoutes | undefined;
-    let bestLength = -1;
-    for (const group of NAV_GROUPS) {
-      for (const item of group.items) {
-        const matches = pathname === item.to || pathname.startsWith(`${item.to}/`);
-        if (matches && item.to.length > bestLength) {
-          bestMatch = item.to;
-          bestLength = item.to.length;
-        }
+  let activeTo: TRoutes | undefined;
+  let bestLength = -1;
+  for (const group of NAV_GROUPS) {
+    for (const item of group.items) {
+      const matches = pathname === item.to || pathname.startsWith(`${item.to}/`);
+      if (matches && item.to.length > bestLength) {
+        activeTo = item.to;
+        bestLength = item.to.length;
       }
     }
-    return bestMatch;
-  }, [pathname]);
+  }
 
   return (
     <Sidebar className="border-sidebar-border" collapsible="icon" variant="inset">
@@ -81,11 +78,11 @@ export function AppSidebar(): React.ReactElement {
           className="flex items-center gap-2 text-sm font-semibold text-sidebar-foreground"
           href="/dashboard"
         >
-          <img
+          <Image
             alt="Sycom Solutions logo"
             className="h-10 w-auto"
             height={40}
-            src="/logos/logo.jpg"
+            src={BRAND.LOGO_FULL}
             width={160}
           />
         </Link>

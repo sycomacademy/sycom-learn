@@ -24,6 +24,8 @@ These rules override default agent behavior. Apply them by default; only deviate
 
 6. **Never fetch derivable data.**
 
+7. **Images go through `@sycom/ui/image`.** Store CDN public IDs (e.g. `"brand/sycom-logo"`) — never full Cloudinary URLs — so swapping providers stays a one-file edit. Static/brand/marketing assets get a constant in [`packages/ui/src/image/assets.ts`](packages/ui/src/image/assets.ts); user-generated assets (avatars, course content) get a `public_id` column in the DB. Render with `<Image src={BRAND.LOGO} ... />` from `@sycom/ui/image` in apps; in emails, use `buildImageUrl()` from `@sycom/ui/image/cdn` with react-email's `<Img>` (modern srcset isn't reliable in mail clients). The only place that knows we use Cloudinary is [`packages/ui/src/image/cdn.ts`](packages/ui/src/image/cdn.ts).
+
 ## Commands
 
 ```bash
