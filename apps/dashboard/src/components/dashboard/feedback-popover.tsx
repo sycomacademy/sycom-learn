@@ -120,12 +120,7 @@ export function FeedbackPopover() {
               )}
             />
 
-            <Button
-              className="w-full"
-              loading={form.formState.isSubmitting}
-              size="sm"
-              type="submit"
-            >
+            <Button className="w-full" loading={form.formState.isSubmitting} type="submit">
               Submit feedback
             </Button>
           </form>

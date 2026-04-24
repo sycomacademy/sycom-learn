@@ -2,7 +2,7 @@ import { createFeedback } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { publicProcedure, router } from "../init";
+import { protectedProcedure, router } from "../init";
 
 const submitFeedbackSchema = z.object({
   email: z.string().trim().email(),
@@ -11,7 +11,7 @@ const submitFeedbackSchema = z.object({
 type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
 
 export const feedbackRouter = router({
-  submit: publicProcedure.input(submitFeedbackSchema).mutation(async ({ ctx, input }) => {
+  submit: protectedProcedure.input(submitFeedbackSchema).mutation(async ({ ctx, input }) => {
     const mutationInput: SubmitFeedbackInput = input;
     const userId = ctx.session?.user.id ?? null;
 

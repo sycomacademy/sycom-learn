@@ -12,7 +12,7 @@ export const requestLoggingMiddleware = createMiddleware({ type: "request" }).se
     const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
     const status = result.response.status;
     const line = `${method} ${pathname} ${status} - completed in ${durationMs.toFixed(2)}ms`;
-    if (result.response.ok) {
+    if (result.response.ok || (status >= 300 && status < 400)) {
       startRequestLogger.info(line);
     } else {
       startRequestLogger.error(line);

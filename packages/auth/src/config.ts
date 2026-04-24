@@ -5,8 +5,12 @@ import { createLoggerWithContext } from "@sycom/logger";
 
 const authLogger = createLoggerWithContext("auth");
 
-// Email stubs — replace with a real provider (Resend/Postmark/SES) before
-// shipping. In dev, they log the URL so you can copy/paste it. In prod, they
+type AuthEmailUser = {
+  email: string;
+  name?: string | null;
+};
+
+// Email stubs — log the URL so you can copy/paste it. In prod, they
 // throw loudly so signups fail visibly instead of silently skipping
 // verification.
 export const devOrThrow = (label: string, to: string, url: string) => {
@@ -15,12 +19,7 @@ export const devOrThrow = (label: string, to: string, url: string) => {
       message: `Email provider not configured (${label}). Configure one before enabling in production.`,
     });
   }
-  console.log(`[auth:${label}] to=${to} url=${url}`);
-};
-
-type AuthEmailUser = {
-  email: string;
-  name?: string | null;
+  authLogger.info(`[auth:${label}] to=${to} url=${url}`);
 };
 
 const sendAuthEmail = async ({
