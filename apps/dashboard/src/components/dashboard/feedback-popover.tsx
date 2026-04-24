@@ -78,17 +78,18 @@ export function FeedbackPopover() {
 
   return (
     <Popover onOpenChange={handleOpenChange} open={open}>
-      <PopoverTrigger
-        className="hidden md:flex"
-        render={
-          <AnimateIcon animateOnHover>
+      <AnimateIcon animateOnHover>
+        <PopoverTrigger
+          className="hidden md:flex"
+          render={
             <Button aria-label="Open feedback form" size="lg" variant="ghost">
               <MessageSquareMoreIcon size={16} />
               Feedback
             </Button>
-          </AnimateIcon>
-        }
-      />
+          }
+        />
+      </AnimateIcon>
+
       <PopoverContent align="end" className="w-80" side="top">
         <div className="mb-2 w-full space-y-1">
           <h3 className="text-sm font-medium text-foreground">Send feedback</h3>

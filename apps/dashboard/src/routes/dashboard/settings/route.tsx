@@ -1,37 +1,29 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
-import { cn } from "@sycom/ui/lib/utils";
-import { Link } from "@/components/layout/foresight-link";
+
+import { SecondaryMenu } from "@/components/dashboard/secondary-menu";
 
 export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsLayout,
 });
 
-const tabs = [
-  { to: "/dashboard/settings/profile", label: "Profile" },
-  { to: "/dashboard/settings/password", label: "Password" },
-] as const;
-
 function SettingsLayout() {
   return (
-    <div className="flex flex-col gap-8 p-6 lg:flex-row lg:gap-10">
-      <nav aria-label="Settings sections" className="flex shrink-0 gap-2 lg:w-48 lg:flex-col">
-        {tabs.map(({ to, label }) => (
-          <Link
-            key={to}
-            activeProps={{ className: "bg-accent text-accent-foreground" }}
-            className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/80 hover:text-accent-foreground",
-            )}
-            inactiveProps={{ className: "text-muted-foreground" }}
-            to={to}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <div className="min-w-0 flex-1">
+    <div className="mb-10 max-w-3xl md:ml-10">
+      <SecondaryMenu
+        base="/dashboard/settings/general"
+        items={[
+          { path: "/dashboard/settings/general", label: "General" },
+          { path: "/dashboard/settings/security", label: "Security" },
+          {
+            path: "/dashboard/settings/preferences",
+            label: "Preferences",
+          },
+        ]}
+        label="Settings"
+      />
+      <section className="mt-6">
         <Outlet />
-      </div>
+      </section>
     </div>
   );
 }
