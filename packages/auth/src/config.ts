@@ -10,9 +10,11 @@ type AuthEmailUser = {
   name?: string | null;
 };
 
-// Email stubs — log the URL so you can copy/paste it. In prod, they
-// throw loudly so signups fail visibly instead of silently skipping
-// verification.
+/**
+ * Email stubs — log the URL so you can copy/paste it. In prod, they
+ * throw loudly so signups fail visibly instead of silently skipping
+ * verification.
+ */
 export const devOrThrow = (label: string, to: string, url: string) => {
   if (env.NODE_ENV === "production") {
     throw new APIError("INTERNAL_SERVER_ERROR", {

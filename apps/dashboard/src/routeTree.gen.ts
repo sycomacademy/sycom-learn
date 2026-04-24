@@ -8,392 +8,397 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as AuthRouteImport } from "./routes/_auth";
-import { Route as SplatRouteImport } from "./routes/$";
-import { Route as DashboardRouteRouteImport } from "./routes/dashboard/route";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
-import { Route as DashboardSplatRouteImport } from "./routes/dashboard/$";
-import { Route as AuthVerifyEmailRouteImport } from "./routes/_auth/verify-email";
-import { Route as AuthSignUpRouteImport } from "./routes/_auth/sign-up";
-import { Route as AuthSignInRouteImport } from "./routes/_auth/sign-in";
-import { Route as AuthResetPasswordRouteImport } from "./routes/_auth/reset-password";
-import { Route as AuthForgotPasswordRouteImport } from "./routes/_auth/forgot-password";
-import { Route as AuthCheckEmailRouteImport } from "./routes/_auth/check-email";
-import { Route as DashboardSettingsRouteRouteImport } from "./routes/dashboard/settings/route";
-import { Route as DashboardSettingsIndexRouteImport } from "./routes/dashboard/settings/index";
-import { Route as DashboardSettingsSecurityRouteImport } from "./routes/dashboard/settings/security";
-import { Route as DashboardSettingsPreferencesRouteImport } from "./routes/dashboard/settings/preferences";
-import { Route as DashboardSettingsGeneralRouteImport } from "./routes/dashboard/settings/general";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardSplatRouteImport } from './routes/dashboard/$'
+import { Route as AuthVerifyEmailRouteImport } from './routes/_auth/verify-email'
+import { Route as AuthSignUpRouteImport } from './routes/_auth/sign-up'
+import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
+import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
+import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
+import { Route as AuthCheckEmailRouteImport } from './routes/_auth/check-email'
+import { Route as DashboardSettingsRouteRouteImport } from './routes/dashboard/settings/route'
+import { Route as DashboardSettingsIndexRouteImport } from './routes/dashboard/settings/index'
+import { Route as DashboardSettingsSecurityRouteImport } from './routes/dashboard/settings/security'
+import { Route as DashboardSettingsPreferencesRouteImport } from './routes/dashboard/settings/preferences'
+import { Route as DashboardSettingsGeneralRouteImport } from './routes/dashboard/settings/general'
 
 const AuthRoute = AuthRouteImport.update({
-  id: "/_auth",
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SplatRoute = SplatRouteImport.update({
-  id: "/$",
-  path: "/$",
+  id: '/$',
+  path: '/$',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
-  id: "/dashboard",
-  path: "/dashboard",
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => DashboardRouteRoute,
-} as any);
+} as any)
 const DashboardSplatRoute = DashboardSplatRouteImport.update({
-  id: "/$",
-  path: "/$",
+  id: '/$',
+  path: '/$',
   getParentRoute: () => DashboardRouteRoute,
-} as any);
+} as any)
 const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
-  id: "/verify-email",
-  path: "/verify-email",
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
-  id: "/sign-up",
-  path: "/sign-up",
+  id: '/sign-up',
+  path: '/sign-up',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const AuthSignInRoute = AuthSignInRouteImport.update({
-  id: "/sign-in",
-  path: "/sign-in",
+  id: '/sign-in',
+  path: '/sign-in',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
-  id: "/reset-password",
-  path: "/reset-password",
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
-  id: "/forgot-password",
-  path: "/forgot-password",
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const AuthCheckEmailRoute = AuthCheckEmailRouteImport.update({
-  id: "/check-email",
-  path: "/check-email",
+  id: '/check-email',
+  path: '/check-email',
   getParentRoute: () => AuthRoute,
-} as any);
+} as any)
 const DashboardSettingsRouteRoute = DashboardSettingsRouteRouteImport.update({
-  id: "/settings",
-  path: "/settings",
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => DashboardRouteRoute,
-} as any);
+} as any)
 const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => DashboardSettingsRouteRoute,
-} as any);
-const DashboardSettingsSecurityRoute = DashboardSettingsSecurityRouteImport.update({
-  id: "/security",
-  path: "/security",
-  getParentRoute: () => DashboardSettingsRouteRoute,
-} as any);
-const DashboardSettingsPreferencesRoute = DashboardSettingsPreferencesRouteImport.update({
-  id: "/preferences",
-  path: "/preferences",
-  getParentRoute: () => DashboardSettingsRouteRoute,
-} as any);
-const DashboardSettingsGeneralRoute = DashboardSettingsGeneralRouteImport.update({
-  id: "/general",
-  path: "/general",
-  getParentRoute: () => DashboardSettingsRouteRoute,
-} as any);
+} as any)
+const DashboardSettingsSecurityRoute =
+  DashboardSettingsSecurityRouteImport.update({
+    id: '/security',
+    path: '/security',
+    getParentRoute: () => DashboardSettingsRouteRoute,
+  } as any)
+const DashboardSettingsPreferencesRoute =
+  DashboardSettingsPreferencesRouteImport.update({
+    id: '/preferences',
+    path: '/preferences',
+    getParentRoute: () => DashboardSettingsRouteRoute,
+  } as any)
+const DashboardSettingsGeneralRoute =
+  DashboardSettingsGeneralRouteImport.update({
+    id: '/general',
+    path: '/general',
+    getParentRoute: () => DashboardSettingsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/dashboard": typeof DashboardRouteRouteWithChildren;
-  "/$": typeof SplatRoute;
-  "/dashboard/settings": typeof DashboardSettingsRouteRouteWithChildren;
-  "/check-email": typeof AuthCheckEmailRoute;
-  "/forgot-password": typeof AuthForgotPasswordRoute;
-  "/reset-password": typeof AuthResetPasswordRoute;
-  "/sign-in": typeof AuthSignInRoute;
-  "/sign-up": typeof AuthSignUpRoute;
-  "/verify-email": typeof AuthVerifyEmailRoute;
-  "/dashboard/$": typeof DashboardSplatRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
-  "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
-  "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
-  "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
+  '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/$': typeof SplatRoute
+  '/dashboard/settings': typeof DashboardSettingsRouteRouteWithChildren
+  '/check-email': typeof AuthCheckEmailRoute
+  '/forgot-password': typeof AuthForgotPasswordRoute
+  '/reset-password': typeof AuthResetPasswordRoute
+  '/sign-in': typeof AuthSignInRoute
+  '/sign-up': typeof AuthSignUpRoute
+  '/verify-email': typeof AuthVerifyEmailRoute
+  '/dashboard/$': typeof DashboardSplatRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/settings/general': typeof DashboardSettingsGeneralRoute
+  '/dashboard/settings/preferences': typeof DashboardSettingsPreferencesRoute
+  '/dashboard/settings/security': typeof DashboardSettingsSecurityRoute
+  '/dashboard/settings/': typeof DashboardSettingsIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/$": typeof SplatRoute;
-  "/check-email": typeof AuthCheckEmailRoute;
-  "/forgot-password": typeof AuthForgotPasswordRoute;
-  "/reset-password": typeof AuthResetPasswordRoute;
-  "/sign-in": typeof AuthSignInRoute;
-  "/sign-up": typeof AuthSignUpRoute;
-  "/verify-email": typeof AuthVerifyEmailRoute;
-  "/dashboard/$": typeof DashboardSplatRoute;
-  "/dashboard": typeof DashboardIndexRoute;
-  "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
-  "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
-  "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
-  "/dashboard/settings": typeof DashboardSettingsIndexRoute;
+  '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/check-email': typeof AuthCheckEmailRoute
+  '/forgot-password': typeof AuthForgotPasswordRoute
+  '/reset-password': typeof AuthResetPasswordRoute
+  '/sign-in': typeof AuthSignInRoute
+  '/sign-up': typeof AuthSignUpRoute
+  '/verify-email': typeof AuthVerifyEmailRoute
+  '/dashboard/$': typeof DashboardSplatRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/settings/general': typeof DashboardSettingsGeneralRoute
+  '/dashboard/settings/preferences': typeof DashboardSettingsPreferencesRoute
+  '/dashboard/settings/security': typeof DashboardSettingsSecurityRoute
+  '/dashboard/settings': typeof DashboardSettingsIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/dashboard": typeof DashboardRouteRouteWithChildren;
-  "/$": typeof SplatRoute;
-  "/_auth": typeof AuthRouteWithChildren;
-  "/dashboard/settings": typeof DashboardSettingsRouteRouteWithChildren;
-  "/_auth/check-email": typeof AuthCheckEmailRoute;
-  "/_auth/forgot-password": typeof AuthForgotPasswordRoute;
-  "/_auth/reset-password": typeof AuthResetPasswordRoute;
-  "/_auth/sign-in": typeof AuthSignInRoute;
-  "/_auth/sign-up": typeof AuthSignUpRoute;
-  "/_auth/verify-email": typeof AuthVerifyEmailRoute;
-  "/dashboard/$": typeof DashboardSplatRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
-  "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
-  "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
-  "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
-  "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/$': typeof SplatRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/dashboard/settings': typeof DashboardSettingsRouteRouteWithChildren
+  '/_auth/check-email': typeof AuthCheckEmailRoute
+  '/_auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/_auth/reset-password': typeof AuthResetPasswordRoute
+  '/_auth/sign-in': typeof AuthSignInRoute
+  '/_auth/sign-up': typeof AuthSignUpRoute
+  '/_auth/verify-email': typeof AuthVerifyEmailRoute
+  '/dashboard/$': typeof DashboardSplatRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/settings/general': typeof DashboardSettingsGeneralRoute
+  '/dashboard/settings/preferences': typeof DashboardSettingsPreferencesRoute
+  '/dashboard/settings/security': typeof DashboardSettingsSecurityRoute
+  '/dashboard/settings/': typeof DashboardSettingsIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/dashboard"
-    | "/$"
-    | "/dashboard/settings"
-    | "/check-email"
-    | "/forgot-password"
-    | "/reset-password"
-    | "/sign-in"
-    | "/sign-up"
-    | "/verify-email"
-    | "/dashboard/$"
-    | "/dashboard/"
-    | "/dashboard/settings/general"
-    | "/dashboard/settings/preferences"
-    | "/dashboard/settings/security"
-    | "/dashboard/settings/";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/dashboard'
+    | '/$'
+    | '/dashboard/settings'
+    | '/check-email'
+    | '/forgot-password'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/verify-email'
+    | '/dashboard/$'
+    | '/dashboard/'
+    | '/dashboard/settings/general'
+    | '/dashboard/settings/preferences'
+    | '/dashboard/settings/security'
+    | '/dashboard/settings/'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/$"
-    | "/check-email"
-    | "/forgot-password"
-    | "/reset-password"
-    | "/sign-in"
-    | "/sign-up"
-    | "/verify-email"
-    | "/dashboard/$"
-    | "/dashboard"
-    | "/dashboard/settings/general"
-    | "/dashboard/settings/preferences"
-    | "/dashboard/settings/security"
-    | "/dashboard/settings";
+    | '/'
+    | '/$'
+    | '/check-email'
+    | '/forgot-password'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/verify-email'
+    | '/dashboard/$'
+    | '/dashboard'
+    | '/dashboard/settings/general'
+    | '/dashboard/settings/preferences'
+    | '/dashboard/settings/security'
+    | '/dashboard/settings'
   id:
-    | "__root__"
-    | "/"
-    | "/dashboard"
-    | "/$"
-    | "/_auth"
-    | "/dashboard/settings"
-    | "/_auth/check-email"
-    | "/_auth/forgot-password"
-    | "/_auth/reset-password"
-    | "/_auth/sign-in"
-    | "/_auth/sign-up"
-    | "/_auth/verify-email"
-    | "/dashboard/$"
-    | "/dashboard/"
-    | "/dashboard/settings/general"
-    | "/dashboard/settings/preferences"
-    | "/dashboard/settings/security"
-    | "/dashboard/settings/";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/$'
+    | '/_auth'
+    | '/dashboard/settings'
+    | '/_auth/check-email'
+    | '/_auth/forgot-password'
+    | '/_auth/reset-password'
+    | '/_auth/sign-in'
+    | '/_auth/sign-up'
+    | '/_auth/verify-email'
+    | '/dashboard/$'
+    | '/dashboard/'
+    | '/dashboard/settings/general'
+    | '/dashboard/settings/preferences'
+    | '/dashboard/settings/security'
+    | '/dashboard/settings/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
-  SplatRoute: typeof SplatRoute;
-  AuthRoute: typeof AuthRouteWithChildren;
+  IndexRoute: typeof IndexRoute
+  DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
+  SplatRoute: typeof SplatRoute
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/_auth": {
-      id: "/_auth";
-      path: "";
-      fullPath: "/";
-      preLoaderRoute: typeof AuthRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/$": {
-      id: "/$";
-      path: "/$";
-      fullPath: "/$";
-      preLoaderRoute: typeof SplatRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/dashboard": {
-      id: "/dashboard";
-      path: "/dashboard";
-      fullPath: "/dashboard";
-      preLoaderRoute: typeof DashboardRouteRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/dashboard/": {
-      id: "/dashboard/";
-      path: "/";
-      fullPath: "/dashboard/";
-      preLoaderRoute: typeof DashboardIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/$": {
-      id: "/dashboard/$";
-      path: "/$";
-      fullPath: "/dashboard/$";
-      preLoaderRoute: typeof DashboardSplatRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/_auth/verify-email": {
-      id: "/_auth/verify-email";
-      path: "/verify-email";
-      fullPath: "/verify-email";
-      preLoaderRoute: typeof AuthVerifyEmailRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/_auth/sign-up": {
-      id: "/_auth/sign-up";
-      path: "/sign-up";
-      fullPath: "/sign-up";
-      preLoaderRoute: typeof AuthSignUpRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/_auth/sign-in": {
-      id: "/_auth/sign-in";
-      path: "/sign-in";
-      fullPath: "/sign-in";
-      preLoaderRoute: typeof AuthSignInRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/_auth/reset-password": {
-      id: "/_auth/reset-password";
-      path: "/reset-password";
-      fullPath: "/reset-password";
-      preLoaderRoute: typeof AuthResetPasswordRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/_auth/forgot-password": {
-      id: "/_auth/forgot-password";
-      path: "/forgot-password";
-      fullPath: "/forgot-password";
-      preLoaderRoute: typeof AuthForgotPasswordRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/_auth/check-email": {
-      id: "/_auth/check-email";
-      path: "/check-email";
-      fullPath: "/check-email";
-      preLoaderRoute: typeof AuthCheckEmailRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    "/dashboard/settings": {
-      id: "/dashboard/settings";
-      path: "/settings";
-      fullPath: "/dashboard/settings";
-      preLoaderRoute: typeof DashboardSettingsRouteRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
-    };
-    "/dashboard/settings/": {
-      id: "/dashboard/settings/";
-      path: "/";
-      fullPath: "/dashboard/settings/";
-      preLoaderRoute: typeof DashboardSettingsIndexRouteImport;
-      parentRoute: typeof DashboardSettingsRouteRoute;
-    };
-    "/dashboard/settings/security": {
-      id: "/dashboard/settings/security";
-      path: "/security";
-      fullPath: "/dashboard/settings/security";
-      preLoaderRoute: typeof DashboardSettingsSecurityRouteImport;
-      parentRoute: typeof DashboardSettingsRouteRoute;
-    };
-    "/dashboard/settings/preferences": {
-      id: "/dashboard/settings/preferences";
-      path: "/preferences";
-      fullPath: "/dashboard/settings/preferences";
-      preLoaderRoute: typeof DashboardSettingsPreferencesRouteImport;
-      parentRoute: typeof DashboardSettingsRouteRoute;
-    };
-    "/dashboard/settings/general": {
-      id: "/dashboard/settings/general";
-      path: "/general";
-      fullPath: "/dashboard/settings/general";
-      preLoaderRoute: typeof DashboardSettingsGeneralRouteImport;
-      parentRoute: typeof DashboardSettingsRouteRoute;
-    };
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/$': {
+      id: '/dashboard/$'
+      path: '/$'
+      fullPath: '/dashboard/$'
+      preLoaderRoute: typeof DashboardSplatRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/_auth/verify-email': {
+      id: '/_auth/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof AuthVerifyEmailRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sign-up': {
+      id: '/_auth/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof AuthSignUpRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sign-in': {
+      id: '/_auth/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reset-password': {
+      id: '/_auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/forgot-password': {
+      id: '/_auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/check-email': {
+      id: '/_auth/check-email'
+      path: '/check-email'
+      fullPath: '/check-email'
+      preLoaderRoute: typeof AuthCheckEmailRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/settings/': {
+      id: '/dashboard/settings/'
+      path: '/'
+      fullPath: '/dashboard/settings/'
+      preLoaderRoute: typeof DashboardSettingsIndexRouteImport
+      parentRoute: typeof DashboardSettingsRouteRoute
+    }
+    '/dashboard/settings/security': {
+      id: '/dashboard/settings/security'
+      path: '/security'
+      fullPath: '/dashboard/settings/security'
+      preLoaderRoute: typeof DashboardSettingsSecurityRouteImport
+      parentRoute: typeof DashboardSettingsRouteRoute
+    }
+    '/dashboard/settings/preferences': {
+      id: '/dashboard/settings/preferences'
+      path: '/preferences'
+      fullPath: '/dashboard/settings/preferences'
+      preLoaderRoute: typeof DashboardSettingsPreferencesRouteImport
+      parentRoute: typeof DashboardSettingsRouteRoute
+    }
+    '/dashboard/settings/general': {
+      id: '/dashboard/settings/general'
+      path: '/general'
+      fullPath: '/dashboard/settings/general'
+      preLoaderRoute: typeof DashboardSettingsGeneralRouteImport
+      parentRoute: typeof DashboardSettingsRouteRoute
+    }
   }
 }
 
 interface DashboardSettingsRouteRouteChildren {
-  DashboardSettingsGeneralRoute: typeof DashboardSettingsGeneralRoute;
-  DashboardSettingsPreferencesRoute: typeof DashboardSettingsPreferencesRoute;
-  DashboardSettingsSecurityRoute: typeof DashboardSettingsSecurityRoute;
-  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute;
+  DashboardSettingsGeneralRoute: typeof DashboardSettingsGeneralRoute
+  DashboardSettingsPreferencesRoute: typeof DashboardSettingsPreferencesRoute
+  DashboardSettingsSecurityRoute: typeof DashboardSettingsSecurityRoute
+  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute
 }
 
-const DashboardSettingsRouteRouteChildren: DashboardSettingsRouteRouteChildren = {
-  DashboardSettingsGeneralRoute: DashboardSettingsGeneralRoute,
-  DashboardSettingsPreferencesRoute: DashboardSettingsPreferencesRoute,
-  DashboardSettingsSecurityRoute: DashboardSettingsSecurityRoute,
-  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
-};
+const DashboardSettingsRouteRouteChildren: DashboardSettingsRouteRouteChildren =
+  {
+    DashboardSettingsGeneralRoute: DashboardSettingsGeneralRoute,
+    DashboardSettingsPreferencesRoute: DashboardSettingsPreferencesRoute,
+    DashboardSettingsSecurityRoute: DashboardSettingsSecurityRoute,
+    DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
+  }
 
-const DashboardSettingsRouteRouteWithChildren = DashboardSettingsRouteRoute._addFileChildren(
-  DashboardSettingsRouteRouteChildren,
-);
+const DashboardSettingsRouteRouteWithChildren =
+  DashboardSettingsRouteRoute._addFileChildren(
+    DashboardSettingsRouteRouteChildren,
+  )
 
 interface DashboardRouteRouteChildren {
-  DashboardSettingsRouteRoute: typeof DashboardSettingsRouteRouteWithChildren;
-  DashboardSplatRoute: typeof DashboardSplatRoute;
-  DashboardIndexRoute: typeof DashboardIndexRoute;
+  DashboardSettingsRouteRoute: typeof DashboardSettingsRouteRouteWithChildren
+  DashboardSplatRoute: typeof DashboardSplatRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardSettingsRouteRoute: DashboardSettingsRouteRouteWithChildren,
   DashboardSplatRoute: DashboardSplatRoute,
   DashboardIndexRoute: DashboardIndexRoute,
-};
+}
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
   DashboardRouteRouteChildren,
-);
+)
 
 interface AuthRouteChildren {
-  AuthCheckEmailRoute: typeof AuthCheckEmailRoute;
-  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute;
-  AuthResetPasswordRoute: typeof AuthResetPasswordRoute;
-  AuthSignInRoute: typeof AuthSignInRoute;
-  AuthSignUpRoute: typeof AuthSignUpRoute;
-  AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute;
+  AuthCheckEmailRoute: typeof AuthCheckEmailRoute
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignUpRoute: typeof AuthSignUpRoute
+  AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -403,26 +408,26 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   AuthVerifyEmailRoute: AuthVerifyEmailRoute,
-};
+}
 
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
   SplatRoute: SplatRoute,
   AuthRoute: AuthRouteWithChildren,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { startInstance } from "./start.ts";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

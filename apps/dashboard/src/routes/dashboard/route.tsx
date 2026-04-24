@@ -14,11 +14,11 @@ export const Route = createFileRoute("/dashboard")({
     }
   },
   loader: async ({ context }) => {
-    const [profile, sidebarOpen] = await Promise.all([
+    const [, sidebarOpen] = await Promise.all([
       context.queryClient.ensureQueryData(context.trpc.profile.get.queryOptions()),
       getSidebarState(),
     ]);
-    return { profile, sidebarOpen: sidebarOpen ?? true };
+    return { sidebarOpen: sidebarOpen ?? true };
   },
   component: DashboardLayout,
 });

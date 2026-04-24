@@ -1,5 +1,7 @@
 import { getRouteApi } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
+import { useTRPC } from "@/lib/trpc/client";
 
 const dashboardRouteApi = getRouteApi("/dashboard");
 
@@ -8,8 +10,9 @@ export function useDashboardContext() {
 }
 
 export function useUser() {
-  const { profile } = dashboardRouteApi.useLoaderData();
-  return profile as AppRouterOutputs["profile"]["get"];
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(trpc.profile.get.queryOptions());
+  return data as AppRouterOutputs["profile"]["get"];
 }
 
 // export function useUpdateUserProfileMutatioan() {
