@@ -1,5 +1,6 @@
 const defaults = {
   DATABASE_URL: "postgresql://test:test@localhost:5432/test",
+  CLOUDINARY_CLOUD_NAME: "demo",
   BETTER_AUTH_SECRET: "test-secret-at-least-thirty-two-chars",
   BETTER_AUTH_URL: "http://localhost:3001",
   BETTER_AUTH_API_KEY: "test-api-key",

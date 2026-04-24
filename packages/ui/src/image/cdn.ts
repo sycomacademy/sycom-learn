@@ -1,18 +1,33 @@
+import { Cloudinary } from "@cloudinary/url-gen";
+
+type ImportMetaEnvLike = { VITE_CLOUDINARY_CLOUD_NAME?: string };
+type ImportMetaLike = ImportMeta & { env?: ImportMetaEnvLike };
+
 function getCloudName(): string {
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const fromVite = (import.meta as any)?.env?.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
+  const fromVite = (import.meta as ImportMetaLike)?.env?.VITE_CLOUDINARY_CLOUD_NAME;
   if (fromVite) return fromVite;
+
   if (typeof process !== "undefined") {
-    return process.env.CLOUDINARY_CLOUD_NAME ?? process.env.VITE_CLOUDINARY_CLOUD_NAME ?? "";
+    const fromProcess = process.env.CLOUDINARY_CLOUD_NAME ?? process.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (fromProcess) return fromProcess;
   }
-  return "";
+
+  throw new Error(
+    "Missing Cloudinary cloud name. Set VITE_CLOUDINARY_CLOUD_NAME (web) or CLOUDINARY_CLOUD_NAME (server).",
+  );
 }
 
 export function buildImageUrl(publicId: string): string {
   if (publicId.startsWith("http://") || publicId.startsWith("https://")) {
     return publicId;
   }
-  const cloud = getCloudName();
+
   const id = publicId.replace(/^\/+/, "");
-  return `https://res.cloudinary.com/${cloud}/image/upload/${id}`;
+  const cld = new Cloudinary({ cloud: { cloudName: getCloudName() } });
+  const image = cld.image(id);
+
+  image.format("auto");
+  image.quality("auto");
+
+  return image.toURL();
 }

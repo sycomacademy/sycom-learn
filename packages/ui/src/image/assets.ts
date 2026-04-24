@@ -8,13 +8,5 @@
 
 export const BRAND = {
   LOGO: "brand/sycom-logo",
-  LOGO_FULL: "brand/sycom-logo-full",
-  LOGO_WHITE: "brand/sycom-logo-white",
-  APPLE_ICON: "brand/apple-icon",
   FAVICON: "brand/favicon",
-} as const;
-
-export const MARKETING = {
-  AUTH_LANDSCAPE: "marketing/auth-landscape",
-  AUTH_LOGIN: "marketing/auth-login",
 } as const;

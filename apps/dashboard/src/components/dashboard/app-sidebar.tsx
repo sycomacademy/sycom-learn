@@ -82,7 +82,7 @@ export function AppSidebar(): React.ReactElement {
             alt="Sycom Solutions logo"
             className="h-10 w-auto"
             height={40}
-            src={BRAND.LOGO_FULL}
+            src={BRAND.LOGO}
             width={160}
           />
         </Link>

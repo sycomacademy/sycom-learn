@@ -7,6 +7,7 @@ export const env = createEnv({
     VITE_SERVER_URL: z.url(),
     VITE_WEBSITE_URL: z.url(),
     VITE_DASHBOARD_URL: z.url(),
+    VITE_CLOUDINARY_CLOUD_NAME: z.string().min(1),
   },
   // oxlint-disable-next-line typescript/no-explicit-any
   runtimeEnv: (import.meta as any).env,
