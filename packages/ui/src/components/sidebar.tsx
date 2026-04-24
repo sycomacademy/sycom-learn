@@ -32,7 +32,7 @@ const SIDEBAR_WIDTH_ICON: string = "3.5rem";
 const SIDEBAR_KEYBOARD_SHORTCUT: string = "b";
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground motion-reduce:transition-none [&>span:last-child]:truncate [&>span:last-child]:transition-opacity [&>span:last-child]:duration-150 [&>span:last-child]:ease-out motion-reduce:[&>span:last-child]:transition-none [&>svg]:shrink-0 [&>svg:not([class*='size-'])]:size-4",
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground motion-reduce:transition-none [&>span:last-child]:truncate [&>span:last-child]:transition-opacity [&>span:last-child]:duration-240 [&>span:last-child]:ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:[&>span:last-child]:transition-none [&>svg]:shrink-0 [&>svg:not([class*='size-'])]:size-4",
   {
     defaultVariants: {
       size: "default",
@@ -41,7 +41,7 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       size: {
         default: "h-8 text-sm",
-        lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
+        lg: "h-12 text-sm group-data-[collapsible=icon]:-mx-[3px] group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:p-3!",
         sm: "h-7 text-xs",
       },
       variant: {

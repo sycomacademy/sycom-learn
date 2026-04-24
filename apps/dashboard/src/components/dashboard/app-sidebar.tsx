@@ -43,33 +43,11 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/**
- * Expanded: h-12 row, base p-2 (icon at 16px from rail-left).
- * Collapsed: 48x48 square, p-3, with -3px negative side margins so the button sits dead-center in the
- * 58px rail (icon ends up at 17px — only 1px of total drift over the entire 240ms collapse).
- *
- * Crucially, all three deltas (width: full→48, padding: 8→12, margin: 0→-3) animate together on the
- * SAME duration/easing as the sidebar itself — so spatial consistency holds throughout the motion
- * instead of snapping at the start.
- */
 const menuButtonStableClass = cn(
-  "h-12",
   "transition-[width,height,padding,margin] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
-  "group-data-[collapsible=icon]:!size-12",
-  "group-data-[collapsible=icon]:!p-3",
-  "group-data-[collapsible=icon]:!-mx-[3px]",
 );
 
-/**
- * Match the label's exit to the sidebar's collapse motion (240ms + iOS curve) so the label finishes
- * fading exactly when the rail finishes narrowing — no orphan "icon centered in still-expanding rail"
- * frame. Per Emil: spatial consistency + cohesion of easing/duration with the rest of the motion.
- */
-const menuButtonLabelFadeClass = cn(
-  "[&>span:last-child]:!duration-240",
-  "[&>span:last-child]:!ease-[cubic-bezier(0.32,0.72,0,1)]",
-  "group-data-[collapsible=icon]:[&>span:last-child]:opacity-0",
-);
+const menuButtonLabelFadeClass = cn("group-data-[collapsible=icon]:[&>span:last-child]:opacity-0");
 
 /** Cancel -mt-8 slide; keep label row height so nav items do not jump vertically. */
 const groupLabelStableClass = cn(

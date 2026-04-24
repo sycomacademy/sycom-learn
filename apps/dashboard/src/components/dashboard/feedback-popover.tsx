@@ -104,7 +104,7 @@ export function FeedbackPopover() {
               render={({ field, fieldState }) => (
                 <FormItem>
                   <Field>
-                    <FieldLabel className="text-xs! text-muted-foreground">
+                    <FieldLabel className="text-xs text-muted-foreground sm:text-xs">
                       Your feedback
                     </FieldLabel>
                     <FormControl>
