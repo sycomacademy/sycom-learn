@@ -43,6 +43,13 @@
       "when": 1777118413623,
       "tag": "0005_strong_forgotten_one",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777136243000,
+      "tag": "0006_vengeful_boomer",
+      "breakpoints": true
     }
   ]
 }

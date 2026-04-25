@@ -36,7 +36,10 @@ export function buildImageUrl(publicId: string): string {
   }
 
   const id = publicId.replace(/^\/+/, "");
-  const cld = new Cloudinary({ cloud: { cloudName: getCloudName() } });
+  const cld = new Cloudinary({
+    cloud: { cloudName: getCloudName() },
+    url: { analytics: false, secure: true },
+  });
   const image = cld.image(id);
 
   image.format("auto");

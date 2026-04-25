@@ -1,4 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { uploadFile } from "@sycom/storage/client";
+import { AvatarUploader as AvatarUploaderUI } from "@sycom/ui/components/avatar-uploader";
 import { Button } from "@sycom/ui/components/button";
 import {
   Card,
@@ -12,17 +14,15 @@ import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
 import { Input } from "@sycom/ui/components/input";
 import { toastManager } from "@sycom/ui/components/toast";
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
 import { contacts } from "@sycom/ui/lib/constants";
-import { useUser } from "@/hooks/use-user";
-import { authClient } from "@/lib/auth/auth-client";
-import { useTRPC } from "@/lib/trpc/client";
+import { useUser, useUserMutation } from "@/hooks/use-user";
+import { useTRPCClient } from "@/lib/trpc/client";
 import { capitalize, parseName } from "@sycom/ui/lib/string";
-import { AvatarUploader } from "@/components/dashboard/settings/avatar-uploader";
 
 const fullNameSchema = z.object({
   firstName: z
@@ -39,8 +39,9 @@ export const Route = createFileRoute("/dashboard/settings/general")({
 
 function GeneralSettings() {
   const { user } = useUser();
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
+  const { updateName, updateAvatar } = useUserMutation();
+  const trpcClient = useTRPCClient();
+  const [isUploading, setIsUploading] = useState(false);
 
   const { firstName, lastName } = parseName(user.name);
 
@@ -50,33 +51,59 @@ function GeneralSettings() {
   });
 
   const onSubmitName = async (data: FullNameInput) => {
+    const fullName = [capitalize(data.firstName.trim()), capitalize(data.lastName.trim())]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    if (!fullName || fullName === user.name.trim()) {
+      return;
+    }
     try {
-      const fullName = [capitalize(data.firstName.trim()), capitalize(data.lastName.trim())]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-      if (!fullName) {
-        return;
-      }
-      if (fullName === user.name.trim()) {
-        return;
-      }
-      const { error } = await authClient.updateUser({ name: fullName });
-      if (error) {
-        toastManager.add({ title: error.message, type: "error" });
-        return;
-      }
-      await queryClient.invalidateQueries({ queryKey: trpc.profile.get.queryKey() });
+      await updateName.mutateAsync({ name: fullName });
       toastManager.add({ title: "Name updated", type: "success" });
     } catch (error) {
-      if (error instanceof Error) {
-        toastManager.add({ title: error.message, type: "error" });
-        return;
-      }
-      toastManager.add({
-        title: "Couldn't reach server. Check your connection and try again.",
-        type: "error",
+      const message =
+        error instanceof Error ? error.message : "Couldn't update name. Please try again.";
+      toastManager.add({ title: "Failed to update name", description: message, type: "error" });
+      nameForm.reset({ firstName, lastName });
+    }
+  };
+
+  const onCropComplete = async (blob: Blob, fileName: string) => {
+    setIsUploading(true);
+    try {
+      const signedParams = await trpcClient.storage.signUpload.mutate({
+        folder: "user_avatars",
+        entityType: "user",
+        entityId: user.id,
       });
+
+      const file = new File([blob], fileName, { type: blob.type });
+      const result = await uploadFile({ file, signedParams });
+
+      await trpcClient.storage.saveAsset.mutate({
+        publicId: result.publicId,
+        secureUrl: result.secureUrl,
+        folder: "user_avatars",
+        entityType: "user",
+        entityId: user.id,
+        resourceType: result.resourceType,
+        format: result.format,
+        bytes: result.bytes,
+        width: result.width,
+        height: result.height,
+        name: fileName,
+      });
+
+      // Do not optimistically patch avatar: only update UI after storage + profile writes complete.
+      await updateAvatar.mutateAsync({ publicId: result.publicId });
+      toastManager.add({ title: "Avatar updated", type: "success" });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Couldn't upload avatar. Please try again.";
+      toastManager.add({ title: "Upload failed", description: message, type: "error" });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -84,7 +111,12 @@ function GeneralSettings() {
     <div className="space-y-4">
       <Card>
         <div className="flex items-center gap-4 p-6">
-          <AvatarUploader user={user} />
+          <AvatarUploaderUI
+            currentImagePublicId={user.image}
+            isUploading={isUploading}
+            name={user.name}
+            onCropComplete={onCropComplete}
+          />
           <div>
             <p className="text-sm font-semibold">{user.name}</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -94,7 +126,7 @@ function GeneralSettings() {
 
       <Card>
         <Form {...nameForm}>
-          <form onSubmit={nameForm.handleSubmit(onSubmitName)}>
+          <form onSubmit={nameForm.handleSubmit(async (data) => await onSubmitName(data))}>
             <CardHeader>
               <CardTitle className="text-sm">Full name</CardTitle>
               <CardDescription className="text-sm">

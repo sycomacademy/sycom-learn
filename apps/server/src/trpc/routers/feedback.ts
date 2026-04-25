@@ -5,7 +5,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../init";
 
 const submitFeedbackSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.email(),
   message: z.string().trim().min(1).max(5000),
 });
 type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
