@@ -10,12 +10,10 @@ import {
 } from "@sycom/ui/components/card";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
-import { ImageUpload } from "@sycom/ui/components/image-upload";
 import { Input } from "@sycom/ui/components/input";
 import { toastManager } from "@sycom/ui/components/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
@@ -24,6 +22,8 @@ import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
 import { useTRPC } from "@/lib/trpc/client";
 import { capitalize, getInitials, parseName } from "@sycom/ui/lib/string";
+import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar";
+import { CameraIcon } from "lucide-react";
 
 const fullNameSchema = z.object({
   firstName: z
@@ -42,7 +42,6 @@ function GeneralSettings() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
-  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
 
   const { firstName, lastName } = parseName(user.name);
   const initials = getInitials(user.name);
@@ -86,26 +85,23 @@ function GeneralSettings() {
   return (
     <div className="space-y-4">
       <Card>
-        <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <ImageUpload
-              alt={user.name}
-              description="Drop an image here or click to browse. JPG, PNG, GIF, or WebP up to 5 MB."
-              fallback={initials}
-              onChange={setSelectedAvatarFile}
-              previewClassName="size-14 rounded-xl text-sm"
-              value={user.image}
-            />
-
-            <div>
-              <p className="text-sm font-semibold">{user.name}</p>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-              {selectedAvatarFile ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Selected locally only. Cloudinary is not connected yet.
-                </p>
-              ) : null}
-            </div>
+        <div className="flex items-center gap-4 p-6">
+          <div className="relative">
+            <Avatar className="size-14 rounded-xl text-sm">
+              {user.image && <AvatarImage src={user.image} />}
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            <button
+              aria-label="Change profile photo"
+              className="absolute -right-1 -bottom-1 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
+              type="button"
+            >
+              <CameraIcon className="size-3" />
+            </button>
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{user.name}</p>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
         </div>
       </Card>
