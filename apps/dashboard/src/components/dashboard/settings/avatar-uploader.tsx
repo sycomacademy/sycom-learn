@@ -26,7 +26,7 @@ export function AvatarUploader({ user }: AvatarUploaderProps) {
     setIsUploading(true);
     try {
       const signedParams = await trpcClient.storage.signUpload.mutate({
-        folder: "avatars",
+        folder: "user_avatars",
         entityType: "user",
         entityId: user.id,
       });
@@ -37,7 +37,7 @@ export function AvatarUploader({ user }: AvatarUploaderProps) {
       await trpcClient.storage.saveAsset.mutate({
         publicId: result.publicId,
         secureUrl: result.secureUrl,
-        folder: "avatars",
+        folder: "user_avatars",
         entityType: "user",
         entityId: user.id,
         resourceType: result.resourceType,

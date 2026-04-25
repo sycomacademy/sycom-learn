@@ -1,10 +1,10 @@
+import type {
+  StorageEntityType,
+  StorageFolder,
+  StorageResourceType,
+} from "@sycom/db/schema/storage";
 import { env } from "@sycom/env/server";
 import { v2 as cloudinary } from "cloudinary";
-
-import type { StorageEntityType, StorageFolder, StorageResourceType } from "./schemas";
-import type { SignedUploadParams } from "./types";
-
-export type { SignedUploadParams, UploadResult } from "./types";
 
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME,
@@ -53,7 +53,7 @@ export function signUploadParams(input: {
   entityId: string;
   uploaderId: string;
   uploaderEmail: string;
-}): SignedUploadParams {
+}) {
   const publicId = buildPublicId(input.folder, input.entityId);
   const assetFolder = buildAssetFolder(input.folder, input.entityId);
   const timestamp = Math.round(Date.now() / 1000);
@@ -80,6 +80,8 @@ export function signUploadParams(input: {
     tags,
   };
 }
+
+export type SignedUploadParams = ReturnType<typeof signUploadParams>;
 
 export async function removeAsset(
   publicId: string,

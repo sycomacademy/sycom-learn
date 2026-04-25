@@ -21,7 +21,7 @@ export const storageResourceTypeEnum = pgEnum("storage_resource_type", [
 export type StorageResourceType = (typeof storageResourceTypeEnum.enumValues)[number];
 
 export const storageFolderEnum = pgEnum("storage_folder", [
-  "avatars",
+  "user_avatars",
   "course_thumbnails",
   "lesson_artifacts",
   "organization_logos",

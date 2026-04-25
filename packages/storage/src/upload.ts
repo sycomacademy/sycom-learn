@@ -1,5 +1,6 @@
-import type { StorageResourceType } from "./schemas";
-import type { SignedUploadParams, UploadResult } from "./types";
+import type { NewStorage } from "@sycom/db/schema/storage";
+import type { StorageResourceType } from "@sycom/db/schema/storage";
+import type { SignedUploadParams } from "./cloudinary";
 
 interface CloudinaryUploadResponse {
   secure_url?: string;
@@ -11,6 +12,16 @@ interface CloudinaryUploadResponse {
   resource_type?: string;
   error?: { message?: string };
 }
+
+export type UploadResult = {
+  secureUrl: string;
+  publicId: string;
+  format: NewStorage["format"];
+  bytes: NewStorage["bytes"];
+  width?: number;
+  height?: number;
+  resourceType: NewStorage["resourceType"];
+};
 
 function mapResourceType(type: string | undefined): StorageResourceType {
   switch (type) {

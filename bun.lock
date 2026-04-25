@@ -208,6 +208,7 @@
     "packages/storage": {
       "name": "@sycom/storage",
       "dependencies": {
+        "@sycom/db": "workspace:*",
         "@sycom/env": "workspace:*",
         "cloudinary": "^2.9.0",
         "zod": "catalog:",
