@@ -66,7 +66,12 @@ export function DashboardUserMenu(): React.ReactElement {
           <Button aria-label="Open user menu" size="icon-lg" variant="ghost">
             <Avatar>
               {user.image ? (
-                <AvatarImage alt={user.name ?? "User"} src={buildImageUrl(user.image)} />
+                <AvatarImage
+                  alt={user.name ?? "User"}
+                  fetchPriority="high"
+                  loading="eager"
+                  src={buildImageUrl(user.image)}
+                />
               ) : null}
               <AvatarFallback>
                 {enableFacehash ? (
