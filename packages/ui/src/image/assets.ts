@@ -7,6 +7,8 @@
  */
 
 export const BRAND = {
-  LOGO: "brand/sycom-logo",
+  LOGO: "brand/sycom-logo-jpg",
+  LOGO_PNG: "brand/sycom-logo-png",
   FAVICON: "brand/favicon",
+  LOGO_ICON: "brand/sycom-logo-icon-jpg",
 } as const;

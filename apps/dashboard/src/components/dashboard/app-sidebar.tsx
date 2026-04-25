@@ -80,10 +80,10 @@ export function AppSidebar(): React.ReactElement {
         >
           <Image
             alt="Sycom Solutions logo"
-            className="h-10 w-auto"
+            className="rounded object-contain"
             height={40}
-            src={BRAND.LOGO}
-            width={160}
+            width={40}
+            src={BRAND.LOGO_ICON}
           />
         </Link>
       </SidebarHeader>

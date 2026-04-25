@@ -1,10 +1,15 @@
 import { Cloudinary } from "@cloudinary/url-gen";
 
-type ImportMetaEnvLike = { VITE_CLOUDINARY_CLOUD_NAME?: string };
-type ImportMetaLike = ImportMeta & { env?: ImportMetaEnvLike };
+function getViteCloudName(): string | undefined {
+  try {
+    return import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  } catch {
+    return undefined;
+  }
+}
 
 function getCloudName(): string {
-  const fromVite = (import.meta as ImportMetaLike)?.env?.VITE_CLOUDINARY_CLOUD_NAME;
+  const fromVite = getViteCloudName();
   if (fromVite) return fromVite;
 
   if (typeof process !== "undefined") {
@@ -18,7 +23,15 @@ function getCloudName(): string {
 }
 
 export function buildImageUrl(publicId: string): string {
-  if (publicId.startsWith("http://") || publicId.startsWith("https://")) {
+  if (
+    publicId.startsWith("http://") ||
+    publicId.startsWith("https://") ||
+    publicId.startsWith("/") ||
+    publicId.startsWith("./") ||
+    publicId.startsWith("../") ||
+    publicId.startsWith("data:") ||
+    publicId.startsWith("blob:")
+  ) {
     return publicId;
   }
 

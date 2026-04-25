@@ -34,13 +34,13 @@ function AuthLayout() {
         <div className="flex h-full w-full max-w-md flex-col">
           <div className="mb-8 flex items-center lg:hidden">
             <Link className="flex items-center gap-2" to="/sign-in">
-              <div className="flex size-8 items-center justify-center rounded bg-primary">
+              <div className="flex size-16 items-center justify-center rounded bg-primary">
                 <Image
                   alt="Sycom Solutions logo"
-                  className="size-8 object-contain"
-                  height={32}
+                  className="rounded object-contain"
+                  height={80}
                   src={BRAND.LOGO}
-                  width={32}
+                  width={80}
                 />
               </div>
             </Link>
