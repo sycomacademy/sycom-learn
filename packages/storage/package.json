@@ -1,0 +1,32 @@
+{
+  "name": "@sycom/storage",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./server": {
+      "default": "./src/cloudinary.ts"
+    },
+    "./client": {
+      "default": "./src/upload.ts"
+    },
+    "./schemas": {
+      "default": "./src/schemas.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@sycom/env": "workspace:*",
+    "cloudinary": "^2.9.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@sycom/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "^6.0.3"
+  }
+}

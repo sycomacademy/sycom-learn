@@ -1,17 +1,28 @@
 import { and, eq } from "drizzle-orm";
 
 import type { Database } from "..";
-import { storage, type ImageFor, type NewStorage } from "../schema/storage";
+import { storage, type NewStorage, type StorageEntityType } from "../schema/storage";
 
-export async function createStorageEntry(database: Database, input: NewStorage) {
-  const [row] = await database.insert(storage).values(input).returning();
+export async function createMediaAsset(database: Database, input: NewStorage) {
+  const [row] = await database
+    .insert(storage)
+    .values(input)
+    .onConflictDoUpdate({
+      target: storage.publicId,
+      set: {
+        secureUrl: input.secureUrl,
+        bytes: input.bytes,
+        width: input.width ?? null,
+        height: input.height ?? null,
+        tags: input.tags ?? [],
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
   return row ?? null;
 }
 
-export async function deleteStorageEntryByPublicId(
-  database: Database,
-  input: { publicId: string },
-) {
+export async function deleteMediaAssetByPublicId(database: Database, input: { publicId: string }) {
   const [row] = await database
     .delete(storage)
     .where(eq(storage.publicId, input.publicId))
@@ -19,12 +30,21 @@ export async function deleteStorageEntryByPublicId(
   return row ?? null;
 }
 
-export async function getStorageEntriesForEntity(
+export async function findMediaAssetByPublicId(database: Database, input: { publicId: string }) {
+  const [row] = await database
+    .select()
+    .from(storage)
+    .where(eq(storage.publicId, input.publicId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function findMediaAssetsByEntity(
   database: Database,
-  input: { imageFor: ImageFor; entityId: string },
+  input: { entityType: StorageEntityType; entityId: string },
 ) {
   return database
     .select()
     .from(storage)
-    .where(and(eq(storage.imageFor, input.imageFor), eq(storage.entityId, input.entityId)));
+    .where(and(eq(storage.entityType, input.entityType), eq(storage.entityId, input.entityId)));
 }

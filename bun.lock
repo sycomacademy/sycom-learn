@@ -26,6 +26,7 @@
         "@sycom/auth": "workspace:*",
         "@sycom/env": "workspace:*",
         "@sycom/logger": "workspace:*",
+        "@sycom/storage": "workspace:*",
         "@sycom/ui": "workspace:*",
         "@tailwindcss/vite": "^4.2.4",
         "@tanstack/react-query": "^5.99.2",
@@ -77,10 +78,10 @@
         "@sycom/db": "workspace:*",
         "@sycom/env": "workspace:*",
         "@sycom/logger": "workspace:*",
+        "@sycom/storage": "workspace:*",
         "@sycom/ui": "workspace:*",
         "@trpc/server": "catalog:",
         "better-auth": "catalog:",
-        "cloudinary": "^2.9.0",
         "dotenv": "catalog:",
         "drizzle-orm": "catalog:",
         "hono": "catalog:",
@@ -201,6 +202,19 @@
       },
       "devDependencies": {
         "@sycom/config": "workspace:*",
+        "typescript": "^6.0.3",
+      },
+    },
+    "packages/storage": {
+      "name": "@sycom/storage",
+      "dependencies": {
+        "@sycom/env": "workspace:*",
+        "cloudinary": "^2.9.0",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@sycom/config": "workspace:*",
+        "@types/bun": "catalog:",
         "typescript": "^6.0.3",
       },
     },
@@ -1052,6 +1066,8 @@
     "@sycom/env": ["@sycom/env@workspace:packages/env"],
 
     "@sycom/logger": ["@sycom/logger@workspace:packages/logger"],
+
+    "@sycom/storage": ["@sycom/storage@workspace:packages/storage"],
 
     "@sycom/ui": ["@sycom/ui@workspace:packages/ui"],
 
