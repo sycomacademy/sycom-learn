@@ -29,6 +29,13 @@
       "when": 1776940070973,
       "tag": "0003_classy_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777079575034,
+      "tag": "0004_brainy_valeria_richards",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,7 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { getInitials, snakeCaseToTitleCase } from "@sycom/ui/lib/string";
 import { Facehash } from "facehash";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
@@ -64,7 +65,9 @@ export function DashboardUserMenu(): React.ReactElement {
         render={
           <Button aria-label="Open user menu" size="icon-lg" variant="ghost">
             <Avatar>
-              {user.image ? <AvatarImage alt={user.name ?? "User"} src={user.image} /> : null}
+              {user.image ? (
+                <AvatarImage alt={user.name ?? "User"} src={buildImageUrl(user.image)} />
+              ) : null}
               <AvatarFallback>
                 {enableFacehash ? (
                   <Facehash

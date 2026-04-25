@@ -21,9 +21,8 @@ import { contacts } from "@sycom/ui/lib/constants";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
 import { useTRPC } from "@/lib/trpc/client";
-import { capitalize, getInitials, parseName } from "@sycom/ui/lib/string";
-import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar";
-import { CameraIcon } from "lucide-react";
+import { capitalize, parseName } from "@sycom/ui/lib/string";
+import { AvatarUploader } from "@/components/settings/avatar-uploader";
 
 const fullNameSchema = z.object({
   firstName: z
@@ -44,7 +43,6 @@ function GeneralSettings() {
   const trpc = useTRPC();
 
   const { firstName, lastName } = parseName(user.name);
-  const initials = getInitials(user.name);
 
   const nameForm = useForm<FullNameInput>({
     resolver: zodResolver(fullNameSchema),
@@ -86,19 +84,7 @@ function GeneralSettings() {
     <div className="space-y-4">
       <Card>
         <div className="flex items-center gap-4 p-6">
-          <div className="relative">
-            <Avatar className="size-14 rounded-xl text-sm">
-              {user.image && <AvatarImage src={user.image} />}
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <button
-              aria-label="Change profile photo"
-              className="absolute -right-1 -bottom-1 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
-              type="button"
-            >
-              <CameraIcon className="size-3" />
-            </button>
-          </div>
+          <AvatarUploader user={user} />
           <div>
             <p className="text-sm font-semibold">{user.name}</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>

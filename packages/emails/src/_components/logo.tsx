@@ -7,9 +7,9 @@ export function Logo() {
     <Section>
       <Img
         alt="Sycom Solutions"
-        className="mx-auto my-0 block"
-        src={buildImageUrl(BRAND.LOGO)}
-        width="146"
+        className="mx-auto my-0 block size-10 object-contain"
+        src={buildImageUrl(BRAND.LOGO_ICON)}
+        width="40"
       />
     </Section>
   );

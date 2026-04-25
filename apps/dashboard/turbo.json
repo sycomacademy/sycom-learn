@@ -1,0 +1,14 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": ["BUNDLE_ANALYZE", "VITE_*"]
+    },
+    "dev": {
+      "env": ["BUNDLE_ANALYZE", "VITE_*"]
+    },
+    "test": {
+      "env": ["VITE_*"]
+    }
+  }
+}
