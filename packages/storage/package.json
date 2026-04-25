@@ -22,7 +22,7 @@
   "dependencies": {
     "@sycom/db": "workspace:*",
     "@sycom/env": "workspace:*",
-    "cloudinary": "^2.9.0",
+    "cloudinary": "^2.10.0",
     "zod": "catalog:"
   },
   "devDependencies": {

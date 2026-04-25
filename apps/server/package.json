@@ -35,7 +35,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@sycom/config": "workspace:*",
     "@types/bun": "catalog:",
-    "tsdown": "^0.21.9",
+    "tsdown": "^0.21.10",
     "typescript": "^6.0.3"
   }
 }
