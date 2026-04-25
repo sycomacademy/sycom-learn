@@ -1,13 +1,7 @@
 import type { Database } from "..";
-import { feedback } from "../schema/feedback";
+import { feedback, type NewFeedback } from "../schema/feedback";
 
-export interface CreateFeedbackInput {
-  userId?: string | null;
-  email: string;
-  message: string;
-}
-
-export async function createFeedback(database: Database, input: CreateFeedbackInput) {
+export async function createFeedback(database: Database, input: NewFeedback) {
   const [row] = await database
     .insert(feedback)
     .values({

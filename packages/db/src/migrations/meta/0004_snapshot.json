@@ -1,5 +1,5 @@
 {
-  "id": "9bbe2df0-f228-47fb-b954-78cd7ec2b143",
+  "id": "7c11c9d9-8da1-491a-9c2c-388bcfbedc3b",
   "prevId": "ae500d25-38b3-4e97-b152-632c295b8125",
   "version": "7",
   "dialect": "postgresql",
@@ -1099,8 +1099,72 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.image": {
-      "name": "image",
+    "public.profile": {
+      "name": "profile",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "onboarded_at": {
+          "name": "onboarded_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "''"
+        },
+        "settings": {
+          "name": "settings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{\"useDeviceTimezone\":true,\"enableFacehash\":true,\"marketingEmails\":true}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "profile_user_id_user_id_fk": {
+          "name": "profile_user_id_user_id_fk",
+          "tableFrom": "profile",
+          "tableTo": "user",
+          "schemaTo": "auth",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.storage": {
+      "name": "storage",
       "schema": "",
       "columns": {
         "id": {
@@ -1180,8 +1244,8 @@
         }
       },
       "indexes": {
-        "image_publicId_uidx": {
-          "name": "image_publicId_uidx",
+        "storage_publicId_uidx": {
+          "name": "storage_publicId_uidx",
           "columns": [
             {
               "expression": "public_id",
@@ -1195,8 +1259,8 @@
           "method": "btree",
           "with": {}
         },
-        "image_for_entity_idx": {
-          "name": "image_for_entity_idx",
+        "storage_for_entity_idx": {
+          "name": "storage_for_entity_idx",
           "columns": [
             {
               "expression": "image_for",
@@ -1216,8 +1280,8 @@
           "method": "btree",
           "with": {}
         },
-        "image_uploadedBy_idx": {
-          "name": "image_uploadedBy_idx",
+        "storage_uploadedBy_idx": {
+          "name": "storage_uploadedBy_idx",
           "columns": [
             {
               "expression": "uploaded_by",
@@ -1233,78 +1297,14 @@
         }
       },
       "foreignKeys": {
-        "image_uploaded_by_user_id_fk": {
-          "name": "image_uploaded_by_user_id_fk",
-          "tableFrom": "image",
+        "storage_uploaded_by_user_id_fk": {
+          "name": "storage_uploaded_by_user_id_fk",
+          "tableFrom": "storage",
           "tableTo": "user",
           "schemaTo": "auth",
           "columnsFrom": ["uploaded_by"],
           "columnsTo": ["id"],
           "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.profile": {
-      "name": "profile",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "onboarded_at": {
-          "name": "onboarded_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bio": {
-          "name": "bio",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "''"
-        },
-        "settings": {
-          "name": "settings",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{\"useDeviceTimezone\":true,\"enableFacehash\":true,\"marketingEmails\":true}'::jsonb"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "profile_user_id_user_id_fk": {
-          "name": "profile_user_id_user_id_fk",
-          "tableFrom": "profile",
-          "tableTo": "user",
-          "schemaTo": "auth",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1329,7 +1329,7 @@
     "public.image_for": {
       "name": "image_for",
       "schema": "public",
-      "values": ["avatar", "course_thumbnail", "lesson_video", "cohort_logo", "organization_logo"]
+      "values": ["user_avatar", "course_thumbnail", "lesson_artifact", "organization_logo"]
     }
   },
   "schemas": {},

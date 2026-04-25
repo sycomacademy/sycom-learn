@@ -1,5 +1,5 @@
 import { auth } from "@sycom/auth";
-import { createImage } from "@sycom/db/queries/index";
+import { createStorageEntry } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -33,14 +33,14 @@ export const avatarRouter = router({
       });
     }
 
-    const row = await createImage(ctx.db, {
+    const row = await createStorageEntry(ctx.db, {
       publicId: mutationInput.publicId,
       name: mutationInput.name ?? null,
       format: mutationInput.format,
       bytes: mutationInput.bytes,
       width: mutationInput.width,
       height: mutationInput.height,
-      imageFor: "avatar",
+      imageFor: "user_avatar",
       entityId: userId,
       uploadedBy: userId,
     });
@@ -48,7 +48,7 @@ export const avatarRouter = router({
     if (!row) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to record image",
+        message: "Failed to record storage entry",
       });
     }
 

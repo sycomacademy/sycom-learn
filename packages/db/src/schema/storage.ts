@@ -5,16 +5,15 @@ import { user } from "./auth";
 import { createdAt, updatedAt } from "./_shared";
 
 export const imageForEnum = pgEnum("image_for", [
-  "avatar",
+  "user_avatar",
   "course_thumbnail",
-  "lesson_video",
-  "cohort_logo",
+  "lesson_artifact",
   "organization_logo",
 ]);
 export type ImageFor = (typeof imageForEnum.enumValues)[number];
 
-export const image = pgTable(
-  "image",
+export const storage = pgTable(
+  "storage",
   {
     id: text("id")
       .primaryKey()
@@ -32,18 +31,18 @@ export const image = pgTable(
     updatedAt,
   },
   (table) => [
-    uniqueIndex("image_publicId_uidx").on(table.publicId),
-    index("image_for_entity_idx").on(table.imageFor, table.entityId),
-    index("image_uploadedBy_idx").on(table.uploadedBy),
+    uniqueIndex("storage_publicId_uidx").on(table.publicId),
+    index("storage_for_entity_idx").on(table.imageFor, table.entityId),
+    index("storage_uploadedBy_idx").on(table.uploadedBy),
   ],
 );
 
-export const imageRelations = relations(image, ({ one }) => ({
+export const storageRelations = relations(storage, ({ one }) => ({
   uploader: one(user, {
-    fields: [image.uploadedBy],
+    fields: [storage.uploadedBy],
     references: [user.id],
   }),
 }));
 
-export type Image = typeof image.$inferSelect;
-export type NewImage = typeof image.$inferInsert;
+export type Storage = typeof storage.$inferSelect;
+export type NewStorage = typeof storage.$inferInsert;

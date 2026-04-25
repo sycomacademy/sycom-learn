@@ -75,7 +75,7 @@ export function AppSidebar(): React.ReactElement {
     <Sidebar className="border-sidebar-border" collapsible="icon" variant="inset">
       <SidebarHeader>
         <Link
-          className="flex items-center gap-2 text-sm font-semibold text-sidebar-foreground"
+          className="flex w-fit items-center gap-2 text-sm font-semibold text-sidebar-foreground"
           href="/dashboard"
         >
           <Image

@@ -22,7 +22,7 @@ import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
 import { useTRPC } from "@/lib/trpc/client";
 import { capitalize, parseName } from "@sycom/ui/lib/string";
-import { AvatarUploader } from "@/components/settings/avatar-uploader";
+import { AvatarUploader } from "@/components/dashboard/settings/avatar-uploader";
 
 const fullNameSchema = z.object({
   firstName: z

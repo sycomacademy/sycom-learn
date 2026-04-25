@@ -262,15 +262,15 @@ export function AvatarUploader({ user }: AvatarUploaderProps) {
               <ZoomOutIcon aria-hidden="true" className="shrink-0 opacity-60" size={16} />
               <Slider
                 aria-label="Zoom"
-                defaultValue={[1]}
+                className="flex-1"
                 max={3}
                 min={1}
-                onValueChange={(value) => {
-                  const next = value[0];
+                onValueChange={(next) => {
                   if (typeof next === "number") setZoom(next);
+                  else if (Array.isArray(next) && typeof next[0] === "number") setZoom(next[0]);
                 }}
                 step={0.1}
-                value={[zoom]}
+                value={zoom}
               />
               <ZoomInIcon aria-hidden="true" className="shrink-0 opacity-60" size={16} />
             </div>
