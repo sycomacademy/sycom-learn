@@ -5,7 +5,12 @@
   "globalPassThroughEnv": ["VERCEL_*"],
   "tasks": {
     "build": {
-      "env": ["VITE_SERVER_URL", "VITE_DASHBOARD_URL", "VITE_WEBSITE_URL"],
+      "env": [
+        "VITE_SERVER_URL",
+        "VITE_DASHBOARD_URL",
+        "VITE_WEBSITE_URL",
+        "VITE_CLOUDINARY_CLOUD_NAME"
+      ],
       "dependsOn": ["dashboard#build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**"]
