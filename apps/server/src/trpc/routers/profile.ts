@@ -43,6 +43,13 @@ const updateProfileSchema = profileSelectSchema
   });
 type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  revokeOtherSessions: z.boolean().optional(),
+});
+type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
 export const profileRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
@@ -95,5 +102,20 @@ export const profileRouter = router({
     }
 
     return profile;
+  }),
+
+  changePassword: protectedProcedure
+    .input(changePasswordSchema)
+    .mutation(async ({ ctx, input }) => {
+      const mutationInput: ChangePasswordInput = input;
+      await auth.api.changePassword({
+        body: mutationInput,
+        headers: ctx.headers,
+      });
+      return { success: true };
+    }),
+
+  listAccounts: protectedProcedure.query(async ({ ctx }) => {
+    return await auth.api.listUserAccounts({ headers: ctx.headers });
   }),
 });

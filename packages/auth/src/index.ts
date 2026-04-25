@@ -33,26 +33,14 @@ export function createAuth() {
         httpOnly: true,
       },
       useSecureCookies: env.NODE_ENV === "production",
-      // TODO(deploy): re-enable crossSubDomainCookies with an explicit `domain`
-      // crossSubDomainCookies: {
-      //   enabled: true,
-      // },
-      // (e.g. ".sycom.com") when deploying dashboard + api to subdomains.
-      //   ipAddress: {
-      //     ipAddressHeaders: [
-      //       process.env.NODE_ENV === "production"
-      //         ? "x-vercel-forwarded-for"
-      //         : "cf-connecting-ip",
-      //       // "x-forwarded-for",
-      //     ],
-      //   },
-      // TODO(security): before going to production, set ipAddressHeaders to
-      // match the deployment's trusted proxy header (e.g.
-      // ["x-vercel-forwarded-for"] on Vercel, ["cf-connecting-ip"] on
-      // Cloudflare). Default reads x-forwarded-for, which is spoofable when
-      // not behind a known proxy and lets attackers bypass rate limits.
+      crossSubDomainCookies: {
+        enabled: process.env.NODE_ENV === "production",
+      },
+      ipAddressHeaders:
+        env.NODE_ENV === "production"
+          ? ["x-vercel-forwarded-for", "x-real-ip", "x-forwarded-for"]
+          : ["x-forwarded-for"],
     },
-
     experimental: {
       joins: true,
     },
@@ -94,6 +82,7 @@ export function createAuth() {
         "/sign-in/email": { window: 60, max: 10 },
         "/request-password-reset": { window: 60 * 60, max: 3 },
         "/reset-password": { window: 60 * 60, max: 5 },
+        "/change-password": { window: 60 * 60, max: 5 },
       },
     },
     databaseHooks: {

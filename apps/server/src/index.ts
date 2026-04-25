@@ -12,6 +12,7 @@ import { httpLogger } from "@/utils/http-logger";
 import { byIp, createRateLimitMiddleware } from "@/utils/rate-limit";
 import { consoleText } from "@sycom/ui/lib/constants";
 import { csrf } from "hono/csrf";
+import { readFile } from "node:fs/promises";
 
 const honoLogger = createLoggerWithContext("hono");
 
@@ -69,16 +70,23 @@ app.get("/", (c) => {
 });
 
 if (env.NODE_ENV !== "production") {
-  const faviconFile = Bun.file(new URL("../public/favicon.svg", import.meta.url));
+  const faviconPath = new URL("../public/favicon.svg", import.meta.url);
+  const loadFavicon = async () => readFile(faviconPath);
   const faviconHref = "/favicon.svg";
   const faviconHeaders = {
     "content-type": "image/svg+xml; charset=utf-8",
     "cache-control": "public, max-age=86400",
   };
 
-  app.get("/favicon.svg", () => new Response(faviconFile, { headers: faviconHeaders }));
+  app.get(
+    "/favicon.svg",
+    async () => new Response(await loadFavicon(), { headers: faviconHeaders }),
+  );
 
-  app.get("/favicon.ico", () => new Response(faviconFile, { headers: faviconHeaders }));
+  app.get(
+    "/favicon.ico",
+    async () => new Response(await loadFavicon(), { headers: faviconHeaders }),
+  );
 
   app.get("/docs", async (c) => {
     const { renderTrpcPanel } = await import("trpc-ui-zod4");
