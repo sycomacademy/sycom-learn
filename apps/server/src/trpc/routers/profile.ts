@@ -50,6 +50,11 @@ const changePasswordSchema = z.object({
 });
 type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
+const revokeSessionSchema = z.object({
+  token: z.string().min(1),
+});
+type RevokeSessionInput = z.infer<typeof revokeSessionSchema>;
+
 export const profileRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
@@ -117,5 +122,18 @@ export const profileRouter = router({
 
   listAccounts: protectedProcedure.query(async ({ ctx }) => {
     return await auth.api.listUserAccounts({ headers: ctx.headers });
+  }),
+
+  listSessions: protectedProcedure.query(async ({ ctx }) => {
+    return await auth.api.listSessions({ headers: ctx.headers });
+  }),
+
+  revokeSession: protectedProcedure.input(revokeSessionSchema).mutation(async ({ ctx, input }) => {
+    const mutationInput: RevokeSessionInput = input;
+    await auth.api.revokeSession({
+      body: { token: mutationInput.token },
+      headers: ctx.headers,
+    });
+    return { success: true };
   }),
 });

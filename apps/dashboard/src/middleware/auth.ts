@@ -1,8 +1,16 @@
+import { createLoggerWithContext } from "@sycom/logger";
 import { createMiddleware } from "@tanstack/react-start";
 
 import { authClient } from "@/lib/auth/auth-client";
 
+const startFnLogger = createLoggerWithContext("start:fn");
+
 export const sessionMiddleware = createMiddleware().server(async ({ next, request }) => {
+  startFnLogger.info("getSession request", {
+    method: request.method,
+    url: request.url,
+  });
+
   const data = await authClient.getSession({
     fetchOptions: {
       headers: request.headers,
