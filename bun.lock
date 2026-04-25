@@ -24,6 +24,7 @@
       "dependencies": {
         "@hookform/resolvers": "catalog:",
         "@sycom/auth": "workspace:*",
+        "@sycom/db": "workspace:*",
         "@sycom/env": "workspace:*",
         "@sycom/logger": "workspace:*",
         "@sycom/storage": "workspace:*",
