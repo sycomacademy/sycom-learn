@@ -4,7 +4,7 @@ import { cn } from "@sycom/ui/lib/utils";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
-export default function Error() {
+export default function Error({ mode = "container" }: { mode?: "container" | "screen" }) {
   const router = useRouter();
   const [retrying, setRetrying] = useState(false);
 
@@ -21,6 +21,7 @@ export default function Error() {
     <main
       className={cn(
         "relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-background p-8",
+        mode === "screen" ? "min-h-screen" : "h-full",
       )}
     >
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">

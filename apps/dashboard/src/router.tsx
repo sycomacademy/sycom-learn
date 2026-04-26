@@ -82,7 +82,9 @@ export const getRouter = () => {
     },
     defaultPendingComponent: () => <Loader />,
     defaultNotFoundComponent: () => <NotFound />,
-    defaultErrorComponent: RouteError,
+    defaultErrorComponent: ({ error, reset }) => (
+      <RouteError error={error} mode="container" reset={reset} />
+    ),
     Wrap: ({ children }) => (
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
         {children}

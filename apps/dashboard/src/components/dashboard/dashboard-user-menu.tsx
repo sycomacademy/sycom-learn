@@ -20,7 +20,6 @@ import {
 import { toastManager } from "@sycom/ui/components/toast";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
-import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { getInitials, snakeCaseToTitleCase } from "@sycom/ui/lib/string";
 import { Facehash } from "facehash";
@@ -47,8 +46,12 @@ export function DashboardUserMenu(): React.ReactElement {
         toastManager.add({ title: error.message, type: "error" });
         return;
       }
+
+      await queryClient.cancelQueries();
+      queryClient.clear();
+
       toastManager.add({ title: "Signed out", type: "success" });
-      queryClient.setQueryData(SESSION_QUERY_KEY, null);
+
       await router.navigate({ to: "/sign-in", replace: true });
     } catch {
       toastManager.add({

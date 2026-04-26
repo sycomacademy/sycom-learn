@@ -9,10 +9,9 @@ function isApiUnreachable(err: unknown): boolean {
   return msg.includes("failed to fetch") || msg.includes("fetch failed");
 }
 
-export default function RouteError({ error }: ErrorComponentProps) {
-  return (
-    <div className="flex size-full min-h-screen items-center justify-center">
-      {isApiUnreachable(error) ? <GlobalError /> : <Error />}
-    </div>
-  );
+export default function RouteError({
+  error,
+  mode = "container",
+}: ErrorComponentProps & { mode?: "container" | "screen" }) {
+  return isApiUnreachable(error) ? <GlobalError /> : <Error mode={mode} />;
 }

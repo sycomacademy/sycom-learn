@@ -24,7 +24,7 @@ export const Route = createFileRoute("/dashboard")({
   },
   component: DashboardLayout,
   pendingComponent: RootLoader,
-  errorComponent: RouteError,
+  errorComponent: ({ error, reset }) => <RouteError error={error} mode="screen" reset={reset} />,
 });
 
 function DashboardLayout() {
