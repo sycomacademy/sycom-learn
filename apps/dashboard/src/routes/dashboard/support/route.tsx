@@ -12,9 +12,9 @@ function SupportLayout() {
       <SecondaryMenu
         base="/dashboard/support/report-issue"
         items={[
-          { path: "/dashboard/support/report-issue", label: "Report issue" },
-          { path: "/dashboard/support/contact", label: "Contact" },
-          { path: "/dashboard/support/faqs", label: "FAQs" },
+          { path: "/dashboard/support/report-issue", label: "Report" },
+          { path: "/dashboard/support/faqs", label: "FAQ" },
+          { path: "/dashboard/support/contact", label: "Contact Us" },
         ]}
         label="Support"
       />

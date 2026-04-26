@@ -9,6 +9,7 @@ export const storageEntityTypeEnum = pgEnum("storage_entity_type", [
   "course",
   "lesson",
   "organization",
+  "feedback",
 ]);
 export type StorageEntityType = (typeof storageEntityTypeEnum.enumValues)[number];
 
@@ -25,6 +26,7 @@ export const storageFolderEnum = pgEnum("storage_folder", [
   "course_thumbnails",
   "lesson_artifacts",
   "organization_logos",
+  "feedback_reports",
 ]);
 export type StorageFolder = (typeof storageFolderEnum.enumValues)[number];
 
