@@ -63,6 +63,7 @@ function ReportIssuePage() {
   const trpcClient = useTRPCClient();
   const { user } = useUser();
   const [uploadProgresses, setUploadProgresses] = useState<Record<string, number>>({});
+  const [uploaderResetKey, setUploaderResetKey] = useState(0);
 
   const form = useForm<ReportIssueInput>({
     resolver: zodResolver(reportIssueSchema),
@@ -130,6 +131,7 @@ function ReportIssuePage() {
       });
 
       setUploadProgresses({});
+      setUploaderResetKey((current) => current + 1);
       form.reset({
         type: reportTypeOptions[0].value,
         subject: "",
@@ -246,6 +248,7 @@ function ReportIssuePage() {
                       <FileUploader
                         accept="image/*"
                         className="w-full"
+                        key={uploaderResetKey}
                         maxFileCount={1}
                         maxSize={1024 * 1024 * 5}
                         onFilesChange={(files) => {
