@@ -40,8 +40,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Main",
     items: [
       { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" },
-      { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
       { icon: MessageCircleQuestionIcon, label: "Support", to: "/dashboard/support" },
+      { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
     ],
   },
 ];
