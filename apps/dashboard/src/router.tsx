@@ -11,7 +11,7 @@ import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toastManager } from "@sycom/ui/components/toast";
 import superjson from "superjson";
 
-import Loader from "./components/loader";
+import Loader from "./components/layout/loader";
 import NotFound from "./components/layout/not-found";
 import RouteError from "./components/layout/route-error";
 import { getForwardedCookieHeader } from "./functions/forward-header-cookies";

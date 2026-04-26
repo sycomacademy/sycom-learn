@@ -10,5 +10,9 @@ function isApiUnreachable(err: unknown): boolean {
 }
 
 export default function RouteError({ error }: ErrorComponentProps) {
-  return isApiUnreachable(error) ? <GlobalError /> : <Error />;
+  return (
+    <div className="flex size-full min-h-screen items-center justify-center">
+      {isApiUnreachable(error) ? <GlobalError /> : <Error />}
+    </div>
+  );
 }

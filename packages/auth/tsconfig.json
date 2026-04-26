@@ -2,10 +2,10 @@
   "extends": "@sycom/config/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
+    "declarationMap": false,
     "sourceMap": true,
     "outDir": "dist",
-    "composite": true
+    "composite": false
   }
 }

@@ -3,9 +3,10 @@ import { useState } from "react";
 
 import { CloudLightning } from "@sycom/ui/components/animated/icons/cloud-lightning";
 import { Button } from "@sycom/ui/components/button";
+import { cn } from "@sycom/ui/lib/utils";
 
 /** Mirrors `apps/dashboard/src/components/layout/error.tsx` without router invalidation (demo retry delay only). */
-function RouteErrorScreen() {
+function RouteErrorScreen({ mode = "screen" }: { mode?: "screen" | "container" }) {
   const [retrying, setRetrying] = useState(false);
 
   const onRetry = async () => {
@@ -18,7 +19,12 @@ function RouteErrorScreen() {
   };
 
   return (
-    <main className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background p-8">
+    <main
+      className={cn(
+        "relative flex w-full flex-col items-center justify-center overflow-hidden bg-background p-8",
+        mode === "screen" ? "min-h-svh" : "h-full",
+      )}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_60%)] opacity-[0.07]" />
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
@@ -46,6 +52,9 @@ function RouteErrorScreen() {
 const meta = {
   title: "Screens/Error",
   component: RouteErrorScreen,
+  args: {
+    mode: "screen",
+  },
   parameters: {
     layout: "fullscreen",
   },
@@ -56,3 +65,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const InDashboardContainer: Story = {
+  args: {
+    mode: "container",
+  },
+  parameters: {
+    layout: "padded",
+  },
+  render: (args) => (
+    <div className="h-[520px] w-full rounded-lg border">
+      <RouteErrorScreen {...args} />
+    </div>
+  ),
+};

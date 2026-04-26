@@ -30,6 +30,7 @@ import { useTheme } from "next-themes";
 
 export function DashboardUserMenu(): React.ReactElement {
   const { user, profile } = useUser();
+  const userRole = (user as { role?: string | null }).role;
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const queryClient = useQueryClient();
@@ -98,7 +99,7 @@ export function DashboardUserMenu(): React.ReactElement {
               <p className="truncate text-xs text-muted-foreground">{user.email}</p>
             </div>
             <Badge className="mt-2 rounded-none p-2" size="sm" variant="outline">
-              {snakeCaseToTitleCase(user.role ?? "")}
+              {snakeCaseToTitleCase(userRole ?? "")}
             </Badge>
           </DropdownMenuLabel>
         </DropdownMenuGroup>

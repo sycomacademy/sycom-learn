@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { Spinner } from "@sycom/ui/components/spinner";
+import { Spinner as KiboSpinner } from "../../src/components/kibo-ui/spinner";
 
 const meta = {
   title: "Simple/Spinner",
@@ -33,6 +34,15 @@ export const InButton: Story = {
     <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm">
       <Spinner className="size-3.5" />
       Loading…
+    </div>
+  ),
+};
+
+export const KiboBars: Story = {
+  render: () => (
+    <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm text-muted-foreground">
+      <KiboSpinner className="size-4" variant="bars" />
+      Loading workspace
     </div>
   ),
 };

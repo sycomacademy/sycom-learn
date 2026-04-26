@@ -2,13 +2,19 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { ConstructionIcon } from "@sycom/ui/components/animated/icons/construction";
 import { contacts } from "@sycom/ui/lib/constants";
+import { cn } from "@sycom/ui/lib/utils";
 
 /** Mirrors `apps/dashboard/src/components/layout/global-error.tsx` (blog URL uses a static preview base). */
 const blogUrl = "https://sycomsolutions.com/blog";
 
-function GlobalErrorScreen() {
+function GlobalErrorScreen({ mode = "screen" }: { mode?: "screen" | "container" }) {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-8">
+    <main
+      className={cn(
+        "relative flex w-full flex-col items-center justify-center overflow-hidden bg-background p-8",
+        mode === "screen" ? "min-h-screen" : "h-full",
+      )}
+    >
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
         <div className="flex size-36 items-center justify-center text-primary">
           <ConstructionIcon color="currentColor" animate size={100} />
@@ -46,6 +52,9 @@ function GlobalErrorScreen() {
 const meta = {
   title: "Screens/Global error",
   component: GlobalErrorScreen,
+  args: {
+    mode: "screen",
+  },
   parameters: {
     layout: "fullscreen",
   },
@@ -56,3 +65,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const InDashboardContainer: Story = {
+  args: {
+    mode: "container",
+  },
+  parameters: {
+    layout: "padded",
+  },
+  render: (args) => (
+    <div className="h-[520px] w-full rounded-lg border">
+      <GlobalErrorScreen {...args} />
+    </div>
+  ),
+};

@@ -1,5 +1,6 @@
 import { Button } from "@sycom/ui/components/button";
 import { CloudLightning } from "@sycom/ui/components/animated/icons/cloud-lightning";
+import { cn } from "@sycom/ui/lib/utils";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -17,9 +18,11 @@ export default function Error() {
   };
 
   return (
-    <main className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background p-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_60%)] opacity-[0.07]" />
-
+    <main
+      className={cn(
+        "relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-background p-8",
+      )}
+    >
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
         <div className="flex size-36 items-center justify-center text-primary">
           <CloudLightning animate loop loopDelay={600} size={100} />

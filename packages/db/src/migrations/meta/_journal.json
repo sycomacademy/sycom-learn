@@ -50,6 +50,13 @@
       "when": 1777136243000,
       "tag": "0006_vengeful_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777204657268,
+      "tag": "0007_right_naoko",
+      "breakpoints": true
     }
   ]
 }

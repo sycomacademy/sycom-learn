@@ -5,6 +5,7 @@ import { sessionQueryOptions } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/$")({
   beforeLoad: async ({ context, location }) => {
+    throw new Error("test");
     const session = await context.queryClient.ensureQueryData(sessionQueryOptions());
     if (!session) {
       throw redirect({
@@ -16,5 +17,9 @@ export const Route = createFileRoute("/$")({
   head: () => ({
     meta: [{ title: "Not found | Sycom" }],
   }),
-  component: NotFound,
+  component: () => (
+    <div className="flex min-h-screen items-center justify-center">
+      <NotFound />
+    </div>
+  ),
 });

@@ -16,6 +16,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import GlobalError from "@/components/layout/global-error";
+import { RootLoader } from "@/components/layout/loader";
 
 import appCss from "../index.css?url";
 export type RouterAppContext = {
@@ -49,7 +50,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
     ],
   }),
-
+  pendingComponent: RootLoader,
   component: RootComponent,
   errorComponent: RootError,
 });

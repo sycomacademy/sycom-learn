@@ -2,6 +2,8 @@ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { getSidebarState } from "@/functions/get-sidebar-state";
 import { sessionQueryOptions } from "@/lib/auth/session";
+import { RootLoader } from "@/components/layout/loader";
+import RouteError from "@/components/layout/route-error";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ context, location }) => {
@@ -21,6 +23,8 @@ export const Route = createFileRoute("/dashboard")({
     return { sidebarOpen: sidebarOpen ?? true };
   },
   component: DashboardLayout,
+  pendingComponent: RootLoader,
+  errorComponent: RouteError,
 });
 
 function DashboardLayout() {

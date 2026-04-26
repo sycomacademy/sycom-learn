@@ -1,12 +1,36 @@
-import { Spinner } from "@sycom/ui/components/spinner";
+import { Spinner } from "@sycom/ui/components/kibo-ui/spinner/index";
+import { cn } from "@sycom/ui/lib/utils";
+
+type LoaderMode = "screen" | "container";
+
+type LoaderProps = {
+  mode?: LoaderMode;
+  text?: string;
+  className?: string;
+  spinnerClassName?: string;
+  textClassName?: string;
+};
 
 /**
  * Centered full-size loading surface for route `pendingComponent` and similar.
  */
-export function Loader() {
+export function Loader({
+  mode = "container",
+  text = "Loading",
+  className,
+  spinnerClassName,
+  textClassName,
+}: LoaderProps) {
   return (
-    <div className="flex h-full min-h-40 w-full items-center justify-center pt-8">
-      <Spinner className="size-6" />
+    <div
+      className={cn(
+        "flex size-full flex-col items-center justify-center gap-2",
+        mode === "screen" ? "min-h-screen" : "min-h-40",
+        className,
+      )}
+    >
+      <Spinner className={cn("size-6 text-muted-foreground", spinnerClassName)} variant="bars" />
+      <p className={cn("text-sm text-muted-foreground", textClassName)}>{text}</p>
     </div>
   );
 }
