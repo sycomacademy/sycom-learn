@@ -196,16 +196,15 @@ function SecurityChangePassword() {
       await changePassword.mutateAsync({
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
-        revokeOtherSessions: false,
+        revokeOtherSessions: true,
       });
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Couldn't reach server. Check your connection and try again.";
       toastManager.add({
         title: "Couldn't change password",
-        description: message,
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
         type: "error",
       });
     }
