@@ -1,4 +1,4 @@
-import { Spinner as ShadcnSpinner } from "@repo/shadcn-ui/components/ui/spinner";
+import { Spinner as ShadcnSpinner } from "@sycom/ui/components/kibo-ui/spinner";
 import { LoaderCircleIcon, LoaderIcon, LoaderPinwheelIcon, type LucideProps } from "lucide-react";
 import { cn } from "@sycom/ui/lib/utils";
 
