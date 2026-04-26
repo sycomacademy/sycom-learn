@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
+import { MessageCircleQuestionIcon } from "@sycom/ui/components/animated/icons/message-circle-question";
 import { SettingsIcon } from "@sycom/ui/components/animated/icons/settings";
 import { BRAND, Image } from "@sycom/ui/image";
 import {
@@ -40,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" },
       { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
+      { icon: MessageCircleQuestionIcon, label: "Support", to: "/dashboard/support" },
     ],
   },
 ];
