@@ -1,7 +1,6 @@
-import { asc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import type { Database } from "..";
-import { passkey } from "../schema/auth";
 import { profile, type ProfileSettings } from "../schema/profile";
 
 export async function getProfileByUserId(database: Database, input: { userId: string }) {
@@ -37,16 +36,4 @@ export async function upsertProfileByUserId(
     .returning();
 
   return row ?? null;
-}
-
-export async function listPasskeysByUserId(database: Database, input: { userId: string }) {
-  return await database
-    .select({
-      id: passkey.id,
-      name: passkey.name,
-      createdAt: passkey.createdAt,
-    })
-    .from(passkey)
-    .where(eq(passkey.userId, input.userId))
-    .orderBy(asc(passkey.createdAt), asc(passkey.id));
 }

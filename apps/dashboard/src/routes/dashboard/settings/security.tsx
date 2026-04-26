@@ -2,6 +2,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@sycom/ui/components/button";
 import { Badge } from "@sycom/ui/components/badge";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@sycom/ui/components/accordion";
+import {
   Card,
   CardDescription,
   CardFooter,
@@ -32,7 +38,6 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { formatDeviceLabel, isMobileAgent } from "@sycom/ui/lib/device";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import type { inferRouterOutputs } from "@trpc/server";
 import {
   CheckIcon,
   CopyIcon,
@@ -52,52 +57,6 @@ import * as z from "zod/mini";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
 import { useTRPC } from "@/lib/trpc/client";
-import type { AppRouter } from "server/trpc/routers/_app";
-
-const linkedAccountProviders = ["google", "linkedin"] as const;
-
-const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().check(z.minLength(1, "Current password is required")),
-    newPassword: z.string().check(z.minLength(8, "Password must be at least 8 characters")),
-    confirmNewPassword: z.string(),
-  })
-  .check(
-    z.refine((data) => data.newPassword === data.confirmNewPassword, {
-      message: "Passwords don't match",
-      path: ["confirmNewPassword"],
-    }),
-  );
-
-const passwordConfirmationSchema = z.object({
-  password: z.string().check(z.minLength(1, "Current password is required")),
-});
-
-const verifyTotpSchema = z.object({
-  code: z.string().check(z.minLength(6, "Enter your authenticator code")),
-});
-
-type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
-type PasswordConfirmationInput = z.infer<typeof passwordConfirmationSchema>;
-type VerifyTotpInput = z.infer<typeof verifyTotpSchema>;
-type LinkedAccountProvider = (typeof linkedAccountProviders)[number];
-type ListSessionsOutput = inferRouterOutputs<AppRouter>["profile"]["listSessions"];
-
-const linkedAccountProviderConfig: Record<
-  LinkedAccountProvider,
-  { description: string; icon: typeof GoogleIcon; label: string }
-> = {
-  google: {
-    description: "Use your Google account for sign-in and account recovery.",
-    icon: GoogleIcon,
-    label: "Google",
-  },
-  linkedin: {
-    description: "Connect LinkedIn so you can sign in without a separate Sycom password.",
-    icon: LinkedInIcon,
-    label: "LinkedIn",
-  },
-};
 
 export const Route = createFileRoute("/dashboard/settings/security")({
   loader: async ({ context }) => {
@@ -114,10 +73,10 @@ function SecuritySettings() {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <SecuritySessionsActive />
+      <SecurityChangePassword />
       <SecurityPasskeys />
       <SecurityLinkedAccounts />
       <SecurityTwoFactorAuthentication />
-      <SecurityChangePassword />
     </div>
   );
 }
@@ -133,11 +92,9 @@ function SecuritySessionsActive() {
       onMutate: async ({ token }) => {
         await queryClient.cancelQueries({ queryKey: listSessionsQueryOptions.queryKey });
 
-        const previousSessions = queryClient.getQueryData<ListSessionsOutput>(
-          listSessionsQueryOptions.queryKey,
-        );
+        const previousSessions = queryClient.getQueryData(listSessionsQueryOptions.queryKey);
 
-        queryClient.setQueryData<ListSessionsOutput>(listSessionsQueryOptions.queryKey, (current) =>
+        queryClient.setQueryData(listSessionsQueryOptions.queryKey, (current) =>
           (current ?? []).filter((activeSession) => activeSession.token !== token),
         );
 
@@ -215,718 +172,20 @@ function SecuritySessionsActive() {
   );
 }
 
-function SecurityPasskeys() {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const listPasskeysQueryOptions = trpc.profile.listPasskeys.queryOptions();
-  const { data: passkeys } = useSuspenseQuery(listPasskeysQueryOptions);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
-
-  const refreshPasskeys = async () => {
-    await queryClient.invalidateQueries(listPasskeysQueryOptions);
-  };
-
-  const handleAddPasskey = async () => {
-    try {
-      const { error } = await authClient.passkey.addPasskey({
-        authenticatorAttachment: "platform",
-        name: "Sycom LMS",
-      });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't add passkey",
-          description: error.message,
-          type: "error",
-        });
-        return;
-      }
-
-      setAddDialogOpen(false);
-      toastManager.add({ title: "Passkey added", type: "success" });
-      await refreshPasskeys();
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't add passkey",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    }
-  };
-
-  const handleDeletePasskey = async (id: string) => {
-    setDeletingPasskeyId(id);
-
-    try {
-      const { error } = await authClient.passkey.deletePasskey({ id });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't remove passkey",
-          description: error.message,
-          type: "error",
-        });
-        return;
-      }
-
-      toastManager.add({ title: "Passkey removed", type: "success" });
-      await refreshPasskeys();
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't remove passkey",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    } finally {
-      setDeletingPasskeyId(null);
-    }
-  };
-
-  return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Passkeys</CardTitle>
-          <CardDescription className="text-sm">
-            Register a passkey on this device for faster, phishing-resistant sign-in later.
-          </CardDescription>
-        </CardHeader>
-        <CardPanel className="space-y-3 py-0">
-          {passkeys.length === 0 ? (
-            <div className="border px-3 py-2.5 text-sm text-muted-foreground">
-              No passkeys registered yet.
-            </div>
-          ) : (
-            passkeys.map((passkey) => (
-              <div
-                className="flex items-center justify-between gap-3 border px-3 py-2.5"
-                key={passkey.id}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {passkey.name ?? "Unnamed passkey"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Added {passkey.createdAt.toLocaleDateString()}
-                  </p>
-                </div>
-                <Button
-                  aria-label="Remove passkey"
-                  loading={deletingPasskeyId === passkey.id}
-                  onClick={() => {
-                    void handleDeletePasskey(passkey.id);
-                  }}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2Icon className="size-4" />
-                </Button>
-              </div>
-            ))
-          )}
-        </CardPanel>
-        <CardFooter className="justify-end">
-          <Button onClick={() => setAddDialogOpen(true)} size="sm" type="button">
-            <PlusIcon className="size-4" />
-            Add passkey
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <Dialog onOpenChange={setAddDialogOpen} open={addDialogOpen}>
-        <DialogPopup>
-          <DialogHeader>
-            <DialogTitle>Add passkey</DialogTitle>
-            <DialogDescription>
-              Your browser will ask you to confirm with Face ID, Touch ID, Windows Hello, or your
-              device PIN.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setAddDialogOpen(false)} type="button" variant="outline">
-              Cancel
-            </Button>
-            <Button onClick={() => void handleAddPasskey()} type="button">
-              Add passkey
-            </Button>
-          </DialogFooter>
-        </DialogPopup>
-      </Dialog>
-    </>
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().check(z.minLength(1, "Current password is required")),
+    newPassword: z.string().check(z.minLength(8, "Password must be at least 8 characters")),
+    confirmNewPassword: z.string(),
+  })
+  .check(
+    z.refine((data) => data.newPassword === data.confirmNewPassword, {
+      message: "Passwords don't match",
+      path: ["confirmNewPassword"],
+    }),
   );
-}
 
-function SecurityLinkedAccounts() {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const listAccountsQueryOptions = trpc.profile.listAccounts.queryOptions();
-  const { data: accounts } = useSuspenseQuery(listAccountsQueryOptions);
-  const [linkingProvider, setLinkingProvider] = useState<LinkedAccountProvider | null>(null);
-  const [unlinkingProviderId, setUnlinkingProviderId] = useState<string | null>(null);
-
-  const refreshAccounts = async () => {
-    await queryClient.invalidateQueries(listAccountsQueryOptions);
-  };
-
-  const getProviderAccount = (provider: LinkedAccountProvider) =>
-    accounts.find(
-      (account) => account.providerId === provider || account.providerId.startsWith(`${provider}:`),
-    );
-
-  const handleLinkAccount = async (provider: LinkedAccountProvider) => {
-    setLinkingProvider(provider);
-
-    try {
-      const { error } = await authClient.linkSocial({
-        callbackURL: "/dashboard/settings/security",
-        provider,
-      });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't link account",
-          description: error.message,
-          type: "error",
-        });
-      }
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't link account",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    } finally {
-      setLinkingProvider(null);
-    }
-  };
-
-  const handleUnlinkAccount = async (providerId: string) => {
-    setUnlinkingProviderId(providerId);
-
-    try {
-      const { error } = await authClient.unlinkAccount({ providerId });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't unlink account",
-          description: error.message,
-          type: "error",
-        });
-        return;
-      }
-
-      toastManager.add({ title: "Account unlinked", type: "success" });
-      await refreshAccounts();
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't unlink account",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    } finally {
-      setUnlinkingProviderId(null);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">Linked accounts</CardTitle>
-        <CardDescription className="text-sm">
-          Connect a trusted social account so you can sign in with fewer steps.
-        </CardDescription>
-      </CardHeader>
-      <CardPanel className="space-y-3 py-0">
-        {linkedAccountProviders.map((provider) => {
-          const providerAccount = getProviderAccount(provider);
-          const providerConfig = linkedAccountProviderConfig[provider];
-          const ProviderIcon = providerConfig.icon;
-
-          return (
-            <div
-              className="flex items-center justify-between gap-3 border px-3 py-2.5"
-              key={provider}
-            >
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border bg-muted">
-                  <ProviderIcon />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-foreground">{providerConfig.label}</p>
-                    {providerAccount ? (
-                      <Badge className="gap-1" variant="success">
-                        <CheckIcon className="size-3" />
-                        Linked
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{providerConfig.description}</p>
-                </div>
-              </div>
-              {providerAccount ? (
-                <Button
-                  loading={unlinkingProviderId === providerAccount.providerId}
-                  onClick={() => {
-                    void handleUnlinkAccount(providerAccount.providerId);
-                  }}
-                  size="sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  Disconnect
-                </Button>
-              ) : (
-                <Button
-                  loading={linkingProvider === provider}
-                  onClick={() => {
-                    void handleLinkAccount(provider);
-                  }}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  Connect
-                </Button>
-              )}
-            </div>
-          );
-        })}
-      </CardPanel>
-    </Card>
-  );
-}
-
-function SecurityTwoFactorAuthentication() {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const { user } = useUser();
-  const profileQueryOptions = trpc.profile.get.queryOptions();
-  const twoFactorEnabled = Boolean(
-    (user as { twoFactorEnabled?: boolean | null }).twoFactorEnabled,
-  );
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [setupDialogOpen, setSetupDialogOpen] = useState(false);
-  const [totpUri, setTotpUri] = useState<string | null>(null);
-
-  const enableForm = useForm<PasswordConfirmationInput>({
-    resolver: zodResolver(passwordConfirmationSchema),
-    defaultValues: { password: "" },
-  });
-  const verifyForm = useForm<VerifyTotpInput>({
-    resolver: zodResolver(verifyTotpSchema),
-    defaultValues: { code: "" },
-  });
-  const regenerateForm = useForm<PasswordConfirmationInput>({
-    resolver: zodResolver(passwordConfirmationSchema),
-    defaultValues: { password: "" },
-  });
-  const disableForm = useForm<PasswordConfirmationInput>({
-    resolver: zodResolver(passwordConfirmationSchema),
-    defaultValues: { password: "" },
-  });
-
-  const refreshProfile = async () => {
-    await queryClient.invalidateQueries(profileQueryOptions);
-  };
-
-  const handleEnable = async (data: PasswordConfirmationInput) => {
-    try {
-      const { data: response, error } = await authClient.twoFactor.enable({
-        issuer: "Sycom LMS",
-        password: data.password,
-      });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't start 2FA setup",
-          description: error.message,
-          type: "error",
-        });
-        return;
-      }
-
-      setBackupCodes(response?.backupCodes ?? []);
-      setTotpUri(response?.totpURI ?? null);
-      setSetupDialogOpen(true);
-      verifyForm.reset({ code: "" });
-      toastManager.add({ title: "2FA setup started", type: "success" });
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't start 2FA setup",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    }
-  };
-
-  const handleVerify = async (data: VerifyTotpInput) => {
-    try {
-      const { error } = await authClient.twoFactor.verifyTotp({
-        code: data.code,
-        trustDevice: true,
-      });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't verify code",
-          description: error.message,
-          type: "error",
-        });
-        return;
-      }
-
-      setSetupDialogOpen(false);
-      setTotpUri(null);
-      verifyForm.reset({ code: "" });
-      toastManager.add({ title: "Two-factor enabled", type: "success" });
-      await refreshProfile();
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't verify code",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    }
-  };
-
-  const handleDisable = async (data: PasswordConfirmationInput) => {
-    try {
-      const { error } = await authClient.twoFactor.disable({ password: data.password });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't disable 2FA",
-          description: error.message,
-          type: "error",
-        });
-        return;
-      }
-
-      disableForm.reset({ password: "" });
-      setBackupCodes([]);
-      toastManager.add({ title: "Two-factor disabled", type: "success" });
-      await refreshProfile();
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't disable 2FA",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    }
-  };
-
-  const handleRegenerateBackupCodes = async (data: PasswordConfirmationInput) => {
-    try {
-      const { data: response, error } = await authClient.twoFactor.generateBackupCodes({
-        password: data.password,
-      });
-
-      if (error) {
-        toastManager.add({
-          title: "Couldn't regenerate backup codes",
-          description: error.message,
-          type: "error",
-        });
-        return;
-      }
-
-      setBackupCodes(response?.backupCodes ?? []);
-      regenerateForm.reset({ password: "" });
-      toastManager.add({ title: "Backup codes regenerated", type: "success" });
-    } catch (error) {
-      toastManager.add({
-        title: "Couldn't regenerate backup codes",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Couldn't reach server. Check your connection and try again.",
-        type: "error",
-      });
-    }
-  };
-
-  const copyText = async (text: string, title: string) => {
-    await navigator.clipboard.writeText(text);
-    toastManager.add({ title, type: "success" });
-  };
-
-  const resetTwoFactorDialog = (open: boolean) => {
-    setSetupDialogOpen(open);
-
-    if (!open) {
-      setTotpUri(null);
-      verifyForm.reset({ code: "" });
-    }
-  };
-
-  return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Two-factor authentication</CardTitle>
-          <CardDescription className="text-sm">
-            Add a verification step with an authenticator app to better protect your account.
-          </CardDescription>
-        </CardHeader>
-        <CardPanel className="space-y-4 py-0">
-          {twoFactorEnabled ? (
-            <>
-              <div className="border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100">
-                Two-factor authentication is enabled for this account.
-              </div>
-
-              <Form {...regenerateForm}>
-                <form
-                  className="space-y-3"
-                  onSubmit={regenerateForm.handleSubmit(handleRegenerateBackupCodes)}
-                >
-                  <FormField
-                    control={regenerateForm.control}
-                    name="password"
-                    render={({ field, fieldState }) => (
-                      <FormItem>
-                        <Field>
-                          <FieldLabel>Current password</FieldLabel>
-                          <FormControl>
-                            <Input
-                              autoComplete="current-password"
-                              placeholder="Current password"
-                              type="password"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FieldDescription>
-                            Required to generate a fresh set of backup codes.
-                          </FieldDescription>
-                          <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                        </Field>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button
-                    loading={regenerateForm.formState.isSubmitting}
-                    size="sm"
-                    type="submit"
-                    variant="outline"
-                  >
-                    <RefreshCwIcon className="size-4" />
-                    Regenerate backup codes
-                  </Button>
-                </form>
-              </Form>
-
-              {backupCodes.length > 0 ? (
-                <div className="space-y-2 border bg-muted/40 px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground">Backup codes</p>
-                    <Button
-                      className="px-0"
-                      onClick={() => void copyText(backupCodes.join("\n"), "Backup codes copied")}
-                      size="sm"
-                      type="button"
-                      variant="link"
-                    >
-                      <CopyIcon className="size-4" />
-                      Copy
-                    </Button>
-                  </div>
-                  <pre className="text-xs break-all whitespace-pre-wrap text-muted-foreground">
-                    {backupCodes.join("\n")}
-                  </pre>
-                </div>
-              ) : null}
-
-              <Form {...disableForm}>
-                <form className="space-y-3" onSubmit={disableForm.handleSubmit(handleDisable)}>
-                  <FormField
-                    control={disableForm.control}
-                    name="password"
-                    render={({ field, fieldState }) => (
-                      <FormItem>
-                        <Field>
-                          <FieldLabel>Current password</FieldLabel>
-                          <FormControl>
-                            <Input
-                              autoComplete="current-password"
-                              placeholder="Current password"
-                              type="password"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FieldDescription>
-                            Required to disable two-factor authentication.
-                          </FieldDescription>
-                          <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                        </Field>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button
-                    loading={disableForm.formState.isSubmitting}
-                    size="sm"
-                    type="submit"
-                    variant="destructive"
-                  >
-                    Disable 2FA
-                  </Button>
-                </form>
-              </Form>
-            </>
-          ) : (
-            <Form {...enableForm}>
-              <form className="space-y-3" onSubmit={enableForm.handleSubmit(handleEnable)}>
-                <FormField
-                  control={enableForm.control}
-                  name="password"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <Field>
-                        <FieldLabel>Current password</FieldLabel>
-                        <FormControl>
-                          <Input
-                            autoComplete="current-password"
-                            placeholder="Current password"
-                            type="password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FieldDescription>
-                          Confirm your password before starting setup.
-                        </FieldDescription>
-                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                      </Field>
-                    </FormItem>
-                  )}
-                />
-
-                <Button loading={enableForm.formState.isSubmitting} size="sm" type="submit">
-                  <ShieldCheckIcon className="size-4" />
-                  Start setup
-                </Button>
-              </form>
-            </Form>
-          )}
-        </CardPanel>
-      </Card>
-
-      <Dialog onOpenChange={resetTwoFactorDialog} open={setupDialogOpen}>
-        <DialogPopup>
-          <DialogHeader>
-            <DialogTitle>Set up two-factor authentication</DialogTitle>
-            <DialogDescription>
-              Scan this code with your authenticator app, then enter the 6-digit verification code.
-            </DialogDescription>
-          </DialogHeader>
-          {totpUri ? (
-            <>
-              <DialogPanel className="space-y-4">
-                <div className="mx-auto w-full max-w-52 border bg-background p-3">
-                  <QRCode className="aspect-square w-full" data={totpUri} robustness="H" />
-                </div>
-
-                <div className="flex justify-center">
-                  <Button
-                    className="px-0"
-                    onClick={() => void copyText(totpUri, "Setup URI copied")}
-                    size="sm"
-                    type="button"
-                    variant="link"
-                  >
-                    <CopyIcon className="size-4" />
-                    Copy setup URI
-                  </Button>
-                </div>
-
-                <p className="text-xs break-all text-muted-foreground">{totpUri}</p>
-
-                {backupCodes.length > 0 ? (
-                  <div className="space-y-2 border bg-muted/40 px-3 py-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">Backup codes</p>
-                      <Button
-                        className="px-0"
-                        onClick={() => void copyText(backupCodes.join("\n"), "Backup codes copied")}
-                        size="sm"
-                        type="button"
-                        variant="link"
-                      >
-                        <CopyIcon className="size-4" />
-                        Copy
-                      </Button>
-                    </div>
-                    <pre className="text-xs break-all whitespace-pre-wrap text-muted-foreground">
-                      {backupCodes.join("\n")}
-                    </pre>
-                  </div>
-                ) : null}
-
-                <Form {...verifyForm}>
-                  <form className="space-y-3" onSubmit={verifyForm.handleSubmit(handleVerify)}>
-                    <FormField
-                      control={verifyForm.control}
-                      name="code"
-                      render={({ field, fieldState }) => (
-                        <FormItem>
-                          <Field>
-                            <FieldLabel>Verification code</FieldLabel>
-                            <FormControl>
-                              <Input
-                                autoComplete="one-time-code"
-                                inputMode="numeric"
-                                placeholder="123456"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                          </Field>
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button loading={verifyForm.formState.isSubmitting} size="sm" type="submit">
-                      Enable 2FA
-                    </Button>
-                  </form>
-                </Form>
-              </DialogPanel>
-              <DialogFooter>
-                <Button onClick={() => resetTwoFactorDialog(false)} type="button" variant="outline">
-                  Close
-                </Button>
-              </DialogFooter>
-            </>
-          ) : null}
-        </DialogPopup>
-      </Dialog>
-    </>
-  );
-}
+type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 function SecurityChangePassword() {
   const trpc = useTRPC();
@@ -1110,6 +369,781 @@ function SecurityChangePassword() {
         </form>
       </Form>
     </Card>
+  );
+}
+
+function SecurityPasskeys() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const { data: passkeys } = useSuspenseQuery(trpc.profile.listPasskeys.queryOptions());
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
+
+  const handleAddPasskey = async () => {
+    try {
+      const { error } = await authClient.passkey.addPasskey({
+        authenticatorAttachment: "platform",
+        name: "Sycom LMS",
+      });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't add passkey",
+          description: error.message,
+          type: "error",
+        });
+        return;
+      }
+
+      setAddDialogOpen(false);
+      toastManager.add({ title: "Passkey added", type: "success" });
+      void queryClient.invalidateQueries(trpc.profile.listPasskeys.queryOptions());
+      void queryClient.refetchQueries(trpc.profile.listPasskeys.queryOptions());
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't add passkey",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleDeletePasskey = async (id: string) => {
+    setDeletingPasskeyId(id);
+
+    try {
+      const { error } = await authClient.passkey.deletePasskey({ id });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't remove passkey",
+          description: error.message,
+          type: "error",
+        });
+        return;
+      }
+
+      toastManager.add({ title: "Passkey removed", type: "success" });
+      void queryClient.invalidateQueries(trpc.profile.listPasskeys.queryOptions());
+      void queryClient.refetchQueries(trpc.profile.listPasskeys.queryOptions());
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't remove passkey",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    } finally {
+      setDeletingPasskeyId(null);
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Passkeys</CardTitle>
+          <CardDescription className="text-sm">
+            Register a passkey on this device for faster, phishing-resistant sign-in later.
+          </CardDescription>
+        </CardHeader>
+        <CardPanel className="space-y-3 py-0">
+          {passkeys.length === 0 ? (
+            <div className="border px-3 py-2.5 text-sm text-muted-foreground">
+              No passkeys registered yet.
+            </div>
+          ) : (
+            passkeys.map((passkey) => (
+              <div
+                className="flex items-center justify-between gap-3 border px-3 py-2.5"
+                key={passkey.id}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {passkey.name ?? "Unnamed passkey"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Added {passkey.createdAt.toLocaleDateString()}
+                  </p>
+                </div>
+                <Button
+                  aria-label="Remove passkey"
+                  loading={deletingPasskeyId === passkey.id}
+                  onClick={() => {
+                    void handleDeletePasskey(passkey.id);
+                  }}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2Icon className="size-4" />
+                </Button>
+              </div>
+            ))
+          )}
+        </CardPanel>
+        <CardFooter className="justify-end">
+          <Button onClick={() => setAddDialogOpen(true)} size="sm" type="button">
+            <PlusIcon className="size-4" />
+            Add passkey
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Dialog onOpenChange={setAddDialogOpen} open={addDialogOpen}>
+        <DialogPopup>
+          <DialogHeader>
+            <DialogTitle>Add passkey</DialogTitle>
+            <DialogDescription>
+              Your browser will ask you to confirm with Face ID, Touch ID, Windows Hello, or your
+              device PIN.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setAddDialogOpen(false)} type="button" variant="outline">
+              Cancel
+            </Button>
+            <Button onClick={() => void handleAddPasskey()} type="button">
+              Add passkey
+            </Button>
+          </DialogFooter>
+        </DialogPopup>
+      </Dialog>
+    </>
+  );
+}
+const linkedAccountProviders = ["google", "linkedin"] as const;
+type LinkedAccountProvider = (typeof linkedAccountProviders)[number];
+const linkedAccountProviderConfig = {
+  google: {
+    label: "Google",
+    description: "Connect your Google account to your Sycom account.",
+    icon: GoogleIcon,
+  },
+  linkedin: {
+    label: "LinkedIn",
+    description: "Connect your LinkedIn account to your Sycom account.",
+    icon: LinkedInIcon,
+  },
+};
+
+function SecurityLinkedAccounts() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const listAccountsQueryOptions = trpc.profile.listAccounts.queryOptions();
+  const { data: accounts } = useSuspenseQuery(listAccountsQueryOptions);
+  const [linkingProvider, setLinkingProvider] = useState<LinkedAccountProvider | null>(null);
+  const [unlinkingProviderId, setUnlinkingProviderId] = useState<string | null>(null);
+
+  const refreshAccounts = () => {
+    void queryClient.invalidateQueries(trpc.profile.listAccounts.queryOptions());
+    void queryClient.refetchQueries(trpc.profile.listAccounts.queryOptions());
+  };
+
+  const getProviderAccount = (provider: LinkedAccountProvider) =>
+    accounts.find(
+      (account) => account.providerId === provider || account.providerId.startsWith(`${provider}:`),
+    );
+
+  const handleLinkAccount = async (provider: LinkedAccountProvider) => {
+    setLinkingProvider(provider);
+
+    try {
+      const { error } = await authClient.linkSocial({
+        callbackURL: "/dashboard/settings/security",
+        provider,
+      });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't link account",
+          description: error.message,
+          type: "error",
+        });
+      }
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't link account",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    } finally {
+      setLinkingProvider(null);
+    }
+  };
+
+  const handleUnlinkAccount = async (providerId: string) => {
+    setUnlinkingProviderId(providerId);
+
+    try {
+      const { error } = await authClient.unlinkAccount({ providerId });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't unlink account",
+          description: error.message,
+          type: "error",
+        });
+        return;
+      }
+
+      toastManager.add({ title: "Account unlinked", type: "success" });
+      await refreshAccounts();
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't unlink account",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    } finally {
+      setUnlinkingProviderId(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Linked accounts</CardTitle>
+        <CardDescription className="text-sm">
+          Connect a trusted social account so you can sign in with fewer steps.
+        </CardDescription>
+      </CardHeader>
+      <CardPanel className="space-y-3">
+        {linkedAccountProviders.map((provider) => {
+          const providerAccount = getProviderAccount(provider);
+          const providerConfig = linkedAccountProviderConfig[provider];
+          const ProviderIcon = providerConfig.icon;
+
+          return (
+            <div
+              className="flex items-center justify-between gap-3 border px-3 py-2.5"
+              key={provider}
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border bg-muted">
+                  <ProviderIcon />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">{providerConfig.label}</p>
+                    {providerAccount ? (
+                      <Badge className="gap-1" variant="success">
+                        <CheckIcon className="size-3" />
+                        Linked
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{providerConfig.description}</p>
+                </div>
+              </div>
+              {providerAccount ? (
+                <Button
+                  loading={unlinkingProviderId === providerAccount.providerId}
+                  onClick={() => {
+                    void handleUnlinkAccount(providerAccount.providerId);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  Disconnect
+                </Button>
+              ) : (
+                <Button
+                  loading={linkingProvider === provider}
+                  onClick={() => {
+                    void handleLinkAccount(provider);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Connect
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </CardPanel>
+    </Card>
+  );
+}
+
+const passwordConfirmationSchema = z.object({
+  password: z.string().check(z.minLength(1, "Current password is required")),
+});
+
+const verifyTotpSchema = z.object({
+  code: z.string().check(z.minLength(6, "Enter your authenticator code")),
+});
+
+type PasswordConfirmationInput = z.infer<typeof passwordConfirmationSchema>;
+type VerifyTotpInput = z.infer<typeof verifyTotpSchema>;
+
+function SecurityTwoFactorAuthentication() {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+  const { user } = useUser();
+  const twoFactorEnabled = Boolean(user?.twoFactorEnabled);
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [setupDialogOpen, setSetupDialogOpen] = useState(false);
+  const [totpUri, setTotpUri] = useState<string | null>(null);
+  const [enabledAction, setEnabledAction] = useState<"disable" | "regenerate" | null>(null);
+  const [showEnablePassword, setShowEnablePassword] = useState(false);
+  const [showManagePassword, setShowManagePassword] = useState(false);
+
+  const enableForm = useForm<PasswordConfirmationInput>({
+    resolver: zodResolver(passwordConfirmationSchema),
+    defaultValues: { password: "" },
+  });
+  const verifyForm = useForm<VerifyTotpInput>({
+    resolver: zodResolver(verifyTotpSchema),
+    defaultValues: { code: "" },
+  });
+  const manageEnabledForm = useForm<PasswordConfirmationInput>({
+    resolver: zodResolver(passwordConfirmationSchema),
+    defaultValues: { password: "" },
+  });
+
+  const refreshProfile = async () => {
+    void queryClient.invalidateQueries(trpc.profile.get.queryOptions());
+    void queryClient.refetchQueries(trpc.profile.get.queryOptions());
+  };
+
+  const handleEnable = async (data: PasswordConfirmationInput) => {
+    try {
+      const { data: response, error } = await authClient.twoFactor.enable({
+        issuer: "Sycom LMS",
+        password: data.password,
+      });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't start 2FA setup",
+          description: error.message,
+          type: "error",
+        });
+        return;
+      }
+
+      setBackupCodes(response?.backupCodes ?? []);
+      setTotpUri(response?.totpURI ?? null);
+      setSetupDialogOpen(true);
+      verifyForm.reset({ code: "" });
+      toastManager.add({ title: "2FA setup started", type: "success" });
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't start 2FA setup",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleVerify = async (data: VerifyTotpInput) => {
+    try {
+      const { error } = await authClient.twoFactor.verifyTotp({
+        code: data.code,
+        trustDevice: true,
+      });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't verify code",
+          description: error.message,
+          type: "error",
+        });
+        return;
+      }
+
+      setSetupDialogOpen(false);
+      setTotpUri(null);
+      verifyForm.reset({ code: "" });
+      toastManager.add({ title: "Two-factor enabled", type: "success" });
+      await refreshProfile();
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't verify code",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleDisable = async (data: PasswordConfirmationInput) => {
+    try {
+      const { error } = await authClient.twoFactor.disable({ password: data.password });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't disable 2FA",
+          description: error.message,
+          type: "error",
+        });
+        return;
+      }
+
+      manageEnabledForm.reset({ password: "" });
+      setBackupCodes([]);
+      toastManager.add({ title: "Two-factor disabled", type: "success" });
+      await refreshProfile();
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't disable 2FA",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleRegenerateBackupCodes = async (data: PasswordConfirmationInput) => {
+    try {
+      const { data: response, error } = await authClient.twoFactor.generateBackupCodes({
+        password: data.password,
+      });
+
+      if (error) {
+        toastManager.add({
+          title: "Couldn't regenerate backup codes",
+          description: error.message,
+          type: "error",
+        });
+        return;
+      }
+
+      setBackupCodes(response?.backupCodes ?? []);
+      manageEnabledForm.reset({ password: "" });
+      toastManager.add({ title: "Backup codes regenerated", type: "success" });
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't regenerate backup codes",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
+  const copyText = async (text: string, title: string) => {
+    await navigator.clipboard.writeText(text);
+    toastManager.add({ title, type: "success" });
+  };
+
+  const resetTwoFactorDialog = (open: boolean) => {
+    setSetupDialogOpen(open);
+
+    if (!open) {
+      setTotpUri(null);
+      verifyForm.reset({ code: "" });
+    }
+  };
+
+  const submitEnabledAction = (action: "disable" | "regenerate") => {
+    setEnabledAction(action);
+
+    void manageEnabledForm
+      .handleSubmit(async (data) => {
+        if (action === "regenerate") {
+          await handleRegenerateBackupCodes(data);
+          return;
+        }
+
+        await handleDisable(data);
+      })()
+      .finally(() => {
+        setEnabledAction(null);
+      });
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Two-factor authentication</CardTitle>
+          <CardDescription className="text-sm">
+            Add a verification step with an authenticator app to better protect your account.
+          </CardDescription>
+        </CardHeader>
+        <CardPanel className="space-y-4">
+          {twoFactorEnabled ? (
+            <>
+              <div className="border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100">
+                Two-factor authentication is enabled for this account.
+              </div>
+
+              <Form {...manageEnabledForm}>
+                <form className="space-y-3">
+                  <FormField
+                    control={manageEnabledForm.control}
+                    name="password"
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <Field>
+                          <FieldLabel>Current password</FieldLabel>
+                          <FormControl>
+                            <InputGroup>
+                              <InputGroupInput
+                                autoComplete="current-password"
+                                placeholder="Current password"
+                                type={showManagePassword ? "text" : "password"}
+                                {...field}
+                              />
+                              <InputGroupAddon align="inline-end">
+                                <InputGroupButton
+                                  aria-label={
+                                    showManagePassword ? "Hide password" : "Show password"
+                                  }
+                                  onClick={() => setShowManagePassword((state) => !state)}
+                                >
+                                  {showManagePassword ? (
+                                    <EyeOffIcon className="size-3.5" />
+                                  ) : (
+                                    <EyeIcon className="size-3.5" />
+                                  )}
+                                </InputGroupButton>
+                              </InputGroupAddon>
+                            </InputGroup>
+                          </FormControl>
+                          <FieldDescription>
+                            Required to regenerate backup codes or disable two-factor
+                            authentication.
+                          </FieldDescription>
+                          <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                        </Field>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      loading={
+                        manageEnabledForm.formState.isSubmitting && enabledAction === "regenerate"
+                      }
+                      onClick={() => submitEnabledAction("regenerate")}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <RefreshCwIcon className="size-4" />
+                      Regenerate backup codes
+                    </Button>
+                    <Button
+                      loading={
+                        manageEnabledForm.formState.isSubmitting && enabledAction === "disable"
+                      }
+                      onClick={() => submitEnabledAction("disable")}
+                      size="sm"
+                      type="button"
+                      variant="destructive"
+                    >
+                      Disable 2FA
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+
+              {backupCodes.length > 0 ? (
+                <Accordion defaultValue={[]}>
+                  <AccordionItem
+                    className="border bg-muted/40 px-3 last:border-b"
+                    value="backup-codes"
+                  >
+                    <AccordionTrigger className="py-2.5">Backup codes</AccordionTrigger>
+                    <AccordionContent className="space-y-2 pb-2.5">
+                      <div className="flex justify-end">
+                        <Button
+                          className="px-0"
+                          onClick={() =>
+                            void copyText(backupCodes.join("\n"), "Backup codes copied")
+                          }
+                          size="sm"
+                          type="button"
+                          variant="link"
+                        >
+                          <CopyIcon className="size-4" />
+                          Copy
+                        </Button>
+                      </div>
+                      <pre className="text-xs break-all whitespace-pre-wrap text-muted-foreground">
+                        {backupCodes.join("\n")}
+                      </pre>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ) : null}
+            </>
+          ) : (
+            <Form {...enableForm}>
+              <form className="space-y-3" onSubmit={enableForm.handleSubmit(handleEnable)}>
+                <FormField
+                  control={enableForm.control}
+                  name="password"
+                  render={({ field, fieldState }) => (
+                    <FormItem>
+                      <Field>
+                        <FieldLabel>Current password</FieldLabel>
+                        <FormControl>
+                          <InputGroup>
+                            <InputGroupInput
+                              autoComplete="current-password"
+                              placeholder="Current password"
+                              type={showEnablePassword ? "text" : "password"}
+                              {...field}
+                            />
+                            <InputGroupAddon align="inline-end">
+                              <InputGroupButton
+                                aria-label={showEnablePassword ? "Hide password" : "Show password"}
+                                onClick={() => setShowEnablePassword((state) => !state)}
+                              >
+                                {showEnablePassword ? (
+                                  <EyeOffIcon className="size-3.5" />
+                                ) : (
+                                  <EyeIcon className="size-3.5" />
+                                )}
+                              </InputGroupButton>
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </FormControl>
+                        <FieldDescription>
+                          Confirm your password before starting setup.
+                        </FieldDescription>
+                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                      </Field>
+                    </FormItem>
+                  )}
+                />
+
+                <Button loading={enableForm.formState.isSubmitting} size="sm" type="submit">
+                  <ShieldCheckIcon className="size-4" />
+                  Start setup
+                </Button>
+              </form>
+            </Form>
+          )}
+        </CardPanel>
+      </Card>
+
+      <Dialog onOpenChange={resetTwoFactorDialog} open={setupDialogOpen}>
+        <DialogPopup>
+          <DialogHeader>
+            <DialogTitle>Set up two-factor authentication</DialogTitle>
+            <DialogDescription>
+              Scan this code with your authenticator app, then enter the 6-digit verification code.
+            </DialogDescription>
+          </DialogHeader>
+          {totpUri ? (
+            <>
+              <DialogPanel className="space-y-4">
+                <div className="mx-auto w-full max-w-52 border bg-background p-3">
+                  <QRCode className="aspect-square w-full" data={totpUri} robustness="H" />
+                </div>
+
+                <div className="flex justify-center">
+                  <Button
+                    className="px-0"
+                    onClick={() => void copyText(totpUri, "Setup URI copied")}
+                    size="sm"
+                    type="button"
+                    variant="link"
+                  >
+                    <CopyIcon className="size-4" />
+                    Copy setup URI
+                  </Button>
+                </div>
+
+                {/* <p className="text-xs break-all text-muted-foreground">{totpUri}</p> */}
+
+                {backupCodes.length > 0 ? (
+                  <Accordion defaultValue={[]}>
+                    <AccordionItem
+                      className="border bg-muted/40 px-3 last:border-b"
+                      value="setup-backup-codes"
+                    >
+                      <AccordionTrigger className="py-2.5">Backup codes</AccordionTrigger>
+                      <AccordionContent className="space-y-2 pb-2.5">
+                        <div className="flex justify-end">
+                          <Button
+                            className="px-0"
+                            onClick={() =>
+                              void copyText(backupCodes.join("\n"), "Backup codes copied")
+                            }
+                            size="sm"
+                            type="button"
+                            variant="link"
+                          >
+                            <CopyIcon className="size-4" />
+                            Copy
+                          </Button>
+                        </div>
+                        <pre className="text-xs break-all whitespace-pre-wrap text-muted-foreground">
+                          {backupCodes.join("\n")}
+                        </pre>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                ) : null}
+
+                <Form {...verifyForm}>
+                  <form className="space-y-3" onSubmit={verifyForm.handleSubmit(handleVerify)}>
+                    <FormField
+                      control={verifyForm.control}
+                      name="code"
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <Field>
+                            <FieldLabel>Verification code</FieldLabel>
+                            <FormControl>
+                              <Input
+                                autoComplete="one-time-code"
+                                inputMode="numeric"
+                                placeholder="123456"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                          </Field>
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button loading={verifyForm.formState.isSubmitting} size="sm" type="submit">
+                      Enable 2FA
+                    </Button>
+                  </form>
+                </Form>
+              </DialogPanel>
+              <DialogFooter>
+                <Button onClick={() => resetTwoFactorDialog(false)} type="button" variant="outline">
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogPopup>
+      </Dialog>
+    </>
   );
 }
 

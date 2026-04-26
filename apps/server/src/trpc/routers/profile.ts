@@ -1,9 +1,5 @@
 import { auth } from "@sycom/auth";
-import {
-  getProfileByUserId,
-  listPasskeysByUserId,
-  upsertProfileByUserId,
-} from "@sycom/db/queries/index";
+import { getProfileByUserId, upsertProfileByUserId } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -58,13 +54,6 @@ const revokeSessionSchema = z.object({
   token: z.string().min(1),
 });
 type RevokeSessionInput = z.infer<typeof revokeSessionSchema>;
-
-const passkeyListItemSchema = z.object({
-  id: z.string(),
-  name: z.string().nullable(),
-  createdAt: z.date(),
-});
-type PasskeyListItem = z.infer<typeof passkeyListItemSchema>;
 
 export const profileRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
@@ -140,11 +129,7 @@ export const profileRouter = router({
   }),
 
   listPasskeys: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
-    const passkeys = await listPasskeysByUserId(ctx.db, { userId });
-    const parsedPasskeys: PasskeyListItem[] = passkeyListItemSchema.array().parse(passkeys);
-
-    return parsedPasskeys;
+    return await auth.api.listPasskeys({ headers: ctx.headers });
   }),
 
   revokeSession: protectedProcedure.input(revokeSessionSchema).mutation(async ({ ctx, input }) => {

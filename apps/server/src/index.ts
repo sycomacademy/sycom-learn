@@ -40,7 +40,8 @@ app.use(
     credentials: true,
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Authorization", "Content-Type", "x-trpc-source", "trpc-accept"],
-    maxAge: 86400,
+    exposeHeaders: ["Content-Length", "Content-Type", "Cache-Control"],
+    maxAge: 60 * 60 * 1000, // 1 hour
   }),
 );
 

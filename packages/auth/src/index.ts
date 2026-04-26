@@ -17,147 +17,147 @@ import {
   sendVerificationEmail,
 } from "./config";
 
-const db = createDb();
-
-const authOptions = {
-  appName: "Sycom",
-  database: drizzleAdapter(db, {
-    provider: "pg",
-    schema: schema,
-  }),
-  secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
-  trustedOrigins: env.CORS_ORIGIN,
-  advanced: {
-    defaultCookieAttributes: {
-      sameSite: "lax" as const,
-      httpOnly: true,
+export function createAuth() {
+  const db = createDb();
+  return betterAuth({
+    appName: "Sycom",
+    database: drizzleAdapter(db, {
+      provider: "pg",
+      schema: schema,
+    }),
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
+    trustedOrigins: env.CORS_ORIGIN,
+    advanced: {
+      defaultCookieAttributes: {
+        sameSite: "lax",
+        httpOnly: true,
+      },
+      useSecureCookies: env.NODE_ENV === "production",
+      crossSubDomainCookies: {
+        enabled: process.env.NODE_ENV === "production",
+      },
+      ipAddressHeaders:
+        env.NODE_ENV === "production"
+          ? ["x-vercel-forwarded-for", "x-real-ip", "x-forwarded-for"]
+          : ["x-forwarded-for"],
     },
-    useSecureCookies: env.NODE_ENV === "production",
-    crossSubDomainCookies: {
-      enabled: process.env.NODE_ENV === "production",
+    experimental: {
+      joins: true,
     },
-    ipAddressHeaders:
-      env.NODE_ENV === "production"
-        ? ["x-vercel-forwarded-for", "x-real-ip", "x-forwarded-for"]
-        : ["x-forwarded-for"],
-  },
-  experimental: {
-    joins: true,
-  },
-  account: {
-    accountLinking: {
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ["google", "linkedin"],
+      },
+    },
+    session: {
+      expiresIn: 60 * 60 * 8,
+      updateAge: 60 * 30,
+      // Disable cookie cache to avoid getSession returning null in API routes (better-auth#7008)
+      cookieCache: { enabled: false },
+    },
+    emailAndPassword: {
       enabled: true,
-      trustedProviders: ["google", "linkedin"],
+      requireEmailVerification: true,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: async ({
+        user,
+        url,
+      }: {
+        url: string;
+        user: { email: string; name?: string | null };
+      }) => {
+        await sendResetPasswordEmail(user, url);
+      },
     },
-  },
-  session: {
-    expiresIn: 60 * 60 * 8,
-    updateAge: 60 * 30,
-    // Disable cookie cache to avoid getSession returning null in API routes (better-auth#7008)
-    cookieCache: { enabled: false },
-  },
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
-    revokeSessionsOnPasswordReset: true,
-    sendResetPassword: async ({
-      user,
-      url,
-    }: {
-      url: string;
-      user: { email: string; name?: string | null };
-    }) => {
-      await sendResetPasswordEmail(user, url);
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      expiresIn: 60 * 60 * 24,
+      sendVerificationEmail: async ({
+        user,
+        url,
+      }: {
+        url: string;
+        user: { email: string; name?: string | null };
+      }) => {
+        await sendVerificationEmail(user, url);
+      },
     },
-  },
-  emailVerification: {
-    sendOnSignUp: true,
-    autoSignInAfterVerification: true,
-    expiresIn: 60 * 60 * 24,
-    sendVerificationEmail: async ({
-      user,
-      url,
-    }: {
-      url: string;
-      user: { email: string; name?: string | null };
-    }) => {
-      await sendVerificationEmail(user, url);
+    socialProviders: {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+      linkedin: {
+        clientId: env.LINKEDIN_CLIENT_ID,
+        clientSecret: env.LINKEDIN_CLIENT_SECRET,
+      },
     },
-  },
-  socialProviders: {
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-      prompt: "select_account" as const,
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 60,
+      customRules: {
+        "/sign-up/email": { window: 60 * 60, max: 5 },
+        "/send-verification-email": { window: 60 * 60, max: 3 },
+        "/sign-in/email": { window: 60, max: 10 },
+        "/request-password-reset": { window: 60 * 60, max: 3 },
+        "/reset-password": { window: 60 * 60, max: 5 },
+        "/change-password": { window: 60 * 60, max: 5 },
+        "/revoke-session": { window: 60 * 60, max: 30 },
+      },
     },
-    linkedin: {
-      clientId: env.LINKEDIN_CLIENT_ID,
-      clientSecret: env.LINKEDIN_CLIENT_SECRET,
-    },
-  },
-  rateLimit: {
-    enabled: true,
-    window: 60,
-    max: 60,
-    customRules: {
-      "/sign-up/email": { window: 60 * 60, max: 5 },
-      "/send-verification-email": { window: 60 * 60, max: 3 },
-      "/sign-in/email": { window: 60, max: 10 },
-      "/request-password-reset": { window: 60 * 60, max: 3 },
-      "/reset-password": { window: 60 * 60, max: 5 },
-      "/change-password": { window: 60 * 60, max: 5 },
-      "/revoke-session": { window: 60 * 60, max: 30 },
-    },
-  },
-  databaseHooks: {
-    user: {
-      create: {
-        after: async (createdUser: { id: string }) => {
-          await db.insert(profile).values({
-            userId: createdUser.id,
-          });
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (createdUser: { id: string }) => {
+            await db.insert(profile).values({
+              userId: createdUser.id,
+            });
+          },
         },
       },
     },
-  },
-  plugins: [
-    organization({
-      ac: orgAc,
-      roles: orgRoles,
-      creatorRole: "owner",
-      allowUserToCreateOrganization: async (user) => {
-        const role = user.role as UserRole;
-        return role === "platform_admin";
-      },
-      teams: {
-        enabled: true,
-      },
-      schema: {
-        team: { modelName: "cohort" },
-        teamMember: { modelName: "cohort_member" },
-      },
-      sendInvitationEmail: async (data) => {
-        const inviteUrl = `${env.BETTER_AUTH_URL}/invite/${data.id}`;
-        devOrThrow("org-invite", data.email, inviteUrl);
-      },
-    }),
-    admin({
-      ac: platformAc,
-      roles: platformRoles,
-      defaultRole: "public_student",
-    }),
-    passkey({
-      rpID: env.NODE_ENV === "production" ? new URL(env.BETTER_AUTH_URL).hostname : "localhost",
-      rpName: "Sycom LMS",
-      origin: env.BETTER_AUTH_URL,
-    }),
-    twoFactor({
-      issuer: "Sycom LMS",
-    }),
-    dash(),
-  ],
-  ...betterAuthLogger,
-};
+    ...betterAuthLogger,
+    plugins: [
+      organization({
+        ac: orgAc,
+        roles: orgRoles,
+        creatorRole: "owner",
+        allowUserToCreateOrganization: async (user) => {
+          const role = user.role as UserRole;
+          return role === "platform_admin";
+        },
+        teams: {
+          enabled: true,
+        },
+        schema: {
+          team: { modelName: "cohort" },
+          teamMember: { modelName: "cohort_member" },
+        },
+        sendInvitationEmail: async (data) => {
+          const inviteUrl = `${env.BETTER_AUTH_URL}/invite/${data.id}`;
+          devOrThrow("org-invite", data.email, inviteUrl);
+        },
+      }),
+      admin({
+        ac: platformAc,
+        roles: platformRoles,
+        defaultRole: "public_student",
+      }),
+      passkey({
+        rpID: env.NODE_ENV === "production" ? new URL(env.BETTER_AUTH_URL).hostname : "localhost",
+        rpName: "Sycom LMS",
+        origin: env.BETTER_AUTH_URL,
+      }),
+      twoFactor({
+        issuer: "Sycom LMS",
+      }),
+      dash(),
+    ],
+  });
+}
 
-export const auth = betterAuth(authOptions);
+export const auth = createAuth();
