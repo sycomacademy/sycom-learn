@@ -15,6 +15,7 @@ import Loader from "./components/loader";
 import NotFound from "./components/layout/not-found";
 import RouteError from "./components/layout/route-error";
 import { getForwardedCookieHeader } from "./functions/forward-header-cookies";
+import { SESSION_QUERY_KEY, sessionQueryOptions } from "./lib/auth/session";
 import { TRPCProvider } from "./lib/trpc/client";
 import { routeTree, type FileRoutesByTo } from "./routeTree.gen";
 /**
@@ -33,7 +34,9 @@ export const getRouter = () => {
           actionProps: {
             children: "Retry",
             onClick: () => {
-              query.invalidate();
+              void query.invalidate();
+              void queryClient.removeQueries({ queryKey: SESSION_QUERY_KEY });
+              void queryClient.prefetchQuery({ ...sessionQueryOptions(), staleTime: 0 });
             },
           },
         });

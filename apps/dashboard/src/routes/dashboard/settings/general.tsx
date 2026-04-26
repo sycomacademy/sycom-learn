@@ -32,6 +32,7 @@ const fullNameSchema = z.object({
 });
 
 type FullNameInput = z.infer<typeof fullNameSchema>;
+type DashboardUser = ReturnType<typeof useUser>["user"];
 
 export const Route = createFileRoute("/dashboard/settings/general")({
   component: GeneralSettings,
@@ -39,35 +40,20 @@ export const Route = createFileRoute("/dashboard/settings/general")({
 
 function GeneralSettings() {
   const { user } = useUser();
-  const { updateName, updateAvatar } = useUserMutation();
+
+  return (
+    <div className="space-y-4">
+      <ProfileCard user={user} />
+      <FullNameCard user={user} />
+      <EmailAddressCard user={user} />
+    </div>
+  );
+}
+
+function ProfileCard({ user }: { user: DashboardUser }) {
   const trpcClient = useTRPCClient();
+  const { updateAvatar } = useUserMutation();
   const [isUploading, setIsUploading] = useState(false);
-
-  const { firstName, lastName } = parseName(user.name);
-
-  const nameForm = useForm<FullNameInput>({
-    resolver: zodResolver(fullNameSchema),
-    defaultValues: { firstName, lastName },
-  });
-
-  const onSubmitName = async (data: FullNameInput) => {
-    const fullName = [capitalize(data.firstName.trim()), capitalize(data.lastName.trim())]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-    if (!fullName || fullName === user.name.trim()) {
-      return;
-    }
-    try {
-      await updateName.mutateAsync({ name: fullName });
-      toastManager.add({ title: "Name updated", type: "success" });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Couldn't update name. Please try again.";
-      toastManager.add({ title: "Failed to update name", description: message, type: "error" });
-      nameForm.reset({ firstName, lastName });
-    }
-  };
 
   const onCropComplete = async (blob: Blob, fileName: string) => {
     setIsUploading(true);
@@ -108,97 +94,132 @@ function GeneralSettings() {
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <div className="flex items-center gap-4 p-6">
-          <AvatarUploaderUI
-            currentImagePublicId={user.image}
-            isUploading={isUploading}
-            name={user.name}
-            onCropComplete={onCropComplete}
-          />
-          <div>
-            <p className="text-sm font-semibold">{user.name}</p>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
-          </div>
+    <Card>
+      <div className="flex items-center gap-4 p-6">
+        <AvatarUploaderUI
+          currentImagePublicId={user.image}
+          isUploading={isUploading}
+          name={user.name}
+          onCropComplete={onCropComplete}
+        />
+        <div>
+          <p className="text-sm font-semibold">{user.name}</p>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
         </div>
-      </Card>
+      </div>
+    </Card>
+  );
+}
 
-      <Card>
-        <Form {...nameForm}>
-          <form onSubmit={nameForm.handleSubmit(async (data) => await onSubmitName(data))}>
-            <CardHeader>
-              <CardTitle className="text-sm">Full name</CardTitle>
-              <CardDescription className="text-sm">
-                Your display name across the platform.
-              </CardDescription>
-            </CardHeader>
-            <CardPanel className="py-0">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={nameForm.control}
-                  name="firstName"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <Field>
-                        <FieldLabel>First name</FieldLabel>
-                        <FormControl>
-                          <Input autoComplete="given-name" {...field} />
-                        </FormControl>
-                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                      </Field>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={nameForm.control}
-                  name="lastName"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <Field>
-                        <FieldLabel>Last name</FieldLabel>
-                        <FormControl>
-                          <Input autoComplete="family-name" {...field} />
-                        </FormControl>
-                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                      </Field>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardPanel>
-            <CardFooter className="justify-end pt-0">
-              <Button loading={nameForm.formState.isSubmitting} type="submit" className="w-40">
-                Save
-              </Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </Card>
+function FullNameCard({ user }: { user: DashboardUser }) {
+  const { updateName } = useUserMutation();
+  const { firstName, lastName } = parseName(user.name);
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Email address</CardTitle>
-          <CardDescription className="text-sm">
-            Used for sign-in, notifications, and account recovery. Contact{" "}
-            <a href={`mailto:${contacts.support.email.contact}`} className="hover:underline">
-              support
-            </a>{" "}
-            if you need to change your email address.
-          </CardDescription>
-        </CardHeader>
-        <CardPanel className="py-0">
-          <Field>
-            <FieldLabel>Email</FieldLabel>
-            <Input disabled readOnly value={user.email} />
-          </Field>
-        </CardPanel>
-        <CardFooter className="justify-end">
-          <Button disabled type="button" className="w-40">
-            Save
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+  const nameForm = useForm<FullNameInput>({
+    resolver: zodResolver(fullNameSchema),
+    defaultValues: { firstName, lastName },
+  });
+
+  const onSubmitName = async (data: FullNameInput) => {
+    const fullName = [capitalize(data.firstName.trim()), capitalize(data.lastName.trim())]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    if (!fullName || fullName === user.name.trim()) {
+      return;
+    }
+
+    try {
+      await updateName.mutateAsync({ name: fullName });
+      toastManager.add({ title: "Name updated", type: "success" });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Couldn't update name. Please try again.";
+      toastManager.add({ title: "Failed to update name", description: message, type: "error" });
+      nameForm.reset({ firstName, lastName });
+    }
+  };
+
+  return (
+    <Card>
+      <Form {...nameForm}>
+        <form onSubmit={nameForm.handleSubmit(onSubmitName)}>
+          <CardHeader>
+            <CardTitle className="text-sm">Full name</CardTitle>
+            <CardDescription className="text-sm">
+              Your display name across the platform.
+            </CardDescription>
+          </CardHeader>
+          <CardPanel className="py-0">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={nameForm.control}
+                name="firstName"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <Field>
+                      <FieldLabel>First name</FieldLabel>
+                      <FormControl>
+                        <Input autoComplete="given-name" {...field} />
+                      </FormControl>
+                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                    </Field>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={nameForm.control}
+                name="lastName"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <Field>
+                      <FieldLabel>Last name</FieldLabel>
+                      <FormControl>
+                        <Input autoComplete="family-name" {...field} />
+                      </FormControl>
+                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                    </Field>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardPanel>
+          <CardFooter className="justify-end pt-0">
+            <Button className="w-40" loading={nameForm.formState.isSubmitting} type="submit">
+              Save
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+    </Card>
+  );
+}
+
+function EmailAddressCard({ user }: { user: DashboardUser }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Email address</CardTitle>
+        <CardDescription className="text-sm">
+          Used for sign-in, notifications, and account recovery. Contact{" "}
+          <a href={`mailto:${contacts.support.email.contact}`} className="hover:underline">
+            support
+          </a>{" "}
+          if you need to change your email address.
+        </CardDescription>
+      </CardHeader>
+      <CardPanel className="py-0">
+        <Field>
+          <FieldLabel>Email</FieldLabel>
+          <Input disabled readOnly value={user.email} />
+        </Field>
+      </CardPanel>
+      <CardFooter className="justify-end">
+        <Button className="w-40" disabled type="button">
+          Save
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
