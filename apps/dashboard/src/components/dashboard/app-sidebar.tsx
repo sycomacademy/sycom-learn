@@ -2,9 +2,12 @@
 
 import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { BuildingIcon } from "@sycom/ui/components/animated/icons/building";
+import { LayersIcon } from "@sycom/ui/components/animated/icons/layers";
 import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
 import { MessageCircleQuestionIcon } from "@sycom/ui/components/animated/icons/message-circle-question";
 import { SettingsIcon } from "@sycom/ui/components/animated/icons/settings";
+import { UsersIcon } from "@sycom/ui/components/animated/icons/users";
 import { BRAND, Image } from "@sycom/ui/image";
 import {
   Sidebar,
@@ -18,11 +21,13 @@ import {
   SidebarMenuItem,
 } from "@sycom/ui/components/sidebar";
 import { Link } from "@/components/layout/foresight-link";
+import { useUser } from "@/hooks/use-user";
 import type { TRoutes } from "@/router";
 import { cn } from "@sycom/ui/lib/utils";
-import { AnimateIcon, type IconProps } from "@sycom/ui/components/animated/icons/icon";
+import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
+import type { UserRole } from "@sycom/db/schema/auth";
 
-type NavIcon = React.ComponentType<IconProps<never>>;
+type NavIcon = React.ComponentType<{ className?: string }>;
 
 type NavItem = {
   icon: NavIcon;
@@ -35,14 +40,28 @@ type NavGroup = {
   items: NavItem[];
 };
 
-const NAV_GROUPS: NavGroup[] = [
+const COMMON_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "General",
+    items: [
+      { icon: MessageCircleQuestionIcon, label: "Support", to: "/dashboard/support" },
+      { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
+    ],
+  },
+];
+
+const PLATFORM_ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     label: "Main",
     items: [
       { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" },
-      { icon: MessageCircleQuestionIcon, label: "Support", to: "/dashboard/support" },
-      { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
+      { icon: UsersIcon, label: "Users", to: "/dashboard/admin/users" },
+      { icon: BuildingIcon, label: "Organizations", to: "/dashboard/admin/organizations" },
     ],
+  },
+  {
+    label: "Courses",
+    items: [{ icon: LayersIcon, label: "Catalog", to: "/dashboard/admin/catalog" }],
   },
 ];
 
@@ -59,11 +78,13 @@ const groupLabelStableClass = cn(
 );
 
 export function AppSidebar(): React.ReactElement {
+  const { user } = useUser();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const navGroups = getNavGroups(normalizeUserRole(user.role));
 
   let activeTo: TRoutes | undefined;
   let bestLength = -1;
-  for (const group of NAV_GROUPS) {
+  for (const group of navGroups) {
     for (const item of group.items) {
       const matches = pathname === item.to || pathname.startsWith(`${item.to}/`);
       if (matches && item.to.length > bestLength) {
@@ -91,7 +112,7 @@ export function AppSidebar(): React.ReactElement {
       </SidebarHeader>
 
       <SidebarContent>
-        {NAV_GROUPS.map((group) => (
+        {navGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className={groupLabelStableClass}>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -121,4 +142,23 @@ export function AppSidebar(): React.ReactElement {
       </SidebarContent>
     </Sidebar>
   );
+}
+
+function getNavGroups(role: UserRole | null): NavGroup[] {
+  const navGroups: NavGroup[] = [];
+
+  if (role === "platform_admin") {
+    navGroups.push(...PLATFORM_ADMIN_NAV_GROUPS);
+  }
+  navGroups.push(...COMMON_NAV_GROUPS);
+
+  return navGroups;
+}
+
+function normalizeUserRole(role: string | null | undefined): UserRole | null {
+  if (role === "platform_admin" || role === "content_creator" || role === "public_student") {
+    return role;
+  }
+
+  return null;
 }

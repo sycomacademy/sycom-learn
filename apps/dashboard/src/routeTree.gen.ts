@@ -24,14 +24,28 @@ import { Route as AuthForgotPasswordRouteImport } from "./routes/_auth/forgot-pa
 import { Route as AuthCheckEmailRouteImport } from "./routes/_auth/check-email";
 import { Route as DashboardSupportRouteRouteImport } from "./routes/dashboard/support/route";
 import { Route as DashboardSettingsRouteRouteImport } from "./routes/dashboard/settings/route";
+import { Route as DashboardAdminRouteRouteImport } from "./routes/dashboard/admin/route";
 import { Route as DashboardSupportIndexRouteImport } from "./routes/dashboard/support/index";
 import { Route as DashboardSettingsIndexRouteImport } from "./routes/dashboard/settings/index";
+import { Route as DashboardAdminIndexRouteImport } from "./routes/dashboard/admin/index";
 import { Route as DashboardSupportReportIssueRouteImport } from "./routes/dashboard/support/report-issue";
 import { Route as DashboardSupportFaqsRouteImport } from "./routes/dashboard/support/faqs";
 import { Route as DashboardSupportContactRouteImport } from "./routes/dashboard/support/contact";
 import { Route as DashboardSettingsSecurityRouteImport } from "./routes/dashboard/settings/security";
 import { Route as DashboardSettingsPreferencesRouteImport } from "./routes/dashboard/settings/preferences";
 import { Route as DashboardSettingsGeneralRouteImport } from "./routes/dashboard/settings/general";
+import { Route as DashboardAdminUsersRouteRouteImport } from "./routes/dashboard/admin/users/route";
+import { Route as DashboardAdminOrganizationsRouteRouteImport } from "./routes/dashboard/admin/organizations/route";
+import { Route as DashboardAdminCatalogRouteRouteImport } from "./routes/dashboard/admin/catalog/route";
+import { Route as DashboardAdminUsersIndexRouteImport } from "./routes/dashboard/admin/users/index";
+import { Route as DashboardAdminOrganizationsIndexRouteImport } from "./routes/dashboard/admin/organizations/index";
+import { Route as DashboardAdminCatalogIndexRouteImport } from "./routes/dashboard/admin/catalog/index";
+import { Route as DashboardAdminUsersRolesRouteImport } from "./routes/dashboard/admin/users/roles";
+import { Route as DashboardAdminUsersPublicInvitesRouteImport } from "./routes/dashboard/admin/users/public-invites";
+import { Route as DashboardAdminOrganizationsInvitesRouteImport } from "./routes/dashboard/admin/organizations/invites";
+import { Route as DashboardAdminOrganizationsDomainsRouteImport } from "./routes/dashboard/admin/organizations/domains";
+import { Route as DashboardAdminCatalogDraftsRouteImport } from "./routes/dashboard/admin/catalog/drafts";
+import { Route as DashboardAdminCatalogCategoriesRouteImport } from "./routes/dashboard/admin/catalog/categories";
 
 const AuthRoute = AuthRouteImport.update({
   id: "/_auth",
@@ -107,6 +121,11 @@ const DashboardSettingsRouteRoute = DashboardSettingsRouteRouteImport.update({
   path: "/settings",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardAdminRouteRoute = DashboardAdminRouteRouteImport.update({
+  id: "/admin",
+  path: "/admin",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
 const DashboardSupportIndexRoute = DashboardSupportIndexRouteImport.update({
   id: "/",
   path: "/",
@@ -116,6 +135,11 @@ const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => DashboardSettingsRouteRoute,
+} as any);
+const DashboardAdminIndexRoute = DashboardAdminIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => DashboardAdminRouteRoute,
 } as any);
 const DashboardSupportReportIssueRoute = DashboardSupportReportIssueRouteImport.update({
   id: "/report-issue",
@@ -147,11 +171,74 @@ const DashboardSettingsGeneralRoute = DashboardSettingsGeneralRouteImport.update
   path: "/general",
   getParentRoute: () => DashboardSettingsRouteRoute,
 } as any);
+const DashboardAdminUsersRouteRoute = DashboardAdminUsersRouteRouteImport.update({
+  id: "/users",
+  path: "/users",
+  getParentRoute: () => DashboardAdminRouteRoute,
+} as any);
+const DashboardAdminOrganizationsRouteRoute = DashboardAdminOrganizationsRouteRouteImport.update({
+  id: "/organizations",
+  path: "/organizations",
+  getParentRoute: () => DashboardAdminRouteRoute,
+} as any);
+const DashboardAdminCatalogRouteRoute = DashboardAdminCatalogRouteRouteImport.update({
+  id: "/catalog",
+  path: "/catalog",
+  getParentRoute: () => DashboardAdminRouteRoute,
+} as any);
+const DashboardAdminUsersIndexRoute = DashboardAdminUsersIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => DashboardAdminUsersRouteRoute,
+} as any);
+const DashboardAdminOrganizationsIndexRoute = DashboardAdminOrganizationsIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => DashboardAdminOrganizationsRouteRoute,
+} as any);
+const DashboardAdminCatalogIndexRoute = DashboardAdminCatalogIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => DashboardAdminCatalogRouteRoute,
+} as any);
+const DashboardAdminUsersRolesRoute = DashboardAdminUsersRolesRouteImport.update({
+  id: "/roles",
+  path: "/roles",
+  getParentRoute: () => DashboardAdminUsersRouteRoute,
+} as any);
+const DashboardAdminUsersPublicInvitesRoute = DashboardAdminUsersPublicInvitesRouteImport.update({
+  id: "/public-invites",
+  path: "/public-invites",
+  getParentRoute: () => DashboardAdminUsersRouteRoute,
+} as any);
+const DashboardAdminOrganizationsInvitesRoute =
+  DashboardAdminOrganizationsInvitesRouteImport.update({
+    id: "/invites",
+    path: "/invites",
+    getParentRoute: () => DashboardAdminOrganizationsRouteRoute,
+  } as any);
+const DashboardAdminOrganizationsDomainsRoute =
+  DashboardAdminOrganizationsDomainsRouteImport.update({
+    id: "/domains",
+    path: "/domains",
+    getParentRoute: () => DashboardAdminOrganizationsRouteRoute,
+  } as any);
+const DashboardAdminCatalogDraftsRoute = DashboardAdminCatalogDraftsRouteImport.update({
+  id: "/drafts",
+  path: "/drafts",
+  getParentRoute: () => DashboardAdminCatalogRouteRoute,
+} as any);
+const DashboardAdminCatalogCategoriesRoute = DashboardAdminCatalogCategoriesRouteImport.update({
+  id: "/categories",
+  path: "/categories",
+  getParentRoute: () => DashboardAdminCatalogRouteRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/$": typeof SplatRoute;
+  "/dashboard/admin": typeof DashboardAdminRouteRouteWithChildren;
   "/dashboard/settings": typeof DashboardSettingsRouteRouteWithChildren;
   "/dashboard/support": typeof DashboardSupportRouteRouteWithChildren;
   "/check-email": typeof AuthCheckEmailRoute;
@@ -163,14 +250,27 @@ export interface FileRoutesByFullPath {
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
+  "/dashboard/admin/catalog": typeof DashboardAdminCatalogRouteRouteWithChildren;
+  "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
+  "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
   "/dashboard/support/contact": typeof DashboardSupportContactRoute;
   "/dashboard/support/faqs": typeof DashboardSupportFaqsRoute;
   "/dashboard/support/report-issue": typeof DashboardSupportReportIssueRoute;
+  "/dashboard/admin/": typeof DashboardAdminIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/support/": typeof DashboardSupportIndexRoute;
+  "/dashboard/admin/catalog/categories": typeof DashboardAdminCatalogCategoriesRoute;
+  "/dashboard/admin/catalog/drafts": typeof DashboardAdminCatalogDraftsRoute;
+  "/dashboard/admin/organizations/domains": typeof DashboardAdminOrganizationsDomainsRoute;
+  "/dashboard/admin/organizations/invites": typeof DashboardAdminOrganizationsInvitesRoute;
+  "/dashboard/admin/users/public-invites": typeof DashboardAdminUsersPublicInvitesRoute;
+  "/dashboard/admin/users/roles": typeof DashboardAdminUsersRolesRoute;
+  "/dashboard/admin/catalog/": typeof DashboardAdminCatalogIndexRoute;
+  "/dashboard/admin/organizations/": typeof DashboardAdminOrganizationsIndexRoute;
+  "/dashboard/admin/users/": typeof DashboardAdminUsersIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
@@ -190,8 +290,18 @@ export interface FileRoutesByTo {
   "/dashboard/support/contact": typeof DashboardSupportContactRoute;
   "/dashboard/support/faqs": typeof DashboardSupportFaqsRoute;
   "/dashboard/support/report-issue": typeof DashboardSupportReportIssueRoute;
+  "/dashboard/admin": typeof DashboardAdminIndexRoute;
   "/dashboard/settings": typeof DashboardSettingsIndexRoute;
   "/dashboard/support": typeof DashboardSupportIndexRoute;
+  "/dashboard/admin/catalog/categories": typeof DashboardAdminCatalogCategoriesRoute;
+  "/dashboard/admin/catalog/drafts": typeof DashboardAdminCatalogDraftsRoute;
+  "/dashboard/admin/organizations/domains": typeof DashboardAdminOrganizationsDomainsRoute;
+  "/dashboard/admin/organizations/invites": typeof DashboardAdminOrganizationsInvitesRoute;
+  "/dashboard/admin/users/public-invites": typeof DashboardAdminUsersPublicInvitesRoute;
+  "/dashboard/admin/users/roles": typeof DashboardAdminUsersRolesRoute;
+  "/dashboard/admin/catalog": typeof DashboardAdminCatalogIndexRoute;
+  "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsIndexRoute;
+  "/dashboard/admin/users": typeof DashboardAdminUsersIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -199,6 +309,7 @@ export interface FileRoutesById {
   "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/$": typeof SplatRoute;
   "/_auth": typeof AuthRouteWithChildren;
+  "/dashboard/admin": typeof DashboardAdminRouteRouteWithChildren;
   "/dashboard/settings": typeof DashboardSettingsRouteRouteWithChildren;
   "/dashboard/support": typeof DashboardSupportRouteRouteWithChildren;
   "/_auth/check-email": typeof AuthCheckEmailRoute;
@@ -210,14 +321,27 @@ export interface FileRoutesById {
   "/_auth/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
+  "/dashboard/admin/catalog": typeof DashboardAdminCatalogRouteRouteWithChildren;
+  "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
+  "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
   "/dashboard/support/contact": typeof DashboardSupportContactRoute;
   "/dashboard/support/faqs": typeof DashboardSupportFaqsRoute;
   "/dashboard/support/report-issue": typeof DashboardSupportReportIssueRoute;
+  "/dashboard/admin/": typeof DashboardAdminIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/support/": typeof DashboardSupportIndexRoute;
+  "/dashboard/admin/catalog/categories": typeof DashboardAdminCatalogCategoriesRoute;
+  "/dashboard/admin/catalog/drafts": typeof DashboardAdminCatalogDraftsRoute;
+  "/dashboard/admin/organizations/domains": typeof DashboardAdminOrganizationsDomainsRoute;
+  "/dashboard/admin/organizations/invites": typeof DashboardAdminOrganizationsInvitesRoute;
+  "/dashboard/admin/users/public-invites": typeof DashboardAdminUsersPublicInvitesRoute;
+  "/dashboard/admin/users/roles": typeof DashboardAdminUsersRolesRoute;
+  "/dashboard/admin/catalog/": typeof DashboardAdminCatalogIndexRoute;
+  "/dashboard/admin/organizations/": typeof DashboardAdminOrganizationsIndexRoute;
+  "/dashboard/admin/users/": typeof DashboardAdminUsersIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -225,6 +349,7 @@ export interface FileRouteTypes {
     | "/"
     | "/dashboard"
     | "/$"
+    | "/dashboard/admin"
     | "/dashboard/settings"
     | "/dashboard/support"
     | "/check-email"
@@ -236,14 +361,27 @@ export interface FileRouteTypes {
     | "/verify-email"
     | "/dashboard/$"
     | "/dashboard/"
+    | "/dashboard/admin/catalog"
+    | "/dashboard/admin/organizations"
+    | "/dashboard/admin/users"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
     | "/dashboard/support/contact"
     | "/dashboard/support/faqs"
     | "/dashboard/support/report-issue"
+    | "/dashboard/admin/"
     | "/dashboard/settings/"
-    | "/dashboard/support/";
+    | "/dashboard/support/"
+    | "/dashboard/admin/catalog/categories"
+    | "/dashboard/admin/catalog/drafts"
+    | "/dashboard/admin/organizations/domains"
+    | "/dashboard/admin/organizations/invites"
+    | "/dashboard/admin/users/public-invites"
+    | "/dashboard/admin/users/roles"
+    | "/dashboard/admin/catalog/"
+    | "/dashboard/admin/organizations/"
+    | "/dashboard/admin/users/";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -263,14 +401,25 @@ export interface FileRouteTypes {
     | "/dashboard/support/contact"
     | "/dashboard/support/faqs"
     | "/dashboard/support/report-issue"
+    | "/dashboard/admin"
     | "/dashboard/settings"
-    | "/dashboard/support";
+    | "/dashboard/support"
+    | "/dashboard/admin/catalog/categories"
+    | "/dashboard/admin/catalog/drafts"
+    | "/dashboard/admin/organizations/domains"
+    | "/dashboard/admin/organizations/invites"
+    | "/dashboard/admin/users/public-invites"
+    | "/dashboard/admin/users/roles"
+    | "/dashboard/admin/catalog"
+    | "/dashboard/admin/organizations"
+    | "/dashboard/admin/users";
   id:
     | "__root__"
     | "/"
     | "/dashboard"
     | "/$"
     | "/_auth"
+    | "/dashboard/admin"
     | "/dashboard/settings"
     | "/dashboard/support"
     | "/_auth/check-email"
@@ -282,14 +431,27 @@ export interface FileRouteTypes {
     | "/_auth/verify-email"
     | "/dashboard/$"
     | "/dashboard/"
+    | "/dashboard/admin/catalog"
+    | "/dashboard/admin/organizations"
+    | "/dashboard/admin/users"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
     | "/dashboard/support/contact"
     | "/dashboard/support/faqs"
     | "/dashboard/support/report-issue"
+    | "/dashboard/admin/"
     | "/dashboard/settings/"
-    | "/dashboard/support/";
+    | "/dashboard/support/"
+    | "/dashboard/admin/catalog/categories"
+    | "/dashboard/admin/catalog/drafts"
+    | "/dashboard/admin/organizations/domains"
+    | "/dashboard/admin/organizations/invites"
+    | "/dashboard/admin/users/public-invites"
+    | "/dashboard/admin/users/roles"
+    | "/dashboard/admin/catalog/"
+    | "/dashboard/admin/organizations/"
+    | "/dashboard/admin/users/";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -406,6 +568,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardSettingsRouteRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
+    "/dashboard/admin": {
+      id: "/dashboard/admin";
+      path: "/admin";
+      fullPath: "/dashboard/admin";
+      preLoaderRoute: typeof DashboardAdminRouteRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
     "/dashboard/support/": {
       id: "/dashboard/support/";
       path: "/";
@@ -419,6 +588,13 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard/settings/";
       preLoaderRoute: typeof DashboardSettingsIndexRouteImport;
       parentRoute: typeof DashboardSettingsRouteRoute;
+    };
+    "/dashboard/admin/": {
+      id: "/dashboard/admin/";
+      path: "/";
+      fullPath: "/dashboard/admin/";
+      preLoaderRoute: typeof DashboardAdminIndexRouteImport;
+      parentRoute: typeof DashboardAdminRouteRoute;
     };
     "/dashboard/support/report-issue": {
       id: "/dashboard/support/report-issue";
@@ -462,8 +638,159 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardSettingsGeneralRouteImport;
       parentRoute: typeof DashboardSettingsRouteRoute;
     };
+    "/dashboard/admin/users": {
+      id: "/dashboard/admin/users";
+      path: "/users";
+      fullPath: "/dashboard/admin/users";
+      preLoaderRoute: typeof DashboardAdminUsersRouteRouteImport;
+      parentRoute: typeof DashboardAdminRouteRoute;
+    };
+    "/dashboard/admin/organizations": {
+      id: "/dashboard/admin/organizations";
+      path: "/organizations";
+      fullPath: "/dashboard/admin/organizations";
+      preLoaderRoute: typeof DashboardAdminOrganizationsRouteRouteImport;
+      parentRoute: typeof DashboardAdminRouteRoute;
+    };
+    "/dashboard/admin/catalog": {
+      id: "/dashboard/admin/catalog";
+      path: "/catalog";
+      fullPath: "/dashboard/admin/catalog";
+      preLoaderRoute: typeof DashboardAdminCatalogRouteRouteImport;
+      parentRoute: typeof DashboardAdminRouteRoute;
+    };
+    "/dashboard/admin/users/": {
+      id: "/dashboard/admin/users/";
+      path: "/";
+      fullPath: "/dashboard/admin/users/";
+      preLoaderRoute: typeof DashboardAdminUsersIndexRouteImport;
+      parentRoute: typeof DashboardAdminUsersRouteRoute;
+    };
+    "/dashboard/admin/organizations/": {
+      id: "/dashboard/admin/organizations/";
+      path: "/";
+      fullPath: "/dashboard/admin/organizations/";
+      preLoaderRoute: typeof DashboardAdminOrganizationsIndexRouteImport;
+      parentRoute: typeof DashboardAdminOrganizationsRouteRoute;
+    };
+    "/dashboard/admin/catalog/": {
+      id: "/dashboard/admin/catalog/";
+      path: "/";
+      fullPath: "/dashboard/admin/catalog/";
+      preLoaderRoute: typeof DashboardAdminCatalogIndexRouteImport;
+      parentRoute: typeof DashboardAdminCatalogRouteRoute;
+    };
+    "/dashboard/admin/users/roles": {
+      id: "/dashboard/admin/users/roles";
+      path: "/roles";
+      fullPath: "/dashboard/admin/users/roles";
+      preLoaderRoute: typeof DashboardAdminUsersRolesRouteImport;
+      parentRoute: typeof DashboardAdminUsersRouteRoute;
+    };
+    "/dashboard/admin/users/public-invites": {
+      id: "/dashboard/admin/users/public-invites";
+      path: "/public-invites";
+      fullPath: "/dashboard/admin/users/public-invites";
+      preLoaderRoute: typeof DashboardAdminUsersPublicInvitesRouteImport;
+      parentRoute: typeof DashboardAdminUsersRouteRoute;
+    };
+    "/dashboard/admin/organizations/invites": {
+      id: "/dashboard/admin/organizations/invites";
+      path: "/invites";
+      fullPath: "/dashboard/admin/organizations/invites";
+      preLoaderRoute: typeof DashboardAdminOrganizationsInvitesRouteImport;
+      parentRoute: typeof DashboardAdminOrganizationsRouteRoute;
+    };
+    "/dashboard/admin/organizations/domains": {
+      id: "/dashboard/admin/organizations/domains";
+      path: "/domains";
+      fullPath: "/dashboard/admin/organizations/domains";
+      preLoaderRoute: typeof DashboardAdminOrganizationsDomainsRouteImport;
+      parentRoute: typeof DashboardAdminOrganizationsRouteRoute;
+    };
+    "/dashboard/admin/catalog/drafts": {
+      id: "/dashboard/admin/catalog/drafts";
+      path: "/drafts";
+      fullPath: "/dashboard/admin/catalog/drafts";
+      preLoaderRoute: typeof DashboardAdminCatalogDraftsRouteImport;
+      parentRoute: typeof DashboardAdminCatalogRouteRoute;
+    };
+    "/dashboard/admin/catalog/categories": {
+      id: "/dashboard/admin/catalog/categories";
+      path: "/categories";
+      fullPath: "/dashboard/admin/catalog/categories";
+      preLoaderRoute: typeof DashboardAdminCatalogCategoriesRouteImport;
+      parentRoute: typeof DashboardAdminCatalogRouteRoute;
+    };
   }
 }
+
+interface DashboardAdminCatalogRouteRouteChildren {
+  DashboardAdminCatalogCategoriesRoute: typeof DashboardAdminCatalogCategoriesRoute;
+  DashboardAdminCatalogDraftsRoute: typeof DashboardAdminCatalogDraftsRoute;
+  DashboardAdminCatalogIndexRoute: typeof DashboardAdminCatalogIndexRoute;
+}
+
+const DashboardAdminCatalogRouteRouteChildren: DashboardAdminCatalogRouteRouteChildren = {
+  DashboardAdminCatalogCategoriesRoute: DashboardAdminCatalogCategoriesRoute,
+  DashboardAdminCatalogDraftsRoute: DashboardAdminCatalogDraftsRoute,
+  DashboardAdminCatalogIndexRoute: DashboardAdminCatalogIndexRoute,
+};
+
+const DashboardAdminCatalogRouteRouteWithChildren =
+  DashboardAdminCatalogRouteRoute._addFileChildren(DashboardAdminCatalogRouteRouteChildren);
+
+interface DashboardAdminOrganizationsRouteRouteChildren {
+  DashboardAdminOrganizationsDomainsRoute: typeof DashboardAdminOrganizationsDomainsRoute;
+  DashboardAdminOrganizationsInvitesRoute: typeof DashboardAdminOrganizationsInvitesRoute;
+  DashboardAdminOrganizationsIndexRoute: typeof DashboardAdminOrganizationsIndexRoute;
+}
+
+const DashboardAdminOrganizationsRouteRouteChildren: DashboardAdminOrganizationsRouteRouteChildren =
+  {
+    DashboardAdminOrganizationsDomainsRoute: DashboardAdminOrganizationsDomainsRoute,
+    DashboardAdminOrganizationsInvitesRoute: DashboardAdminOrganizationsInvitesRoute,
+    DashboardAdminOrganizationsIndexRoute: DashboardAdminOrganizationsIndexRoute,
+  };
+
+const DashboardAdminOrganizationsRouteRouteWithChildren =
+  DashboardAdminOrganizationsRouteRoute._addFileChildren(
+    DashboardAdminOrganizationsRouteRouteChildren,
+  );
+
+interface DashboardAdminUsersRouteRouteChildren {
+  DashboardAdminUsersPublicInvitesRoute: typeof DashboardAdminUsersPublicInvitesRoute;
+  DashboardAdminUsersRolesRoute: typeof DashboardAdminUsersRolesRoute;
+  DashboardAdminUsersIndexRoute: typeof DashboardAdminUsersIndexRoute;
+}
+
+const DashboardAdminUsersRouteRouteChildren: DashboardAdminUsersRouteRouteChildren = {
+  DashboardAdminUsersPublicInvitesRoute: DashboardAdminUsersPublicInvitesRoute,
+  DashboardAdminUsersRolesRoute: DashboardAdminUsersRolesRoute,
+  DashboardAdminUsersIndexRoute: DashboardAdminUsersIndexRoute,
+};
+
+const DashboardAdminUsersRouteRouteWithChildren = DashboardAdminUsersRouteRoute._addFileChildren(
+  DashboardAdminUsersRouteRouteChildren,
+);
+
+interface DashboardAdminRouteRouteChildren {
+  DashboardAdminCatalogRouteRoute: typeof DashboardAdminCatalogRouteRouteWithChildren;
+  DashboardAdminOrganizationsRouteRoute: typeof DashboardAdminOrganizationsRouteRouteWithChildren;
+  DashboardAdminUsersRouteRoute: typeof DashboardAdminUsersRouteRouteWithChildren;
+  DashboardAdminIndexRoute: typeof DashboardAdminIndexRoute;
+}
+
+const DashboardAdminRouteRouteChildren: DashboardAdminRouteRouteChildren = {
+  DashboardAdminCatalogRouteRoute: DashboardAdminCatalogRouteRouteWithChildren,
+  DashboardAdminOrganizationsRouteRoute: DashboardAdminOrganizationsRouteRouteWithChildren,
+  DashboardAdminUsersRouteRoute: DashboardAdminUsersRouteRouteWithChildren,
+  DashboardAdminIndexRoute: DashboardAdminIndexRoute,
+};
+
+const DashboardAdminRouteRouteWithChildren = DashboardAdminRouteRoute._addFileChildren(
+  DashboardAdminRouteRouteChildren,
+);
 
 interface DashboardSettingsRouteRouteChildren {
   DashboardSettingsGeneralRoute: typeof DashboardSettingsGeneralRoute;
@@ -502,6 +829,7 @@ const DashboardSupportRouteRouteWithChildren = DashboardSupportRouteRoute._addFi
 );
 
 interface DashboardRouteRouteChildren {
+  DashboardAdminRouteRoute: typeof DashboardAdminRouteRouteWithChildren;
   DashboardSettingsRouteRoute: typeof DashboardSettingsRouteRouteWithChildren;
   DashboardSupportRouteRoute: typeof DashboardSupportRouteRouteWithChildren;
   DashboardSplatRoute: typeof DashboardSplatRoute;
@@ -509,6 +837,7 @@ interface DashboardRouteRouteChildren {
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
+  DashboardAdminRouteRoute: DashboardAdminRouteRouteWithChildren,
   DashboardSettingsRouteRoute: DashboardSettingsRouteRouteWithChildren,
   DashboardSupportRouteRoute: DashboardSupportRouteRouteWithChildren,
   DashboardSplatRoute: DashboardSplatRoute,

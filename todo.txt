@@ -26,3 +26,9 @@
 - cool features
     - keyboard shortcuts
     - 404 page stuff
+
+- features
+    - add queue system for emails and other tasks (triggerdev)
+    - add analytics and monitoring (posthog)
+    - add billing and subscription management (stripe)
+    - setup sentry for error tracking
