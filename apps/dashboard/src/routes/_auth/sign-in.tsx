@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { env } from "@sycom/env/web";
+import { Badge } from "@sycom/ui/components/badge";
 import { Button } from "@sycom/ui/components/button";
 import { buttonVariants } from "@sycom/ui/components/button-variants";
 import { Checkbox } from "@sycom/ui/components/checkbox";
@@ -17,10 +18,11 @@ import { cn } from "@sycom/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
+import { AuthMethods } from "@/components/auth/auth-methods";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/auth/auth-redirect";
@@ -33,6 +35,8 @@ const signInSchema = z.object({
 });
 
 type SignInInput = z.infer<typeof signInSchema>;
+
+const disabledOAuthReason = "Not yet available";
 
 export const Route = createFileRoute("/_auth/sign-in")({
   head: () => ({
@@ -53,16 +57,29 @@ function SignInPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { redirect: redirectParam } = useSearch({ from: "/_auth" });
+  const [lastUsedMethod, setLastUsedMethod] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [passkeyPending, setPasskeyPending] = useState(false);
 
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: "", password: "", rememberMe: false },
   });
 
+  useEffect(() => {
+    setLastUsedMethod(authClient.getLastUsedLoginMethod());
+  }, []);
+
+  const finishSignIn = useCallback(async () => {
+    queryClient.removeQueries({ queryKey: SESSION_QUERY_KEY });
+    await queryClient.prefetchQuery(sessionQueryOptions());
+    const target = resolvePostAuthRedirect(router, redirectParam);
+    await router.navigate({ href: target, replace: true });
+  }, [queryClient, redirectParam, router]);
+
   const onSubmit = async (data: SignInInput) => {
     try {
-      const { error } = await authClient.signIn.email({
+      const { data: response, error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
@@ -87,11 +104,17 @@ function SignInPage() {
         toastManager.add({ title: error.message, type: "error" });
         return;
       }
+
+      if (response && "twoFactorRedirect" in response && response.twoFactorRedirect) {
+        await router.navigate({
+          to: "/two-factor",
+          search: { redirect: redirectParam },
+        });
+        return;
+      }
+
       toastManager.add({ title: "Signed in", type: "success" });
-      queryClient.removeQueries({ queryKey: SESSION_QUERY_KEY });
-      await queryClient.prefetchQuery(sessionQueryOptions());
-      const target = resolvePostAuthRedirect(router, redirectParam);
-      await router.navigate({ href: target, replace: true });
+      await finishSignIn();
     } catch (error) {
       if (error instanceof Error) {
         toastManager.add({
@@ -104,6 +127,32 @@ function SignInPage() {
           type: "error",
         });
       }
+    }
+  };
+
+  const handlePasskeySignIn = async () => {
+    setPasskeyPending(true);
+
+    try {
+      const { error } = await authClient.signIn.passkey({ autoFill: false });
+
+      if (error) {
+        toastManager.add({ title: error.message, type: "error" });
+        return;
+      }
+
+      toastManager.add({ title: "Signed in with passkey", type: "success" });
+      await finishSignIn();
+    } catch (error) {
+      toastManager.add({
+        title:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    } finally {
+      setPasskeyPending(false);
     }
   };
 
@@ -129,7 +178,7 @@ function SignInPage() {
                       </FieldLabel>
                       <FormControl>
                         <Input
-                          autoComplete="username"
+                          autoComplete="username webauthn"
                           placeholder="you@example.com"
                           type="email"
                           {...field}
@@ -159,7 +208,7 @@ function SignInPage() {
                       <FormControl>
                         <InputGroup>
                           <InputGroupInput
-                            autoComplete="current-password"
+                            autoComplete="current-password webauthn"
                             placeholder="Enter your password"
                             type={showPassword ? "text" : "password"}
                             {...field}
@@ -206,14 +255,36 @@ function SignInPage() {
                 )}
               />
 
-              <Button
-                className="mt-1 w-full"
-                loading={form.formState.isSubmitting}
-                size="lg"
-                type="submit"
-              >
-                Continue
-              </Button>
+              <div className="relative mt-1 w-full pt-1">
+                <Button
+                  className="w-full"
+                  loading={form.formState.isSubmitting}
+                  size="lg"
+                  type="submit"
+                >
+                  Continue
+                </Button>
+                {lastUsedMethod === "email" ? (
+                  <Badge
+                    className="pointer-events-none absolute top-0 -right-1 rounded-none px-2"
+                    size="sm"
+                    variant="secondary"
+                  >
+                    Last used
+                  </Badge>
+                ) : null}
+              </div>
+
+              <AuthMethods
+                disabledSocialReason={disabledOAuthReason}
+                lastUsedMethod={lastUsedMethod}
+                onPasskey={() => {
+                  void handlePasskeySignIn();
+                }}
+                passkeyLoading={passkeyPending}
+                showPasskey
+                title="More ways to sign in"
+              />
             </form>
           </Form>
 

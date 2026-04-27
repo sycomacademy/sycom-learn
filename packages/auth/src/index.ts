@@ -6,7 +6,7 @@ import { dash } from "@better-auth/infra";
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, organization } from "better-auth/plugins";
+import { admin, lastLoginMethod, organization } from "better-auth/plugins";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { orgAc, orgRoles, platformAc, platformRoles } from "./permissions";
 import type { UserRole } from "@sycom/db/schema/auth";
@@ -19,6 +19,9 @@ import {
 
 export function createAuth() {
   const db = createDb();
+  const passkeyOrigin = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
+  const passkeyRpId = new URL(passkeyOrigin).hostname;
+
   return betterAuth({
     appName: "Sycom",
     database: drizzleAdapter(db, {
@@ -148,10 +151,11 @@ export function createAuth() {
         defaultRole: "public_student",
       }),
       passkey({
-        rpID: env.NODE_ENV === "production" ? new URL(env.BETTER_AUTH_URL).hostname : "localhost",
+        rpID: passkeyRpId,
         rpName: "Sycom LMS",
-        origin: env.BETTER_AUTH_URL,
+        origin: passkeyOrigin,
       }),
+      lastLoginMethod(),
       twoFactor({
         issuer: "Sycom LMS",
       }),

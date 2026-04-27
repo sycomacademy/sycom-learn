@@ -15,10 +15,11 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { cn } from "@sycom/ui/lib/utils";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
+import { AuthMethods } from "@/components/auth/auth-methods";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
 
@@ -41,6 +42,8 @@ const signUpSchema = z.object({
 
 type SignUpInput = z.infer<typeof signUpSchema>;
 
+const disabledOAuthReason = "Not yet available";
+
 export const Route = createFileRoute("/_auth/sign-up")({
   head: () => ({
     meta: [
@@ -58,12 +61,17 @@ export const Route = createFileRoute("/_auth/sign-up")({
 
 function SignUpPage() {
   const router = useRouter();
+  const [lastUsedMethod, setLastUsedMethod] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { firstName: "", lastName: "", email: "", password: "" },
   });
+
+  useEffect(() => {
+    setLastUsedMethod(authClient.getLastUsedLoginMethod());
+  }, []);
 
   const onSubmit = async (data: SignUpInput) => {
     try {
@@ -217,6 +225,12 @@ function SignUpPage() {
               >
                 Create account
               </Button>
+
+              <AuthMethods
+                disabledSocialReason={disabledOAuthReason}
+                lastUsedMethod={lastUsedMethod}
+                title="More ways to continue"
+              />
             </form>
           </Form>
 

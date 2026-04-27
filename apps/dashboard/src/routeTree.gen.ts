@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from "./routes/index";
 import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
 import { Route as DashboardSplatRouteImport } from "./routes/dashboard/$";
 import { Route as AuthVerifyEmailRouteImport } from "./routes/_auth/verify-email";
+import { Route as AuthTwoFactorRouteImport } from "./routes/_auth/two-factor";
 import { Route as AuthSignUpRouteImport } from "./routes/_auth/sign-up";
 import { Route as AuthSignInRouteImport } from "./routes/_auth/sign-in";
 import { Route as AuthResetPasswordRouteImport } from "./routes/_auth/reset-password";
@@ -64,6 +65,11 @@ const DashboardSplatRoute = DashboardSplatRouteImport.update({
 const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
   id: "/verify-email",
   path: "/verify-email",
+  getParentRoute: () => AuthRoute,
+} as any);
+const AuthTwoFactorRoute = AuthTwoFactorRouteImport.update({
+  id: "/two-factor",
+  path: "/two-factor",
   getParentRoute: () => AuthRoute,
 } as any);
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   "/reset-password": typeof AuthResetPasswordRoute;
   "/sign-in": typeof AuthSignInRoute;
   "/sign-up": typeof AuthSignUpRoute;
+  "/two-factor": typeof AuthTwoFactorRoute;
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   "/reset-password": typeof AuthResetPasswordRoute;
   "/sign-in": typeof AuthSignInRoute;
   "/sign-up": typeof AuthSignUpRoute;
+  "/two-factor": typeof AuthTwoFactorRoute;
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard": typeof DashboardIndexRoute;
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   "/_auth/reset-password": typeof AuthResetPasswordRoute;
   "/_auth/sign-in": typeof AuthSignInRoute;
   "/_auth/sign-up": typeof AuthSignUpRoute;
+  "/_auth/two-factor": typeof AuthTwoFactorRoute;
   "/_auth/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard/": typeof DashboardIndexRoute;
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/sign-in"
     | "/sign-up"
+    | "/two-factor"
     | "/verify-email"
     | "/dashboard/$"
     | "/dashboard/"
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/sign-in"
     | "/sign-up"
+    | "/two-factor"
     | "/verify-email"
     | "/dashboard/$"
     | "/dashboard"
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | "/_auth/reset-password"
     | "/_auth/sign-in"
     | "/_auth/sign-up"
+    | "/_auth/two-factor"
     | "/_auth/verify-email"
     | "/dashboard/$"
     | "/dashboard/"
@@ -336,6 +348,13 @@ declare module "@tanstack/react-router" {
       path: "/verify-email";
       fullPath: "/verify-email";
       preLoaderRoute: typeof AuthVerifyEmailRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
+    "/_auth/two-factor": {
+      id: "/_auth/two-factor";
+      path: "/two-factor";
+      fullPath: "/two-factor";
+      preLoaderRoute: typeof AuthTwoFactorRouteImport;
       parentRoute: typeof AuthRoute;
     };
     "/_auth/sign-up": {
@@ -506,6 +525,7 @@ interface AuthRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute;
   AuthSignInRoute: typeof AuthSignInRoute;
   AuthSignUpRoute: typeof AuthSignUpRoute;
+  AuthTwoFactorRoute: typeof AuthTwoFactorRoute;
   AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute;
 }
 
@@ -515,6 +535,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  AuthTwoFactorRoute: AuthTwoFactorRoute,
   AuthVerifyEmailRoute: AuthVerifyEmailRoute,
 };
 
