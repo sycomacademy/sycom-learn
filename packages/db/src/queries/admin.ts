@@ -1,14 +1,16 @@
-import { and, count, desc, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNull, or, type SQL } from "drizzle-orm";
 
 import type { Database } from "..";
 import { user, type UserRole } from "../schema/auth";
+
+export type AdminUserStatus = "verified" | "banned" | "unverified";
 
 export type ListAdminUsersInput = {
   page: number;
   pageSize: number;
   query?: string;
-  role?: UserRole;
-  status?: "verified" | "banned" | "unverified";
+  roles?: UserRole[];
+  statuses?: AdminUserStatus[];
 };
 
 export type AdminUserListItem = {
@@ -19,7 +21,7 @@ export type AdminUserListItem = {
   emailVerified: boolean;
   banned: boolean | null;
   createdAt: Date;
-  status: "verified" | "banned" | "unverified";
+  status: AdminUserStatus;
 };
 
 export async function listAdminUsers(database: Database, input: ListAdminUsersInput) {
@@ -73,27 +75,39 @@ function buildListAdminUsersWhere(input: ListAdminUsersInput) {
     }
   }
 
-  if (input.role) {
-    conditions.push(eq(user.role, input.role));
+  if (input.roles && input.roles.length > 0) {
+    conditions.push(inArray(user.role, input.roles));
   }
 
-  if (input.status === "banned") {
-    conditions.push(eq(user.banned, true));
-  }
+  if (input.statuses && input.statuses.length > 0) {
+    const statusConditions: SQL[] = [];
 
-  if (input.status === "verified") {
-    const verifiedCondition = and(isNotBannedCondition(), eq(user.emailVerified, true));
+    for (const status of input.statuses) {
+      if (status === "banned") {
+        statusConditions.push(eq(user.banned, true));
+      }
 
-    if (verifiedCondition) {
-      conditions.push(verifiedCondition);
+      if (status === "verified") {
+        const verifiedCondition = and(isNotBannedCondition(), eq(user.emailVerified, true));
+
+        if (verifiedCondition) {
+          statusConditions.push(verifiedCondition);
+        }
+      }
+
+      if (status === "unverified") {
+        const unverifiedCondition = and(isNotBannedCondition(), eq(user.emailVerified, false));
+
+        if (unverifiedCondition) {
+          statusConditions.push(unverifiedCondition);
+        }
+      }
     }
-  }
 
-  if (input.status === "unverified") {
-    const unverifiedCondition = and(isNotBannedCondition(), eq(user.emailVerified, false));
+    const combined = statusConditions.length === 1 ? statusConditions[0] : or(...statusConditions);
 
-    if (unverifiedCondition) {
-      conditions.push(unverifiedCondition);
+    if (combined) {
+      conditions.push(combined);
     }
   }
 

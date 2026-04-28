@@ -5,12 +5,14 @@ import { z } from "zod";
 
 import { protectedProcedure, router } from "../init";
 
+const adminUserStatusSchema = z.enum(["verified", "banned", "unverified"]);
+
 const listUsersSchema = z.object({
   page: z.number().int().min(1),
   pageSize: z.number().int().min(1).max(100),
   query: z.string().trim().min(1).optional(),
-  role: z.enum(userRoleEnum.enumValues).optional(),
-  status: z.enum(["verified", "banned", "unverified"]).optional(),
+  roles: z.array(z.enum(userRoleEnum.enumValues)).optional(),
+  statuses: z.array(adminUserStatusSchema).optional(),
 });
 type ListUsersInput = z.infer<typeof listUsersSchema>;
 
