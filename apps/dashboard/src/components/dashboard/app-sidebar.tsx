@@ -65,6 +65,24 @@ const PLATFORM_ADMIN_NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+// const CONTENT_CREATOR_NAV_GROUPS: NavGroup[] = [
+//   {
+//     label: "Main",
+//     items: [{ icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" }],
+//   },
+//   {
+//     label: "Courses",
+//     items: [{ icon: LayersIcon, label: "Catalog", to: "/dashboard/admin/catalog" }],
+//   },
+// ];
+
+// const PUBLIC_STUDENT_NAV_GROUPS: NavGroup[] = [
+//   {
+//     label: "Main",
+//     items: [{ icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" }],
+//   },
+// ];
+
 const menuButtonStableClass = cn(
   "transition-[width,height,padding,margin] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
 );
@@ -78,7 +96,9 @@ const groupLabelStableClass = cn(
 );
 
 export function AppSidebar(): React.ReactElement {
-  const { user } = useUser();
+  const {
+    data: { user },
+  } = useUser();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const navGroups = getNavGroups(normalizeUserRole(user.role));
 

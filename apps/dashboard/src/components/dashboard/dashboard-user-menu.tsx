@@ -26,10 +26,13 @@ import { Facehash } from "facehash";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
 import { ThemeToggleIcon } from "@sycom/ui/components/animated/icons/theme-toggle";
 import { useTheme } from "next-themes";
+import type { UserRole } from "@sycom/db/schema/auth";
 
 export function DashboardUserMenu(): React.ReactElement {
-  const { user, profile } = useUser();
-  const userRole = (user as { role?: string | null }).role;
+  const {
+    data: { user, profile },
+  } = useUser();
+  const userRole = user.role as UserRole;
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const queryClient = useQueryClient();
