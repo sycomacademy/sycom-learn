@@ -19,6 +19,7 @@ import GlobalError from "@/components/layout/global-error";
 import { RootLoader } from "@/components/layout/loader";
 
 import appCss from "../index.css?url";
+import { sessionQueryOptions } from "@/lib/auth/session";
 export type RouterAppContext = {
   trpc: TRPCOptionsProxy<AppRouter>;
   queryClient: QueryClient;
@@ -50,6 +51,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
     ],
   }),
+  beforeLoad: async ({ context }) => {
+    await context.queryClient.prefetchQuery(sessionQueryOptions());
+  },
   pendingComponent: RootLoader,
   component: RootComponent,
   errorComponent: RootError,

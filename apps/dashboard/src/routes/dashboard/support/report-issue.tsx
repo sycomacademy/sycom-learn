@@ -61,7 +61,9 @@ type ReportIssueInput = z.infer<typeof reportIssueSchema>;
 
 function ReportIssuePage() {
   const trpcClient = useTRPCClient();
-  const { user } = useUser();
+  const {
+    data: { user },
+  } = useUser();
   const [uploadProgresses, setUploadProgresses] = useState<Record<string, number>>({});
   const [uploaderResetKey, setUploaderResetKey] = useState(0);
 

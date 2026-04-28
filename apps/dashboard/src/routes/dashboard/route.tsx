@@ -7,7 +7,7 @@ import RouteError from "@/components/layout/route-error";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ context, location }) => {
-    const session = await context.queryClient.ensureQueryData(sessionQueryOptions());
+    const session = await context.queryClient.fetchQuery(sessionQueryOptions());
     if (!session) {
       throw redirect({
         to: "/sign-in",

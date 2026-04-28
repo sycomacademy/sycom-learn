@@ -15,10 +15,9 @@ import {
 } from "@sycom/ui/components/input-group";
 import { toastManager } from "@sycom/ui/components/toast";
 import { cn } from "@sycom/ui/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter, useSearch } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
@@ -26,7 +25,8 @@ import { AuthMethods } from "@/components/auth/auth-methods";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/auth/auth-redirect";
-import { SESSION_QUERY_KEY, sessionQueryOptions } from "@/lib/auth/session";
+import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { useQueryClient } from "@tanstack/react-query";
 
 const signInSchema = z.object({
   email: z.email("Invalid email address"),
@@ -70,12 +70,11 @@ function SignInPage() {
     setLastUsedMethod(authClient.getLastUsedLoginMethod());
   }, []);
 
-  const finishSignIn = useCallback(async () => {
-    queryClient.removeQueries({ queryKey: SESSION_QUERY_KEY });
-    await queryClient.prefetchQuery(sessionQueryOptions());
+  const finishSignIn = async () => {
+    await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
     const target = resolvePostAuthRedirect(router, redirectParam);
     await router.navigate({ href: target, replace: true });
-  }, [queryClient, redirectParam, router]);
+  };
 
   const onSubmit = async (data: SignInInput) => {
     try {

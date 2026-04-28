@@ -4,7 +4,7 @@ import { sessionQueryOptions } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/dashboard/admin")({
   beforeLoad: async ({ context, location }) => {
-    const session = await context.queryClient.ensureQueryData(sessionQueryOptions());
+    const session = await context.queryClient.fetchQuery(sessionQueryOptions());
     if (!session) {
       throw redirect({
         to: "/sign-in",

@@ -86,7 +86,9 @@ function SecuritySettings() {
 function SecuritySessionsActive() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { session } = useUser();
+  const {
+    data: { session },
+  } = useUser();
   const listSessionsQueryOptions = trpc.profile.listSessions.queryOptions();
   const { data: sessions } = useSuspenseQuery(listSessionsQueryOptions);
   const revokeSession = useMutation({
@@ -377,7 +379,8 @@ function SecurityChangePassword() {
 function SecurityPasskeys() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { data: passkeys } = useSuspenseQuery(trpc.profile.listPasskeys.queryOptions());
+  const listPasskeysQueryOptions = trpc.profile.listPasskeys.queryOptions();
+  const { data: passkeys } = useSuspenseQuery(listPasskeysQueryOptions);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
 
@@ -399,8 +402,7 @@ function SecurityPasskeys() {
 
       setAddDialogOpen(false);
       toastManager.add({ title: "Passkey added", type: "success" });
-      void queryClient.invalidateQueries(trpc.profile.listPasskeys.queryOptions());
-      void queryClient.refetchQueries(trpc.profile.listPasskeys.queryOptions());
+      void queryClient.invalidateQueries(listPasskeysQueryOptions);
     } catch (error) {
       toastManager.add({
         title: "Couldn't add passkey",
@@ -429,8 +431,7 @@ function SecurityPasskeys() {
       }
 
       toastManager.add({ title: "Passkey removed", type: "success" });
-      void queryClient.invalidateQueries(trpc.profile.listPasskeys.queryOptions());
-      void queryClient.refetchQueries(trpc.profile.listPasskeys.queryOptions());
+      void queryClient.invalidateQueries(listPasskeysQueryOptions);
     } catch (error) {
       toastManager.add({
         title: "Couldn't remove passkey",
@@ -542,11 +543,6 @@ function SecurityLinkedAccounts() {
   const [linkingProvider, setLinkingProvider] = useState<LinkedAccountProvider | null>(null);
   const [unlinkingProviderId, setUnlinkingProviderId] = useState<string | null>(null);
 
-  const refreshAccounts = () => {
-    void queryClient.invalidateQueries(trpc.profile.listAccounts.queryOptions());
-    void queryClient.refetchQueries(trpc.profile.listAccounts.queryOptions());
-  };
-
   const getProviderAccount = (provider: LinkedAccountProvider) =>
     accounts.find(
       (account) => account.providerId === provider || account.providerId.startsWith(`${provider}:`),
@@ -568,6 +564,7 @@ function SecurityLinkedAccounts() {
           type: "error",
         });
       }
+      void queryClient.invalidateQueries(listAccountsQueryOptions);
     } catch (error) {
       toastManager.add({
         title: "Couldn't link account",
@@ -598,7 +595,7 @@ function SecurityLinkedAccounts() {
       }
 
       toastManager.add({ title: "Account unlinked", type: "success" });
-      await refreshAccounts();
+      void queryClient.invalidateQueries(listAccountsQueryOptions);
     } catch (error) {
       toastManager.add({
         title: "Couldn't unlink account",
@@ -696,8 +693,10 @@ type VerifyTotpInput = z.infer<typeof verifyTotpSchema>;
 function SecurityTwoFactorAuthentication() {
   const queryClient = useQueryClient();
   const trpc = useTRPC();
-  const { user } = useUser();
-  const twoFactorEnabled = Boolean(user?.twoFactorEnabled);
+  const {
+    data: { user },
+  } = useUser();
+  const twoFactorEnabled = Boolean(user.twoFactorEnabled);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [setupDialogOpen, setSetupDialogOpen] = useState(false);
   const [totpUri, setTotpUri] = useState<string | null>(null);
@@ -717,11 +716,6 @@ function SecurityTwoFactorAuthentication() {
     resolver: zodResolver(passwordConfirmationSchema),
     defaultValues: { password: "" },
   });
-
-  const refreshProfile = async () => {
-    void queryClient.invalidateQueries(trpc.profile.get.queryOptions());
-    void queryClient.refetchQueries(trpc.profile.get.queryOptions());
-  };
 
   const handleEnable = async (data: PasswordConfirmationInput) => {
     try {
@@ -776,7 +770,7 @@ function SecurityTwoFactorAuthentication() {
       setTotpUri(null);
       verifyForm.reset({ code: "" });
       toastManager.add({ title: "Two-factor enabled", type: "success" });
-      await refreshProfile();
+      void queryClient.invalidateQueries(trpc.profile.get.queryOptions());
     } catch (error) {
       toastManager.add({
         title: "Couldn't verify code",
@@ -805,7 +799,7 @@ function SecurityTwoFactorAuthentication() {
       manageEnabledForm.reset({ password: "" });
       setBackupCodes([]);
       toastManager.add({ title: "Two-factor disabled", type: "success" });
-      await refreshProfile();
+      void queryClient.invalidateQueries(trpc.profile.get.queryOptions());
     } catch (error) {
       toastManager.add({
         title: "Couldn't disable 2FA",

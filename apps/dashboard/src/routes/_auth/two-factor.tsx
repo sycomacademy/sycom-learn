@@ -9,7 +9,6 @@ import { OTPField, OTPFieldInput } from "@sycom/ui/components/otp-field";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@sycom/ui/components/tabs";
 import { toastManager } from "@sycom/ui/components/toast";
 import { cn } from "@sycom/ui/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -18,8 +17,8 @@ import * as z from "zod/mini";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
 import { resolvePostAuthRedirect } from "@/lib/auth/auth-redirect";
-import { SESSION_QUERY_KEY, sessionQueryOptions } from "@/lib/auth/session";
-
+import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { useQueryClient } from "@tanstack/react-query";
 const totpSchema = z.object({
   code: z.string().check(z.minLength(6, "Enter the 6-digit code from your authenticator app")),
   trustDevice: z.optional(z.boolean()),
@@ -62,8 +61,7 @@ function TwoFactorPage() {
   });
 
   const finishSignIn = async () => {
-    queryClient.removeQueries({ queryKey: SESSION_QUERY_KEY });
-    await queryClient.prefetchQuery(sessionQueryOptions());
+    await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
     const target = resolvePostAuthRedirect(router, redirectParam);
     await router.navigate({ href: target, replace: true });
   };

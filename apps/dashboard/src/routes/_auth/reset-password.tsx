@@ -12,7 +12,6 @@ import {
 } from "@sycom/ui/components/input-group";
 import { toastManager } from "@sycom/ui/components/toast";
 import { cn } from "@sycom/ui/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter, useSearch } from "@tanstack/react-router";
 import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
@@ -22,6 +21,7 @@ import * as z from "zod/mini";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { useQueryClient } from "@tanstack/react-query";
 
 const resetPasswordSearchSchema = z.object({
   token: z.optional(z.string()),

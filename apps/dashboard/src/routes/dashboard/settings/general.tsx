@@ -23,6 +23,7 @@ import { contacts } from "@sycom/ui/lib/constants";
 import { useUser, useUserMutation } from "@/hooks/use-user";
 import { useTRPCClient } from "@/lib/trpc/client";
 import { capitalize, parseName } from "@sycom/ui/lib/string";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 const fullNameSchema = z.object({
   firstName: z
@@ -32,14 +33,17 @@ const fullNameSchema = z.object({
 });
 
 type FullNameInput = z.infer<typeof fullNameSchema>;
-type DashboardUser = ReturnType<typeof useUser>["user"];
+
+type User = AppRouterOutputs["profile"]["get"]["user"];
 
 export const Route = createFileRoute("/dashboard/settings/general")({
   component: GeneralSettings,
 });
 
 function GeneralSettings() {
-  const { user } = useUser();
+  const {
+    data: { user },
+  } = useUser();
 
   return (
     <div className="space-y-4">
@@ -50,7 +54,7 @@ function GeneralSettings() {
   );
 }
 
-function ProfileCard({ user }: { user: DashboardUser }) {
+function ProfileCard({ user }: { user: User }) {
   const trpcClient = useTRPCClient();
   const { updateAvatar } = useUserMutation();
   const [isUploading, setIsUploading] = useState(false);
@@ -111,7 +115,7 @@ function ProfileCard({ user }: { user: DashboardUser }) {
   );
 }
 
-function FullNameCard({ user }: { user: DashboardUser }) {
+function FullNameCard({ user }: { user: User }) {
   const { updateName } = useUserMutation();
   const { firstName, lastName } = parseName(user.name);
 
@@ -196,7 +200,7 @@ function FullNameCard({ user }: { user: DashboardUser }) {
   );
 }
 
-function EmailAddressCard({ user }: { user: DashboardUser }) {
+function EmailAddressCard({ user }: { user: User }) {
   return (
     <Card>
       <CardHeader>

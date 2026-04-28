@@ -27,7 +27,9 @@ export const Route = createFileRoute("/dashboard/settings/preferences")({
 
 function PreferencesSettings() {
   const { theme, setTheme } = useTheme();
-  const { profile } = useUser();
+  const {
+    data: { profile },
+  } = useUser();
   const { updateProfile } = useUserMutation();
 
   const currentSettings = profile.settings ?? {};

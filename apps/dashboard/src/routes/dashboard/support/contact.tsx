@@ -13,32 +13,32 @@ export const Route = createFileRoute("/dashboard/support/contact")({
   component: ContactPage,
 });
 
-function ContactPage() {
-  const socialIcons = {
-    Twitter: TwitterLogo,
-    Facebook: MetaLogo,
-    Instagram: InstagramLogo,
-    LinkedIn: LinkedinLogo,
-  } as const;
-  const channels = [
-    {
-      label: "Phone",
-      value: contacts.support.phone.contact,
-      href: `tel:${contacts.support.phone.contact}`,
-    },
-    {
-      label: "Email",
-      value: contacts.support.email.contact,
-      href: `mailto:${contacts.support.email.contact}`,
-    },
-  ];
-  const socialLinks = [
-    { label: "Twitter", href: contacts.socialMedia.twitter.contact },
-    { label: "Facebook", href: contacts.socialMedia.facebook.contact },
-    { label: "Instagram", href: contacts.socialMedia.instagram.contact },
-    { label: "LinkedIn", href: contacts.socialMedia.linkedin.contact },
-  ];
+const socialIcons = {
+  Twitter: TwitterLogo,
+  Facebook: MetaLogo,
+  Instagram: InstagramLogo,
+  LinkedIn: LinkedinLogo,
+} as const;
+const channels = [
+  {
+    label: "Phone",
+    value: contacts.support.phone.contact,
+    href: `tel:${contacts.support.phone.contact}`,
+  },
+  {
+    label: "Email",
+    value: contacts.support.email.contact,
+    href: `mailto:${contacts.support.email.contact}`,
+  },
+];
+const socialLinks = [
+  { label: "Twitter", href: contacts.socialMedia.twitter.contact },
+  { label: "Facebook", href: contacts.socialMedia.facebook.contact },
+  { label: "Instagram", href: contacts.socialMedia.instagram.contact },
+  { label: "LinkedIn", href: contacts.socialMedia.linkedin.contact },
+];
 
+function ContactPage() {
   return (
     <div className="flex flex-col gap-6">
       <Card>
