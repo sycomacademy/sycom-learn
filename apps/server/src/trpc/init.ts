@@ -1,4 +1,4 @@
-import { authMiddleware } from "./middleware/auth";
+import { adminMiddleware, authMiddleware } from "./middleware/auth";
 import { loggingMiddleware } from "./middleware/logging";
 import { t } from "./t";
 import { env } from "@sycom/env/server";
@@ -12,3 +12,4 @@ const baseProcedure = isDebugPerformance ? t.procedure.use(loggingMiddleware) : 
 
 export const publicProcedure = baseProcedure;
 export const protectedProcedure = baseProcedure.use(authMiddleware);
+export const adminProcedure = baseProcedure.use(adminMiddleware);

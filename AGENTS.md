@@ -6,7 +6,7 @@ This file provides guidance to agents (Claude Code, Cursor, OpenCode, etc.) when
 
 These rules override default agent behavior. Apply them by default; only deviate if the user explicitly asks for something different.
 
-1. **Use a standard tRPC router file shape.** In each file under `apps/server/src/trpc/routers/`, define imports first, then all Zod schemas and inferred types at the top, then export the router object. Prefer named schemas/types (for example `updateProfileSchema`, `UpdateProfileInput`, `ProfileGetOutput`) over inline `z.object(...)` inside procedure chains so the contract is obvious and reusable.
+1. **All server/tRPC schemas and types live in [`apps/server/src/trpc/schemas.ts`](apps/server/src/trpc/schemas.ts).** Router files under `apps/server/src/trpc/routers/` must not declare Zod schemas or inferred input/output types inline; import them from `../schemas` instead. Inside `schemas.ts`, group entries by router (`// admin`, `// feedback`, etc.) and export both the schema and its inferred type (for example `updateProfileSchema` + `UpdateProfileInput`) so the contract is single-source and reusable. Frontend forms and `packages/db` query types are out of scope for this rule and stay where they are.
 
 2. **All DB interactions go through query modules.** In the server app, route handlers and tRPC routers must not issue raw Drizzle queries directly. Put database reads/writes in `packages/db/src/queries/*.ts`, export them via `packages/db/src/queries/index.ts`, and call those functions from routers/server code. Keep auth provider calls (e.g. Better Auth APIs) in the router layer; keep SQL in the DB query layer.
 

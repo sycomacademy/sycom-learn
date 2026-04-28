@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useUser } from "@/hooks/use-user";
+import { JsonViewer } from "@sycom/ui/components/elements/json-viewer";
 
 export const Route = createFileRoute("/dashboard/")({
   component: RouteComponent,
@@ -17,9 +18,12 @@ function RouteComponent() {
 
       <section className="rounded-lg border bg-background p-4">
         <h2 className="mb-2 text-sm font-medium text-muted-foreground">Profile snapshot</h2>
-        <pre className="overflow-x-auto rounded-md bg-muted/50 p-4 text-xs">
-          {JSON.stringify(profile, null, 2)}
-        </pre>
+        <JsonViewer
+          data={JSON.parse(JSON.stringify(profile))}
+          searchable
+          copyPath
+          collapsed={2}
+        />{" "}
       </section>
     </div>
   );

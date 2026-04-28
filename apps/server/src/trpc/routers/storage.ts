@@ -1,10 +1,5 @@
 import { createMediaAsset, deleteMediaAssetByPublicId } from "@sycom/db/queries/index";
 import {
-  storageEntityTypeEnum,
-  storageFolderEnum,
-  storageResourceTypeEnum,
-} from "@sycom/db/schema/storage";
-import {
   CLOUD_ROOT,
   buildAssetFolder,
   getSignedUrl,
@@ -12,46 +7,18 @@ import {
   signUploadParams,
 } from "@sycom/storage/server";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 
 import { protectedProcedure, router } from "../init";
-
-const signUploadInputSchema = z.object({
-  folder: z.enum(storageFolderEnum.enumValues),
-  entityType: z.enum(storageEntityTypeEnum.enumValues),
-  entityId: z.string().min(1),
-});
-type StorageSignUploadInput = z.infer<typeof signUploadInputSchema>;
-
-const saveAssetInputSchema = z.object({
-  publicId: z.string().min(1),
-  secureUrl: z.url(),
-  folder: z.enum(storageFolderEnum.enumValues),
-  entityType: z.enum(storageEntityTypeEnum.enumValues),
-  entityId: z.string().min(1),
-  resourceType: z.enum(storageResourceTypeEnum.enumValues),
-  tags: z.array(z.string()).optional(),
-  name: z.string().optional(),
-  format: z.string().min(1),
-  bytes: z.number().int().positive(),
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
-});
-type StorageSaveAssetInput = z.infer<typeof saveAssetInputSchema>;
-
-const signedUrlInputSchema = z.object({
-  publicId: z.string().min(1),
-  expireIn: z.number().int().positive(),
-  download: z.boolean().optional(),
-  resourceType: z.enum(storageResourceTypeEnum.enumValues).optional(),
-});
-type StorageSignedUrlInput = z.infer<typeof signedUrlInputSchema>;
-
-const deleteAssetInputSchema = z.object({
-  publicId: z.string().min(1),
-  resourceType: z.enum(storageResourceTypeEnum.enumValues).optional(),
-});
-type StorageDeleteAssetInput = z.infer<typeof deleteAssetInputSchema>;
+import {
+  deleteAssetInputSchema,
+  saveAssetInputSchema,
+  signedUrlInputSchema,
+  signUploadInputSchema,
+  type StorageDeleteAssetInput,
+  type StorageSaveAssetInput,
+  type StorageSignUploadInput,
+  type StorageSignedUrlInput,
+} from "../schemas";
 
 export const storageRouter = router({
   signUpload: protectedProcedure.input(signUploadInputSchema).mutation(({ ctx, input }) => {

@@ -1,4 +1,5 @@
-import { and, count, desc, eq, ilike, inArray, isNull, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, isNull, or, type SQL } from "drizzle-orm";
+import type { PgColumn } from "drizzle-orm/pg-core";
 
 import type { Database } from "..";
 import { user, type UserRole } from "../schema/auth";
@@ -6,11 +7,13 @@ import { user, type UserRole } from "../schema/auth";
 export type AdminUserStatus = "verified" | "banned" | "unverified";
 
 export type ListAdminUsersInput = {
-  page: number;
-  pageSize: number;
-  query?: string;
+  limit: number;
+  offset: number;
+  search?: string;
   roles?: UserRole[];
   statuses?: AdminUserStatus[];
+  sortBy: "name" | "email" | "createdAt";
+  sortDirection: "asc" | "desc";
 };
 
 export type AdminUserListItem = {
@@ -24,11 +27,18 @@ export type AdminUserListItem = {
   status: AdminUserStatus;
 };
 
-export async function listAdminUsers(database: Database, input: ListAdminUsersInput) {
-  const offset = (input.page - 1) * input.pageSize;
-  const where = buildListAdminUsersWhere(input);
+const sortColumns = {
+  name: user.name,
+  email: user.email,
+  createdAt: user.createdAt,
+} satisfies Record<ListAdminUsersInput["sortBy"], PgColumn>;
 
-  const [summary] = await database.select({ totalCount: count() }).from(user).where(where);
+export async function listAdminUsers(database: Database, input: ListAdminUsersInput) {
+  const where = buildListAdminUsersWhere(input);
+  const orderColumn = sortColumns[input.sortBy];
+  const orderBy = input.sortDirection === "asc" ? asc(orderColumn) : desc(orderColumn);
+
+  const [summary] = await database.select({ total: count() }).from(user).where(where);
 
   const rows = await database
     .select({
@@ -42,32 +52,29 @@ export async function listAdminUsers(database: Database, input: ListAdminUsersIn
     })
     .from(user)
     .where(where)
-    .orderBy(desc(user.createdAt))
-    .limit(input.pageSize)
-    .offset(offset);
-
-  const totalCount = summary?.totalCount ?? 0;
+    .orderBy(orderBy)
+    .limit(input.limit)
+    .offset(input.offset);
 
   return {
-    page: input.page,
-    pageCount: Math.ceil(totalCount / input.pageSize),
-    pageSize: input.pageSize,
     rows: rows.map((row) => ({
       ...row,
       status: resolveAdminUserStatus(row),
     })) satisfies AdminUserListItem[],
-    totalCount,
+    total: summary?.total ?? 0,
+    limit: input.limit,
+    offset: input.offset,
   };
 }
 
 function buildListAdminUsersWhere(input: ListAdminUsersInput) {
   const conditions: SQL[] = [];
-  const normalizedQuery = input.query?.trim();
+  const normalizedSearch = input.search?.trim();
 
-  if (normalizedQuery) {
+  if (normalizedSearch) {
     const searchCondition = or(
-      ilike(user.name, `%${normalizedQuery}%`),
-      ilike(user.email, `%${normalizedQuery}%`),
+      ilike(user.name, `%${normalizedSearch}%`),
+      ilike(user.email, `%${normalizedSearch}%`),
     );
 
     if (searchCondition) {

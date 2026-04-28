@@ -1,26 +1,13 @@
 import { createFeedback, createFeedbackReport } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 
 import { protectedProcedure, router } from "../init";
-
-const submitFeedbackSchema = z.object({
-  email: z.email(),
-  message: z.string().trim().min(1).max(5000),
-});
-type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
-
-const feedbackReportTypes = ["bug", "feature", "complaint", "other"] as const;
-
-const submitFeedbackReportSchema = z.object({
-  reportId: z.uuid(),
-  email: z.email(),
-  type: z.enum(feedbackReportTypes),
-  subject: z.string().trim().min(1).max(160),
-  description: z.string().trim().min(1).max(5000),
-  imageUrl: z.string().max(2048).optional(),
-});
-type SubmitFeedbackReportInput = z.infer<typeof submitFeedbackReportSchema>;
+import {
+  submitFeedbackReportSchema,
+  submitFeedbackSchema,
+  type SubmitFeedbackInput,
+  type SubmitFeedbackReportInput,
+} from "../schemas";
 
 export const feedbackRouter = router({
   submit: protectedProcedure.input(submitFeedbackSchema).mutation(async ({ ctx, input }) => {

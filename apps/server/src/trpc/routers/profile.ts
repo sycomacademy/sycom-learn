@@ -1,59 +1,20 @@
 import { auth } from "@sycom/auth";
 import { getProfileByUserId, upsertProfileByUserId } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 
 import { protectedProcedure, router } from "../init";
-
-const profileSettingsSchema = z.object({
-  enableFacehash: z.boolean().optional(),
-  marketingEmails: z.boolean().optional(),
-  useDeviceTimezone: z.boolean().optional(),
-});
-
-export const profileSelectSchema = z.object({
-  userId: z.string(),
-  onboardedAt: z.date().nullable(),
-  bio: z.string().nullable(),
-  settings: profileSettingsSchema.nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-export type ProfileSelect = z.infer<typeof profileSelectSchema>;
-
-const updateNameSchema = z.object({
-  name: z.string().min(1),
-});
-type UpdateNameInput = z.infer<typeof updateNameSchema>;
-
-const updateAvatarSchema = z.object({
-  publicId: z.string().min(1),
-});
-type UpdateAvatarInput = z.infer<typeof updateAvatarSchema>;
-
-const updateProfileSchema = profileSelectSchema
-  .pick({
-    onboardedAt: true,
-    bio: true,
-    settings: true,
-  })
-  .partial()
-  .refine((value) => Object.keys(value).length > 0, {
-    message: "Provide at least one profile field to update",
-  });
-type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
-  revokeOtherSessions: z.boolean().optional(),
-});
-type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
-
-const revokeSessionSchema = z.object({
-  token: z.string().min(1),
-});
-type RevokeSessionInput = z.infer<typeof revokeSessionSchema>;
+import {
+  changePasswordSchema,
+  revokeSessionSchema,
+  updateAvatarSchema,
+  updateNameSchema,
+  updateProfileSchema,
+  type ChangePasswordInput,
+  type RevokeSessionInput,
+  type UpdateAvatarInput,
+  type UpdateNameInput,
+  type UpdateProfileInput,
+} from "../schemas";
 
 export const profileRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
