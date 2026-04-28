@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Button } from "@sycom/ui/components/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/components/input-group";
 import { Spinner } from "@sycom/ui/components/spinner";
+import { cn } from "@sycom/ui/lib/utils";
 
 export type UsersToolbarProps = {
   search: string;
@@ -26,7 +27,7 @@ export function UsersToolbar({
         <label className="sr-only" htmlFor="users-search">
           Search by name or email
         </label>
-        <InputGroup className="w-full">
+        <InputGroup className="w-full max-w-md">
           <InputGroupAddon align="inline-start">
             {isFetching ? <Spinner className="size-4" /> : <Search className="size-4 opacity-60" />}
           </InputGroupAddon>
@@ -47,7 +48,7 @@ export function UsersToolbar({
         size="icon"
         variant="outline"
       >
-        <RefreshCcw className="size-4" />
+        <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
       </Button>
 
       <Button onClick={onNewInvite}>

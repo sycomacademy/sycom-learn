@@ -17,19 +17,27 @@ function UsersAllPage() {
   const [statuses, setStatuses] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isFetching, setIsFetching] = useState(false);
+  const onRefresh = async () => {
+    setIsFetching(true);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    setIsFetching(false);
+  };
 
   const params = { search, roles, statuses, page, pageSize };
 
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Users</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Active params: <code className="rounded bg-muted/60 px-1">{JSON.stringify(params)}</code>
-        </p>
-      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Active params: <code className="rounded bg-muted/60 px-1">{JSON.stringify(params)}</code>
+      </p>
 
-      <UsersToolbar isFetching={false} onSearchChange={setSearch} search={search} />
+      <UsersToolbar
+        isFetching={isFetching}
+        onSearchChange={setSearch}
+        onRefresh={onRefresh}
+        search={search}
+      />
 
       <UsersFilters
         onRolesChange={setRoles}

@@ -29,7 +29,9 @@ type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
 export function FeedbackPopover() {
   const [open, setOpen] = useState(false);
   const trpcClient = useTRPCClient();
-  const { user } = useUser();
+  const {
+    data: { user },
+  } = useUser();
 
   const form = useForm<SubmitFeedbackInput>({
     resolver: zodResolver(submitFeedbackSchema),

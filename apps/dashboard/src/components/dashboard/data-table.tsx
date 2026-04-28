@@ -1,7 +1,12 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Button } from "@sycom/ui/components/button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+} from "@sycom/ui/components/pagination";
 import {
   Select,
   SelectItem,
@@ -128,26 +133,40 @@ export function DataTable<T>({
           <span className="text-muted-foreground">
             {total === 0 ? "No results" : `${start}–${end} of ${total}`}
           </span>
-          <div className="flex items-center gap-0.5">
-            <Button
-              aria-label="Previous page"
-              disabled={page <= 1}
-              onClick={() => goTo(page - 1)}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <Button
-              aria-label="Next page"
-              disabled={page >= pageCount}
-              onClick={() => goTo(page + 1)}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <ChevronRightIcon className="size-4" />
-            </Button>
-          </div>
+          <Pagination className="mx-0 w-auto justify-start">
+            <PaginationContent className="gap-0.5">
+              <PaginationItem>
+                <PaginationLink
+                  aria-disabled={page <= 1}
+                  aria-label="Previous page"
+                  className={cn(page <= 1 && "pointer-events-none opacity-50")}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    goTo(page - 1);
+                  }}
+                  size="icon-sm"
+                >
+                  <ChevronLeftIcon className="size-4" />
+                </PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink
+                  aria-disabled={page >= pageCount}
+                  aria-label="Next page"
+                  className={cn(page >= pageCount && "pointer-events-none opacity-50")}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    goTo(page + 1);
+                  }}
+                  size="icon-sm"
+                >
+                  <ChevronRightIcon className="size-4" />
+                </PaginationLink>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>

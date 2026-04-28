@@ -3,7 +3,6 @@ import { MoreHorizontal } from "lucide-react";
 import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
 import { Button } from "@sycom/ui/components/button";
-import { cn } from "@sycom/ui/lib/utils";
 
 import type { DataTableColumn } from "@/components/dashboard/data-table";
 
@@ -17,6 +16,7 @@ export type UserRow = {
   role: UserRole | null;
   emailVerified: boolean;
   banned: boolean;
+  twoFactorEnabled: boolean;
   organizations: string[];
   createdAt: Date;
 };
@@ -51,7 +51,10 @@ function UserCell({ user }: { user: UserRow }) {
           {initials(user.name)}
         </AvatarFallback>
       </Avatar>
-      <span className="min-w-0 truncate font-medium text-foreground">{user.name}</span>
+      <div className="min-w-0">
+        <p className="truncate font-medium text-foreground">{user.name}</p>
+        <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+      </div>
     </div>
   );
 }
@@ -75,30 +78,35 @@ function getStatus(user: UserRow): Status {
   return "active";
 }
 
-const STATUS_CONFIG: Record<Status, { label: string; dot: string }> = {
-  active: { label: "Active", dot: "bg-emerald-500" },
-  unverified: { label: "Unverified email", dot: "bg-amber-500" },
-  banned: { label: "Banned", dot: "bg-destructive" },
+const STATUS_CONFIG: Record<Status, { label: string; variant: "success" | "warning" | "error" }> = {
+  active: { label: "Verified", variant: "success" },
+  unverified: { label: "Unverified", variant: "warning" },
+  banned: { label: "Banned", variant: "error" },
 };
 
-function StatusIndicator({ user }: { user: UserRow }) {
+function StatusBadge({ user }: { user: UserRow }) {
   const cfg = STATUS_CONFIG[getStatus(user)];
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className={cn("size-1.5 rounded-full", cfg.dot)} aria-hidden />
-      <span>{cfg.label}</span>
-    </span>
+  return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
+}
+
+function TwoFactorBadge({ user }: { user: UserRow }) {
+  return user.twoFactorEnabled ? (
+    <Badge variant="success">Enabled</Badge>
+  ) : (
+    <Badge variant="secondary">Disabled</Badge>
   );
 }
 
 function OrganizationsCell({ user }: { user: UserRow }) {
   if (user.organizations.length === 0) {
-    return <span className="text-muted-foreground">No organizations</span>;
+    return <span className="text-xs text-muted-foreground">No organizations</span>;
   }
   if (user.organizations.length === 1) {
-    return <span>{user.organizations[0]}</span>;
+    return <span className="text-xs">{user.organizations[0]}</span>;
   }
-  return <span>{`${user.organizations[0]} + ${user.organizations.length - 1}`}</span>;
+  return (
+    <span className="text-xs">{`${user.organizations[0]} + ${user.organizations.length - 1}`}</span>
+  );
 }
 
 function RowActions() {
@@ -112,14 +120,8 @@ function RowActions() {
 export const USER_COLUMNS: DataTableColumn<UserRow>[] = [
   {
     id: "user",
-    header: "Name",
+    header: "User",
     cell: (u) => <UserCell user={u} />,
-  },
-  {
-    id: "email",
-    className: "max-w-xs min-w-48 truncate text-muted-foreground",
-    header: "Email",
-    cell: (u) => u.email,
   },
   {
     id: "role",
@@ -135,7 +137,12 @@ export const USER_COLUMNS: DataTableColumn<UserRow>[] = [
   {
     id: "status",
     header: "Status",
-    cell: (u) => <StatusIndicator user={u} />,
+    cell: (u) => <StatusBadge user={u} />,
+  },
+  {
+    id: "twoFactor",
+    header: "2FA",
+    cell: (u) => <TwoFactorBadge user={u} />,
   },
   {
     id: "joined",
