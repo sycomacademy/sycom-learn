@@ -7,7 +7,7 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function RouteComponent() {
-  const profile = useUser();
+  const { data: profile } = useUser();
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">

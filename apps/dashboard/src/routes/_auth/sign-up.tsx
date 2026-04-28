@@ -42,8 +42,6 @@ const signUpSchema = z.object({
 
 type SignUpInput = z.infer<typeof signUpSchema>;
 
-const disabledOAuthReason = "Not yet available";
-
 export const Route = createFileRoute("/_auth/sign-up")({
   head: () => ({
     meta: [
@@ -227,7 +225,7 @@ function SignUpPage() {
               </Button>
 
               <AuthMethods
-                disabledSocialReason={disabledOAuthReason}
+                disabledSocialReason={"Not yet available"}
                 lastUsedMethod={lastUsedMethod}
                 title="More ways to continue"
               />

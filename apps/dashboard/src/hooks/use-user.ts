@@ -1,19 +1,10 @@
-import { getRouteApi } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 
-const dashboardRouteApi = getRouteApi("/dashboard");
-
-export function useDashboardContext() {
-  return dashboardRouteApi.useRouteContext();
-}
-
 export function useUser() {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.profile.get.queryOptions());
-  return data;
+  return useSuspenseQuery(trpc.profile.get.queryOptions());
 }
-
 export function useUserMutation() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
