@@ -27,3 +27,14 @@ export function snakeCaseToTitleCase(string: string): string {
 export function kebabCaseToTitleCase(string: string): string {
   return string.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
+
+export function slugify(string: string): string {
+  return string
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 63);
+}

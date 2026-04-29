@@ -15,6 +15,7 @@ const platformStatements = {
   ...platformDefaultStatements,
   feedback: ["submit", "list", "update"],
   report: ["submit", "list", "update"],
+  organization: ["create", "read", "update", "delete"],
 } as const;
 
 export const platformAc = createAccessControl(platformStatements);
@@ -23,6 +24,7 @@ export const platformAdminRole = platformAc.newRole({
   ...platformBuiltInAdminAc.statements,
   feedback: ["submit", "list", "update"],
   report: ["submit", "list", "update"],
+  organization: ["create", "read", "update", "delete"],
 });
 
 export const contentCreatorRole = platformAc.newRole({

@@ -3,7 +3,9 @@ import { sendPlatformInviteEmail } from "@sycom/auth/config";
 import {
   createOrganizationWithOwner,
   createPlatformInvitation,
+  deleteOrganization,
   getActivePlatformInvitationByEmail,
+  getAdminOrganizationById,
   getAdminUserById,
   getOrganizationBySlug,
   listAdminOrganizations,
@@ -23,7 +25,9 @@ import {
   adminLogsAnalyticsOverviewSchema,
   banAdminUserSchema,
   createAdminOrganizationSchema,
+  deleteAdminOrganizationSchema,
   deleteAdminUserSchema,
+  getAdminOrganizationSchema,
   listAdminOrganizationsSchema,
   getAdminUserSchema,
   impersonateAdminUserSchema,
@@ -59,12 +63,6 @@ export const adminRouter = router({
     .input(listAdminUsersSchema)
     .query(async ({ ctx, input }) => {
       return await listAdminUsers(ctx.db, input);
-    }),
-
-  listOrganizations: adminProcedure
-    .input(listAdminOrganizationsSchema)
-    .query(async ({ ctx, input }) => {
-      return await listAdminOrganizations(ctx.db, input);
     }),
 
   getUser: adminProcedure
@@ -352,6 +350,7 @@ export const adminRouter = router({
   // ---------------------------------------------------------------------------
 
   createOrganization: adminProcedure
+    .use(platformPermissionMiddleware({ organization: ["create"] }))
     .input(createAdminOrganizationSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await getOrganizationBySlug(ctx.db, { slug: input.slug });
@@ -379,5 +378,37 @@ export const adminRouter = router({
         slug: result.organization.slug,
         owner: result.owner,
       };
+    }),
+  listOrganizations: adminProcedure
+    .use(platformPermissionMiddleware({ organization: ["read"] }))
+    .input(listAdminOrganizationsSchema)
+    .query(async ({ ctx, input }) => {
+      return await listAdminOrganizations(ctx.db, input);
+    }),
+
+  getOrganization: adminProcedure
+    .use(platformPermissionMiddleware({ organization: ["read"] }))
+    .input(getAdminOrganizationSchema)
+    .query(async ({ ctx, input }) => {
+      const org = await getAdminOrganizationById(ctx.db, input);
+
+      if (!org) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+
+      return org;
+    }),
+
+  deleteOrganization: adminProcedure
+    .use(platformPermissionMiddleware({ organization: ["delete"] }))
+    .input(deleteAdminOrganizationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const result = await deleteOrganization(ctx.db, input);
+
+      if (!result.deleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+
+      return { success: true };
     }),
 });

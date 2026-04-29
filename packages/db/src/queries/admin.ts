@@ -443,6 +443,138 @@ export async function getOrganizationBySlug(
   return row ?? null;
 }
 
+export async function deleteOrganization(
+  database: Database,
+  input: { organizationId: string },
+): Promise<{ deleted: boolean }> {
+  const result = await database
+    .delete(organization)
+    .where(eq(organization.id, input.organizationId))
+    .returning({ id: organization.id });
+
+  return { deleted: result.length > 0 };
+}
+
+export type AdminOrganizationCohortRef = {
+  id: string;
+  name: string;
+};
+
+export type AdminOrganizationMember = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: "owner" | "admin" | "teacher" | "student";
+  joinedAt: Date;
+  cohorts: AdminOrganizationCohortRef[];
+};
+
+export type AdminOrganizationCohort = {
+  id: string;
+  name: string;
+  image: string | null;
+  memberCount: number;
+  createdAt: Date;
+};
+
+export type AdminOrganizationDetails = {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  createdAt: Date;
+  memberCount: number;
+  cohortCount: number;
+  pendingInviteCount: number;
+  owner: AdminOrganizationMember | null;
+  members: AdminOrganizationMember[];
+  cohorts: AdminOrganizationCohort[];
+};
+
+export async function getAdminOrganizationById(
+  database: Database,
+  input: { organizationId: string },
+): Promise<AdminOrganizationDetails | null> {
+  const orgRow = await database.query.organization.findFirst({
+    where: eq(organization.id, input.organizationId),
+  });
+
+  if (!orgRow) {
+    return null;
+  }
+
+  const [memberRows, cohortRows, cohortMembershipRows, pendingInviteCountRow] = await Promise.all([
+    database
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: member.role,
+        joinedAt: member.createdAt,
+      })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(eq(member.organizationId, orgRow.id))
+      .orderBy(asc(member.createdAt), asc(user.name)),
+    database
+      .select({
+        id: cohort.id,
+        name: cohort.name,
+        image: cohort.image,
+        createdAt: cohort.createdAt,
+        memberCount: sql<number>`cast(count(${cohort_member.userId}) as integer)`,
+      })
+      .from(cohort)
+      .leftJoin(cohort_member, eq(cohort_member.teamId, cohort.id))
+      .where(eq(cohort.organizationId, orgRow.id))
+      .groupBy(cohort.id)
+      .orderBy(asc(cohort.name)),
+    database
+      .select({
+        userId: cohort_member.userId,
+        cohortId: cohort.id,
+        cohortName: cohort.name,
+      })
+      .from(cohort_member)
+      .innerJoin(cohort, eq(cohort.id, cohort_member.teamId))
+      .where(eq(cohort.organizationId, orgRow.id))
+      .orderBy(asc(cohort.name)),
+    database
+      .select({ value: count() })
+      .from(invitation)
+      .where(and(eq(invitation.organizationId, orgRow.id), eq(invitation.status, "pending"))),
+  ]);
+
+  const cohortsByUser = new Map<string, AdminOrganizationCohortRef[]>();
+  for (const row of cohortMembershipRows) {
+    const list = cohortsByUser.get(row.userId) ?? [];
+    list.push({ id: row.cohortId, name: row.cohortName });
+    cohortsByUser.set(row.userId, list);
+  }
+
+  const members: AdminOrganizationMember[] = memberRows.map((row) => ({
+    ...row,
+    cohorts: cohortsByUser.get(row.id) ?? [],
+  }));
+  const ownerRow = members.find((row) => row.role === "owner") ?? null;
+
+  return {
+    id: orgRow.id,
+    name: orgRow.name,
+    slug: orgRow.slug,
+    logo: orgRow.logo,
+    createdAt: orgRow.createdAt,
+    memberCount: members.length,
+    cohortCount: cohortRows.length,
+    pendingInviteCount: pendingInviteCountRow[0]?.value ?? 0,
+    owner: ownerRow,
+    members,
+    cohorts: cohortRows,
+  };
+}
+
 export async function createOrganizationWithOwner(
   database: Database,
   input: CreateOrganizationInput,

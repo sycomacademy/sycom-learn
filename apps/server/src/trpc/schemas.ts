@@ -65,6 +65,16 @@ export const createAdminOrganizationSchema = z.object({
 });
 export type CreateAdminOrganizationInput = z.infer<typeof createAdminOrganizationSchema>;
 
+export const deleteAdminOrganizationSchema = z.object({
+  organizationId: z.string().min(1),
+});
+export type DeleteAdminOrganizationInput = z.infer<typeof deleteAdminOrganizationSchema>;
+
+export const getAdminOrganizationSchema = z.object({
+  organizationId: z.string().min(1),
+});
+export type GetAdminOrganizationInput = z.infer<typeof getAdminOrganizationSchema>;
+
 export const getAdminUserSchema = z.object({
   userId: z.string().min(1),
 });

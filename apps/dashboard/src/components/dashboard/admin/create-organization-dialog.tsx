@@ -19,8 +19,8 @@ import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
 import { Input } from "@sycom/ui/components/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/components/input-group";
-import { Textarea } from "@sycom/ui/components/textarea";
 import { toastManager } from "@sycom/ui/components/toast";
+import { slugify } from "@sycom/ui/lib/string";
 
 const RESERVED_SLUGS = ["admin", "api", "app", "auth", "dashboard", "public", "www"] as const;
 
@@ -39,31 +39,9 @@ const createOrganizationSchema = z.object({
       "This slug is reserved",
     ),
   ),
-  primaryDomain: z.optional(
-    z.string().check(
-      z.maxLength(253),
-      z.refine(
-        (value) =>
-          value.length === 0 ||
-          /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(value),
-        "Enter a valid domain like example.com",
-      ),
-    ),
-  ),
-  supportEmail: z.optional(
-    z
-      .string()
-      .check(
-        z.refine(
-          (value) => value.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-          "Enter a valid email",
-        ),
-      ),
-  ),
   ownerFirstName: z.string().check(z.minLength(1, "Owner first name is required"), z.maxLength(80)),
   ownerLastName: z.string().check(z.minLength(1, "Owner last name is required"), z.maxLength(80)),
   ownerEmail: z.email("Enter a valid email"),
-  internalNotes: z.optional(z.string().check(z.maxLength(2000))),
 });
 
 type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
@@ -71,24 +49,10 @@ type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
 const DEFAULT_VALUES: CreateOrganizationInput = {
   name: "",
   slug: "",
-  primaryDomain: "",
-  supportEmail: "",
   ownerFirstName: "",
   ownerLastName: "",
   ownerEmail: "",
-  internalNotes: "",
 };
-
-function slugifyName(name: string) {
-  return name
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-")
-    .slice(0, 63);
-}
 
 type CreateOrganizationDialogProps = {
   open: boolean;
@@ -140,12 +104,13 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
         ownerFirstName: data.ownerFirstName,
         ownerLastName: data.ownerLastName,
         ownerEmail: data.ownerEmail,
-        primaryDomain: data.primaryDomain?.trim() ? data.primaryDomain.trim() : undefined,
-        supportEmail: data.supportEmail?.trim() ? data.supportEmail.trim() : undefined,
-        internalNotes: data.internalNotes?.trim() ? data.internalNotes.trim() : undefined,
       });
-    } catch {
-      // onError toast already fired by mutation
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't create organization",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        type: "error",
+      });
     }
   };
 
@@ -185,7 +150,7 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
                             const value = event.currentTarget.value;
                             field.onChange(value);
                             if (!slugTouched) {
-                              form.setValue("slug", slugifyName(value), {
+                              form.setValue("slug", slugify(value), {
                                 shouldValidate: true,
                               });
                             }
@@ -217,7 +182,9 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
                             }}
                           />
                           <InputGroupAddon align="inline-end">
-                            <span className="text-xs text-muted-foreground">.app.sycom.com</span>
+                            <span className="text-xs text-muted-foreground">
+                              .app.learn.sycomsolutions.com
+                            </span>
                           </InputGroupAddon>
                         </InputGroup>
                       </FormControl>
@@ -226,45 +193,6 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
                   </FormItem>
                 )}
               />
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="primaryDomain"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <Field>
-                        <FieldLabel>Primary email domain</FieldLabel>
-                        <FormControl>
-                          <Input autoComplete="off" placeholder="ordal.com" {...field} />
-                        </FormControl>
-                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                      </Field>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="supportEmail"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <Field>
-                        <FieldLabel>Support email</FieldLabel>
-                        <FormControl>
-                          <Input
-                            autoComplete="off"
-                            placeholder="support@ordal.com"
-                            type="email"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                      </Field>
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
@@ -312,26 +240,6 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
                           autoComplete="off"
                           placeholder="ada@ordal.com"
                           type="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                    </Field>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="internalNotes"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <Field>
-                      <FieldLabel>Internal notes</FieldLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Anything Sycom staff should know about this tenant."
-                          rows={3}
                           {...field}
                         />
                       </FormControl>
