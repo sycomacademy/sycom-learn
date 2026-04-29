@@ -27,7 +27,6 @@ import {
   listAdminUsersSchema,
   resendPlatformInvitationSchema,
   revokePlatformInvitationSchema,
-  sendVerificationEmailAdminSchema,
   setAdminUserRoleSchema,
   unbanAdminUserSchema,
 } from "../schemas";
@@ -306,36 +305,6 @@ export const adminRouter = router({
       }
 
       await markPlatformInvitationRevoked(ctx.db, { invitationId: invitation.id });
-
-      return { success: true };
-    }),
-
-  sendUserVerificationEmail: adminProcedure
-    .use(platformPermissionMiddleware({ user: ["create"] }))
-    .input(sendVerificationEmailAdminSchema)
-    .mutation(async ({ ctx, input }) => {
-      const target = await getAdminUserById(ctx.db, input);
-
-      if (!target) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-      }
-
-      if (target.emailVerified) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "This user's email is already verified",
-        });
-      }
-
-      const dashboardUrl = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
-
-      await auth.api.sendVerificationEmail({
-        body: {
-          email: target.email,
-          callbackURL: `${dashboardUrl}/dashboard`,
-        },
-        headers: ctx.headers,
-      });
 
       return { success: true };
     }),

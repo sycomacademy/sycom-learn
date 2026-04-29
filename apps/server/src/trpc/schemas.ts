@@ -55,11 +55,6 @@ export const inviteAdminUserSchema = z.object({
 });
 export type InviteAdminUserInput = z.infer<typeof inviteAdminUserSchema>;
 
-export const sendVerificationEmailAdminSchema = z.object({
-  userId: z.string().min(1),
-});
-export type SendVerificationEmailAdminInput = z.infer<typeof sendVerificationEmailAdminSchema>;
-
 export const deleteAdminUserSchema = z.object({
   userId: z.string().min(1),
 });

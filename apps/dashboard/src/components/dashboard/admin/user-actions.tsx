@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BanIcon,
   EyeIcon,
-  MailCheckIcon,
   MoreHorizontalIcon,
   ShieldIcon,
   Trash2Icon,
@@ -235,13 +234,11 @@ type UserActionsMenuProps = {
   canManageRole: boolean;
   canBan: boolean;
   canImpersonate: boolean;
-  canSendVerification: boolean;
   canDelete: boolean;
   onView: () => void;
   onChangeRole: () => void;
   onBanToggle: () => void;
   onImpersonate: () => void;
-  onSendVerification: () => void;
   onDelete: () => void;
 };
 
@@ -250,13 +247,11 @@ function UserActionsMenu({
   canManageRole,
   canBan,
   canImpersonate,
-  canSendVerification,
   canDelete,
   onView,
   onChangeRole,
   onBanToggle,
   onImpersonate,
-  onSendVerification,
   onDelete,
 }: UserActionsMenuProps) {
   return (
@@ -293,12 +288,6 @@ function UserActionsMenu({
             <DropdownMenuItem onClick={onBanToggle}>
               <BanIcon />
               {user.banned ? "Unban user" : "Ban user"}
-            </DropdownMenuItem>
-          ) : null}
-          {canSendVerification ? (
-            <DropdownMenuItem onClick={onSendVerification}>
-              <MailCheckIcon />
-              Send verification email
             </DropdownMenuItem>
           ) : null}
           {canImpersonate ? (
@@ -703,25 +692,6 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
     }),
   });
 
-  const sendVerificationMutation = useMutation({
-    ...trpc.admin.sendUserVerificationEmail.mutationOptions({
-      onSuccess: () => {
-        toastManager.add({
-          title: "Verification email sent",
-          description: `${user.name} will receive a verification link at ${user.email}.`,
-          type: "success",
-        });
-      },
-      onError: (error) => {
-        toastManager.add({
-          title: "Failed to send verification email",
-          description: error.message,
-          type: "error",
-        });
-      },
-    }),
-  });
-
   const deleteMutation = useMutation({
     ...trpc.admin.deleteUser.mutationOptions({
       onSuccess: async () => {
@@ -747,7 +717,6 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
   const canManageRole = !isSelf;
   const canBan = !isSelf;
   const canImpersonate = !isSelf && !isTargetAdmin;
-  const canSendVerification = !user.emailVerified && !user.banned;
   const canDelete = !isSelf;
 
   const onBanSubmit = async (data: BanUserInput) => {
@@ -775,12 +744,10 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
         canDelete={canDelete}
         canImpersonate={canImpersonate}
         canManageRole={canManageRole}
-        canSendVerification={canSendVerification}
         onBanToggle={handleBanToggle}
         onChangeRole={() => setRoleOpen(true)}
         onDelete={() => setDeleteOpen(true)}
         onImpersonate={() => setImpersonateOpen(true)}
-        onSendVerification={() => sendVerificationMutation.mutate({ userId: user.id })}
         onView={() => setViewOpen(true)}
         user={user}
       />

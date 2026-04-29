@@ -34,6 +34,7 @@ export const getRouter = () => {
             children: "Retry",
             onClick: () => {
               void query.invalidate();
+              void window.location.reload();
             },
           },
         });
