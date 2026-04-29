@@ -1,25 +1,12 @@
-import { MoreHorizontal } from "lucide-react";
-
+import type { UserRole } from "@sycom/db/schema/auth";
 import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
 import { Button } from "@sycom/ui/components/button";
+import { createColumnHelper } from "@tanstack/react-table";
+import { MoreHorizontal } from "lucide-react";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-import type { DataTableColumn } from "@/components/dashboard/data-table";
-
-export type UserRole = "platform_admin" | "content_creator" | "public_student";
-
-export type UserRow = {
-  id: string;
-  name: string;
-  email: string;
-  image: string | null;
-  role: UserRole | null;
-  emailVerified: boolean;
-  banned: boolean;
-  twoFactorEnabled: boolean;
-  organizations: string[];
-  createdAt: Date;
-};
+export type UserRow = AppRouterOutputs["admin"]["listUsers"]["rows"][number];
 
 const ROLE_LABEL: Record<UserRole, string> = {
   platform_admin: "Admin",
@@ -70,19 +57,17 @@ function RolePill({ role }: { role: UserRole | null }) {
   );
 }
 
-type Status = "active" | "unverified" | "banned";
-
-function getStatus(user: UserRow): Status {
-  if (user.banned) return "banned";
-  if (!user.emailVerified) return "unverified";
-  return "active";
-}
-
-const STATUS_CONFIG: Record<Status, { label: string; variant: "success" | "warning" | "error" }> = {
-  active: { label: "Verified", variant: "success" },
+const STATUS_CONFIG = {
+  verified: { label: "Verified", variant: "success" },
   unverified: { label: "Unverified", variant: "warning" },
   banned: { label: "Banned", variant: "error" },
-};
+} as const;
+
+function getStatus(user: UserRow): keyof typeof STATUS_CONFIG {
+  if (user.banned) return "banned";
+  if (!user.emailVerified) return "unverified";
+  return "verified";
+}
 
 function StatusBadge({ user }: { user: UserRow }) {
   const cfg = STATUS_CONFIG[getStatus(user)];
@@ -117,44 +102,48 @@ function RowActions() {
   );
 }
 
-export const USER_COLUMNS: DataTableColumn<UserRow>[] = [
-  {
-    id: "user",
+const columnHelper = createColumnHelper<UserRow>();
+
+export const USER_COLUMNS = [
+  columnHelper.accessor("name", {
+    id: "name",
     header: "User",
-    cell: (u) => <UserCell user={u} />,
-  },
-  {
+    cell: ({ row }) => <UserCell user={row.original} />,
+    enableSorting: true,
+  }),
+  columnHelper.accessor("role", {
     id: "role",
     header: "Role",
-    cell: (u) => <RolePill role={u.role} />,
-  },
-  {
+    cell: ({ row }) => <RolePill role={row.original.role} />,
+    enableSorting: false,
+  }),
+  columnHelper.display({
     id: "organizations",
-    className: "text-muted-foreground",
     header: "Organizations",
-    cell: (u) => <OrganizationsCell user={u} />,
-  },
-  {
+    cell: ({ row }) => <OrganizationsCell user={row.original} />,
+    meta: { className: "text-muted-foreground" },
+  }),
+  columnHelper.display({
     id: "status",
     header: "Status",
-    cell: (u) => <StatusBadge user={u} />,
-  },
-  {
+    cell: ({ row }) => <StatusBadge user={row.original} />,
+  }),
+  columnHelper.display({
     id: "twoFactor",
     header: "2FA",
-    cell: (u) => <TwoFactorBadge user={u} />,
-  },
-  {
-    id: "joined",
-    className: "text-muted-foreground",
+    cell: ({ row }) => <TwoFactorBadge user={row.original} />,
+  }),
+  columnHelper.accessor("createdAt", {
+    id: "createdAt",
     header: "Joined",
-    cell: (u) => dateFormatter.format(u.createdAt),
-  },
-  {
+    cell: ({ row }) => dateFormatter.format(row.original.createdAt),
+    enableSorting: true,
+    meta: { className: "text-muted-foreground" },
+  }),
+  columnHelper.display({
     id: "actions",
-    headerClassName: "w-10",
-    className: "w-10 pe-2 text-end",
     header: "",
     cell: () => <RowActions />,
-  },
+    meta: { headerClassName: "w-10", className: "w-10 pe-2 text-end" },
+  }),
 ];

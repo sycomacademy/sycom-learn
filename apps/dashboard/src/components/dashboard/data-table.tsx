@@ -1,6 +1,8 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { flexRender, type RowData, type Table as TanstackTable } from "@tanstack/react-table";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { Button } from "@sycom/ui/components/button";
 import {
   Pagination,
   PaginationContent,
@@ -24,84 +26,93 @@ import {
 } from "@sycom/ui/components/table";
 import { cn } from "@sycom/ui/lib/utils";
 
-export type DataTableColumn<T> = {
-  id: string;
-  header: ReactNode;
-  cell: (row: T) => ReactNode;
-  className?: string;
-  headerClassName?: string;
-};
-
-export type DataTableProps<T> = {
-  data: T[];
-  columns: DataTableColumn<T>[];
-  getRowId: (row: T) => string;
-  page: number;
-  pageCount: number;
-  onPageChange: (page: number) => void;
-  pageSize: number;
-  onPageSizeChange?: (size: number) => void;
-  pageSizeOptions?: number[];
-  totalCount?: number;
-  emptyMessage?: ReactNode;
-  className?: string;
-};
+declare module "@tanstack/react-table" {
+  // biome-ignore lint/correctness/noUnusedVariables: declaration merging
+  interface ColumnMeta<TData extends RowData, TValue> {
+    className?: string;
+    headerClassName?: string;
+  }
+}
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-export function DataTable<T>({
-  className,
-  columns,
-  data,
-  emptyMessage = "No results.",
-  getRowId,
-  onPageChange,
-  onPageSizeChange,
-  page,
-  pageCount,
-  pageSize,
-  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
-  totalCount,
-}: DataTableProps<T>): ReactNode {
-  const total = totalCount ?? data.length;
-  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
+export type DataTableProps<TData> = {
+  table: TanstackTable<TData>;
+  emptyMessage?: ReactNode;
+  pageSizeOptions?: number[];
+  className?: string;
+};
 
-  const goTo = (next: number) => {
-    if (next < 1 || next > pageCount || next === page) return;
-    onPageChange(next);
-  };
+export function DataTable<TData>({
+  className,
+  emptyMessage = "No results.",
+  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  table,
+}: DataTableProps<TData>): ReactNode {
+  const totalCount = table.getRowCount();
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const start = totalCount === 0 ? 0 : pageIndex * pageSize + 1;
+  const end = Math.min((pageIndex + 1) * pageSize, totalCount);
+  const rows = table.getRowModel().rows;
+  const columnCount = table.getAllLeafColumns().length;
 
   return (
     <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
       <Table>
         <TableHeader>
-          <TableRow>
-            {columns.map((c) => (
-              <TableHead className={c.headerClassName} key={c.id}>
-                {c.header}
-              </TableHead>
-            ))}
-          </TableRow>
+          {table.getHeaderGroups().map((group) => (
+            <TableRow key={group.id}>
+              {group.headers.map((header) => {
+                if (header.isPlaceholder) {
+                  return <TableHead key={header.id} />;
+                }
+                const meta = header.column.columnDef.meta;
+                const canSort = header.column.getCanSort();
+                const sortDir = header.column.getIsSorted();
+                const headerNode = flexRender(header.column.columnDef.header, header.getContext());
+                return (
+                  <TableHead className={meta?.headerClassName} key={header.id}>
+                    {canSort ? (
+                      <Button
+                        className="-mx-2 h-auto gap-1.5 px-2 py-1 font-medium text-muted-foreground hover:text-foreground"
+                        onClick={header.column.getToggleSortingHandler()}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        {headerNode}
+                        {sortDir === "asc" ? (
+                          <ChevronUpIcon className="size-3" />
+                        ) : sortDir === "desc" ? (
+                          <ChevronDownIcon className="size-3" />
+                        ) : null}
+                      </Button>
+                    ) : (
+                      headerNode
+                    )}
+                  </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
         </TableHeader>
         <TableBody>
-          {data.length === 0 ? (
+          {rows.length === 0 ? (
             <TableRow>
-              <TableCell
-                className="h-24 text-center text-muted-foreground"
-                colSpan={columns.length}
-              >
+              <TableCell className="h-24 text-center text-muted-foreground" colSpan={columnCount}>
                 {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
-            data.map((row) => (
-              <TableRow key={getRowId(row)}>
-                {columns.map((c) => (
-                  <TableCell className={c.className} key={c.id}>
-                    {c.cell(row)}
-                  </TableCell>
-                ))}
+            rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => {
+                  const meta = cell.column.columnDef.meta;
+                  return (
+                    <TableCell className={meta?.className} key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))
           )}
@@ -113,7 +124,7 @@ export function DataTable<T>({
           <span>Rows per page</span>
           <Select
             items={pageSizeOptions.map((n) => ({ value: String(n), label: String(n) }))}
-            onValueChange={(v) => onPageSizeChange?.(Number(v))}
+            onValueChange={(v) => table.setPageSize(Number(v))}
             value={String(pageSize)}
           >
             <SelectTrigger className="w-20" size="sm">
@@ -131,19 +142,19 @@ export function DataTable<T>({
 
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">
-            {total === 0 ? "No results" : `${start}–${end} of ${total}`}
+            {totalCount === 0 ? "No results" : `${start}–${end} of ${totalCount}`}
           </span>
           <Pagination className="mx-0 w-auto justify-start">
             <PaginationContent className="gap-0.5">
               <PaginationItem>
                 <PaginationLink
-                  aria-disabled={page <= 1}
+                  aria-disabled={!table.getCanPreviousPage()}
                   aria-label="Previous page"
-                  className={cn(page <= 1 && "pointer-events-none opacity-50")}
+                  className={cn(!table.getCanPreviousPage() && "pointer-events-none opacity-50")}
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    goTo(page - 1);
+                    table.previousPage();
                   }}
                   size="icon-sm"
                 >
@@ -152,13 +163,13 @@ export function DataTable<T>({
               </PaginationItem>
               <PaginationItem>
                 <PaginationLink
-                  aria-disabled={page >= pageCount}
+                  aria-disabled={!table.getCanNextPage()}
                   aria-label="Next page"
-                  className={cn(page >= pageCount && "pointer-events-none opacity-50")}
+                  className={cn(!table.getCanNextPage() && "pointer-events-none opacity-50")}
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    goTo(page + 1);
+                    table.nextPage();
                   }}
                   size="icon-sm"
                 >
