@@ -1,10 +1,10 @@
 import type { UserRole } from "@sycom/db/schema/auth";
 import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
-import { Button } from "@sycom/ui/components/button";
 import { createColumnHelper } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
+
+import { UserActions } from "./user-actions";
 
 export type UserRow = AppRouterOutputs["admin"]["listUsers"]["rows"][number];
 
@@ -94,14 +94,6 @@ function OrganizationsCell({ user }: { user: UserRow }) {
   );
 }
 
-function RowActions() {
-  return (
-    <Button aria-label="Row actions" size="icon-sm" variant="ghost">
-      <MoreHorizontal className="size-4" />
-    </Button>
-  );
-}
-
 const columnHelper = createColumnHelper<UserRow>();
 
 export const USER_COLUMNS = [
@@ -143,7 +135,7 @@ export const USER_COLUMNS = [
   columnHelper.display({
     id: "actions",
     header: "",
-    cell: () => <RowActions />,
+    cell: ({ row }) => <UserActions user={row.original} />,
     meta: { headerClassName: "w-10", className: "w-10 pe-2 text-end" },
   }),
 ];

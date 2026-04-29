@@ -14,7 +14,6 @@ function UsersLayout() {
         items={[
           { path: "/dashboard/admin/users", label: "Users" },
           { path: "/dashboard/admin/users/public-invites", label: "Public invites" },
-          { path: "/dashboard/admin/users/roles", label: "Roles" },
         ]}
         label="Users"
       />

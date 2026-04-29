@@ -79,6 +79,7 @@ export const makeCaller = (opts: MakeCallerOptions = {}): Caller => {
     : null;
 
   const ctx: Context = {
+    context: {} as Context["context"],
     headers: new Headers(),
     session,
     db: testDb,

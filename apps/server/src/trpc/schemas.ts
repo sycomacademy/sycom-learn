@@ -21,6 +21,28 @@ export const listAdminUsersSchema = z.object({
 });
 export type ListAdminUsersInput = z.infer<typeof listAdminUsersSchema>;
 
+export const getAdminUserSchema = z.object({
+  userId: z.string().min(1),
+});
+export type GetAdminUserInput = z.infer<typeof getAdminUserSchema>;
+
+export const banAdminUserSchema = z.object({
+  userId: z.string().min(1),
+  banReason: z.string().trim().min(1).max(500),
+});
+export type BanAdminUserInput = z.infer<typeof banAdminUserSchema>;
+
+export const setAdminUserRoleSchema = z.object({
+  userId: z.string().min(1),
+  role: z.enum(userRoleEnum.enumValues),
+});
+export type SetAdminUserRoleInput = z.infer<typeof setAdminUserRoleSchema>;
+
+export const impersonateAdminUserSchema = z.object({
+  userId: z.string().min(1),
+});
+export type ImpersonateAdminUserInput = z.infer<typeof impersonateAdminUserSchema>;
+
 // feedback
 export const submitFeedbackSchema = z.object({
   email: z.email(),

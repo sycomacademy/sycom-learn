@@ -6,7 +6,7 @@ import {
   type PaginationState,
   type SortingState,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { USER_COLUMNS, type UserRow } from "@/components/dashboard/admin/users-columns";
 import { UsersFilters } from "@/components/dashboard/admin/users-filters";
@@ -33,6 +33,7 @@ function UsersAllPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
+  const [isSearchPending, startSearchTransition] = useTransition();
 
   const query = useQuery(trpc.admin.listUsers.queryOptions(search));
 
@@ -44,12 +45,15 @@ function UsersAllPage() {
     const next = searchInput.trim() || undefined;
     if ((search.search ?? undefined) === next) return;
     const handle = setTimeout(() => {
-      navigate({
-        search: (prev: ListAdminUsersInput) => ({ ...prev, search: next, offset: 0 }),
+      startSearchTransition(() => {
+        navigate({
+          replace: true,
+          search: (prev: ListAdminUsersInput) => ({ ...prev, search: next, offset: 0 }),
+        });
       });
     }, 300);
     return () => clearTimeout(handle);
-  }, [searchInput, navigate, search.search]);
+  }, [searchInput, navigate, search.search, startSearchTransition]);
 
   const sorting = useMemo<SortingState>(
     () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],
@@ -99,7 +103,7 @@ function UsersAllPage() {
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
       <UsersToolbar
-        isFetching={query.isFetching}
+        isFetching={query.isFetching || isSearchPending}
         onRefresh={() => query.refetch()}
         onSearchChange={setSearchInput}
         search={searchInput}

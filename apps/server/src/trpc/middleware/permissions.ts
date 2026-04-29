@@ -56,7 +56,10 @@ export function assertPlatformPermission(
   permission: PlatformPermission,
 ) {
   if (!hasPlatformPermission(session, permission)) {
-    throw new TRPCError({ code: "FORBIDDEN" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not authorized to access this resource",
+    });
   }
 }
 

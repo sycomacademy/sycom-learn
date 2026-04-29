@@ -12,6 +12,7 @@ export async function createContext({ context }: CreateContextOptions) {
     headers: _headers,
   });
   return {
+    context,
     headers: _headers,
     session,
     db,
