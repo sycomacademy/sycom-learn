@@ -46,7 +46,7 @@ import { Route as DashboardAdminCatalogIndexRouteImport } from "./routes/dashboa
 import { Route as DashboardAdminUsersPublicInvitesRouteImport } from "./routes/dashboard/admin/users/public-invites";
 import { Route as DashboardAdminOrganizationsInvitesRouteImport } from "./routes/dashboard/admin/organizations/invites";
 import { Route as DashboardAdminOrganizationsDomainsRouteImport } from "./routes/dashboard/admin/organizations/domains";
-import { Route as DashboardAdminLogsAnalyticsReportRouteImport } from "./routes/dashboard/admin/logs-analytics/report";
+import { Route as DashboardAdminLogsAnalyticsReportsRouteImport } from "./routes/dashboard/admin/logs-analytics/reports";
 import { Route as DashboardAdminLogsAnalyticsFeedbackRouteImport } from "./routes/dashboard/admin/logs-analytics/feedback";
 import { Route as DashboardAdminCatalogDraftsRouteImport } from "./routes/dashboard/admin/catalog/drafts";
 import { Route as DashboardAdminCatalogCategoriesRouteImport } from "./routes/dashboard/admin/catalog/categories";
@@ -237,11 +237,12 @@ const DashboardAdminOrganizationsDomainsRoute =
     path: "/domains",
     getParentRoute: () => DashboardAdminOrganizationsRouteRoute,
   } as any);
-const DashboardAdminLogsAnalyticsReportRoute = DashboardAdminLogsAnalyticsReportRouteImport.update({
-  id: "/report",
-  path: "/report",
-  getParentRoute: () => DashboardAdminLogsAnalyticsRouteRoute,
-} as any);
+const DashboardAdminLogsAnalyticsReportsRoute =
+  DashboardAdminLogsAnalyticsReportsRouteImport.update({
+    id: "/reports",
+    path: "/reports",
+    getParentRoute: () => DashboardAdminLogsAnalyticsRouteRoute,
+  } as any);
 const DashboardAdminLogsAnalyticsFeedbackRoute =
   DashboardAdminLogsAnalyticsFeedbackRouteImport.update({
     id: "/feedback",
@@ -292,7 +293,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/admin/catalog/categories": typeof DashboardAdminCatalogCategoriesRoute;
   "/dashboard/admin/catalog/drafts": typeof DashboardAdminCatalogDraftsRoute;
   "/dashboard/admin/logs-analytics/feedback": typeof DashboardAdminLogsAnalyticsFeedbackRoute;
-  "/dashboard/admin/logs-analytics/report": typeof DashboardAdminLogsAnalyticsReportRoute;
+  "/dashboard/admin/logs-analytics/reports": typeof DashboardAdminLogsAnalyticsReportsRoute;
   "/dashboard/admin/organizations/domains": typeof DashboardAdminOrganizationsDomainsRoute;
   "/dashboard/admin/organizations/invites": typeof DashboardAdminOrganizationsInvitesRoute;
   "/dashboard/admin/users/public-invites": typeof DashboardAdminUsersPublicInvitesRoute;
@@ -326,7 +327,7 @@ export interface FileRoutesByTo {
   "/dashboard/admin/catalog/categories": typeof DashboardAdminCatalogCategoriesRoute;
   "/dashboard/admin/catalog/drafts": typeof DashboardAdminCatalogDraftsRoute;
   "/dashboard/admin/logs-analytics/feedback": typeof DashboardAdminLogsAnalyticsFeedbackRoute;
-  "/dashboard/admin/logs-analytics/report": typeof DashboardAdminLogsAnalyticsReportRoute;
+  "/dashboard/admin/logs-analytics/reports": typeof DashboardAdminLogsAnalyticsReportsRoute;
   "/dashboard/admin/organizations/domains": typeof DashboardAdminOrganizationsDomainsRoute;
   "/dashboard/admin/organizations/invites": typeof DashboardAdminOrganizationsInvitesRoute;
   "/dashboard/admin/users/public-invites": typeof DashboardAdminUsersPublicInvitesRoute;
@@ -370,7 +371,7 @@ export interface FileRoutesById {
   "/dashboard/admin/catalog/categories": typeof DashboardAdminCatalogCategoriesRoute;
   "/dashboard/admin/catalog/drafts": typeof DashboardAdminCatalogDraftsRoute;
   "/dashboard/admin/logs-analytics/feedback": typeof DashboardAdminLogsAnalyticsFeedbackRoute;
-  "/dashboard/admin/logs-analytics/report": typeof DashboardAdminLogsAnalyticsReportRoute;
+  "/dashboard/admin/logs-analytics/reports": typeof DashboardAdminLogsAnalyticsReportsRoute;
   "/dashboard/admin/organizations/domains": typeof DashboardAdminOrganizationsDomainsRoute;
   "/dashboard/admin/organizations/invites": typeof DashboardAdminOrganizationsInvitesRoute;
   "/dashboard/admin/users/public-invites": typeof DashboardAdminUsersPublicInvitesRoute;
@@ -414,7 +415,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/catalog/categories"
     | "/dashboard/admin/catalog/drafts"
     | "/dashboard/admin/logs-analytics/feedback"
-    | "/dashboard/admin/logs-analytics/report"
+    | "/dashboard/admin/logs-analytics/reports"
     | "/dashboard/admin/organizations/domains"
     | "/dashboard/admin/organizations/invites"
     | "/dashboard/admin/users/public-invites"
@@ -448,7 +449,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/catalog/categories"
     | "/dashboard/admin/catalog/drafts"
     | "/dashboard/admin/logs-analytics/feedback"
-    | "/dashboard/admin/logs-analytics/report"
+    | "/dashboard/admin/logs-analytics/reports"
     | "/dashboard/admin/organizations/domains"
     | "/dashboard/admin/organizations/invites"
     | "/dashboard/admin/users/public-invites"
@@ -491,7 +492,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/catalog/categories"
     | "/dashboard/admin/catalog/drafts"
     | "/dashboard/admin/logs-analytics/feedback"
-    | "/dashboard/admin/logs-analytics/report"
+    | "/dashboard/admin/logs-analytics/reports"
     | "/dashboard/admin/organizations/domains"
     | "/dashboard/admin/organizations/invites"
     | "/dashboard/admin/users/public-invites"
@@ -770,11 +771,11 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardAdminOrganizationsDomainsRouteImport;
       parentRoute: typeof DashboardAdminOrganizationsRouteRoute;
     };
-    "/dashboard/admin/logs-analytics/report": {
-      id: "/dashboard/admin/logs-analytics/report";
-      path: "/report";
-      fullPath: "/dashboard/admin/logs-analytics/report";
-      preLoaderRoute: typeof DashboardAdminLogsAnalyticsReportRouteImport;
+    "/dashboard/admin/logs-analytics/reports": {
+      id: "/dashboard/admin/logs-analytics/reports";
+      path: "/reports";
+      fullPath: "/dashboard/admin/logs-analytics/reports";
+      preLoaderRoute: typeof DashboardAdminLogsAnalyticsReportsRouteImport;
       parentRoute: typeof DashboardAdminLogsAnalyticsRouteRoute;
     };
     "/dashboard/admin/logs-analytics/feedback": {
@@ -818,14 +819,14 @@ const DashboardAdminCatalogRouteRouteWithChildren =
 
 interface DashboardAdminLogsAnalyticsRouteRouteChildren {
   DashboardAdminLogsAnalyticsFeedbackRoute: typeof DashboardAdminLogsAnalyticsFeedbackRoute;
-  DashboardAdminLogsAnalyticsReportRoute: typeof DashboardAdminLogsAnalyticsReportRoute;
+  DashboardAdminLogsAnalyticsReportsRoute: typeof DashboardAdminLogsAnalyticsReportsRoute;
   DashboardAdminLogsAnalyticsIndexRoute: typeof DashboardAdminLogsAnalyticsIndexRoute;
 }
 
 const DashboardAdminLogsAnalyticsRouteRouteChildren: DashboardAdminLogsAnalyticsRouteRouteChildren =
   {
     DashboardAdminLogsAnalyticsFeedbackRoute: DashboardAdminLogsAnalyticsFeedbackRoute,
-    DashboardAdminLogsAnalyticsReportRoute: DashboardAdminLogsAnalyticsReportRoute,
+    DashboardAdminLogsAnalyticsReportsRoute: DashboardAdminLogsAnalyticsReportsRoute,
     DashboardAdminLogsAnalyticsIndexRoute: DashboardAdminLogsAnalyticsIndexRoute,
   };
 

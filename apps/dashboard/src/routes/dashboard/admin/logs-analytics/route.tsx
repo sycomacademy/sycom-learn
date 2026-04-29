@@ -13,7 +13,7 @@ function LogsAnalyticsLayout() {
         base="/dashboard/admin/logs-analytics"
         items={[
           { path: "/dashboard/admin/logs-analytics", label: "Activity" },
-          { path: "/dashboard/admin/logs-analytics/report", label: "Report" },
+          { path: "/dashboard/admin/logs-analytics/reports", label: "Reports" },
           { path: "/dashboard/admin/logs-analytics/feedback", label: "Feedback" },
         ]}
         label="Logs and analytics"

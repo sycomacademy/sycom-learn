@@ -90,6 +90,35 @@ export type RevokePlatformInvitationInput = z.infer<typeof revokePlatformInvitat
 export const adminLogsAnalyticsOverviewSchema = z.object({});
 export type AdminLogsAnalyticsOverviewInput = z.infer<typeof adminLogsAnalyticsOverviewSchema>;
 
+export const adminFeedbackSortFieldSchema = z.enum(["submittedAt"]);
+export type AdminFeedbackSortField = z.infer<typeof adminFeedbackSortFieldSchema>;
+
+export const feedbackReportTypes = ["bug", "feature", "complaint", "other"] as const;
+
+export const listAdminFeedbackSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  sortBy: adminFeedbackSortFieldSchema.default("submittedAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListAdminFeedbackInput = z.infer<typeof listAdminFeedbackSchema>;
+
+export const feedbackReportStatusSchema = z.enum(["pending", "in_progress", "resolved", "closed"]);
+export type FeedbackReportStatus = z.infer<typeof feedbackReportStatusSchema>;
+
+export const feedbackReportTypeSchema = z.enum(feedbackReportTypes);
+export type FeedbackReportType = z.infer<typeof feedbackReportTypeSchema>;
+
+export const listAdminReportsSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  statuses: z.array(feedbackReportStatusSchema).optional(),
+  types: z.array(feedbackReportTypeSchema).optional(),
+  sortBy: adminFeedbackSortFieldSchema.default("submittedAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListAdminReportsInput = z.infer<typeof listAdminReportsSchema>;
+
 // invite
 export const getPlatformInvitationByTokenSchema = z.object({
   token: z.string().min(1),
@@ -113,8 +142,6 @@ export const submitFeedbackSchema = z.object({
   message: z.string().trim().min(1).max(5000),
 });
 export type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
-
-export const feedbackReportTypes = ["bug", "feature", "complaint", "other"] as const;
 
 export const submitFeedbackReportSchema = z.object({
   reportId: z.uuid(),

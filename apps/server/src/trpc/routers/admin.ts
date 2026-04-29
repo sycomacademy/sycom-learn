@@ -4,6 +4,8 @@ import {
   createPlatformInvitation,
   getActivePlatformInvitationByEmail,
   getAdminUserById,
+  listAdminFeedback,
+  listAdminReports,
   getPlatformInvitationById,
   getPlatformUserByEmail,
   listAdminUsers,
@@ -20,6 +22,8 @@ import {
   adminLogsAnalyticsOverviewSchema,
   banAdminUserSchema,
   deleteAdminUserSchema,
+  listAdminFeedbackSchema,
+  listAdminReportsSchema,
   getAdminUserSchema,
   impersonateAdminUserSchema,
   inviteAdminUserSchema,
@@ -49,26 +53,6 @@ function buildInviteUrl(token: string) {
 }
 
 export const adminRouter = router({
-  getLogsAnalyticsOverview: adminProcedure.input(adminLogsAnalyticsOverviewSchema).query(() => {
-    return {
-      activity: {
-        totalEvents24h: 1482,
-        flaggedEvents: 7,
-        activeSources: 5,
-      },
-      reports: {
-        pending: 12,
-        inReview: 4,
-        resolvedThisWeek: 19,
-      },
-      feedback: {
-        unread: 8,
-        triagedToday: 6,
-        averageResponseHours: 14,
-      },
-    };
-  }),
-
   listUsers: adminProcedure
     .use(platformPermissionMiddleware({ user: ["list"] }))
     .input(listAdminUsersSchema)
@@ -162,6 +146,29 @@ export const adminRouter = router({
 
     return { success: true };
   }),
+
+  deleteUser: adminProcedure
+    .use(platformPermissionMiddleware({ user: ["delete"] }))
+    .input(deleteAdminUserSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (input.userId === ctx.session.user.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You can't delete your own account",
+        });
+      }
+
+      await auth.api.removeUser({
+        body: { userId: input.userId },
+        headers: ctx.headers,
+      });
+
+      return { success: true };
+    }),
+
+  // ---------------------------------------------------------------------------
+  // Invitations
+  // ---------------------------------------------------------------------------
 
   inviteUser: adminProcedure
     .use(platformPermissionMiddleware({ user: ["create"] }))
@@ -309,22 +316,41 @@ export const adminRouter = router({
       return { success: true };
     }),
 
-  deleteUser: adminProcedure
-    .use(platformPermissionMiddleware({ user: ["delete"] }))
-    .input(deleteAdminUserSchema)
-    .mutation(async ({ ctx, input }) => {
-      if (input.userId === ctx.session.user.id) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You can't delete your own account",
-        });
-      }
+  // ---------------------------------------------------------------------------
+  // Analytics
+  // ---------------------------------------------------------------------------
 
-      await auth.api.removeUser({
-        body: { userId: input.userId },
-        headers: ctx.headers,
-      });
+  getLogsAnalyticsOverview: adminProcedure.input(adminLogsAnalyticsOverviewSchema).query(() => {
+    return {
+      activity: {
+        totalEvents24h: 1482,
+        flaggedEvents: 7,
+        activeSources: 5,
+      },
+      reports: {
+        pending: 12,
+        inReview: 4,
+        resolvedThisWeek: 19,
+      },
+      feedback: {
+        unread: 8,
+        triagedToday: 6,
+        averageResponseHours: 14,
+      },
+    };
+  }),
 
-      return { success: true };
+  listFeedback: adminProcedure
+    .use(platformPermissionMiddleware({ feedback: ["list"] }))
+    .input(listAdminFeedbackSchema)
+    .query(async ({ ctx, input }) => {
+      return await listAdminFeedback(ctx.db, input);
+    }),
+
+  listReports: adminProcedure
+    .use(platformPermissionMiddleware({ report: ["list"] }))
+    .input(listAdminReportsSchema)
+    .query(async ({ ctx, input }) => {
+      return await listAdminReports(ctx.db, input);
     }),
 });
