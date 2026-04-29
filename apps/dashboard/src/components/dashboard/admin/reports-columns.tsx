@@ -8,25 +8,15 @@ import { ReportsActions } from "./reports-actions";
 
 export type ReportRow = AppRouterOutputs["admin"]["listReports"]["rows"][number];
 
-function SubjectCell({ report }: { report: ReportRow }) {
-  return (
-    <div className="flex max-w-80 min-w-0 flex-col gap-1">
-      <div className="min-w-0">
-        <p className="truncate font-medium text-foreground">{report.subject}</p>
-        <p className="truncate text-xs text-muted-foreground">{report.name ?? report.email}</p>
-      </div>
-      <p className="line-clamp-2 text-xs text-muted-foreground">{report.description}</p>
-    </div>
-  );
-}
-
 const columnHelper = createColumnHelper<ReportRow>();
 
 export const REPORTS_COLUMNS = [
   columnHelper.accessor("subject", {
-    id: "subject",
-    header: "Report",
-    cell: ({ row }) => <SubjectCell report={row.original} />,
+    id: "title",
+    header: "Title",
+    cell: ({ row }) => (
+      <p className="max-w-80 truncate font-medium text-foreground">{row.original.subject}</p>
+    ),
     enableSorting: false,
   }),
   columnHelper.accessor("type", {
@@ -45,16 +35,6 @@ export const REPORTS_COLUMNS = [
     },
     enableSorting: false,
   }),
-  columnHelper.accessor("imageUrl", {
-    id: "attachment",
-    header: "Attachment",
-    cell: ({ row }) => (
-      <Badge variant={row.original.imageUrl ? "secondary" : "outline"}>
-        {row.original.imageUrl ? "Included" : "None"}
-      </Badge>
-    ),
-    enableSorting: false,
-  }),
   columnHelper.accessor("createdAt", {
     id: "submittedAt",
     header: "Submitted",
@@ -64,8 +44,8 @@ export const REPORTS_COLUMNS = [
   }),
   columnHelper.display({
     id: "actions",
-    header: "",
+    header: "Actions",
     cell: ({ row }) => <ReportsActions report={row.original} />,
-    meta: { headerClassName: "w-10", className: "w-10 pe-2 text-end" },
+    meta: { headerClassName: "w-28", className: "w-28 pe-2 text-end" },
   }),
 ];

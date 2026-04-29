@@ -3,8 +3,6 @@ import { formatDateTime } from "@sycom/ui/lib/date";
 import { createColumnHelper } from "@tanstack/react-table";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-import { FeedbackActions } from "./feedback-actions";
-
 export type FeedbackRow = AppRouterOutputs["admin"]["listFeedback"]["rows"][number];
 
 function SubmitterCell({ feedback }: { feedback: FeedbackRow }) {
@@ -38,9 +36,12 @@ export const FEEDBACK_COLUMNS = [
     id: "message",
     header: "Message",
     cell: ({ row }) => (
-      <p className="line-clamp-2 max-w-xl text-sm text-muted-foreground">{row.original.message}</p>
+      <p className="line-clamp-2 min-w-[28rem] text-sm text-muted-foreground">
+        {row.original.message}
+      </p>
     ),
     enableSorting: false,
+    meta: { className: "w-full min-w-[28rem]" },
   }),
   columnHelper.accessor("createdAt", {
     id: "submittedAt",
@@ -48,11 +49,5 @@ export const FEEDBACK_COLUMNS = [
     cell: ({ row }) => formatDateTime(row.original.createdAt),
     enableSorting: true,
     meta: { className: "text-muted-foreground" },
-  }),
-  columnHelper.display({
-    id: "actions",
-    header: "",
-    cell: ({ row }) => <FeedbackActions feedback={row.original} />,
-    meta: { headerClassName: "w-10", className: "w-10 pe-2 text-end" },
   }),
 ];
