@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, ilike } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, lte, or, type SQL } from "drizzle-orm";
 
 import type { Database } from "..";
 import {
@@ -26,6 +26,21 @@ export type PlatformInvitationRow = {
   revokedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type PlatformInvitationFilterStatus = Exclude<ResolvedPlatformInvitationStatus, "pending">;
+
+export type ListPlatformInvitationsFilter = {
+  limit: number;
+  offset: number;
+  statuses?: PlatformInvitationFilterStatus[];
+  sortBy: "name" | "email" | "createdAt" | "expiresAt";
+  sortDirection: "asc" | "desc";
+};
+
+export type ListPlatformInvitationsResult = {
+  rows: PlatformInvitationRow[];
+  totalCount: number;
 };
 
 function resolveInvitationStatus(
@@ -96,12 +111,55 @@ export async function getActivePlatformInvitationByEmail(
 
 export async function listPlatformInvitations(
   database: Database,
-): Promise<PlatformInvitationRow[]> {
-  const rows = await database.query.platform_invitation.findMany({
-    orderBy: [desc(platform_invitation.createdAt)],
-  });
+  input: ListPlatformInvitationsFilter,
+): Promise<ListPlatformInvitationsResult> {
+  const { limit, offset, sortBy, sortDirection, statuses } = input;
+  const now = new Date();
+  const filters: SQL[] = [];
 
-  return rows.map(mapInvitation);
+  if (statuses && statuses.length > 0) {
+    const statusFilters = statuses.flatMap<SQL>((status) => {
+      if (status === "expired") {
+        const expiredFilter = and(
+          eq(platform_invitation.status, "pending"),
+          lte(platform_invitation.expiresAt, now),
+        );
+
+        return expiredFilter ? [expiredFilter] : [];
+      }
+
+      return [eq(platform_invitation.status, status)];
+    });
+    const combinedStatuses = or(...statusFilters);
+
+    if (combinedStatuses) {
+      filters.push(combinedStatuses);
+    }
+  }
+
+  const where = filters.length > 0 ? and(...filters) : undefined;
+  const sortColumn = {
+    name: platform_invitation.name,
+    email: platform_invitation.email,
+    createdAt: platform_invitation.createdAt,
+    expiresAt: platform_invitation.expiresAt,
+  }[sortBy];
+  const orderBy = sortDirection === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+  const [rows, totalRow] = await Promise.all([
+    database.query.platform_invitation.findMany({
+      where,
+      orderBy: [orderBy],
+      limit,
+      offset,
+    }),
+    database.select({ value: count() }).from(platform_invitation).where(where),
+  ]);
+
+  return {
+    rows: rows.map(mapInvitation),
+    totalCount: totalRow[0]?.value ?? 0,
+  };
 }
 
 export async function createPlatformInvitation(

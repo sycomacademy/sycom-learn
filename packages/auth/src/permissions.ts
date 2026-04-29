@@ -13,27 +13,28 @@ import {
 
 const platformStatements = {
   ...platformDefaultStatements,
-  course: ["create", "read", "update", "delete", "publish"],
-  enrollment: ["create", "delete"],
+  feedback: ["submit", "get", "list", "update", "delete"],
+  report: ["submit", "get", "list", "update", "delete"],
 } as const;
 
 export const platformAc = createAccessControl(platformStatements);
 
 export const platformAdminRole = platformAc.newRole({
   ...platformBuiltInAdminAc.statements,
-  course: ["create", "read", "update", "delete", "publish"],
-  enrollment: ["create", "delete"],
+  feedback: ["submit", "get", "list", "update", "delete"],
+  report: ["submit", "get", "list", "update", "delete"],
 });
 
 export const contentCreatorRole = platformAc.newRole({
   ...platformBuiltInUserAc.statements,
-  course: ["create", "read", "update", "delete", "publish"],
+  feedback: ["submit"],
+  report: ["submit"],
 });
 
 export const publicStudentRole = platformAc.newRole({
   ...platformBuiltInUserAc.statements,
-  course: ["read"],
-  enrollment: ["create", "delete"],
+  feedback: ["submit"],
+  report: ["submit"],
 });
 
 export const platformRoles = {

@@ -220,8 +220,8 @@ export const adminRouter = router({
   listPlatformInvitations: adminProcedure
     .use(platformPermissionMiddleware({ user: ["list"] }))
     .input(listPlatformInvitationsSchema)
-    .query(async ({ ctx }) => {
-      return await listPlatformInvitations(ctx.db);
+    .query(async ({ ctx, input }) => {
+      return await listPlatformInvitations(ctx.db, input);
     }),
 
   resendPlatformInvitation: adminProcedure

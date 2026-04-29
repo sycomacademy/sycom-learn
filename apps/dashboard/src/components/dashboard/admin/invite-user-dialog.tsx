@@ -45,7 +45,7 @@ type InviteUserDialogProps = {
 export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const listInvitesQueryKey = trpc.admin.listPlatformInvitations.queryKey({});
+  const listInvitesQueryKey = trpc.admin.listPlatformInvitations.queryKey();
 
   const form = useForm<InviteUserInput>({
     resolver: zodResolver(inviteUserSchema),
