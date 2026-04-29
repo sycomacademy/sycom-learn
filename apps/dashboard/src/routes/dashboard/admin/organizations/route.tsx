@@ -14,7 +14,6 @@ function OrganizationsLayout() {
         items={[
           { path: "/dashboard/admin/organizations", label: "Organizations" },
           { path: "/dashboard/admin/organizations/invites", label: "Invites" },
-          { path: "/dashboard/admin/organizations/domains", label: "Domains" },
         ]}
         label="Organizations"
       />

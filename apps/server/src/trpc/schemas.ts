@@ -30,6 +30,41 @@ export const listAdminOrganizationsSchema = z.object({
 });
 export type ListAdminOrganizationsInput = z.infer<typeof listAdminOrganizationsSchema>;
 
+export const RESERVED_ORGANIZATION_SLUGS = [
+  "admin",
+  "api",
+  "app",
+  "auth",
+  "dashboard",
+  "public",
+  "www",
+] as const;
+
+const slugPattern = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+export const createAdminOrganizationSchema = z.object({
+  name: z.string().trim().min(1, "Organization name is required").max(120),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2, "Slug must be at least 2 characters")
+    .max(63, "Slug must be at most 63 characters")
+    .regex(slugPattern, "Slug must be lowercase letters, numbers, and hyphens")
+    .refine((value) => !value.includes("--"), "Slug cannot contain consecutive hyphens")
+    .refine(
+      (value) =>
+        !RESERVED_ORGANIZATION_SLUGS.includes(
+          value as (typeof RESERVED_ORGANIZATION_SLUGS)[number],
+        ),
+      "This slug is reserved",
+    ),
+  ownerFirstName: z.string().trim().min(1, "Owner first name is required").max(80),
+  ownerLastName: z.string().trim().min(1, "Owner last name is required").max(80),
+  ownerEmail: z.email("Enter a valid email").transform((value) => value.trim().toLowerCase()),
+});
+export type CreateAdminOrganizationInput = z.infer<typeof createAdminOrganizationSchema>;
+
 export const getAdminUserSchema = z.object({
   userId: z.string().min(1),
 });

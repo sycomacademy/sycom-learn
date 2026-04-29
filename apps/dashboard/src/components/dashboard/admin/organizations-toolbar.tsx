@@ -1,4 +1,4 @@
-import { RefreshCcw, Search } from "lucide-react";
+import { Plus, RefreshCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@sycom/ui/components/button";
@@ -11,10 +11,12 @@ export type OrganizationsToolbarProps = {
   onSearchChange: (next: string) => void;
   isFetching?: boolean;
   onRefresh?: () => void;
+  onNewOrganization?: () => void;
 };
 
 export function OrganizationsToolbar({
   isFetching = false,
+  onNewOrganization,
   onRefresh,
   onSearchChange,
   search,
@@ -47,6 +49,11 @@ export function OrganizationsToolbar({
         variant="outline"
       >
         <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
+      </Button>
+
+      <Button onClick={onNewOrganization}>
+        <Plus className="size-4" />
+        New organization
       </Button>
     </div>
   );

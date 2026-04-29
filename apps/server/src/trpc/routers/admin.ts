@@ -1,9 +1,11 @@
 import { auth } from "@sycom/auth";
 import { sendPlatformInviteEmail } from "@sycom/auth/config";
 import {
+  createOrganizationWithOwner,
   createPlatformInvitation,
   getActivePlatformInvitationByEmail,
   getAdminUserById,
+  getOrganizationBySlug,
   listAdminOrganizations,
   getPlatformInvitationById,
   getPlatformUserByEmail,
@@ -20,6 +22,7 @@ import { adminProcedure, protectedProcedure, router } from "../init";
 import {
   adminLogsAnalyticsOverviewSchema,
   banAdminUserSchema,
+  createAdminOrganizationSchema,
   deleteAdminUserSchema,
   listAdminOrganizationsSchema,
   getAdminUserSchema,
@@ -343,4 +346,38 @@ export const adminRouter = router({
       },
     };
   }),
+
+  // ---------------------------------------------------------------------------
+  // Organizations
+  // ---------------------------------------------------------------------------
+
+  createOrganization: adminProcedure
+    .input(createAdminOrganizationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const existing = await getOrganizationBySlug(ctx.db, { slug: input.slug });
+
+      if (existing) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "An organization with this slug already exists.",
+        });
+      }
+
+      const result = await createOrganizationWithOwner(ctx.db, {
+        name: input.name,
+        slug: input.slug,
+        ownerEmail: input.ownerEmail,
+        ownerFirstName: input.ownerFirstName,
+        ownerLastName: input.ownerLastName,
+        inviterUserId: ctx.session.user.id,
+        invitationTtlMs: INVITE_TTL_MS,
+      });
+
+      return {
+        success: true,
+        organizationId: result.organization.id,
+        slug: result.organization.slug,
+        owner: result.owner,
+      };
+    }),
 });

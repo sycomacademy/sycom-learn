@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
+import { CreateOrganizationDialog } from "@/components/dashboard/admin/create-organization-dialog";
 import {
   ORGANIZATION_COLUMNS,
   type OrganizationRow,
@@ -39,6 +40,7 @@ function OrganizationsAllPage() {
   const trpc = useTRPC();
   const [isSearchPending, startSearchTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search.search ?? "");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const query = useQuery(trpc.admin.listOrganizations.queryOptions(search));
 
@@ -113,10 +115,13 @@ function OrganizationsAllPage() {
     <div className="flex flex-col gap-4 px-6 py-6">
       <OrganizationsToolbar
         isFetching={query.isFetching || isSearchPending}
+        onNewOrganization={() => setCreateOpen(true)}
         onRefresh={() => query.refetch()}
         onSearchChange={setSearchInput}
         search={searchInput}
       />
+
+      <CreateOrganizationDialog onOpenChange={setCreateOpen} open={createOpen} />
 
       <DataTable<OrganizationRow> emptyMessage="No organizations found." table={table} />
     </div>

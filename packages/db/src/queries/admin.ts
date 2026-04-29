@@ -9,6 +9,7 @@ import {
   member,
   organization,
   user,
+  type Organization,
   type UserRole,
 } from "../schema/auth";
 import { profile, type ProfileSettings } from "../schema/profile";
@@ -106,6 +107,33 @@ export type AdminOrganizationRow = {
   owner: AdminOrganizationMemberPreview | null;
 };
 
+export type CreateOrganizationOwnerInvite = {
+  kind: "invitation";
+  invitationId: string;
+  email: string;
+  expiresAt: Date;
+};
+
+export type CreateOrganizationOwnerExisting = {
+  kind: "existing";
+  userId: string;
+};
+
+export type CreateOrganizationResult = {
+  organization: Organization;
+  owner: CreateOrganizationOwnerExisting | CreateOrganizationOwnerInvite;
+};
+
+export type CreateOrganizationInput = {
+  name: string;
+  slug: string;
+  ownerEmail: string;
+  ownerFirstName: string;
+  ownerLastName: string;
+  inviterUserId: string;
+  invitationTtlMs: number;
+};
+
 export type ListAdminOrganizationsResult = {
   rows: AdminOrganizationRow[];
   totalCount: number;
@@ -123,117 +151,7 @@ const ORGANIZATION_SORT_COLUMNS = {
   createdAt: organization.createdAt,
 } as const;
 
-export async function listAdminOrganizations(
-  database: Database,
-  input: ListAdminOrganizationsFilter,
-): Promise<ListAdminOrganizationsResult> {
-  const { limit, offset, search, sortBy, sortDirection } = input;
-
-  const filters: SQL[] = [];
-
-  if (search) {
-    const pattern = `%${search}%`;
-    const expr = or(ilike(organization.name, pattern), ilike(organization.slug, pattern));
-    if (expr) filters.push(expr);
-  }
-
-  const where = filters.length > 0 ? and(...filters) : undefined;
-  const memberCountExpr = sql<number>`cast(count(distinct ${member.userId}) as integer)`;
-  const ownerNameExpr = sql<string>`(
-    select u.name
-    from auth.member m
-    join auth."user" u on u.id = m.user_id
-    where m.organization_id = ${organization.id} and m.role = 'owner'
-    limit 1
-  )`;
-  const orderBy =
-    sortBy === "memberCount"
-      ? [
-          sortDirection === "desc" ? desc(memberCountExpr) : asc(memberCountExpr),
-          asc(organization.name),
-        ]
-      : sortBy === "owner"
-        ? [
-            sortDirection === "desc" ? desc(ownerNameExpr) : asc(ownerNameExpr),
-            asc(organization.name),
-          ]
-        : [
-            sortDirection === "desc"
-              ? desc(ORGANIZATION_SORT_COLUMNS[sortBy])
-              : asc(ORGANIZATION_SORT_COLUMNS[sortBy]),
-          ];
-
-  const [rows, totalRow] = await Promise.all([
-    database
-      .select({
-        id: organization.id,
-        name: organization.name,
-        slug: organization.slug,
-        logo: organization.logo,
-        createdAt: organization.createdAt,
-        memberCount: memberCountExpr,
-        cohortCount: sql<number>`cast(count(distinct ${cohort.id}) as integer)`,
-        pendingInviteCount: sql<number>`cast(count(distinct case when ${invitation.status} = 'pending' then ${invitation.id} end) as integer)`,
-        ownerName: ownerNameExpr,
-      })
-      .from(organization)
-      .leftJoin(member, eq(member.organizationId, organization.id))
-      .leftJoin(cohort, eq(cohort.organizationId, organization.id))
-      .leftJoin(invitation, eq(invitation.organizationId, organization.id))
-      .where(where)
-      .groupBy(organization.id)
-      .orderBy(...orderBy)
-      .limit(limit)
-      .offset(offset),
-    database.select({ value: count() }).from(organization).where(where),
-  ]);
-
-  const organizationIds = rows.map((row) => row.id);
-
-  const memberRows =
-    organizationIds.length > 0
-      ? await database
-          .select({
-            organizationId: member.organizationId,
-            id: user.id,
-            name: user.name,
-            image: user.image,
-            role: member.role,
-          })
-          .from(member)
-          .innerJoin(user, eq(user.id, member.userId))
-          .where(inArray(member.organizationId, organizationIds))
-          .orderBy(asc(member.organizationId), asc(member.createdAt), asc(user.name))
-      : [];
-
-  const membersByOrganization = new Map<string, AdminOrganizationMemberPreview[]>();
-  const ownersByOrganization = new Map<string, AdminOrganizationMemberPreview>();
-
-  for (const memberRow of memberRows) {
-    if (memberRow.role === "owner") {
-      ownersByOrganization.set(memberRow.organizationId, {
-        id: memberRow.id,
-        name: memberRow.name,
-        image: memberRow.image,
-      });
-    }
-    const previews = membersByOrganization.get(memberRow.organizationId) ?? [];
-    if (previews.length < 6) {
-      previews.push({ id: memberRow.id, name: memberRow.name, image: memberRow.image });
-    }
-    membersByOrganization.set(memberRow.organizationId, previews);
-  }
-
-  return {
-    rows: rows.map((row) => ({
-      ...row,
-      members: membersByOrganization.get(row.id) ?? [],
-      owner: ownersByOrganization.get(row.id) ?? null,
-    })),
-    totalCount: totalRow[0]?.value ?? 0,
-  };
-}
-
+// --- Users ---
 export async function listAdminUsers(
   database: Database,
   input: ListAdminUsersFilter,
@@ -400,4 +318,194 @@ export async function getAdminUserById(
     organizations: organizationRows,
     cohorts: cohortRows,
   };
+}
+
+// --- Organizations ---
+export async function listAdminOrganizations(
+  database: Database,
+  input: ListAdminOrganizationsFilter,
+): Promise<ListAdminOrganizationsResult> {
+  const { limit, offset, search, sortBy, sortDirection } = input;
+
+  const filters: SQL[] = [];
+
+  if (search) {
+    const pattern = `%${search}%`;
+    const expr = or(ilike(organization.name, pattern), ilike(organization.slug, pattern));
+    if (expr) filters.push(expr);
+  }
+
+  const where = filters.length > 0 ? and(...filters) : undefined;
+  const memberCountExpr = sql<number>`cast(count(distinct ${member.userId}) as integer)`;
+  const ownerNameExpr = sql<string>`(
+    select u.name
+    from auth.member m
+    join auth."user" u on u.id = m.user_id
+    where m.organization_id = ${organization.id} and m.role = 'owner'
+    limit 1
+  )`;
+  const orderBy =
+    sortBy === "memberCount"
+      ? [
+          sortDirection === "desc" ? desc(memberCountExpr) : asc(memberCountExpr),
+          asc(organization.name),
+        ]
+      : sortBy === "owner"
+        ? [
+            sortDirection === "desc" ? desc(ownerNameExpr) : asc(ownerNameExpr),
+            asc(organization.name),
+          ]
+        : [
+            sortDirection === "desc"
+              ? desc(ORGANIZATION_SORT_COLUMNS[sortBy])
+              : asc(ORGANIZATION_SORT_COLUMNS[sortBy]),
+          ];
+
+  const [rows, totalRow] = await Promise.all([
+    database
+      .select({
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        logo: organization.logo,
+        createdAt: organization.createdAt,
+        memberCount: memberCountExpr,
+        cohortCount: sql<number>`cast(count(distinct ${cohort.id}) as integer)`,
+        pendingInviteCount: sql<number>`cast(count(distinct case when ${invitation.status} = 'pending' then ${invitation.id} end) as integer)`,
+        ownerName: ownerNameExpr,
+      })
+      .from(organization)
+      .leftJoin(member, eq(member.organizationId, organization.id))
+      .leftJoin(cohort, eq(cohort.organizationId, organization.id))
+      .leftJoin(invitation, eq(invitation.organizationId, organization.id))
+      .where(where)
+      .groupBy(organization.id)
+      .orderBy(...orderBy)
+      .limit(limit)
+      .offset(offset),
+    database.select({ value: count() }).from(organization).where(where),
+  ]);
+
+  const organizationIds = rows.map((row) => row.id);
+
+  const memberRows =
+    organizationIds.length > 0
+      ? await database
+          .select({
+            organizationId: member.organizationId,
+            id: user.id,
+            name: user.name,
+            image: user.image,
+            role: member.role,
+          })
+          .from(member)
+          .innerJoin(user, eq(user.id, member.userId))
+          .where(inArray(member.organizationId, organizationIds))
+          .orderBy(asc(member.organizationId), asc(member.createdAt), asc(user.name))
+      : [];
+
+  const membersByOrganization = new Map<string, AdminOrganizationMemberPreview[]>();
+  const ownersByOrganization = new Map<string, AdminOrganizationMemberPreview>();
+
+  for (const memberRow of memberRows) {
+    if (memberRow.role === "owner") {
+      ownersByOrganization.set(memberRow.organizationId, {
+        id: memberRow.id,
+        name: memberRow.name,
+        image: memberRow.image,
+      });
+    }
+    const previews = membersByOrganization.get(memberRow.organizationId) ?? [];
+    if (previews.length < 6) {
+      previews.push({ id: memberRow.id, name: memberRow.name, image: memberRow.image });
+    }
+    membersByOrganization.set(memberRow.organizationId, previews);
+  }
+
+  return {
+    rows: rows.map((row) => ({
+      ...row,
+      members: membersByOrganization.get(row.id) ?? [],
+      owner: ownersByOrganization.get(row.id) ?? null,
+    })),
+    totalCount: totalRow[0]?.value ?? 0,
+  };
+}
+
+export async function getOrganizationBySlug(
+  database: Database,
+  input: { slug: string },
+): Promise<Organization | null> {
+  const row = await database.query.organization.findFirst({
+    where: eq(organization.slug, input.slug),
+  });
+
+  return row ?? null;
+}
+
+export async function createOrganizationWithOwner(
+  database: Database,
+  input: CreateOrganizationInput,
+): Promise<CreateOrganizationResult> {
+  const organizationId = crypto.randomUUID();
+
+  const [orgRow] = await database
+    .insert(organization)
+    .values({
+      id: organizationId,
+      name: input.name,
+      slug: input.slug,
+    })
+    .returning();
+
+  if (!orgRow) {
+    throw new Error("Failed to create organization");
+  }
+
+  const existingUser = await database.query.user.findFirst({
+    columns: { id: true },
+    where: ilike(user.email, input.ownerEmail),
+  });
+
+  try {
+    if (existingUser) {
+      await database.insert(member).values({
+        id: crypto.randomUUID(),
+        organizationId: orgRow.id,
+        userId: existingUser.id,
+        role: "owner",
+      });
+
+      return {
+        organization: orgRow,
+        owner: { kind: "existing", userId: existingUser.id },
+      };
+    }
+
+    const invitationId = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + input.invitationTtlMs);
+
+    await database.insert(invitation).values({
+      id: invitationId,
+      organizationId: orgRow.id,
+      email: input.ownerEmail,
+      role: "owner",
+      status: "pending",
+      expiresAt,
+      inviterId: input.inviterUserId,
+    });
+
+    return {
+      organization: orgRow,
+      owner: {
+        kind: "invitation",
+        invitationId,
+        email: input.ownerEmail,
+        expiresAt,
+      },
+    };
+  } catch (error) {
+    await database.delete(organization).where(eq(organization.id, orgRow.id));
+    throw error;
+  }
 }
