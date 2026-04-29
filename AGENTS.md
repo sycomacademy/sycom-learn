@@ -22,9 +22,11 @@ These rules override default agent behavior. Apply them by default; only deviate
 
 5. **Prefer route `loader` / `beforeLoad` over in-component queries for initial data.**
 
-6. **Never fetch derivable data.**
+6. **Server-backed admin list pages follow the TanStack Table route pattern.** For dashboard admin directories and other URL-driven list pages, co-locate a route search schema with the page, use `validateSearch`, `loaderDeps: ({ search }) => search`, and preload the matching tRPC query with `context.queryClient.ensureQueryData(...)`. In the page, read data with `useQuery(...queryOptions(search))`, wire TanStack Table with `manualSorting` and `manualPagination`, and keep search/filter/sort/page state in the URL.
 
-7. **Images go through `@sycom/ui/image`.** Store CDN public IDs (e.g. `"brand/sycom-logo"`) — never full Cloudinary URLs — so swapping providers stays a one-file edit. Static/brand/marketing assets get a constant in [`packages/ui/src/image/assets.ts`](packages/ui/src/image/assets.ts); user-generated assets (avatars, course content) get a `public_id` column in the DB. Render with `<Image src={BRAND.LOGO} ... />` from `@sycom/ui/image` in apps; in emails, use `buildImageUrl()` from `@sycom/ui/image/cdn` with react-email's `<Img>` (modern srcset isn't reliable in mail clients). The only place that knows we use Cloudinary is [`packages/ui/src/image/cdn.ts`](packages/ui/src/image/cdn.ts).
+7. **Never fetch derivable data.**
+
+8. **Images go through `@sycom/ui/image`.** Store CDN public IDs (e.g. `"brand/sycom-logo"`) — never full Cloudinary URLs — so swapping providers stays a one-file edit. Static/brand/marketing assets get a constant in [`packages/ui/src/image/assets.ts`](packages/ui/src/image/assets.ts); user-generated assets (avatars, course content) get a `public_id` column in the DB. Render with `<Image src={BRAND.LOGO} ... />` from `@sycom/ui/image` in apps; in emails, use `buildImageUrl()` from `@sycom/ui/image/cdn` with react-email's `<Img>` (modern srcset isn't reliable in mail clients). The only place that knows we use Cloudinary is [`packages/ui/src/image/cdn.ts`](packages/ui/src/image/cdn.ts).
 
 ## Commands
 
@@ -38,7 +40,7 @@ bun run build            # Build all apps
 bun run check-types      # TypeScript type checking across all packages
 bun run check            # Run oxlint + oxfmt (formatting with --write)
 
-# Database (Drizzle + Neon Postgres) — prefer generate + migrate (see rule 13)
+# Database (Drizzle + Neon Postgres) — prefer generate + migrate (see rule 3)
 bun run db:generate      # Generate migration files
 bun run db:migrate       # Run migrations
 bun run db:push          # Push schema directly (avoid unless explicitly requested)

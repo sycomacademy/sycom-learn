@@ -5,6 +5,7 @@ import {
   account,
   cohort,
   cohort_member,
+  invitation,
   member,
   organization,
   user,
@@ -78,11 +79,136 @@ export type AdminUserDetails = {
   }>;
 };
 
+export type ListAdminOrganizationsFilter = {
+  limit: number;
+  offset: number;
+  search?: string;
+  sortBy: "name" | "slug" | "createdAt" | "memberCount";
+  sortDirection: "asc" | "desc";
+};
+
+export type AdminOrganizationMemberPreview = {
+  id: string;
+  name: string;
+  image: string | null;
+};
+
+export type AdminOrganizationRow = {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  createdAt: Date;
+  memberCount: number;
+  cohortCount: number;
+  pendingInviteCount: number;
+  members: AdminOrganizationMemberPreview[];
+};
+
+export type ListAdminOrganizationsResult = {
+  rows: AdminOrganizationRow[];
+  totalCount: number;
+};
+
 const SORT_COLUMNS = {
   name: user.name,
   email: user.email,
   createdAt: user.createdAt,
 } as const;
+
+const ORGANIZATION_SORT_COLUMNS = {
+  name: organization.name,
+  slug: organization.slug,
+  createdAt: organization.createdAt,
+} as const;
+
+export async function listAdminOrganizations(
+  database: Database,
+  input: ListAdminOrganizationsFilter,
+): Promise<ListAdminOrganizationsResult> {
+  const { limit, offset, search, sortBy, sortDirection } = input;
+
+  const filters: SQL[] = [];
+
+  if (search) {
+    const pattern = `%${search}%`;
+    const expr = or(ilike(organization.name, pattern), ilike(organization.slug, pattern));
+    if (expr) filters.push(expr);
+  }
+
+  const where = filters.length > 0 ? and(...filters) : undefined;
+  const memberCountExpr = sql<number>`cast(count(distinct ${member.userId}) as integer)`;
+  const orderBy =
+    sortBy === "memberCount"
+      ? [
+          sortDirection === "desc" ? desc(memberCountExpr) : asc(memberCountExpr),
+          asc(organization.name),
+        ]
+      : [
+          sortDirection === "desc"
+            ? desc(ORGANIZATION_SORT_COLUMNS[sortBy])
+            : asc(ORGANIZATION_SORT_COLUMNS[sortBy]),
+        ];
+
+  const [rows, totalRow] = await Promise.all([
+    database
+      .select({
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        logo: organization.logo,
+        createdAt: organization.createdAt,
+        memberCount: memberCountExpr,
+        cohortCount: sql<number>`cast(count(distinct ${cohort.id}) as integer)`,
+        pendingInviteCount: sql<number>`cast(count(distinct case when ${invitation.status} = 'pending' then ${invitation.id} end) as integer)`,
+      })
+      .from(organization)
+      .leftJoin(member, eq(member.organizationId, organization.id))
+      .leftJoin(cohort, eq(cohort.organizationId, organization.id))
+      .leftJoin(invitation, eq(invitation.organizationId, organization.id))
+      .where(where)
+      .groupBy(organization.id)
+      .orderBy(...orderBy)
+      .limit(limit)
+      .offset(offset),
+    database.select({ value: count() }).from(organization).where(where),
+  ]);
+
+  const organizationIds = rows.map((row) => row.id);
+
+  const memberRows =
+    organizationIds.length > 0
+      ? await database
+          .select({
+            organizationId: member.organizationId,
+            id: user.id,
+            name: user.name,
+            image: user.image,
+          })
+          .from(member)
+          .innerJoin(user, eq(user.id, member.userId))
+          .where(inArray(member.organizationId, organizationIds))
+          .orderBy(asc(member.organizationId), asc(member.createdAt), asc(user.name))
+      : [];
+
+  const membersByOrganization = new Map<string, AdminOrganizationMemberPreview[]>();
+
+  for (const memberRow of memberRows) {
+    const previews = membersByOrganization.get(memberRow.organizationId) ?? [];
+    if (previews.length < 6) {
+      previews.push({ id: memberRow.id, name: memberRow.name, image: memberRow.image });
+    }
+    membersByOrganization.set(memberRow.organizationId, previews);
+  }
+
+  return {
+    rows: rows.map((row) => ({
+      ...row,
+      members: membersByOrganization.get(row.id) ?? [],
+    })),
+    totalCount: totalRow[0]?.value ?? 0,
+  };
+}
 
 export async function listAdminUsers(
   database: Database,

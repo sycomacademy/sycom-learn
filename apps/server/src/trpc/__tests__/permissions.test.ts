@@ -60,6 +60,6 @@ describe("platform permission helpers", () => {
   });
 
   test("assertPlatformPermission throws when unauthenticated", () => {
-    expect(() => assertPlatformPermission(null, { course: ["read"] })).toThrow(TRPCError);
+    expect(() => assertPlatformPermission(null, { report: ["list"] })).toThrow(TRPCError);
   });
 });

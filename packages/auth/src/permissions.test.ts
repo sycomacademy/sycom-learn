@@ -19,46 +19,42 @@ const stmts = (role: { statements: Record<string, readonly string[]> }) =>
   role.statements as Record<string, readonly string[] | undefined>;
 
 describe("platform roles — platform_admin", () => {
-  test("has full course permissions", () => {
-    expect([...(stmts(platformAdminRole).course ?? [])].sort()).toEqual(
-      ["create", "delete", "publish", "read", "update"].sort(),
+  test("can fully manage feedback", () => {
+    expect([...(stmts(platformAdminRole).feedback ?? [])].sort()).toEqual(
+      ["submit", "get", "list", "update"].sort(),
     );
   });
 
-  test("has full enrollment permissions", () => {
-    expect([...(stmts(platformAdminRole).enrollment ?? [])].sort()).toEqual(
-      ["create", "delete"].sort(),
+  test("can fully manage reports", () => {
+    expect([...(stmts(platformAdminRole).report ?? [])].sort()).toEqual(
+      ["submit", "get", "list", "update"].sort(),
     );
   });
 });
 
 describe("platform roles — content_creator", () => {
-  test("can fully manage courses", () => {
-    expect([...(stmts(contentCreatorRole).course ?? [])].sort()).toEqual(
-      ["create", "delete", "publish", "read", "update"].sort(),
-    );
+  test("can submit feedback", () => {
+    expect(stmts(contentCreatorRole).feedback).toEqual(["submit"]);
   });
 
-  test("has no enrollment permissions", () => {
-    expect(stmts(contentCreatorRole).enrollment).toBeUndefined();
+  test("can submit reports", () => {
+    expect(stmts(contentCreatorRole).report).toEqual(["submit"]);
   });
 });
 
 describe("platform roles — public_student", () => {
-  test("can only read courses", () => {
-    expect(stmts(publicStudentRole).course).toEqual(["read"]);
+  test("can submit feedback", () => {
+    expect(stmts(publicStudentRole).feedback).toEqual(["submit"]);
   });
 
-  test("can self-enroll and unenroll, nothing else", () => {
-    expect([...(stmts(publicStudentRole).enrollment ?? [])].sort()).toEqual(
-      ["create", "delete"].sort(),
-    );
+  test("can submit reports", () => {
+    expect(stmts(publicStudentRole).report).toEqual(["submit"]);
   });
 
-  test("cannot mutate courses", () => {
-    const courseActions = stmts(publicStudentRole).course ?? [];
-    for (const forbidden of ["create", "update", "delete", "publish"]) {
-      expect(courseActions).not.toContain(forbidden);
+  test("cannot access admin report actions", () => {
+    const reportActions = stmts(publicStudentRole).report ?? [];
+    for (const forbidden of ["get", "list", "update"]) {
+      expect(reportActions).not.toContain(forbidden);
     }
   });
 });
@@ -166,17 +162,17 @@ describe("orgRoles map", () => {
 // ---------------------------------------------------------------------------
 
 describe("authorize() integration", () => {
-  test("public_student authorize({ course: ['read'] }) succeeds", () => {
-    expect(publicStudentRole.authorize({ course: ["read"] }).success).toBe(true);
+  test("public_student authorize({ report: ['submit'] }) succeeds", () => {
+    expect(publicStudentRole.authorize({ report: ["submit"] }).success).toBe(true);
   });
 
-  test("public_student authorize({ enrollment: ['create'] }) succeeds", () => {
-    expect(publicStudentRole.authorize({ enrollment: ["create"] }).success).toBe(true);
+  test("public_student authorize({ feedback: ['submit'] }) succeeds", () => {
+    expect(publicStudentRole.authorize({ feedback: ["submit"] }).success).toBe(true);
   });
 
-  test("public_student authorize({ course: ['update'] }) fails", () => {
+  test("public_student authorize({ report: ['update'] }) fails", () => {
     const result = publicStudentRole.authorize({
-      course: ["update"],
+      report: ["update"],
     } as unknown as Parameters<typeof publicStudentRole.authorize>[0]);
     expect(result.success).toBe(false);
   });

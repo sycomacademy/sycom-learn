@@ -13,16 +13,16 @@ import {
 
 const platformStatements = {
   ...platformDefaultStatements,
-  feedback: ["submit", "get", "list", "update", "delete"],
-  report: ["submit", "get", "list", "update", "delete"],
+  feedback: ["submit", "list", "update"],
+  report: ["submit", "list", "update"],
 } as const;
 
 export const platformAc = createAccessControl(platformStatements);
 
 export const platformAdminRole = platformAc.newRole({
   ...platformBuiltInAdminAc.statements,
-  feedback: ["submit", "get", "list", "update", "delete"],
-  report: ["submit", "get", "list", "update", "delete"],
+  feedback: ["submit", "list", "update"],
+  report: ["submit", "list", "update"],
 });
 
 export const contentCreatorRole = platformAc.newRole({

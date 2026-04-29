@@ -1,10 +1,19 @@
-import { createFeedback, createFeedbackReport } from "@sycom/db/queries/index";
+import {
+  createFeedback,
+  createFeedbackReport,
+  listAdminFeedback,
+  listAdminReports,
+  updateAdminReportStatus,
+} from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 
-import { protectedProcedure, router } from "../init";
+import { adminProcedure, protectedProcedure, router } from "../init";
 import {
+  listAdminFeedbackSchema,
+  listAdminReportsSchema,
   submitFeedbackReportSchema,
   submitFeedbackSchema,
+  updateAdminReportStatusSchema,
   type SubmitFeedbackInput,
   type SubmitFeedbackReportInput,
 } from "../schemas";
@@ -59,5 +68,32 @@ export const feedbackRouter = router({
       }
 
       return feedbackReportRow;
+    }),
+
+  listFeedback: adminProcedure
+    .use(platformPermissionMiddleware({ feedback: ["list"] }))
+    .input(listAdminFeedbackSchema)
+    .query(async ({ ctx, input }) => {
+      return await listAdminFeedback(ctx.db, input);
+    }),
+
+  listReports: adminProcedure
+    .use(platformPermissionMiddleware({ report: ["list"] }))
+    .input(listAdminReportsSchema)
+    .query(async ({ ctx, input }) => {
+      return await listAdminReports(ctx.db, input);
+    }),
+
+  updateReportStatus: adminProcedure
+    .use(platformPermissionMiddleware({ report: ["update"] }))
+    .input(updateAdminReportStatusSchema)
+    .mutation(async ({ ctx, input }) => {
+      const report = await updateAdminReportStatus(ctx.db, input);
+
+      if (!report) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Report not found" });
+      }
+
+      return report;
     }),
 });

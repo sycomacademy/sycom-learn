@@ -1,5 +1,6 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCheckIcon, CircleDashedIcon, EyeIcon, LinkIcon, XCircleIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { Button } from "@sycom/ui/components/button";
@@ -14,11 +15,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@sycom/ui/components/sheet";
+import { toastManager } from "@sycom/ui/components/toast";
 import { formatDateTime } from "@sycom/ui/lib/date";
 
+import { useTRPC } from "@/lib/trpc/client";
 import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "./reports-helpers";
 
-type ReportRow = AppRouterOutputs["admin"]["listReports"]["rows"][number];
+type ReportRow = AppRouterOutputs["feedback"]["listReports"]["rows"][number];
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -30,10 +33,46 @@ function DetailRow({ label, value }: { label: string; value: ReactNode }) {
 }
 
 export function ReportsActions({ report }: { report: ReportRow }): ReactNode {
+  const [open, setOpen] = useState(false);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const listReportsQueryKey = trpc.feedback.listReports.queryKey();
   const status = REPORT_STATUS_CONFIG[report.status];
 
+  const updateStatusMutation = useMutation({
+    ...trpc.feedback.updateReportStatus.mutationOptions({
+      onSuccess: async (_, variables) => {
+        toastManager.add({
+          title: "Report updated",
+          description: `Status changed to ${REPORT_STATUS_CONFIG[variables.status].label.toLowerCase()}.`,
+          type: "success",
+        });
+        setOpen(false);
+        await queryClient.invalidateQueries({ queryKey: listReportsQueryKey });
+      },
+      onError: (error) => {
+        toastManager.add({
+          title: "Could not update report",
+          description: error.message,
+          type: "error",
+        });
+      },
+    }),
+  });
+
+  const submitStatusChange = (nextStatus: ReportRow["status"]) => {
+    if (nextStatus === report.status) {
+      return;
+    }
+
+    updateStatusMutation.mutate({
+      reportId: report.id,
+      status: nextStatus,
+    });
+  };
+
   return (
-    <Sheet>
+    <Sheet onOpenChange={setOpen} open={open}>
       <SheetTrigger
         render={
           <Button aria-label={`View report ${report.subject}`} size="sm" variant="outline">
@@ -52,9 +91,6 @@ export function ReportsActions({ report }: { report: ReportRow }): ReactNode {
             <div className="flex flex-wrap gap-2">
               <Badge variant={status.variant}>{status.label}</Badge>
               <Badge variant="outline">{REPORT_TYPE_LABELS[report.type]}</Badge>
-              <Badge variant={report.userId ? "success" : "secondary"}>
-                {report.userId ? "Signed in" : "Guest"}
-              </Badge>
             </div>
           </div>
         </SheetHeader>
@@ -93,16 +129,39 @@ export function ReportsActions({ report }: { report: ReportRow }): ReactNode {
           </dl>
         </SheetPanel>
 
-        <SheetFooter>
-          <Button disabled variant="outline">
+        <SheetFooter className="flex gap-2 sm:flex-col">
+          <Button
+            disabled={updateStatusMutation.isPending || report.status === "resolved"}
+            loading={
+              updateStatusMutation.isPending &&
+              updateStatusMutation.variables?.status === "resolved"
+            }
+            onClick={() => submitStatusChange("resolved")}
+            variant="outline"
+          >
             <CheckCheckIcon className="size-4" />
             Mark completed
           </Button>
-          <Button disabled variant="outline">
+          <Button
+            disabled={updateStatusMutation.isPending || report.status === "in_progress"}
+            loading={
+              updateStatusMutation.isPending &&
+              updateStatusMutation.variables?.status === "in_progress"
+            }
+            onClick={() => submitStatusChange("in_progress")}
+            variant="outline"
+          >
             <CircleDashedIcon className="size-4" />
             Mark in progress
           </Button>
-          <Button disabled variant="outline">
+          <Button
+            disabled={updateStatusMutation.isPending || report.status === "closed"}
+            loading={
+              updateStatusMutation.isPending && updateStatusMutation.variables?.status === "closed"
+            }
+            onClick={() => submitStatusChange("closed")}
+            variant="outline"
+          >
             <XCircleIcon className="size-4" />
             Mark ignored
           </Button>

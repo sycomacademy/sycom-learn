@@ -4,8 +4,7 @@ import {
   createPlatformInvitation,
   getActivePlatformInvitationByEmail,
   getAdminUserById,
-  listAdminFeedback,
-  listAdminReports,
+  listAdminOrganizations,
   getPlatformInvitationById,
   getPlatformUserByEmail,
   listAdminUsers,
@@ -22,8 +21,7 @@ import {
   adminLogsAnalyticsOverviewSchema,
   banAdminUserSchema,
   deleteAdminUserSchema,
-  listAdminFeedbackSchema,
-  listAdminReportsSchema,
+  listAdminOrganizationsSchema,
   getAdminUserSchema,
   impersonateAdminUserSchema,
   inviteAdminUserSchema,
@@ -58,6 +56,12 @@ export const adminRouter = router({
     .input(listAdminUsersSchema)
     .query(async ({ ctx, input }) => {
       return await listAdminUsers(ctx.db, input);
+    }),
+
+  listOrganizations: adminProcedure
+    .input(listAdminOrganizationsSchema)
+    .query(async ({ ctx, input }) => {
+      return await listAdminOrganizations(ctx.db, input);
     }),
 
   getUser: adminProcedure
@@ -339,18 +343,4 @@ export const adminRouter = router({
       },
     };
   }),
-
-  listFeedback: adminProcedure
-    .use(platformPermissionMiddleware({ feedback: ["list"] }))
-    .input(listAdminFeedbackSchema)
-    .query(async ({ ctx, input }) => {
-      return await listAdminFeedback(ctx.db, input);
-    }),
-
-  listReports: adminProcedure
-    .use(platformPermissionMiddleware({ report: ["list"] }))
-    .input(listAdminReportsSchema)
-    .query(async ({ ctx, input }) => {
-      return await listAdminReports(ctx.db, input);
-    }),
 });

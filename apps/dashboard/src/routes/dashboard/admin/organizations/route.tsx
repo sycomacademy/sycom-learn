@@ -8,7 +8,7 @@ export const Route = createFileRoute("/dashboard/admin/organizations")({
 
 function OrganizationsLayout() {
   return (
-    <div className="mb-10 max-w-3xl md:ml-10">
+    <div className="mb-10 max-w-6xl md:ml-10">
       <SecondaryMenu
         base="/dashboard/admin/organizations"
         items={[

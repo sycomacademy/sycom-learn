@@ -21,7 +21,7 @@ export const Route = createFileRoute("/dashboard/admin/logs-analytics/feedback")
   validateSearch: listAdminFeedbackSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
-    await context.queryClient.fetchQuery(context.trpc.admin.listFeedback.queryOptions(deps));
+    await context.queryClient.fetchQuery(context.trpc.feedback.listFeedback.queryOptions(deps));
   },
   component: AdminLogsAnalyticsFeedbackPage,
 });
@@ -31,7 +31,7 @@ function AdminLogsAnalyticsFeedbackPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
 
-  const query = useQuery(trpc.admin.listFeedback.queryOptions(search));
+  const query = useQuery(trpc.feedback.listFeedback.queryOptions(search));
 
   const sorting = useMemo<SortingState>(
     () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],

@@ -6,7 +6,7 @@ import type { AppRouterOutputs } from "server/trpc/routers/_app";
 import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "./reports-helpers";
 import { ReportsActions } from "./reports-actions";
 
-export type ReportRow = AppRouterOutputs["admin"]["listReports"]["rows"][number];
+export type ReportRow = AppRouterOutputs["feedback"]["listReports"]["rows"][number];
 
 const columnHelper = createColumnHelper<ReportRow>();
 

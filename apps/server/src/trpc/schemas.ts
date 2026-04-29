@@ -21,6 +21,15 @@ export const listAdminUsersSchema = z.object({
 });
 export type ListAdminUsersInput = z.infer<typeof listAdminUsersSchema>;
 
+export const listAdminOrganizationsSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  sortBy: z.enum(["name", "slug", "createdAt", "memberCount"]).default("createdAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListAdminOrganizationsInput = z.infer<typeof listAdminOrganizationsSchema>;
+
 export const getAdminUserSchema = z.object({
   userId: z.string().min(1),
 });
@@ -118,6 +127,12 @@ export const listAdminReportsSchema = z.object({
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
 });
 export type ListAdminReportsInput = z.infer<typeof listAdminReportsSchema>;
+
+export const updateAdminReportStatusSchema = z.object({
+  reportId: z.string().min(1),
+  status: feedbackReportStatusSchema,
+});
+export type UpdateAdminReportStatusInput = z.infer<typeof updateAdminReportStatusSchema>;
 
 // invite
 export const getPlatformInvitationByTokenSchema = z.object({

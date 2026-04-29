@@ -22,7 +22,7 @@ export const Route = createFileRoute("/dashboard/admin/logs-analytics/reports")(
   validateSearch: listAdminReportsSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
-    await context.queryClient.fetchQuery(context.trpc.admin.listReports.queryOptions(deps));
+    await context.queryClient.fetchQuery(context.trpc.feedback.listReports.queryOptions(deps));
   },
   component: AdminLogsAnalyticsReportsPage,
 });
@@ -32,7 +32,7 @@ function AdminLogsAnalyticsReportsPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
 
-  const query = useQuery(trpc.admin.listReports.queryOptions(search));
+  const query = useQuery(trpc.feedback.listReports.queryOptions(search));
 
   const sorting = useMemo<SortingState>(
     () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],

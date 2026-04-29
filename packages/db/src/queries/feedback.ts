@@ -62,6 +62,16 @@ export type ListAdminReportsResult = {
   totalCount: number;
 };
 
+export type UpdateAdminReportStatusInput = {
+  reportId: string;
+  status: FeedbackReportStatus;
+};
+
+export type UpdateAdminReportStatusResult = {
+  id: string;
+  status: FeedbackReportStatus;
+};
+
 function buildSubmittedAtOrder(direction: "asc" | "desc") {
   return direction === "asc"
     ? [asc(feedback.createdAt), asc(feedback.id)]
@@ -183,4 +193,23 @@ export async function listAdminReports(
     rows,
     totalCount: totalRow[0]?.value ?? 0,
   };
+}
+
+export async function updateAdminReportStatus(
+  database: Database,
+  input: UpdateAdminReportStatusInput,
+): Promise<UpdateAdminReportStatusResult | null> {
+  const [row] = await database
+    .update(feedbackReport)
+    .set({
+      status: input.status,
+      updatedAt: new Date(),
+    })
+    .where(eq(feedbackReport.id, input.reportId))
+    .returning({
+      id: feedbackReport.id,
+      status: feedbackReport.status,
+    });
+
+  return row ?? null;
 }
