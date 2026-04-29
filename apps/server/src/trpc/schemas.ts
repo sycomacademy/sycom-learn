@@ -48,6 +48,23 @@ export const impersonateAdminUserSchema = z.object({
 });
 export type ImpersonateAdminUserInput = z.infer<typeof impersonateAdminUserSchema>;
 
+export const inviteAdminUserSchema = z.object({
+  email: z.email(),
+  name: z.string().trim().min(1).max(120),
+  role: z.enum(userRoleEnum.enumValues),
+});
+export type InviteAdminUserInput = z.infer<typeof inviteAdminUserSchema>;
+
+export const sendVerificationEmailAdminSchema = z.object({
+  userId: z.string().min(1),
+});
+export type SendVerificationEmailAdminInput = z.infer<typeof sendVerificationEmailAdminSchema>;
+
+export const deleteAdminUserSchema = z.object({
+  userId: z.string().min(1),
+});
+export type DeleteAdminUserInput = z.infer<typeof deleteAdminUserSchema>;
+
 // feedback
 export const submitFeedbackSchema = z.object({
   email: z.email(),

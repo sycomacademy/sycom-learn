@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BanIcon,
   EyeIcon,
+  MailCheckIcon,
   MoreHorizontalIcon,
   ShieldIcon,
   Trash2Icon,
@@ -234,10 +235,13 @@ type UserActionsMenuProps = {
   canManageRole: boolean;
   canBan: boolean;
   canImpersonate: boolean;
+  canSendVerification: boolean;
+  canDelete: boolean;
   onView: () => void;
   onChangeRole: () => void;
   onBanToggle: () => void;
   onImpersonate: () => void;
+  onSendVerification: () => void;
   onDelete: () => void;
 };
 
@@ -246,10 +250,13 @@ function UserActionsMenu({
   canManageRole,
   canBan,
   canImpersonate,
+  canSendVerification,
+  canDelete,
   onView,
   onChangeRole,
   onBanToggle,
   onImpersonate,
+  onSendVerification,
   onDelete,
 }: UserActionsMenuProps) {
   return (
@@ -288,6 +295,12 @@ function UserActionsMenu({
               {user.banned ? "Unban user" : "Ban user"}
             </DropdownMenuItem>
           ) : null}
+          {canSendVerification ? (
+            <DropdownMenuItem onClick={onSendVerification}>
+              <MailCheckIcon />
+              Send verification email
+            </DropdownMenuItem>
+          ) : null}
           {canImpersonate ? (
             <DropdownMenuItem onClick={onImpersonate}>
               <EyeIcon />
@@ -295,11 +308,15 @@ function UserActionsMenu({
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onDelete} variant="destructive">
-          <Trash2Icon />
-          Delete user
-        </DropdownMenuItem>
+        {canDelete ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} variant="destructive">
+              <Trash2Icon />
+              Delete user
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -519,34 +536,34 @@ function ImpersonateUserDialog({
 
 type DeleteUserDialogProps = {
   open: boolean;
+  user: UserRow;
+  isPending: boolean;
   onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
 };
 
-function DeleteUserDialog({ open, onOpenChange }: DeleteUserDialogProps) {
+function DeleteUserDialog({
+  open,
+  user,
+  isPending,
+  onOpenChange,
+  onConfirm,
+}: DeleteUserDialogProps) {
   return (
     <AlertDialog onOpenChange={onOpenChange} open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete user</AlertDialogTitle>
           <AlertDialogDescription>
-            Delete behavior is not implemented yet while the team decides between hard and soft
-            delete.
+            This permanently deletes <strong>{user.name}</strong> ({user.email}) and all of their
+            sessions, accounts, and profile data. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
-          <AlertDialogClose
-            render={<Button variant="destructive" />}
-            onClick={() => {
-              toastManager.add({
-                title: "Delete flow not implemented",
-                description: "No changes were made to this account.",
-                type: "info",
-              });
-            }}
-          >
+          <Button loading={isPending} onClick={onConfirm} variant="destructive">
             Delete user
-          </AlertDialogClose>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -686,10 +703,52 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
     }),
   });
 
+  const sendVerificationMutation = useMutation({
+    ...trpc.admin.sendUserVerificationEmail.mutationOptions({
+      onSuccess: () => {
+        toastManager.add({
+          title: "Verification email sent",
+          description: `${user.name} will receive a verification link at ${user.email}.`,
+          type: "success",
+        });
+      },
+      onError: (error) => {
+        toastManager.add({
+          title: "Failed to send verification email",
+          description: error.message,
+          type: "error",
+        });
+      },
+    }),
+  });
+
+  const deleteMutation = useMutation({
+    ...trpc.admin.deleteUser.mutationOptions({
+      onSuccess: async () => {
+        toastManager.add({
+          title: "User deleted",
+          description: `${user.name} has been permanently removed.`,
+          type: "success",
+        });
+        setDeleteOpen(false);
+        await invalidateUsers();
+      },
+      onError: (error) => {
+        toastManager.add({
+          title: "Failed to delete user",
+          description: error.message,
+          type: "error",
+        });
+      },
+    }),
+  });
+
   const selectedRole = roleForm.watch("role");
   const canManageRole = !isSelf;
   const canBan = !isSelf;
   const canImpersonate = !isSelf && !isTargetAdmin;
+  const canSendVerification = !user.emailVerified && !user.banned;
+  const canDelete = !isSelf;
 
   const onBanSubmit = async (data: BanUserInput) => {
     await banMutation.mutateAsync({ userId: user.id, banReason: data.banReason });
@@ -713,12 +772,15 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
     <>
       <UserActionsMenu
         canBan={canBan}
+        canDelete={canDelete}
         canImpersonate={canImpersonate}
         canManageRole={canManageRole}
+        canSendVerification={canSendVerification}
         onBanToggle={handleBanToggle}
         onChangeRole={() => setRoleOpen(true)}
         onDelete={() => setDeleteOpen(true)}
         onImpersonate={() => setImpersonateOpen(true)}
+        onSendVerification={() => sendVerificationMutation.mutate({ userId: user.id })}
         onView={() => setViewOpen(true)}
         user={user}
       />
@@ -777,7 +839,13 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
         user={user}
       />
 
-      <DeleteUserDialog onOpenChange={setDeleteOpen} open={deleteOpen} />
+      <DeleteUserDialog
+        isPending={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate({ userId: user.id })}
+        onOpenChange={setDeleteOpen}
+        open={deleteOpen}
+        user={user}
+      />
     </>
   );
 }

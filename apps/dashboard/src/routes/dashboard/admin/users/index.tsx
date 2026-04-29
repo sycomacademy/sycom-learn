@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
+import { InviteUserDialog } from "@/components/dashboard/admin/invite-user-dialog";
 import { USER_COLUMNS, type UserRow } from "@/components/dashboard/admin/users-columns";
 import { UsersFilters } from "@/components/dashboard/admin/users-filters";
 import {
@@ -34,6 +35,7 @@ function UsersAllPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
   const [isSearchPending, startSearchTransition] = useTransition();
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const query = useQuery(trpc.admin.listUsers.queryOptions(search));
 
@@ -104,10 +106,13 @@ function UsersAllPage() {
     <div className="flex flex-col gap-4 px-6 py-6">
       <UsersToolbar
         isFetching={query.isFetching || isSearchPending}
+        onNewInvite={() => setInviteOpen(true)}
         onRefresh={() => query.refetch()}
         onSearchChange={setSearchInput}
         search={searchInput}
       />
+
+      <InviteUserDialog onOpenChange={setInviteOpen} open={inviteOpen} />
 
       <UsersFilters
         onRolesChange={(roles) =>

@@ -21,8 +21,8 @@ export function DashboardShell({
         className="flex max-h-[calc(100vh-16px)] flex-col overflow-scroll border-x md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-0"
         role="main"
       >
-        <DashboardHeader />
         <ImpersonationBanner />
+        <DashboardHeader />
         <Separator aria-hidden="true" className="bg-secondary" />
         <div className="flex-1 p-4">{children}</div>
       </SidebarInset>
