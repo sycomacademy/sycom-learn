@@ -83,7 +83,7 @@ export type ListAdminOrganizationsFilter = {
   limit: number;
   offset: number;
   search?: string;
-  sortBy: "name" | "slug" | "createdAt" | "memberCount";
+  sortBy: "name" | "slug" | "createdAt" | "memberCount" | "owner";
   sortDirection: "asc" | "desc";
 };
 
@@ -103,6 +103,7 @@ export type AdminOrganizationRow = {
   cohortCount: number;
   pendingInviteCount: number;
   members: AdminOrganizationMemberPreview[];
+  owner: AdminOrganizationMemberPreview | null;
 };
 
 export type ListAdminOrganizationsResult = {
@@ -138,17 +139,29 @@ export async function listAdminOrganizations(
 
   const where = filters.length > 0 ? and(...filters) : undefined;
   const memberCountExpr = sql<number>`cast(count(distinct ${member.userId}) as integer)`;
+  const ownerNameExpr = sql<string>`(
+    select u.name
+    from auth.member m
+    join auth."user" u on u.id = m.user_id
+    where m.organization_id = ${organization.id} and m.role = 'owner'
+    limit 1
+  )`;
   const orderBy =
     sortBy === "memberCount"
       ? [
           sortDirection === "desc" ? desc(memberCountExpr) : asc(memberCountExpr),
           asc(organization.name),
         ]
-      : [
-          sortDirection === "desc"
-            ? desc(ORGANIZATION_SORT_COLUMNS[sortBy])
-            : asc(ORGANIZATION_SORT_COLUMNS[sortBy]),
-        ];
+      : sortBy === "owner"
+        ? [
+            sortDirection === "desc" ? desc(ownerNameExpr) : asc(ownerNameExpr),
+            asc(organization.name),
+          ]
+        : [
+            sortDirection === "desc"
+              ? desc(ORGANIZATION_SORT_COLUMNS[sortBy])
+              : asc(ORGANIZATION_SORT_COLUMNS[sortBy]),
+          ];
 
   const [rows, totalRow] = await Promise.all([
     database
@@ -161,6 +174,7 @@ export async function listAdminOrganizations(
         memberCount: memberCountExpr,
         cohortCount: sql<number>`cast(count(distinct ${cohort.id}) as integer)`,
         pendingInviteCount: sql<number>`cast(count(distinct case when ${invitation.status} = 'pending' then ${invitation.id} end) as integer)`,
+        ownerName: ownerNameExpr,
       })
       .from(organization)
       .leftJoin(member, eq(member.organizationId, organization.id))
@@ -184,6 +198,7 @@ export async function listAdminOrganizations(
             id: user.id,
             name: user.name,
             image: user.image,
+            role: member.role,
           })
           .from(member)
           .innerJoin(user, eq(user.id, member.userId))
@@ -192,8 +207,16 @@ export async function listAdminOrganizations(
       : [];
 
   const membersByOrganization = new Map<string, AdminOrganizationMemberPreview[]>();
+  const ownersByOrganization = new Map<string, AdminOrganizationMemberPreview>();
 
   for (const memberRow of memberRows) {
+    if (memberRow.role === "owner") {
+      ownersByOrganization.set(memberRow.organizationId, {
+        id: memberRow.id,
+        name: memberRow.name,
+        image: memberRow.image,
+      });
+    }
     const previews = membersByOrganization.get(memberRow.organizationId) ?? [];
     if (previews.length < 6) {
       previews.push({ id: memberRow.id, name: memberRow.name, image: memberRow.image });
@@ -205,6 +228,7 @@ export async function listAdminOrganizations(
     rows: rows.map((row) => ({
       ...row,
       members: membersByOrganization.get(row.id) ?? [],
+      owner: ownersByOrganization.get(row.id) ?? null,
     })),
     totalCount: totalRow[0]?.value ?? 0,
   };

@@ -62,6 +62,29 @@ function MembersCell({ organization }: { organization: OrganizationRow }) {
   );
 }
 
+function OwnerCell({ organization }: { organization: OrganizationRow }) {
+  if (!organization.owner) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className="flex max-w-48 min-w-0 items-center gap-2">
+      <Avatar className="size-7 shrink-0 rounded-full">
+        {organization.owner.image ? (
+          <AvatarImage
+            alt={organization.owner.name}
+            src={buildImageUrl(organization.owner.image)}
+          />
+        ) : null}
+        <AvatarFallback className="text-[10px] font-medium text-muted-foreground">
+          {getInitials(organization.owner.name).slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <span className="truncate text-sm">{organization.owner.name}</span>
+    </div>
+  );
+}
+
 const columnHelper = createColumnHelper<OrganizationRow>();
 
 export const ORGANIZATION_COLUMNS = [
@@ -82,6 +105,12 @@ export const ORGANIZATION_COLUMNS = [
     id: "memberCount",
     header: "Members",
     cell: ({ row }) => <MembersCell organization={row.original} />,
+    enableSorting: true,
+  }),
+  columnHelper.accessor("owner", {
+    id: "owner",
+    header: "Owner",
+    cell: ({ row }) => <OwnerCell organization={row.original} />,
     enableSorting: true,
   }),
   columnHelper.accessor("createdAt", {
