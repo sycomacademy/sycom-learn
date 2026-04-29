@@ -1,41 +1,21 @@
 import type { UserRole } from "@sycom/db/schema/auth";
 import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
+import { formatDate } from "@sycom/ui/lib/date";
 import { createColumnHelper } from "@tanstack/react-table";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { UserActions } from "./user-actions";
+import { getUserInitials, getUserStatus, ROLE_LABELS, STATUS_CONFIG } from "./users-helpers";
 
 export type UserRow = AppRouterOutputs["admin"]["listUsers"]["rows"][number];
-
-const ROLE_LABEL: Record<UserRole, string> = {
-  platform_admin: "Admin",
-  content_creator: "Content Creator",
-  public_student: "Student",
-};
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 function UserCell({ user }: { user: UserRow }) {
   return (
     <div className="flex max-w-72 min-w-0 items-center gap-3">
       <Avatar className="size-8 rounded-md">
         <AvatarFallback className="rounded-md text-xs font-medium text-muted-foreground">
-          {initials(user.name)}
+          {getUserInitials(user.name)}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0">
@@ -52,25 +32,13 @@ function RolePill({ role }: { role: UserRole | null }) {
   }
   return (
     <Badge className="rounded-md px-2 py-0.5 font-normal" size="default" variant="outline">
-      {ROLE_LABEL[role]}
+      {ROLE_LABELS[role]}
     </Badge>
   );
 }
 
-const STATUS_CONFIG = {
-  verified: { label: "Verified", variant: "success" },
-  unverified: { label: "Unverified", variant: "warning" },
-  banned: { label: "Banned", variant: "error" },
-} as const;
-
-function getStatus(user: UserRow): keyof typeof STATUS_CONFIG {
-  if (user.banned) return "banned";
-  if (!user.emailVerified) return "unverified";
-  return "verified";
-}
-
 function StatusBadge({ user }: { user: UserRow }) {
-  const cfg = STATUS_CONFIG[getStatus(user)];
+  const cfg = STATUS_CONFIG[getUserStatus(user)];
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
 }
 
@@ -128,7 +96,7 @@ export const USER_COLUMNS = [
   columnHelper.accessor("createdAt", {
     id: "createdAt",
     header: "Joined",
-    cell: ({ row }) => dateFormatter.format(row.original.createdAt),
+    cell: ({ row }) => formatDate(row.original.createdAt),
     enableSorting: true,
     meta: { className: "text-muted-foreground" },
   }),

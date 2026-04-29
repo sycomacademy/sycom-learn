@@ -1,4 +1,5 @@
 import type * as React from "react";
+import { ImpersonationBanner } from "@/components/dashboard/admin/impersonation-banner";
 import { Separator } from "@sycom/ui/components/separator";
 import { SidebarInset, SidebarProvider } from "@sycom/ui/components/sidebar";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
@@ -21,6 +22,7 @@ export function DashboardShell({
         role="main"
       >
         <DashboardHeader />
+        <ImpersonationBanner />
         <Separator aria-hidden="true" className="bg-secondary" />
         <div className="flex-1 p-4">{children}</div>
       </SidebarInset>

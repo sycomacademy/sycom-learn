@@ -37,7 +37,7 @@ export const publicStudentRole = platformAc.newRole({
 });
 
 export const platformRoles = {
-  admin: platformAdminRole,
+  platform_admin: platformAdminRole,
   content_creator: contentCreatorRole,
   public_student: publicStudentRole,
 };

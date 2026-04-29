@@ -66,7 +66,7 @@ describe("platform roles — public_student", () => {
 describe("platformRoles map", () => {
   test("exposes the three expected keys", () => {
     expect(Object.keys(platformRoles).sort()).toEqual(
-      ["admin", "content_creator", "public_student"].sort(),
+      ["platform_admin", "content_creator", "public_student"].sort(),
     );
   });
 });

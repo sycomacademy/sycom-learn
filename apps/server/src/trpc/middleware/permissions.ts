@@ -6,7 +6,7 @@ import type { Context } from "../context";
 import { t } from "../t";
 
 const platformRoleMap = {
-  platform_admin: platformRoles.admin,
+  platform_admin: platformRoles.platform_admin,
   content_creator: platformRoles.content_creator,
   public_student: platformRoles.public_student,
 } as const;

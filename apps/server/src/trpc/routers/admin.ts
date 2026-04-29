@@ -2,13 +2,14 @@ import { auth } from "@sycom/auth";
 import { getAdminUserById, listAdminUsers } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 
-import { adminProcedure, router } from "../init";
+import { adminProcedure, protectedProcedure, router } from "../init";
 import {
   banAdminUserSchema,
   getAdminUserSchema,
   impersonateAdminUserSchema,
   listAdminUsersSchema,
   setAdminUserRoleSchema,
+  unbanAdminUserSchema,
 } from "../schemas";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 
@@ -21,7 +22,7 @@ export const adminRouter = router({
     }),
 
   getUser: adminProcedure
-    .use(platformPermissionMiddleware({ user: ["list"] }))
+    .use(platformPermissionMiddleware({ user: ["list", "get"] }))
     .input(getAdminUserSchema)
     .query(async ({ ctx, input }) => {
       const user = await getAdminUserById(ctx.db, input);
@@ -38,6 +39,18 @@ export const adminRouter = router({
     .input(banAdminUserSchema)
     .mutation(async ({ ctx, input }) => {
       await auth.api.banUser({
+        body: input,
+        headers: ctx.headers,
+      });
+
+      return { success: true };
+    }),
+
+  unbanUser: adminProcedure
+    .use(platformPermissionMiddleware({ user: ["ban"] }))
+    .input(unbanAdminUserSchema)
+    .mutation(async ({ ctx, input }) => {
+      await auth.api.unbanUser({
         body: input,
         headers: ctx.headers,
       });
@@ -66,19 +79,19 @@ export const adminRouter = router({
     .use(platformPermissionMiddleware({ user: ["impersonate"] }))
     .input(impersonateAdminUserSchema)
     .mutation(async ({ ctx, input }) => {
-      const response = await auth.api.impersonateUser({
+      await auth.api.impersonateUser({
         body: input,
         headers: ctx.headers,
-        asResponse: true,
       });
-
-      const cookies = "getSetCookie" in response.headers ? response.headers.getSetCookie() : [];
-      const fallbackCookie = response.headers.get("set-cookie");
-
-      for (const cookie of cookies.length > 0 ? cookies : fallbackCookie ? [fallbackCookie] : []) {
-        ctx.context.header("set-cookie", cookie, { append: true });
-      }
 
       return { success: true };
     }),
+
+  stopImpersonatingUser: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!ctx.session.session.impersonatedBy) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "You are not impersonating any user" });
+    }
+    await auth.api.stopImpersonating({ headers: ctx.headers });
+    return { success: true };
+  }),
 });

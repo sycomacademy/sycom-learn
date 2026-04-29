@@ -1,25 +1,11 @@
-import { userRoleEnum, type UserRole } from "@sycom/db/schema/auth";
+import type { UserRole } from "@sycom/db/schema/auth";
 import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
 import type { ReactNode } from "react";
 
+import { ROLE_OPTIONS, STATUS_LABELS } from "./users-helpers";
 import { adminUserStatusSchema, type AdminUserStatus } from "./users-schema";
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  platform_admin: "Admin",
-  content_creator: "Content Creator",
-  public_student: "Student",
-};
-
-const STATUS_LABELS: Record<AdminUserStatus, string> = {
-  verified: "Verified",
-  unverified: "Unverified email",
-  banned: "Banned",
-};
-
-const ROLE_OPTIONS: FilterOption[] = userRoleEnum.enumValues.map((value: UserRole) => ({
-  value,
-  label: ROLE_LABELS[value],
-}));
+const roleOptions: FilterOption[] = ROLE_OPTIONS.map((option) => ({ ...option }));
 
 const STATUS_OPTIONS: FilterOption[] = adminUserStatusSchema.options.map(
   (value: AdminUserStatus) => ({
@@ -47,7 +33,7 @@ export function UsersFilters({
         allLabel="All roles"
         label="Role"
         onValueChange={(values) => onRolesChange(values as UserRole[])}
-        options={ROLE_OPTIONS}
+        options={roleOptions}
         value={roles}
       />
       <FilterCombobox

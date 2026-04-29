@@ -32,6 +32,11 @@ export const banAdminUserSchema = z.object({
 });
 export type BanAdminUserInput = z.infer<typeof banAdminUserSchema>;
 
+export const unbanAdminUserSchema = z.object({
+  userId: z.string().min(1),
+});
+export type UnbanAdminUserInput = z.infer<typeof unbanAdminUserSchema>;
+
 export const setAdminUserRoleSchema = z.object({
   userId: z.string().min(1),
   role: z.enum(userRoleEnum.enumValues),

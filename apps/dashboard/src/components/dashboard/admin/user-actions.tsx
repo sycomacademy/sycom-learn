@@ -8,7 +8,7 @@ import {
   Trash2Icon,
   UserRoundIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
@@ -68,26 +68,17 @@ import { Spinner } from "@sycom/ui/components/spinner";
 import { Textarea } from "@sycom/ui/components/textarea";
 import { toastManager } from "@sycom/ui/components/toast";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
+import { formatDateTime } from "@sycom/ui/lib/date";
 import type { UserRole } from "@sycom/db/schema/auth";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  platform_admin: "Admin",
-  content_creator: "Content Creator",
-  public_student: "Student",
-};
-
-const STATUS_CONFIG = {
-  verified: { label: "Verified", variant: "success" },
-  unverified: { label: "Unverified", variant: "warning" },
-  banned: { label: "Banned", variant: "error" },
-} as const;
-
-const ROLE_OPTIONS = [
-  { value: "platform_admin", label: ROLE_LABELS.platform_admin },
-  { value: "content_creator", label: ROLE_LABELS.content_creator },
-  { value: "public_student", label: ROLE_LABELS.public_student },
-] as const;
+import {
+  getUserInitials,
+  getUserStatus,
+  ROLE_LABELS,
+  ROLE_OPTIONS,
+  STATUS_CONFIG,
+} from "./users-helpers";
 
 const banUserSchema = z.object({
   banReason: z.string().check(z.minLength(1, "Ban reason is required"), z.maxLength(500)),
@@ -103,30 +94,7 @@ type SetUserRoleInput = z.infer<typeof setUserRoleSchema>;
 
 type UserRow = AppRouterOutputs["admin"]["listUsers"]["rows"][number];
 type AdminUserDetails = AppRouterOutputs["admin"]["getUser"];
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});
-
-function getStatus(user: Pick<UserRow, "banned" | "emailVerified">): keyof typeof STATUS_CONFIG {
-  if (user.banned) return "banned";
-  if (!user.emailVerified) return "unverified";
-  return "verified";
-}
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
+type UserStatus = (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG];
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -138,7 +106,7 @@ function DetailRow({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
-  const status = STATUS_CONFIG[getStatus(user)];
+  const status = STATUS_CONFIG[getUserStatus(user)];
 
   return (
     <>
@@ -147,7 +115,7 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
           <Avatar className="size-12 rounded-md">
             {user.image ? <AvatarImage alt={user.name} src={buildImageUrl(user.image)} /> : null}
             <AvatarFallback className="rounded-md text-sm font-medium text-muted-foreground">
-              {initials(user.name)}
+              {getUserInitials(user.name)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 space-y-2">
@@ -169,8 +137,8 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
       <SheetPanel>
         <dl>
           <DetailRow label="User ID" value={<span className="break-all">{user.id}</span>} />
-          <DetailRow label="Joined" value={dateFormatter.format(user.createdAt)} />
-          <DetailRow label="Updated" value={dateFormatter.format(user.updatedAt)} />
+          <DetailRow label="Joined" value={formatDateTime(user.createdAt)} />
+          <DetailRow label="Updated" value={formatDateTime(user.updatedAt)} />
           <DetailRow label="Email verified" value={user.emailVerified ? "Yes" : "No"} />
           <DetailRow
             label="Accounts"
@@ -186,7 +154,7 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
                     Reason: {user.banReason ?? "Not provided"}
                   </p>
                   <p className="text-muted-foreground">
-                    Expires: {user.banExpires ? dateFormatter.format(user.banExpires) : "Never"}
+                    Expires: {user.banExpires ? formatDateTime(user.banExpires) : "Never"}
                   </p>
                 </div>
               ) : (
@@ -202,9 +170,7 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
                   <p>{user.profile.bio?.trim() ? user.profile.bio : "No bio"}</p>
                   <p className="text-muted-foreground">
                     Onboarded:{" "}
-                    {user.profile.onboardedAt
-                      ? dateFormatter.format(user.profile.onboardedAt)
-                      : "No"}
+                    {user.profile.onboardedAt ? formatDateTime(user.profile.onboardedAt) : "No"}
                   </p>
                   <p className="break-all text-muted-foreground">
                     Settings: {JSON.stringify(user.profile.settings ?? {}, null, 0)}
@@ -224,7 +190,7 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
                     <div key={organization.id}>
                       <p>{organization.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {organization.role} since {dateFormatter.format(organization.joinedAt)}
+                        {organization.role} since {formatDateTime(organization.joinedAt)}
                       </p>
                     </div>
                   ))}
@@ -243,7 +209,7 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
                     <div key={cohort.id}>
                       <p>{cohort.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {cohort.organizationName} since {dateFormatter.format(cohort.joinedAt)}
+                        {cohort.organizationName} since {formatDateTime(cohort.joinedAt)}
                       </p>
                     </div>
                   ))}
@@ -260,6 +226,330 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
         <SheetClose render={<Button variant="outline" />}>Close</SheetClose>
       </SheetFooter>
     </>
+  );
+}
+
+type UserActionsMenuProps = {
+  user: UserRow;
+  canManageRole: boolean;
+  canBan: boolean;
+  canImpersonate: boolean;
+  onView: () => void;
+  onChangeRole: () => void;
+  onBanToggle: () => void;
+  onImpersonate: () => void;
+  onDelete: () => void;
+};
+
+function UserActionsMenu({
+  user,
+  canManageRole,
+  canBan,
+  canImpersonate,
+  onView,
+  onChangeRole,
+  onBanToggle,
+  onImpersonate,
+  onDelete,
+}: UserActionsMenuProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button aria-label={`Open actions for ${user.name}`} size="icon-sm" variant="ghost">
+            <MoreHorizontalIcon className="size-4" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="min-w-0">
+            <div className="flex flex-col gap-0.5">
+              <span className="truncate text-sm font-medium text-foreground">{user.name}</span>
+              <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={onView}>
+            <UserRoundIcon />
+            View user
+          </DropdownMenuItem>
+          {canManageRole ? (
+            <DropdownMenuItem onClick={onChangeRole}>
+              <ShieldIcon />
+              Change role
+            </DropdownMenuItem>
+          ) : null}
+          {canBan ? (
+            <DropdownMenuItem onClick={onBanToggle}>
+              <BanIcon />
+              {user.banned ? "Unban user" : "Ban user"}
+            </DropdownMenuItem>
+          ) : null}
+          {canImpersonate ? (
+            <DropdownMenuItem onClick={onImpersonate}>
+              <EyeIcon />
+              Impersonate
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onDelete} variant="destructive">
+          <Trash2Icon />
+          Delete user
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+type ChangeRoleDialogProps = {
+  open: boolean;
+  user: UserRow;
+  currentRole: UserRole;
+  selectedRole: UserRole;
+  roleForm: ReturnType<typeof useForm<SetUserRoleInput>>;
+  onOpenChange: (open: boolean) => void;
+  onCancel: () => void;
+  onSubmit: (data: SetUserRoleInput) => Promise<void>;
+};
+
+function ChangeRoleDialog({
+  open,
+  user,
+  currentRole,
+  selectedRole,
+  roleForm,
+  onOpenChange,
+  onCancel,
+  onSubmit,
+}: ChangeRoleDialogProps) {
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogPopup>
+        <DialogHeader>
+          <DialogTitle>Change role</DialogTitle>
+          <DialogDescription>
+            Update {user.name}&apos;s platform role. They are currently {ROLE_LABELS[currentRole]}.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogPanel>
+          <Form {...roleForm}>
+            <form className="space-y-4" onSubmit={roleForm.handleSubmit(onSubmit)}>
+              <FormField
+                control={roleForm.control}
+                name="role"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <Field>
+                      <FieldLabel>Role</FieldLabel>
+                      <FormControl>
+                        <Select
+                          items={ROLE_OPTIONS.map((option) => ({
+                            value: option.value,
+                            label: option.label,
+                          }))}
+                          onValueChange={(value) => {
+                            if (value) {
+                              field.onChange(value);
+                            }
+                          }}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {ROLE_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                    </Field>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter variant="bare">
+                <Button onClick={onCancel} type="button" variant="outline">
+                  Cancel
+                </Button>
+                <Button
+                  disabled={selectedRole === currentRole}
+                  loading={roleForm.formState.isSubmitting}
+                  type="submit"
+                >
+                  Update role
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogPanel>
+      </DialogPopup>
+    </Dialog>
+  );
+}
+
+type BanUserDialogProps = {
+  open: boolean;
+  user: UserRow;
+  banForm: ReturnType<typeof useForm<BanUserInput>>;
+  onOpenChange: (open: boolean) => void;
+  onCancel: () => void;
+  onSubmit: (data: BanUserInput) => Promise<void>;
+};
+
+function BanUserDialog({
+  open,
+  user,
+  banForm,
+  onOpenChange,
+  onCancel,
+  onSubmit,
+}: BanUserDialogProps) {
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogPopup>
+        <DialogHeader>
+          <DialogTitle>Ban user</DialogTitle>
+          <DialogDescription>
+            This will prevent {user.name} from signing in and revoke their existing sessions.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogPanel>
+          <Form {...banForm}>
+            <form className="space-y-4" onSubmit={banForm.handleSubmit(onSubmit)}>
+              <FormField
+                control={banForm.control}
+                name="banReason"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <Field>
+                      <FieldLabel>Ban reason</FieldLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Explain why this account is being banned"
+                          rows={4}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                    </Field>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter variant="bare">
+                <Button onClick={onCancel} type="button" variant="outline">
+                  Cancel
+                </Button>
+                <Button
+                  loading={banForm.formState.isSubmitting}
+                  type="submit"
+                  variant="destructive"
+                >
+                  Ban user
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogPanel>
+      </DialogPopup>
+    </Dialog>
+  );
+}
+
+type ImpersonateUserDialogProps = {
+  open: boolean;
+  user: UserRow;
+  status: UserStatus;
+  isPending: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+function ImpersonateUserDialog({
+  open,
+  user,
+  status,
+  isPending,
+  onOpenChange,
+  onCancel,
+  onConfirm,
+}: ImpersonateUserDialogProps) {
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogPopup>
+        <DialogHeader>
+          <DialogTitle>Impersonate user</DialogTitle>
+          <DialogDescription>
+            You will be signed in as {user.name}. You can stop impersonating from the account
+            banner.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogPanel>
+          <div className="rounded-none border bg-muted/40 p-3 text-sm">
+            <p className="font-medium text-foreground">{user.name}</p>
+            <p className="text-muted-foreground">{user.email}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge variant={status.variant}>{status.label}</Badge>
+              <Badge variant="outline">{user.role ? ROLE_LABELS[user.role] : "No role"}</Badge>
+            </div>
+          </div>
+        </DialogPanel>
+        <DialogFooter>
+          <Button onClick={onCancel} type="button" variant="outline">
+            Cancel
+          </Button>
+          <Button loading={isPending} onClick={onConfirm}>
+            Impersonate user
+          </Button>
+        </DialogFooter>
+      </DialogPopup>
+    </Dialog>
+  );
+}
+
+type DeleteUserDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+function DeleteUserDialog({ open, onOpenChange }: DeleteUserDialogProps) {
+  return (
+    <AlertDialog onOpenChange={onOpenChange} open={open}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete user</AlertDialogTitle>
+          <AlertDialogDescription>
+            Delete behavior is not implemented yet while the team decides between hard and soft
+            delete.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
+          <AlertDialogClose
+            render={<Button variant="destructive" />}
+            onClick={() => {
+              toastManager.add({
+                title: "Delete flow not implemented",
+                description: "No changes were made to this account.",
+                type: "info",
+              });
+            }}
+          >
+            Delete user
+          </AlertDialogClose>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -296,17 +586,21 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
     defaultValues: { role: currentRole },
   });
 
-  useEffect(() => {
-    if (roleOpen) {
+  const handleRoleOpenChange = (open: boolean) => {
+    setRoleOpen(open);
+
+    if (open) {
       roleForm.reset({ role: currentRole });
     }
-  }, [currentRole, roleForm, roleOpen]);
+  };
 
-  useEffect(() => {
-    if (!banOpen) {
+  const handleBanOpenChange = (open: boolean) => {
+    setBanOpen(open);
+
+    if (!open) {
       banForm.reset({ banReason: "" });
     }
-  }, [banForm, banOpen]);
+  };
 
   const invalidateUsers = async () => {
     await Promise.all([
@@ -329,6 +623,26 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
       onError: (error) => {
         toastManager.add({
           title: "Failed to ban user",
+          description: error.message,
+          type: "error",
+        });
+      },
+    }),
+  });
+
+  const unbanMutation = useMutation({
+    ...trpc.admin.unbanUser.mutationOptions({
+      onSuccess: async () => {
+        toastManager.add({
+          title: "User unbanned",
+          description: `${user.name} can sign in again.`,
+          type: "success",
+        });
+        await invalidateUsers();
+      },
+      onError: (error) => {
+        toastManager.add({
+          title: "Failed to unban user",
           description: error.message,
           type: "error",
         });
@@ -385,59 +699,29 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
     await setRoleMutation.mutateAsync({ userId: user.id, role: data.role });
   };
 
-  const status = useMemo(() => STATUS_CONFIG[getStatus(user)], [user]);
+  const status = STATUS_CONFIG[getUserStatus(user)];
+  const handleBanToggle = () => {
+    if (user.banned) {
+      unbanMutation.mutate({ userId: user.id });
+      return;
+    }
+
+    setBanOpen(true);
+  };
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button aria-label={`Open actions for ${user.name}`} size="icon-sm" variant="ghost">
-              <MoreHorizontalIcon className="size-4" />
-            </Button>
-          }
-        />
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel className="min-w-0">
-              <div className="flex flex-col gap-0.5">
-                <span className="truncate text-sm font-medium text-foreground">{user.name}</span>
-                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-              </div>
-            </DropdownMenuLabel>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => setViewOpen(true)}>
-              <UserRoundIcon />
-              View user
-            </DropdownMenuItem>
-            {canManageRole ? (
-              <DropdownMenuItem onClick={() => setRoleOpen(true)}>
-                <ShieldIcon />
-                Change role
-              </DropdownMenuItem>
-            ) : null}
-            {canBan ? (
-              <DropdownMenuItem onClick={() => setBanOpen(true)}>
-                <BanIcon />
-                Ban user
-              </DropdownMenuItem>
-            ) : null}
-            {canImpersonate ? (
-              <DropdownMenuItem onClick={() => setImpersonateOpen(true)}>
-                <EyeIcon />
-                Impersonate
-              </DropdownMenuItem>
-            ) : null}
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setDeleteOpen(true)} variant="destructive">
-            <Trash2Icon />
-            Delete user
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <UserActionsMenu
+        canBan={canBan}
+        canImpersonate={canImpersonate}
+        canManageRole={canManageRole}
+        onBanToggle={handleBanToggle}
+        onChangeRole={() => setRoleOpen(true)}
+        onDelete={() => setDeleteOpen(true)}
+        onImpersonate={() => setImpersonateOpen(true)}
+        onView={() => setViewOpen(true)}
+        user={user}
+      />
 
       <Sheet onOpenChange={setViewOpen} open={viewOpen}>
         <SheetPopup>
@@ -463,182 +747,37 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
         </SheetPopup>
       </Sheet>
 
-      <Dialog onOpenChange={setRoleOpen} open={roleOpen}>
-        <DialogPopup>
-          <DialogHeader>
-            <DialogTitle>Change role</DialogTitle>
-            <DialogDescription>
-              Update {user.name}&apos;s platform role. They are currently {ROLE_LABELS[currentRole]}
-              .
-            </DialogDescription>
-          </DialogHeader>
-          <DialogPanel>
-            <Form {...roleForm}>
-              <form className="space-y-4" onSubmit={roleForm.handleSubmit(onRoleSubmit)}>
-                <FormField
-                  control={roleForm.control}
-                  name="role"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <Field>
-                        <FieldLabel>Role</FieldLabel>
-                        <FormControl>
-                          <Select
-                            items={ROLE_OPTIONS.map((option) => ({
-                              value: option.value,
-                              label: option.label,
-                            }))}
-                            onValueChange={(value) => {
-                              if (value) {
-                                field.onChange(value);
-                              }
-                            }}
-                            value={field.value}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                {ROLE_OPTIONS.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                      </Field>
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter variant="bare">
-                  <Button onClick={() => setRoleOpen(false)} type="button" variant="outline">
-                    Cancel
-                  </Button>
-                  <Button
-                    disabled={selectedRole === currentRole}
-                    loading={roleForm.formState.isSubmitting}
-                    type="submit"
-                  >
-                    Update role
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogPanel>
-        </DialogPopup>
-      </Dialog>
+      <ChangeRoleDialog
+        currentRole={currentRole}
+        onCancel={() => setRoleOpen(false)}
+        onOpenChange={handleRoleOpenChange}
+        onSubmit={onRoleSubmit}
+        open={roleOpen}
+        roleForm={roleForm}
+        selectedRole={selectedRole}
+        user={user}
+      />
 
-      <Dialog onOpenChange={setBanOpen} open={banOpen}>
-        <DialogPopup>
-          <DialogHeader>
-            <DialogTitle>Ban user</DialogTitle>
-            <DialogDescription>
-              This will prevent {user.name} from signing in and revoke their existing sessions.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogPanel>
-            <Form {...banForm}>
-              <form className="space-y-4" onSubmit={banForm.handleSubmit(onBanSubmit)}>
-                <FormField
-                  control={banForm.control}
-                  name="banReason"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <Field>
-                        <FieldLabel>Ban reason</FieldLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Explain why this account is being banned"
-                            rows={4}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                      </Field>
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter variant="bare">
-                  <Button onClick={() => setBanOpen(false)} type="button" variant="outline">
-                    Cancel
-                  </Button>
-                  <Button
-                    loading={banForm.formState.isSubmitting}
-                    type="submit"
-                    variant="destructive"
-                  >
-                    Ban user
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogPanel>
-        </DialogPopup>
-      </Dialog>
+      <BanUserDialog
+        banForm={banForm}
+        onCancel={() => setBanOpen(false)}
+        onOpenChange={handleBanOpenChange}
+        onSubmit={onBanSubmit}
+        open={banOpen}
+        user={user}
+      />
 
-      <Dialog onOpenChange={setImpersonateOpen} open={impersonateOpen}>
-        <DialogPopup>
-          <DialogHeader>
-            <DialogTitle>Impersonate user</DialogTitle>
-            <DialogDescription>
-              You will be signed in as {user.name}. You can stop impersonating from the account
-              menu.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogPanel>
-            <div className="rounded-none border bg-muted/40 p-3 text-sm">
-              <p className="font-medium text-foreground">{user.name}</p>
-              <p className="text-muted-foreground">{user.email}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant={status.variant}>{status.label}</Badge>
-                <Badge variant="outline">{user.role ? ROLE_LABELS[user.role] : "No role"}</Badge>
-              </div>
-            </div>
-          </DialogPanel>
-          <DialogFooter>
-            <Button onClick={() => setImpersonateOpen(false)} type="button" variant="outline">
-              Cancel
-            </Button>
-            <Button
-              loading={impersonateMutation.isPending}
-              onClick={() => impersonateMutation.mutate({ userId: user.id })}
-            >
-              Impersonate user
-            </Button>
-          </DialogFooter>
-        </DialogPopup>
-      </Dialog>
+      <ImpersonateUserDialog
+        isPending={impersonateMutation.isPending}
+        onCancel={() => setImpersonateOpen(false)}
+        onConfirm={() => impersonateMutation.mutate({ userId: user.id })}
+        onOpenChange={setImpersonateOpen}
+        open={impersonateOpen}
+        status={status}
+        user={user}
+      />
 
-      <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete user</AlertDialogTitle>
-            <AlertDialogDescription>
-              Delete behavior is not implemented yet while the team decides between hard and soft
-              delete.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
-            <AlertDialogClose
-              render={<Button variant="destructive" />}
-              onClick={() => {
-                toastManager.add({
-                  title: "Delete flow not implemented",
-                  description: "No changes were made to this account.",
-                  type: "info",
-                });
-              }}
-            >
-              Delete user
-            </AlertDialogClose>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteUserDialog onOpenChange={setDeleteOpen} open={deleteOpen} />
     </>
   );
 }
