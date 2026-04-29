@@ -65,6 +65,39 @@ export const deleteAdminUserSchema = z.object({
 });
 export type DeleteAdminUserInput = z.infer<typeof deleteAdminUserSchema>;
 
+export const listPlatformInvitationsSchema = z.object({});
+export type ListPlatformInvitationsInput = z.infer<typeof listPlatformInvitationsSchema>;
+
+export const resendPlatformInvitationSchema = z.object({
+  invitationId: z.string().min(1),
+});
+export type ResendPlatformInvitationInput = z.infer<typeof resendPlatformInvitationSchema>;
+
+export const revokePlatformInvitationSchema = z.object({
+  invitationId: z.string().min(1),
+});
+export type RevokePlatformInvitationInput = z.infer<typeof revokePlatformInvitationSchema>;
+
+export const adminLogsAnalyticsOverviewSchema = z.object({});
+export type AdminLogsAnalyticsOverviewInput = z.infer<typeof adminLogsAnalyticsOverviewSchema>;
+
+// invite
+export const getPlatformInvitationByTokenSchema = z.object({
+  token: z.string().min(1),
+});
+export type GetPlatformInvitationByTokenInput = z.infer<typeof getPlatformInvitationByTokenSchema>;
+
+export const acceptPlatformInvitationSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8).max(128),
+});
+export type AcceptPlatformInvitationInput = z.infer<typeof acceptPlatformInvitationSchema>;
+
+export const rejectPlatformInvitationSchema = z.object({
+  token: z.string().min(1),
+});
+export type RejectPlatformInvitationInput = z.infer<typeof rejectPlatformInvitationSchema>;
+
 // feedback
 export const submitFeedbackSchema = z.object({
   email: z.email(),

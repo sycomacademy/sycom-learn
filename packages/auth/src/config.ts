@@ -1,7 +1,14 @@
-import { render, ResetPasswordEmail, sendEmail, VerifyEmail } from "@sycom/emails";
+import {
+  PlatformInviteEmail,
+  render,
+  ResetPasswordEmail,
+  sendEmail,
+  VerifyEmail,
+} from "@sycom/emails";
 import { env } from "@sycom/env/server";
 import { APIError } from "better-auth";
 import { createLoggerWithContext } from "@sycom/logger";
+import type { UserRole } from "@sycom/db/schema/auth";
 
 const authLogger = createLoggerWithContext("auth");
 
@@ -73,6 +80,36 @@ export const sendVerificationEmail = async (user: AuthEmailUser, url: string) =>
     subject: "Verify your email for Sycom LMS",
     html,
     label: "email verification",
+  });
+};
+
+export const sendPlatformInviteEmail = async ({
+  to,
+  inviteUrl,
+  inviterName,
+  name,
+  role,
+}: {
+  to: string;
+  inviteUrl: string;
+  inviterName: string;
+  name: string;
+  role: UserRole;
+}) => {
+  const html = await render(
+    PlatformInviteEmail({
+      inviteUrl,
+      inviterName,
+      name,
+      role,
+    }),
+  );
+
+  await sendAuthEmail({
+    to,
+    subject: "Your Sycom LMS invitation",
+    html,
+    label: "platform invite",
   });
 };
 

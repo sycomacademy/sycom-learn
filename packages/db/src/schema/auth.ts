@@ -29,6 +29,14 @@ export const organizationRoleEnum = auth.enum("organization_role", [
 ]);
 export type OrganizationRole = (typeof organizationRoleEnum.enumValues)[number];
 
+export const platformInvitationStatusEnum = auth.enum("platform_invitation_status", [
+  "pending",
+  "accepted",
+  "rejected",
+  "revoked",
+]);
+export type PlatformInvitationStatus = (typeof platformInvitationStatusEnum.enumValues)[number];
+
 export const user = auth.table("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -192,6 +200,34 @@ export const invitation = auth.table(
   ],
 );
 
+export const platform_invitation = auth.table(
+  "platform_invitations",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    email: text("email").notNull(),
+    name: text("name").notNull(),
+    role: userRoleEnum("role").notNull(),
+    status: platformInvitationStatusEnum("status").default("pending").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    inviterName: text("inviter_name").notNull(),
+    inviterUserId: text("inviter_user_id").references(() => user.id, { onDelete: "set null" }),
+    acceptedUserId: text("accepted_user_id").references(() => user.id, { onDelete: "set null" }),
+    expiresAt: timestamp("expires_at").notNull(),
+    acceptedAt: timestamp("accepted_at"),
+    rejectedAt: timestamp("rejected_at"),
+    revokedAt: timestamp("revoked_at"),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    index("platform_invitation_email_idx").on(table.email),
+    index("platform_invitation_status_idx").on(table.status),
+    index("platform_invitation_inviterUserId_idx").on(table.inviterUserId),
+  ],
+);
+
 export const passkey = auth.table(
   "passkey",
   {
@@ -238,6 +274,12 @@ export const userRelations = relations(user, ({ many, one }) => ({
   cohort_members: many(cohort_member),
   members: many(member),
   invitations: many(invitation),
+  platformInvitationsSent: many(platform_invitation, {
+    relationName: "platform_invitation_inviter",
+  }),
+  platformInvitationsAccepted: many(platform_invitation, {
+    relationName: "platform_invitation_accepted",
+  }),
   passkeys: many(passkey),
   profile: one(profile, {
     fields: [user.id],
@@ -307,6 +349,19 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
   }),
 }));
 
+export const platformInvitationRelations = relations(platform_invitation, ({ one }) => ({
+  inviter: one(user, {
+    fields: [platform_invitation.inviterUserId],
+    references: [user.id],
+    relationName: "platform_invitation_inviter",
+  }),
+  acceptedUser: one(user, {
+    fields: [platform_invitation.acceptedUserId],
+    references: [user.id],
+    relationName: "platform_invitation_accepted",
+  }),
+}));
+
 export const passkeyRelations = relations(passkey, ({ one }) => ({
   user: one(user, {
     fields: [passkey.userId],
@@ -347,6 +402,9 @@ export type NewMember = typeof member.$inferInsert;
 
 export type Invitation = typeof invitation.$inferSelect;
 export type NewInvitation = typeof invitation.$inferInsert;
+
+export type PlatformInvitation = typeof platform_invitation.$inferSelect;
+export type NewPlatformInvitation = typeof platform_invitation.$inferInsert;
 
 export type Passkey = typeof passkey.$inferSelect;
 export type NewPasskey = typeof passkey.$inferInsert;

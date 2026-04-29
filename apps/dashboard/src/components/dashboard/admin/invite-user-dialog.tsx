@@ -45,7 +45,7 @@ type InviteUserDialogProps = {
 export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const listUsersQueryKey = trpc.admin.listUsers.queryKey();
+  const listInvitesQueryKey = trpc.admin.listPlatformInvitations.queryKey({});
 
   const form = useForm<InviteUserInput>({
     resolver: zodResolver(inviteUserSchema),
@@ -57,12 +57,12 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
       onSuccess: async (_data, input) => {
         toastManager.add({
           title: "Invite sent",
-          description: `${input.name} will receive a 'set password' email at ${input.email}.`,
+          description: `${input.name} will receive an invitation email at ${input.email}.`,
           type: "success",
         });
         onOpenChange(false);
         form.reset({ email: "", name: "", role: "public_student" });
-        await queryClient.invalidateQueries({ queryKey: listUsersQueryKey });
+        await queryClient.invalidateQueries({ queryKey: listInvitesQueryKey });
       },
       onError: (error) => {
         toastManager.add({
@@ -95,7 +95,7 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
         <DialogHeader>
           <DialogTitle>Invite user</DialogTitle>
           <DialogDescription>
-            Create an account and send a set-password email so the user can sign in.
+            Send an invitation email so the user can set a password and create their account.
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>
@@ -193,3 +193,5 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
     </Dialog>
   );
 }
+
+export { InviteUserDialog as PublicInviteDialog };

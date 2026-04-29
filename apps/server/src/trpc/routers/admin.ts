@@ -1,24 +1,75 @@
 import { auth } from "@sycom/auth";
-import { getAdminUserById, listAdminUsers } from "@sycom/db/queries/index";
+import { sendPlatformInviteEmail } from "@sycom/auth/config";
+import {
+  createPlatformInvitation,
+  getActivePlatformInvitationByEmail,
+  getAdminUserById,
+  getPlatformInvitationById,
+  getPlatformUserByEmail,
+  listAdminUsers,
+  listPlatformInvitations,
+  markPlatformInvitationRevoked,
+  refreshPlatformInvitation,
+} from "@sycom/db/queries/index";
 import { env } from "@sycom/env/server";
 import { TRPCError } from "@trpc/server";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import { adminProcedure, protectedProcedure, router } from "../init";
 import {
+  adminLogsAnalyticsOverviewSchema,
   banAdminUserSchema,
   deleteAdminUserSchema,
   getAdminUserSchema,
   impersonateAdminUserSchema,
   inviteAdminUserSchema,
+  listPlatformInvitationsSchema,
   listAdminUsersSchema,
+  resendPlatformInvitationSchema,
+  revokePlatformInvitationSchema,
   sendVerificationEmailAdminSchema,
   setAdminUserRoleSchema,
   unbanAdminUserSchema,
 } from "../schemas";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 
+const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function buildInviteToken() {
+  const token = randomBytes(32).toString("base64url");
+
+  return {
+    token,
+    tokenHash: createHash("sha256").update(token).digest("hex"),
+  };
+}
+
+function buildInviteUrl(token: string) {
+  const dashboardUrl = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
+  return `${dashboardUrl}/accept-invite?token=${token}`;
+}
+
 export const adminRouter = router({
+  getLogsAnalyticsOverview: adminProcedure.input(adminLogsAnalyticsOverviewSchema).query(() => {
+    return {
+      activity: {
+        totalEvents24h: 1482,
+        flaggedEvents: 7,
+        activeSources: 5,
+      },
+      reports: {
+        pending: 12,
+        inReview: 4,
+        resolvedThisWeek: 19,
+      },
+      feedback: {
+        unread: 8,
+        triagedToday: 6,
+        averageResponseHours: 14,
+      },
+    };
+  }),
+
   listUsers: adminProcedure
     .use(platformPermissionMiddleware({ user: ["list"] }))
     .input(listAdminUsersSchema)
@@ -117,36 +168,144 @@ export const adminRouter = router({
     .use(platformPermissionMiddleware({ user: ["create"] }))
     .input(inviteAdminUserSchema)
     .mutation(async ({ ctx, input }) => {
-      const password = randomBytes(32).toString("base64url");
+      const [existingUser, activeInvite] = await Promise.all([
+        getPlatformUserByEmail(ctx.db, { email: input.email }),
+        getActivePlatformInvitationByEmail(ctx.db, { email: input.email }),
+      ]);
 
-      await auth.api.createUser({
-        body: {
-          email: input.email,
-          name: input.name,
-          password,
-          role: input.role,
-          data: { emailVerified: true },
-        },
-        headers: ctx.headers,
+      if (existingUser) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A user with this email already exists.",
+        });
+      }
+
+      if (activeInvite) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "An active invitation already exists for this email.",
+        });
+      }
+
+      const { token, tokenHash } = buildInviteToken();
+      const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
+      const invitation = await createPlatformInvitation(ctx.db, {
+        email: input.email,
+        name: input.name,
+        role: input.role,
+        tokenHash,
+        inviterName: ctx.session.user.name,
+        inviterUserId: ctx.session.user.id,
+        expiresAt,
       });
 
-      const dashboardUrl = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
-
       try {
-        await auth.api.requestPasswordReset({
-          body: {
-            email: input.email,
-            redirectTo: `${dashboardUrl}/reset-password`,
-          },
-          headers: ctx.headers,
+        await sendPlatformInviteEmail({
+          to: input.email,
+          inviteUrl: buildInviteUrl(token),
+          inviterName: ctx.session.user.name,
+          name: input.name,
+          role: input.role,
         });
       } catch {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message:
-            "User created but invitation email failed to send. Use 'Send verification email' to retry.",
+            "Invitation created but the email failed to send. Resend it from Public invites.",
         });
       }
+
+      return { success: true, invitationId: invitation.id };
+    }),
+
+  listPlatformInvitations: adminProcedure
+    .use(platformPermissionMiddleware({ user: ["list"] }))
+    .input(listPlatformInvitationsSchema)
+    .query(async ({ ctx }) => {
+      return await listPlatformInvitations(ctx.db);
+    }),
+
+  resendPlatformInvitation: adminProcedure
+    .use(platformPermissionMiddleware({ user: ["create"] }))
+    .input(resendPlatformInvitationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const invitation = await getPlatformInvitationById(ctx.db, input);
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+      }
+
+      if (invitation.status === "accepted") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Accepted invitations cannot be resent.",
+        });
+      }
+
+      if (invitation.status === "rejected") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Rejected invitations cannot be resent.",
+        });
+      }
+
+      const existingUser = await getPlatformUserByEmail(ctx.db, { email: invitation.email });
+
+      if (existingUser) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A user with this email already exists.",
+        });
+      }
+
+      const { token, tokenHash } = buildInviteToken();
+      const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
+      const refreshedInvitation = await refreshPlatformInvitation(ctx.db, {
+        invitationId: invitation.id,
+        tokenHash,
+        expiresAt,
+      });
+
+      if (!refreshedInvitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+      }
+
+      await sendPlatformInviteEmail({
+        to: invitation.email,
+        inviteUrl: buildInviteUrl(token),
+        inviterName: refreshedInvitation.inviterName,
+        name: refreshedInvitation.name,
+        role: refreshedInvitation.role,
+      });
+
+      return { success: true };
+    }),
+
+  revokePlatformInvitation: adminProcedure
+    .use(platformPermissionMiddleware({ user: ["create"] }))
+    .input(revokePlatformInvitationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const invitation = await getPlatformInvitationById(ctx.db, input);
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+      }
+
+      if (invitation.status === "accepted") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Accepted invitations cannot be revoked.",
+        });
+      }
+
+      if (invitation.status === "rejected") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Rejected invitations cannot be revoked.",
+        });
+      }
+
+      await markPlatformInvitationRevoked(ctx.db, { invitationId: invitation.id });
 
       return { success: true };
     }),

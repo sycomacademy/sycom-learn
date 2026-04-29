@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { BuildingIcon } from "@sycom/ui/components/animated/icons/building";
+import { ChartLineIcon } from "@sycom/ui/components/animated/icons/chart-line";
 import { LayersIcon } from "@sycom/ui/components/animated/icons/layers";
 import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
 import { MessageCircleQuestionIcon } from "@sycom/ui/components/animated/icons/message-circle-question";
@@ -57,6 +58,11 @@ const PLATFORM_ADMIN_NAV_GROUPS: NavGroup[] = [
       { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" },
       { icon: UsersIcon, label: "Users", to: "/dashboard/admin/users" },
       { icon: BuildingIcon, label: "Organizations", to: "/dashboard/admin/organizations" },
+      {
+        icon: ChartLineIcon,
+        label: "Logs/Analytics",
+        to: "/dashboard/admin/logs-analytics",
+      },
     ],
   },
   {
