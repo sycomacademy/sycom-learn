@@ -28,11 +28,16 @@ import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { getInitials, snakeCaseToTitleCase } from "@sycom/ui/lib/string";
 import { Facehash } from "facehash";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
+import { KeyboardShortcutsIcon } from "@sycom/ui/components/animated/icons/keyboard-shortcuts";
+import { MessageCircleQuestionIcon } from "@sycom/ui/components/animated/icons/message-circle-question";
+import { SettingsIcon } from "@sycom/ui/components/animated/icons/settings";
 import { ThemeToggleIcon } from "@sycom/ui/components/animated/icons/theme-toggle";
 import { useTheme } from "next-themes";
 import type { UserRole } from "@sycom/db/schema/auth";
+import { useKeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-provider";
 
 export function DashboardUserMenu(): React.ReactElement {
+  const { openShortcutsDialog } = useKeyboardShortcutsDialog();
   const {
     data: { user, profile },
   } = useUser();
@@ -130,12 +135,42 @@ export function DashboardUserMenu(): React.ReactElement {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <AnimateIcon animateOnHover>
+            <DropdownMenuItem
+              closeOnClick
+              onClick={() => void router.navigate({ to: "/dashboard/settings/security" })}
+            >
+              <SettingsIcon aria-hidden />
+              <span className="flex-1">Settings</span>
+            </DropdownMenuItem>
+          </AnimateIcon>
+          <AnimateIcon animateOnHover>
+            <DropdownMenuItem
+              closeOnClick
+              onClick={() => void router.navigate({ to: "/support/contact" })}
+            >
+              <MessageCircleQuestionIcon aria-hidden />
+              <span className="flex-1">Support</span>
+            </DropdownMenuItem>
+          </AnimateIcon>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
           <AnimateIcon>
             <DropdownMenuItem closeOnClick={false} onClick={toggleTheme}>
               <ThemeToggleIcon animate={resolvedTheme === "dark"} />
               <span className="flex-1">Toggle theme</span>
               <DropdownMenuShortcut>
                 {getShortcutLabelById(shortcutIds.TOGGLE_THEME)}
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </AnimateIcon>
+          <AnimateIcon animateOnHover>
+            <DropdownMenuItem closeOnClick onClick={() => openShortcutsDialog()}>
+              <KeyboardShortcutsIcon aria-hidden />
+              <span className="flex-1">Keyboard shortcuts</span>
+              <DropdownMenuShortcut>
+                {getShortcutLabelById(shortcutIds.OPEN_SHORTCUTS_HELP)}
               </DropdownMenuShortcut>
             </DropdownMenuItem>
           </AnimateIcon>

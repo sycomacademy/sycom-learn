@@ -14,13 +14,10 @@
 
 - SEO and performance {started}
     - metadata,ogs, sitemap, robots.txt, etc.
-    - optimize media like <Image /> component in nextjs
-    - Proper suspense handling
     - FCP, LCP, TTFB etc. and lighthouse scores stuff
     - bundle size optimization and request waterfalls
 
 - cool features
-    - keyboard shortcuts
     - 404 page stuff
 
 - features

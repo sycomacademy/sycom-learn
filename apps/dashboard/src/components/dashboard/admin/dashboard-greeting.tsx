@@ -36,7 +36,7 @@ export function DashboardGreeting({
 
     const interval = setInterval(
       () => setGreeting(getTimeOfDayGreetingForTimeZone(tz)),
-      5 * 60 * 1000,
+      10 * 60 * 1000,
     );
 
     return () => clearInterval(interval);
