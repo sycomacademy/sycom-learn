@@ -10,12 +10,7 @@ import { admin, lastLoginMethod, organization } from "better-auth/plugins";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { orgAc, orgRoles, platformAc, platformRoles } from "./permissions";
 import type { UserRole } from "@sycom/db/schema/auth";
-import {
-  betterAuthLogger,
-  devOrThrow,
-  sendResetPasswordEmail,
-  sendVerificationEmail,
-} from "./config";
+import { betterAuthLogger, sendResetPasswordEmail, sendVerificationEmail } from "./config";
 
 export function createAuth() {
   const db = createDb();
@@ -139,10 +134,6 @@ export function createAuth() {
         schema: {
           team: { modelName: "cohort" },
           teamMember: { modelName: "cohort_member" },
-        },
-        sendInvitationEmail: async (data) => {
-          const inviteUrl = `${env.BETTER_AUTH_URL}/invite/${data.id}`;
-          devOrThrow("org-invite", data.email, inviteUrl);
         },
       }),
       admin({

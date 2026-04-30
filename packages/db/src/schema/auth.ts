@@ -187,6 +187,10 @@ export const invitation = auth.table(
     email: text("email").notNull(),
     role: organizationRoleEnum("role"),
     teamId: text("team_id"),
+    /** Set for custom org-owner invite emails and token lookup; BA plugin-created rows omit this */
+    tokenHash: text("token_hash"),
+    /** Display name captured at invite time (owner first + last from admin flow) */
+    inviteeName: text("invitee_name"),
     status: text("status").default("pending").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
     createdAt,
@@ -197,6 +201,7 @@ export const invitation = auth.table(
   (table) => [
     index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
+    uniqueIndex("invitation_token_hash_uidx").on(table.tokenHash),
   ],
 );
 

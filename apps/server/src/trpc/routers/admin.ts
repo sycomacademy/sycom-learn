@@ -1,5 +1,5 @@
 import { auth } from "@sycom/auth";
-import { sendPlatformInviteEmail } from "@sycom/auth/config";
+import { sendOrgOwnerAssignedEmail, sendPlatformInviteEmail } from "@sycom/auth/config";
 import {
   createOrganizationWithOwner,
   createPlatformInvitation,
@@ -55,6 +55,11 @@ function buildInviteToken() {
 function buildInviteUrl(token: string) {
   const dashboardUrl = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
   return `${dashboardUrl}/accept-invite?token=${token}`;
+}
+
+function buildOrganizationOwnerInviteUrl(token: string) {
+  const dashboardUrl = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
+  return `${dashboardUrl}/accept-invite?kind=organization&token=${encodeURIComponent(token)}`;
 }
 
 export const adminRouter = router({
@@ -362,6 +367,9 @@ export const adminRouter = router({
         });
       }
 
+      const ownerAccount = await getPlatformUserByEmail(ctx.db, { email: input.ownerEmail });
+      const inviteToken = ownerAccount ? undefined : buildInviteToken();
+
       const result = await createOrganizationWithOwner(ctx.db, {
         name: input.name,
         slug: input.slug,
@@ -370,7 +378,49 @@ export const adminRouter = router({
         ownerLastName: input.ownerLastName,
         inviterUserId: ctx.session.user.id,
         invitationTtlMs: INVITE_TTL_MS,
+        invitationTokenHash: inviteToken?.tokenHash,
       });
+
+      const inviteeDisplayName =
+        `${input.ownerFirstName.trim()} ${input.ownerLastName.trim()}`.trim();
+      const inviterName =
+        ctx.session.user.name ?? ctx.session.user.email ?? "A Sycom administrator";
+      const dashboardOrigin = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
+
+      try {
+        if (result.owner.kind === "existing") {
+          await sendOrgOwnerAssignedEmail({
+            to: input.ownerEmail,
+            organizationName: input.name,
+            inviterName,
+            inviteeName: inviteeDisplayName,
+            ctaUrl: `${dashboardOrigin.replace(/\/$/, "")}/dashboard/organisation/setup`,
+            scenario: "existing_account",
+          });
+        } else {
+          if (!inviteToken) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Missing invite token.",
+            });
+          }
+
+          await sendOrgOwnerAssignedEmail({
+            to: input.ownerEmail,
+            organizationName: input.name,
+            inviterName,
+            inviteeName: inviteeDisplayName,
+            ctaUrl: buildOrganizationOwnerInviteUrl(inviteToken.token),
+            scenario: "new_account",
+          });
+        }
+      } catch {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Organization was created but the invitation email failed to send. Contact the organisation owner manually.",
+        });
+      }
 
       return {
         success: true,

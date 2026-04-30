@@ -35,6 +35,7 @@ import { Route as DashboardSupportContactRouteImport } from "./routes/dashboard/
 import { Route as DashboardSettingsSecurityRouteImport } from "./routes/dashboard/settings/security";
 import { Route as DashboardSettingsPreferencesRouteImport } from "./routes/dashboard/settings/preferences";
 import { Route as DashboardSettingsGeneralRouteImport } from "./routes/dashboard/settings/general";
+import { Route as DashboardOrganisationSetupRouteImport } from "./routes/dashboard/organisation/setup";
 import { Route as DashboardAdminUsersRouteRouteImport } from "./routes/dashboard/admin/users/route";
 import { Route as DashboardAdminOrganizationsRouteRouteImport } from "./routes/dashboard/admin/organizations/route";
 import { Route as DashboardAdminLogsAnalyticsRouteRouteImport } from "./routes/dashboard/admin/logs-analytics/route";
@@ -179,6 +180,11 @@ const DashboardSettingsGeneralRoute = DashboardSettingsGeneralRouteImport.update
   path: "/general",
   getParentRoute: () => DashboardSettingsRouteRoute,
 } as any);
+const DashboardOrganisationSetupRoute = DashboardOrganisationSetupRouteImport.update({
+  id: "/organisation/setup",
+  path: "/organisation/setup",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
 const DashboardAdminUsersRouteRoute = DashboardAdminUsersRouteRouteImport.update({
   id: "/users",
   path: "/users",
@@ -274,6 +280,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/admin/logs-analytics": typeof DashboardAdminLogsAnalyticsRouteRouteWithChildren;
   "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
   "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
+  "/dashboard/organisation/setup": typeof DashboardOrganisationSetupRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
@@ -307,6 +314,7 @@ export interface FileRoutesByTo {
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard": typeof DashboardIndexRoute;
+  "/dashboard/organisation/setup": typeof DashboardOrganisationSetupRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   "/dashboard/admin/logs-analytics": typeof DashboardAdminLogsAnalyticsRouteRouteWithChildren;
   "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
   "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
+  "/dashboard/organisation/setup": typeof DashboardOrganisationSetupRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
@@ -393,6 +402,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/logs-analytics"
     | "/dashboard/admin/organizations"
     | "/dashboard/admin/users"
+    | "/dashboard/organisation/setup"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | "/verify-email"
     | "/dashboard/$"
     | "/dashboard"
+    | "/dashboard/organisation/setup"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/logs-analytics"
     | "/dashboard/admin/organizations"
     | "/dashboard/admin/users"
+    | "/dashboard/organisation/setup"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
@@ -680,6 +692,13 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard/settings/general";
       preLoaderRoute: typeof DashboardSettingsGeneralRouteImport;
       parentRoute: typeof DashboardSettingsRouteRoute;
+    };
+    "/dashboard/organisation/setup": {
+      id: "/dashboard/organisation/setup";
+      path: "/organisation/setup";
+      fullPath: "/dashboard/organisation/setup";
+      preLoaderRoute: typeof DashboardOrganisationSetupRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/admin/users": {
       id: "/dashboard/admin/users";
@@ -907,6 +926,7 @@ interface DashboardRouteRouteChildren {
   DashboardSupportRouteRoute: typeof DashboardSupportRouteRouteWithChildren;
   DashboardSplatRoute: typeof DashboardSplatRoute;
   DashboardIndexRoute: typeof DashboardIndexRoute;
+  DashboardOrganisationSetupRoute: typeof DashboardOrganisationSetupRoute;
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
@@ -915,6 +935,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardSupportRouteRoute: DashboardSupportRouteRouteWithChildren,
   DashboardSplatRoute: DashboardSplatRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardOrganisationSetupRoute: DashboardOrganisationSetupRoute,
 };
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(

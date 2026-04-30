@@ -196,6 +196,24 @@ export const rejectPlatformInvitationSchema = z.object({
 });
 export type RejectPlatformInvitationInput = z.infer<typeof rejectPlatformInvitationSchema>;
 
+export const getOrganizationInvitationByTokenSchema = z.object({
+  token: z.string().min(1),
+});
+export type GetOrganizationInvitationByTokenInput = z.infer<
+  typeof getOrganizationInvitationByTokenSchema
+>;
+
+export const acceptOrganizationInvitationSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8).max(128),
+});
+export type AcceptOrganizationInvitationInput = z.infer<typeof acceptOrganizationInvitationSchema>;
+
+export const rejectOrganizationInvitationSchema = z.object({
+  token: z.string().min(1),
+});
+export type RejectOrganizationInvitationInput = z.infer<typeof rejectOrganizationInvitationSchema>;
+
 // feedback
 export const submitFeedbackSchema = z.object({
   email: z.email(),

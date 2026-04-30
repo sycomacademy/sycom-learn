@@ -132,6 +132,8 @@ export type CreateOrganizationInput = {
   ownerLastName: string;
   inviterUserId: string;
   invitationTtlMs: number;
+  /** SHA-256 hex of the raw invite token; required when creating a pending org-owner invitation */
+  invitationTokenHash?: string;
 };
 
 export type ListAdminOrganizationsResult = {
@@ -616,6 +618,11 @@ export async function createOrganizationWithOwner(
 
     const invitationId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + input.invitationTtlMs);
+    const inviteeName = `${input.ownerFirstName.trim()} ${input.ownerLastName.trim()}`.trim();
+
+    if (!input.invitationTokenHash) {
+      throw new Error("invitationTokenHash is required when inviting a new organization owner");
+    }
 
     await database.insert(invitation).values({
       id: invitationId,
@@ -625,6 +632,8 @@ export async function createOrganizationWithOwner(
       status: "pending",
       expiresAt,
       inviterId: input.inviterUserId,
+      tokenHash: input.invitationTokenHash,
+      inviteeName: inviteeName.length > 0 ? inviteeName : null,
     });
 
     return {

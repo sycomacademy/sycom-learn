@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import * as z from "zod/mini";
 
+import { OrganizationOwnerInviteForm } from "@/components/auth/organization-owner-invite-form";
 import { PublicInviteForm } from "@/components/auth/public-invite-form";
 import { AuthLeftPanel } from "@/components/auth/left-panel";
 import { Link } from "@/components/layout/foresight-link";
@@ -9,6 +11,7 @@ import { BRAND, Image } from "@sycom/ui/image";
 
 const acceptInviteSearchSchema = z.object({
   token: z.optional(z.string()),
+  kind: z.optional(z.literal("organization")),
 });
 
 export const Route = createFileRoute("/accept-invite")({
@@ -18,7 +21,7 @@ export const Route = createFileRoute("/accept-invite")({
       { title: "Accept invite | Sycom LMS" },
       {
         name: "description",
-        content: "Accept your Sycom LMS platform invite.",
+        content: "Accept your Sycom LMS invitation or organisation owner invite.",
       },
     ],
   }),
@@ -26,7 +29,29 @@ export const Route = createFileRoute("/accept-invite")({
 });
 
 function AcceptInvitePage() {
-  const { token } = Route.useSearch();
+  const { token, kind } = Route.useSearch();
+
+  let form: ReactNode;
+
+  if (token && kind === "organization") {
+    form = <OrganizationOwnerInviteForm token={token} />;
+  } else if (token) {
+    form = <PublicInviteForm token={token} />;
+  } else {
+    form = (
+      <div className="w-full space-y-4 text-center">
+        <div className="space-y-2">
+          <h1 className="text-lg font-medium tracking-tight">Missing invite token</h1>
+          <p className="text-sm text-muted-foreground">
+            This invite link is incomplete. Ask an admin to send a new one.
+          </p>
+        </div>
+        <Link className={buttonVariants({ variant: "outline" })} to="/sign-in">
+          Back to sign in
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-svh bg-background p-1">
@@ -50,23 +75,7 @@ function AcceptInvitePage() {
             </Link>
           </div>
 
-          <div className="flex h-full w-full items-center justify-center">
-            {token ? (
-              <PublicInviteForm token={token} />
-            ) : (
-              <div className="w-full space-y-4 text-center">
-                <div className="space-y-2">
-                  <h1 className="text-lg font-medium tracking-tight">Missing invite token</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This invite link is incomplete. Ask an admin to send a new one.
-                  </p>
-                </div>
-                <Link className={buttonVariants({ variant: "outline" })} to="/sign-in">
-                  Back to sign in
-                </Link>
-              </div>
-            )}
-          </div>
+          <div className="flex h-full w-full items-center justify-center">{form}</div>
         </div>
       </div>
     </div>

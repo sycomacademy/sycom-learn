@@ -4,6 +4,7 @@ import { createLoggerWithContext } from "@sycom/logger";
 import type { ReactNode } from "react";
 import { Resend } from "resend";
 export { ResetPasswordEmail } from "./templates/reset-password";
+export { OrgOwnerAssignedEmail } from "./templates/org-owner-assigned";
 export { PlatformInviteEmail } from "./templates/platform-invite";
 export { VerifyEmail } from "./templates/verify-email";
 

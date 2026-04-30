@@ -1,4 +1,5 @@
 import {
+  OrgOwnerAssignedEmail,
   PlatformInviteEmail,
   render,
   ResetPasswordEmail,
@@ -15,20 +16,6 @@ const authLogger = createLoggerWithContext("auth");
 type AuthEmailUser = {
   email: string;
   name?: string | null;
-};
-
-/**
- * Email stubs — log the URL so you can copy/paste it. In prod, they
- * throw loudly so signups fail visibly instead of silently skipping
- * verification.
- */
-export const devOrThrow = (label: string, to: string, url: string) => {
-  if (env.NODE_ENV === "production") {
-    throw new APIError("INTERNAL_SERVER_ERROR", {
-      message: `Email provider not configured (${label}). Configure one before enabling in production.`,
-    });
-  }
-  authLogger.info(`[auth:${label}] to=${to} url=${url}`);
 };
 
 const sendAuthEmail = async ({
@@ -110,6 +97,34 @@ export const sendPlatformInviteEmail = async ({
     subject: "Your Sycom LMS invitation",
     html,
     label: "platform invite",
+  });
+};
+
+export type SendOrgOwnerAssignedEmailInput = {
+  to: string;
+  organizationName: string;
+  inviterName: string;
+  inviteeName: string;
+  ctaUrl: string;
+  scenario: "new_account" | "existing_account";
+};
+
+export const sendOrgOwnerAssignedEmail = async (input: SendOrgOwnerAssignedEmailInput) => {
+  const html = await render(
+    OrgOwnerAssignedEmail({
+      organizationName: input.organizationName,
+      inviterName: input.inviterName,
+      inviteeName: input.inviteeName,
+      ctaUrl: input.ctaUrl,
+      scenario: input.scenario,
+    }),
+  );
+
+  await sendAuthEmail({
+    to: input.to,
+    subject: `You’ve been assigned owner of ${input.organizationName}`,
+    html,
+    label: "org owner assigned",
   });
 };
 

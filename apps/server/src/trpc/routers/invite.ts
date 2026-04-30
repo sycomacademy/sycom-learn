@@ -1,7 +1,11 @@
 import { auth } from "@sycom/auth";
 import {
+  getOrganizationInvitationByTokenHash,
   getPlatformInvitationByTokenHash,
   getPlatformUserByEmail,
+  insertOrganizationOwnerMember,
+  markOrganizationInvitationAccepted,
+  markOrganizationInvitationRejected,
   markPlatformInvitationAccepted,
   markPlatformInvitationRejected,
 } from "@sycom/db/queries/index";
@@ -10,8 +14,11 @@ import { createHash } from "node:crypto";
 
 import { publicProcedure, router } from "../init";
 import {
+  acceptOrganizationInvitationSchema,
   acceptPlatformInvitationSchema,
+  getOrganizationInvitationByTokenSchema,
   getPlatformInvitationByTokenSchema,
+  rejectOrganizationInvitationSchema,
   rejectPlatformInvitationSchema,
 } from "../schemas";
 
@@ -131,4 +138,129 @@ export const inviteRouter = router({
 
     return { success: true };
   }),
+
+  getOrganizationInviteByToken: publicProcedure
+    .input(getOrganizationInvitationByTokenSchema)
+    .query(async ({ ctx, input }) => {
+      const invitation = await getOrganizationInvitationByTokenHash(ctx.db, {
+        tokenHash: hashInvitationToken(input.token),
+      });
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+      }
+
+      return invitation;
+    }),
+
+  acceptOrganizationInvite: publicProcedure
+    .input(acceptOrganizationInvitationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const invitation = await getOrganizationInvitationByTokenHash(ctx.db, {
+        tokenHash: hashInvitationToken(input.token),
+      });
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+      }
+
+      if (invitation.status === "accepted") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This invitation has already been accepted.",
+        });
+      }
+
+      if (invitation.status === "rejected") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This invitation has already been declined.",
+        });
+      }
+
+      if (invitation.status === "expired") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This invitation has expired." });
+      }
+
+      const existingUser = await getPlatformUserByEmail(ctx.db, {
+        email: invitation.email,
+      });
+
+      if (existingUser) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "An account with this email already exists. Sign in and open Organisation setup.",
+        });
+      }
+
+      const displayName =
+        invitation.inviteeName?.trim() || invitation.email.split("@")[0] || "User";
+
+      const createdUser = await auth.api.createUser({
+        body: {
+          email: invitation.email,
+          name: displayName,
+          password: input.password,
+          role: "public_student",
+          data: {
+            emailVerified: true,
+          },
+        },
+      });
+
+      await insertOrganizationOwnerMember(ctx.db, {
+        organizationId: invitation.organizationId,
+        userId: createdUser.user.id,
+      });
+
+      const updated = await markOrganizationInvitationAccepted(ctx.db, {
+        invitationId: invitation.id,
+      });
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Could not finalize this invitation. Try again.",
+        });
+      }
+
+      return { success: true };
+    }),
+
+  rejectOrganizationInvite: publicProcedure
+    .input(rejectOrganizationInvitationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const invitation = await getOrganizationInvitationByTokenHash(ctx.db, {
+        tokenHash: hashInvitationToken(input.token),
+      });
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+      }
+
+      if (invitation.status === "accepted") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This invitation has already been accepted.",
+        });
+      }
+
+      if (invitation.status === "rejected") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This invitation has already been declined.",
+        });
+      }
+
+      if (invitation.status === "expired") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This invitation has expired." });
+      }
+
+      await markOrganizationInvitationRejected(ctx.db, {
+        invitationId: invitation.id,
+      });
+
+      return { success: true };
+    }),
 });
