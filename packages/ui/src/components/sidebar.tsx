@@ -29,7 +29,20 @@ const SIDEBAR_COOKIE_MAX_AGE: number = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH: string = "16rem";
 const SIDEBAR_WIDTH_MOBILE: string = "18rem";
 const SIDEBAR_WIDTH_ICON: string = "3.5rem";
-const SIDEBAR_KEYBOARD_SHORTCUT: string = "b";
+
+type SidebarKeyboardShortcut = {
+  readonly key: string;
+  readonly alt?: boolean;
+  readonly ctrl?: boolean;
+  readonly meta?: boolean;
+  readonly mod?: boolean;
+  readonly shift?: boolean;
+};
+
+const SIDEBAR_KEYBOARD_SHORTCUT: SidebarKeyboardShortcut = {
+  key: "b",
+  mod: true,
+};
 
 const sidebarMenuButtonVariants = cva(
   "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground motion-reduce:transition-none [&>span:last-child]:truncate [&>span:last-child]:transition-opacity [&>span:last-child]:duration-240 [&>span:last-child]:ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:[&>span:last-child]:transition-none [&>svg]:shrink-0 [&>svg:not([class*='size-'])]:size-4",
@@ -79,6 +92,7 @@ export function SidebarProvider({
   defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
+  keyboardShortcut = SIDEBAR_KEYBOARD_SHORTCUT,
   className,
   style,
   children,
@@ -87,6 +101,7 @@ export function SidebarProvider({
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  keyboardShortcut?: SidebarKeyboardShortcut | null;
 }): React.ReactElement {
   const isMobile = useMediaQuery("max-md");
   const [openMobile, setOpenMobile] = React.useState(false);
@@ -122,8 +137,26 @@ export function SidebarProvider({
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
+    if (!keyboardShortcut) {
+      return;
+    }
+
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
+      const isMac = /(mac|iphone|ipad|ipod)/i.test(navigator.platform || navigator.userAgent);
+      const expectedCtrl = Boolean(keyboardShortcut.ctrl || (!isMac && keyboardShortcut.mod));
+      const expectedMeta = Boolean(keyboardShortcut.meta || (isMac && keyboardShortcut.mod));
+      const expectedAlt = Boolean(keyboardShortcut.alt);
+      const expectedShift = Boolean(keyboardShortcut.shift);
+      const expectedKey = keyboardShortcut.key.trim().toLowerCase();
+
+      const isKeyMatch = event.key.trim().toLowerCase() === expectedKey;
+      const isModifierMatch =
+        event.ctrlKey === expectedCtrl &&
+        event.metaKey === expectedMeta &&
+        event.altKey === expectedAlt &&
+        event.shiftKey === expectedShift;
+
+      if (isKeyMatch && isModifierMatch) {
         event.preventDefault();
         toggleSidebar();
       }
@@ -131,7 +164,7 @@ export function SidebarProvider({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar]);
+  }, [keyboardShortcut, toggleSidebar]);
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.

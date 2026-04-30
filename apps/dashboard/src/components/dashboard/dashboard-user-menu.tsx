@@ -18,8 +18,12 @@ import {
   DropdownMenuTrigger,
 } from "@sycom/ui/components/dropdown-menu";
 import { toastManager } from "@sycom/ui/components/toast";
+import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
+import { createShortcutBindings } from "@/lib/shortcuts/bindings";
+import { shortcutIds } from "@/lib/shortcuts/definitions";
+import { getShortcutLabelById } from "@/lib/shortcuts/format";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { getInitials, snakeCaseToTitleCase } from "@sycom/ui/lib/string";
 import { Facehash } from "facehash";
@@ -39,6 +43,10 @@ export function DashboardUserMenu(): React.ReactElement {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   const enableFacehash = profile.settings?.enableFacehash;
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
 
   const handleSignOut = async () => {
     if (isSigningOut) return;
@@ -65,6 +73,17 @@ export function DashboardUserMenu(): React.ReactElement {
       setIsSigningOut(false);
     }
   };
+
+  useGlobalShortcuts(
+    createShortcutBindings({
+      TOGGLE_THEME: toggleTheme,
+      SIGN_OUT: isSigningOut
+        ? undefined
+        : () => {
+            void handleSignOut();
+          },
+    }),
+  );
 
   return (
     <DropdownMenu>
@@ -112,13 +131,12 @@ export function DashboardUserMenu(): React.ReactElement {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <AnimateIcon>
-            <DropdownMenuItem
-              closeOnClick={false}
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            >
+            <DropdownMenuItem closeOnClick={false} onClick={toggleTheme}>
               <ThemeToggleIcon animate={resolvedTheme === "dark"} />
               <span className="flex-1">Toggle theme</span>
-              <DropdownMenuShortcut>Y</DropdownMenuShortcut>
+              <DropdownMenuShortcut>
+                {getShortcutLabelById(shortcutIds.TOGGLE_THEME)}
+              </DropdownMenuShortcut>
             </DropdownMenuItem>
           </AnimateIcon>
         </DropdownMenuGroup>
@@ -134,7 +152,7 @@ export function DashboardUserMenu(): React.ReactElement {
             <LogOutIcon />
             <span>{isSigningOut ? "Signing out..." : "Log out"}</span>
             <DropdownMenuShortcut className="text-destructive group-focus/dropdown-menu-item:text-destructive">
-              Q
+              {getShortcutLabelById(shortcutIds.SIGN_OUT)}
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         </AnimateIcon>
