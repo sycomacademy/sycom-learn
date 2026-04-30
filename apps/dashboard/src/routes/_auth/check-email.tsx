@@ -10,6 +10,12 @@ import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@sycom/ui/components/accordion";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -121,39 +127,48 @@ function CheckEmailPage() {
             </p>
           </div>
 
-          {email ? (
-            <div className="flex flex-col gap-2">
-              <Button
-                disabled={cooldown > 0 || resending}
-                loading={resending}
-                onClick={handleResend}
-                size="lg"
-                variant="outline"
-              >
-                {cooldown > 0
-                  ? `Resend in ${cooldown}s`
-                  : isReset
-                    ? "Resend reset email"
-                    : "Resend verification email"}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Wrong email?{" "}
-                <Link
-                  className={cn(buttonVariants({ variant: "link" }), "px-0")}
-                  to={isReset ? "/forgot-password" : "/sign-up"}
-                >
-                  {isReset ? "Try a different address" : "Use a different address"}
-                </Link>
-              </p>
-            </div>
-          ) : (
-            <Link
-              className={buttonVariants({ variant: "outline" })}
-              to={isReset ? "/forgot-password" : "/sign-up"}
-            >
-              {isReset ? "Back to reset" : "Back to sign up"}
-            </Link>
-          )}
+          <Accordion className="border-t border-border">
+            <AccordionItem value="resend">
+              <AccordionTrigger className="py-2 text-sm font-medium">
+                I didn't receive any email?
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3 overflow-visible px-1 pt-3 pb-1">
+                {email ? (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      disabled={cooldown > 0 || resending}
+                      loading={resending}
+                      onClick={handleResend}
+                      size="lg"
+                      variant="outline"
+                    >
+                      {cooldown > 0
+                        ? `Resend in ${cooldown}s`
+                        : isReset
+                          ? "Resend reset email"
+                          : "Resend verification email"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Wrong email?{" "}
+                      <Link
+                        className={cn(buttonVariants({ variant: "link" }), "px-0")}
+                        to={isReset ? "/forgot-password" : "/sign-up"}
+                      >
+                        {isReset ? "Try a different address" : "Use a different address"}
+                      </Link>
+                    </p>
+                  </div>
+                ) : (
+                  <Link
+                    className={buttonVariants({ variant: "outline" })}
+                    to={isReset ? "/forgot-password" : "/sign-up"}
+                  >
+                    {isReset ? "Back to reset" : "Back to sign up"}
+                  </Link>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </div>
 

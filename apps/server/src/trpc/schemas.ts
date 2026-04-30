@@ -162,6 +162,42 @@ export type ListAdminOrganizationInvitationsInput = z.infer<
 export const adminLogsAnalyticsOverviewSchema = z.object({});
 export type AdminLogsAnalyticsOverviewInput = z.infer<typeof adminLogsAnalyticsOverviewSchema>;
 
+export const adminDashboardOverviewInputSchema = z.object({
+  signupDays: z.number().int().min(1).max(90).default(7),
+  recentUserLimit: z.number().int().min(1).max(50).default(5),
+});
+export type AdminDashboardOverviewInput = z.infer<typeof adminDashboardOverviewInputSchema>;
+
+export const adminDashboardOverviewTotalsSchema = z.object({
+  users: z.number().int(),
+  organizations: z.number().int(),
+  activeInvites: z.number().int(),
+  pendingReports: z.number().int(),
+});
+export type AdminDashboardOverviewTotals = z.infer<typeof adminDashboardOverviewTotalsSchema>;
+
+export const adminDashboardSignupDaySchema = z.object({
+  date: z.string(),
+  total: z.number().int(),
+});
+export type AdminDashboardSignupDay = z.infer<typeof adminDashboardSignupDaySchema>;
+
+export const adminDashboardRecentUserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  role: z.enum(userRoleEnum.enumValues).nullable(),
+  createdAt: z.date(),
+});
+export type AdminDashboardRecentUser = z.infer<typeof adminDashboardRecentUserSchema>;
+
+export const adminDashboardOverviewOutputSchema = z.object({
+  totals: adminDashboardOverviewTotalsSchema,
+  signupsByDay: z.array(adminDashboardSignupDaySchema),
+  recentUsers: z.array(adminDashboardRecentUserSchema),
+});
+export type AdminDashboardOverviewOutput = z.infer<typeof adminDashboardOverviewOutputSchema>;
+
 export const auditActorTypeSchema = z.enum(["user", "system"]);
 export type AuditActorTypeInput = z.infer<typeof auditActorTypeSchema>;
 

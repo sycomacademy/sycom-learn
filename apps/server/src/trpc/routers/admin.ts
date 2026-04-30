@@ -7,6 +7,7 @@ import {
   getActivePlatformInvitationByEmail,
   getAdminOrganizationById,
   getAdminUserById,
+  getAdminDashboardOverview,
   getOrganizationBySlug,
   listAdminOrganizations,
   getPlatformInvitationById,
@@ -26,6 +27,8 @@ import { createHash, randomBytes } from "node:crypto";
 import { adminProcedure, protectedProcedure, router } from "../init";
 import { audit } from "../utils/audit";
 import {
+  adminDashboardOverviewInputSchema,
+  adminDashboardOverviewOutputSchema,
   adminLogsAnalyticsOverviewSchema,
   banAdminUserSchema,
   createAdminOrganizationSchema,
@@ -430,6 +433,22 @@ export const adminRouter = router({
       },
     };
   }),
+
+  getDashboardOverview: adminProcedure
+    .use(
+      platformPermissionMiddleware({
+        organization: ["read"],
+        user: ["list"],
+      }),
+    )
+    .input(adminDashboardOverviewInputSchema)
+    .output(adminDashboardOverviewOutputSchema)
+    .query(async ({ ctx, input }) => {
+      return await getAdminDashboardOverview(ctx.db, {
+        recentUserLimit: input.recentUserLimit,
+        signupDays: input.signupDays,
+      });
+    }),
 
   // ---------------------------------------------------------------------------
   // Organizations

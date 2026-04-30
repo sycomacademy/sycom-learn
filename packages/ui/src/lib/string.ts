@@ -16,6 +16,13 @@ export function parseName(name: string): { firstName: string; lastName: string }
   return { firstName, lastName };
 }
 
+/** Part before `@`, or the trimmed string if there is no `@`. */
+export function emailLocalPart(email: string): string {
+  const trimmed = email.trim();
+  const at = trimmed.indexOf("@");
+  return at === -1 ? trimmed : trimmed.slice(0, at);
+}
+
 export function camelCaseToTitleCase(string: string): string {
   return string.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }

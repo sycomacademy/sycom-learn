@@ -40,6 +40,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
+    "recharts": "^3.8.1",
     "server": "workspace:*",
     "superjson": "^2.2.6",
     "tailwindcss": "catalog:",
