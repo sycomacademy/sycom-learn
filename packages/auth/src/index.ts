@@ -2,12 +2,12 @@ import { createDb } from "@sycom/db";
 import * as schema from "@sycom/db/schema/auth";
 import { profile } from "@sycom/db/schema/profile";
 import { env } from "@sycom/env/server";
-import { dash } from "@better-auth/infra";
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, lastLoginMethod, organization } from "better-auth/plugins";
 import { twoFactor } from "better-auth/plugins/two-factor";
+import { auditPlugin } from "./audit-plugin";
 import { orgAc, orgRoles, platformAc, platformRoles } from "./permissions";
 import type { UserRole } from "@sycom/db/schema/auth";
 import { betterAuthLogger, sendResetPasswordEmail, sendVerificationEmail } from "./config";
@@ -150,7 +150,7 @@ export function createAuth() {
       twoFactor({
         issuer: "Sycom LMS",
       }),
-      dash(),
+      auditPlugin({ db }),
     ],
   });
 }

@@ -1,72 +1,152 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardDescription, CardHeader, CardTitle } from "@sycom/ui/components/card";
+import {
+  getCoreRowModel,
+  useReactTable,
+  type PaginationState,
+  type SortingState,
+} from "@tanstack/react-table";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
+import {
+  AUDIT_LOG_COLUMNS,
+  type AuditLogRow,
+} from "@/components/dashboard/admin/audit-log-columns";
+import { AuditLogFilters } from "@/components/dashboard/admin/audit-log-filters";
+import {
+  listAuditLogSchema,
+  type AuditActorTypeFilter,
+  type ListAuditLogInput,
+} from "@/components/dashboard/admin/audit-log-schema";
+import { AuditLogToolbar } from "@/components/dashboard/admin/audit-log-toolbar";
+import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/admin/logs-analytics/")({
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(
-      context.trpc.admin.getLogsAnalyticsOverview.queryOptions({}),
-    );
+  validateSearch: listAuditLogSchema,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ context, deps }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(context.trpc.admin.listAuditLog.queryOptions(deps)),
+      context.queryClient.ensureQueryData(context.trpc.admin.listAuditEventNames.queryOptions({})),
+    ]);
   },
   component: AdminLogsAnalyticsActivityPage,
 });
 
+type SortField = ListAuditLogInput["sortBy"];
+
 function AdminLogsAnalyticsActivityPage() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const query = useQuery(trpc.admin.getLogsAnalyticsOverview.queryOptions({}));
-  const overview = query.data;
+  const [isSearchPending, startSearchTransition] = useTransition();
+  const [searchInput, setSearchInput] = useState(search.search ?? "");
+
+  const query = useQuery(trpc.admin.listAuditLog.queryOptions(search));
+  const eventNamesQuery = useQuery(trpc.admin.listAuditEventNames.queryOptions({}));
+
+  useEffect(() => {
+    setSearchInput(search.search ?? "");
+  }, [search.search]);
+
+  useEffect(() => {
+    const next = searchInput.trim() || undefined;
+    if ((search.search ?? undefined) === next) return;
+
+    const handle = setTimeout(() => {
+      startSearchTransition(() => {
+        navigate({
+          replace: true,
+          search: (prev: ListAuditLogInput) => ({ ...prev, search: next, offset: 0 }),
+        });
+      });
+    }, 300);
+
+    return () => clearTimeout(handle);
+  }, [searchInput, navigate, search.search, startSearchTransition]);
+
+  const sorting = useMemo<SortingState>(
+    () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],
+    [search.sortBy, search.sortDirection],
+  );
+
+  const pagination = useMemo<PaginationState>(
+    () => ({
+      pageIndex: Math.floor(search.offset / search.limit),
+      pageSize: search.limit,
+    }),
+    [search.offset, search.limit],
+  );
+
+  const table = useReactTable<AuditLogRow>({
+    data: query.data?.rows ?? [],
+    columns: AUDIT_LOG_COLUMNS,
+    getCoreRowModel: getCoreRowModel(),
+    state: { sorting, pagination },
+    manualSorting: true,
+    manualPagination: true,
+    rowCount: query.data?.totalCount ?? 0,
+    onSortingChange: (updater) => {
+      const next = typeof updater === "function" ? updater(sorting) : updater;
+      const first = next[0];
+
+      navigate({
+        search: (prev: ListAuditLogInput) => ({
+          ...prev,
+          sortBy: first ? (first.id as SortField) : undefined,
+          sortDirection: first ? (first.desc ? "desc" : "asc") : undefined,
+          offset: 0,
+        }),
+      });
+    },
+    onPaginationChange: (updater) => {
+      const next = typeof updater === "function" ? updater(pagination) : updater;
+
+      navigate({
+        search: (prev: ListAuditLogInput) => ({
+          ...prev,
+          offset: next.pageIndex * next.pageSize,
+          limit: next.pageSize,
+        }),
+      });
+    },
+  });
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Activity</CardTitle>
-          <CardDescription className="text-sm">
-            Live event monitoring shell for platform-wide log activity.
-          </CardDescription>
-          <p className="text-2xl font-semibold">{overview?.activity.totalEvents24h ?? 0}</p>
-          <p className="text-sm text-muted-foreground">Events captured in the last 24 hours</p>
-        </CardHeader>
-      </Card>
+    <div className="flex flex-col gap-4 px-6 py-6">
+      <AuditLogToolbar
+        isFetching={query.isFetching || isSearchPending}
+        onRefresh={() => query.refetch()}
+        onSearchChange={setSearchInput}
+        search={searchInput}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Reports queue</CardTitle>
-          <CardDescription className="text-sm">
-            High-level visibility into incoming reports that still need attention.
-          </CardDescription>
-          <p className="text-2xl font-semibold">{overview?.reports.pending ?? 0}</p>
-          <p className="text-sm text-muted-foreground">Pending reports</p>
-        </CardHeader>
-      </Card>
+      <AuditLogFilters
+        actorTypes={search.actorTypes ?? []}
+        eventOptions={eventNamesQuery.data ?? []}
+        events={search.events ?? []}
+        onActorTypesChange={(actorTypes: AuditActorTypeFilter[]) =>
+          navigate({
+            search: (prev: ListAuditLogInput) => ({
+              ...prev,
+              actorTypes: actorTypes.length > 0 ? actorTypes : undefined,
+              offset: 0,
+            }),
+          })
+        }
+        onEventsChange={(events: string[]) =>
+          navigate({
+            search: (prev: ListAuditLogInput) => ({
+              ...prev,
+              events: events.length > 0 ? events : undefined,
+              offset: 0,
+            }),
+          })
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Feedback queue</CardTitle>
-          <CardDescription className="text-sm">
-            Placeholder metrics for product feedback triage and response tracking.
-          </CardDescription>
-          <p className="text-2xl font-semibold">{overview?.feedback.unread ?? 0}</p>
-          <p className="text-sm text-muted-foreground">Unread feedback items</p>
-        </CardHeader>
-      </Card>
-
-      <Card className="md:col-span-3">
-        <CardHeader>
-          <CardTitle className="text-sm">What this section will cover</CardTitle>
-          <CardDescription className="text-sm">
-            This shell is ready for dashboards, filters, and moderation workflows once the real data
-            sources are connected.
-          </CardDescription>
-          <div className="grid gap-3 pt-2 text-sm text-muted-foreground md:grid-cols-3">
-            <p>Flagged events: {overview?.activity.flaggedEvents ?? 0}</p>
-            <p>Reports in review: {overview?.reports.inReview ?? 0}</p>
-            <p>Feedback triaged today: {overview?.feedback.triagedToday ?? 0}</p>
-          </div>
-        </CardHeader>
-      </Card>
+      <DataTable<AuditLogRow> emptyMessage="No events recorded yet." table={table} />
     </div>
   );
 }

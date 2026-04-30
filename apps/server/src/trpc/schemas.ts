@@ -162,6 +162,29 @@ export type ListAdminOrganizationInvitationsInput = z.infer<
 export const adminLogsAnalyticsOverviewSchema = z.object({});
 export type AdminLogsAnalyticsOverviewInput = z.infer<typeof adminLogsAnalyticsOverviewSchema>;
 
+export const auditActorTypeSchema = z.enum(["user", "system"]);
+export type AuditActorTypeInput = z.infer<typeof auditActorTypeSchema>;
+
+export const listAdminAuditLogSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  actorId: z.string().min(1).optional(),
+  actorTypes: z.array(auditActorTypeSchema).optional(),
+  events: z.array(z.string().min(1)).optional(),
+  entityType: z.string().min(1).optional(),
+  entityId: z.string().min(1).optional(),
+  organizationId: z.string().min(1).optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
+  sortBy: z.enum(["createdAt", "event"]).default("createdAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListAdminAuditLogInput = z.infer<typeof listAdminAuditLogSchema>;
+
+export const listAdminAuditEventNamesSchema = z.object({});
+export type ListAdminAuditEventNamesInput = z.infer<typeof listAdminAuditEventNamesSchema>;
+
 export const adminFeedbackSortFieldSchema = z.enum(["submittedAt"]);
 export type AdminFeedbackSortField = z.infer<typeof adminFeedbackSortFieldSchema>;
 

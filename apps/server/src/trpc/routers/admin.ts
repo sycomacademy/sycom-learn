@@ -12,6 +12,8 @@ import {
   getPlatformInvitationById,
   getPlatformUserByEmail,
   listAdminUsers,
+  listAuditLog,
+  listDistinctAuditEventNames,
   listOrganizationInvitations,
   listPlatformInvitations,
   markPlatformInvitationRevoked,
@@ -22,6 +24,7 @@ import { TRPCError } from "@trpc/server";
 import { createHash, randomBytes } from "node:crypto";
 
 import { adminProcedure, protectedProcedure, router } from "../init";
+import { audit } from "../utils/audit";
 import {
   adminLogsAnalyticsOverviewSchema,
   banAdminUserSchema,
@@ -29,6 +32,8 @@ import {
   deleteAdminOrganizationSchema,
   deleteAdminUserSchema,
   getAdminOrganizationSchema,
+  listAdminAuditEventNamesSchema,
+  listAdminAuditLogSchema,
   listAdminOrganizationInvitationsSchema,
   listAdminOrganizationsSchema,
   getAdminUserSchema,
@@ -94,6 +99,13 @@ export const adminRouter = router({
         headers: ctx.headers,
       });
 
+      await audit(ctx, {
+        event: "admin.user.banned",
+        entityType: "user",
+        entityId: input.userId,
+        metadata: { banReason: input.banReason },
+      });
+
       return { success: true };
     }),
 
@@ -104,6 +116,12 @@ export const adminRouter = router({
       await auth.api.unbanUser({
         body: input,
         headers: ctx.headers,
+      });
+
+      await audit(ctx, {
+        event: "admin.user.unbanned",
+        entityType: "user",
+        entityId: input.userId,
       });
 
       return { success: true };
@@ -123,6 +141,13 @@ export const adminRouter = router({
         headers: ctx.headers,
       });
 
+      await audit(ctx, {
+        event: "admin.user.role_changed",
+        entityType: "user",
+        entityId: input.userId,
+        metadata: { role: input.role },
+      });
+
       return { success: true };
     }),
 
@@ -140,6 +165,12 @@ export const adminRouter = router({
         ctx.context.header("set-cookie", cookie, { append: true });
       }
 
+      await audit(ctx, {
+        event: "admin.user.impersonation.started",
+        entityType: "user",
+        entityId: input.userId,
+      });
+
       return { success: true };
     }),
 
@@ -147,6 +178,7 @@ export const adminRouter = router({
     if (!ctx.session.session.impersonatedBy) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "You are not impersonating any user" });
     }
+    const impersonatedUserId = ctx.session.user.id;
     const { headers } = await auth.api.stopImpersonating({
       headers: ctx.headers,
       returnHeaders: true,
@@ -155,6 +187,12 @@ export const adminRouter = router({
     for (const cookie of headers.getSetCookie()) {
       ctx.context.header("set-cookie", cookie, { append: true });
     }
+
+    await audit(ctx, {
+      event: "admin.user.impersonation.stopped",
+      entityType: "user",
+      entityId: impersonatedUserId,
+    });
 
     return { success: true };
   }),
@@ -173,6 +211,12 @@ export const adminRouter = router({
       await auth.api.removeUser({
         body: { userId: input.userId },
         headers: ctx.headers,
+      });
+
+      await audit(ctx, {
+        event: "admin.user.deleted",
+        entityType: "user",
+        entityId: input.userId,
       });
 
       return { success: true };
@@ -232,6 +276,13 @@ export const adminRouter = router({
             "Invitation created but the email failed to send. Resend it from Public invites.",
         });
       }
+
+      await audit(ctx, {
+        event: "admin.platform_invite.created",
+        entityType: "platform_invitation",
+        entityId: invitation.id,
+        metadata: { email: input.email, role: input.role },
+      });
 
       return { success: true, invitationId: invitation.id };
     }),
@@ -296,6 +347,13 @@ export const adminRouter = router({
         role: refreshedInvitation.role,
       });
 
+      await audit(ctx, {
+        event: "admin.platform_invite.resent",
+        entityType: "platform_invitation",
+        entityId: invitation.id,
+        metadata: { email: invitation.email },
+      });
+
       return { success: true };
     }),
 
@@ -325,12 +383,33 @@ export const adminRouter = router({
 
       await markPlatformInvitationRevoked(ctx.db, { invitationId: invitation.id });
 
+      await audit(ctx, {
+        event: "admin.platform_invite.revoked",
+        entityType: "platform_invitation",
+        entityId: invitation.id,
+        metadata: { email: invitation.email },
+      });
+
       return { success: true };
     }),
 
   // ---------------------------------------------------------------------------
   // Analytics
   // ---------------------------------------------------------------------------
+
+  listAuditLog: adminProcedure
+    .use(platformPermissionMiddleware({ audit: ["read"] }))
+    .input(listAdminAuditLogSchema)
+    .query(async ({ ctx, input }) => {
+      return await listAuditLog(ctx.db, input);
+    }),
+
+  listAuditEventNames: adminProcedure
+    .use(platformPermissionMiddleware({ audit: ["read"] }))
+    .input(listAdminAuditEventNamesSchema)
+    .query(async ({ ctx }) => {
+      return await listDistinctAuditEventNames(ctx.db);
+    }),
 
   getLogsAnalyticsOverview: adminProcedure.input(adminLogsAnalyticsOverviewSchema).query(() => {
     return {
@@ -424,6 +503,19 @@ export const adminRouter = router({
         });
       }
 
+      await audit(ctx, {
+        event: "admin.org.created",
+        entityType: "organization",
+        entityId: result.organization.id,
+        organizationId: result.organization.id,
+        metadata: {
+          slug: input.slug,
+          name: input.name,
+          ownerEmail: input.ownerEmail,
+          ownerKind: result.owner.kind,
+        },
+      });
+
       return {
         success: true,
         organizationId: result.organization.id,
@@ -467,6 +559,12 @@ export const adminRouter = router({
       if (!result.deleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
       }
+
+      await audit(ctx, {
+        event: "admin.org.deleted",
+        entityType: "organization",
+        entityId: input.organizationId,
+      });
 
       return { success: true };
     }),
