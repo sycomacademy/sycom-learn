@@ -1,4 +1,4 @@
-import { userRoleEnum } from "@sycom/db/schema/auth";
+import { organizationRoleEnum, userRoleEnum } from "@sycom/db/schema/auth";
 import {
   storageEntityTypeEnum,
   storageFolderEnum,
@@ -140,6 +140,24 @@ export const revokePlatformInvitationSchema = z.object({
   invitationId: z.string().min(1),
 });
 export type RevokePlatformInvitationInput = z.infer<typeof revokePlatformInvitationSchema>;
+
+export const organizationInvitationFilterStatusSchema = z.enum(["accepted", "expired", "rejected"]);
+export type OrganizationInvitationFilterStatus = z.infer<
+  typeof organizationInvitationFilterStatusSchema
+>;
+
+export const listAdminOrganizationInvitationsSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  roles: z.array(z.enum(organizationRoleEnum.enumValues)).optional(),
+  statuses: z.array(organizationInvitationFilterStatusSchema).optional(),
+  sortBy: z.enum(["email", "createdAt", "expiresAt", "organizationName"]).default("createdAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListAdminOrganizationInvitationsInput = z.infer<
+  typeof listAdminOrganizationInvitationsSchema
+>;
 
 export const adminLogsAnalyticsOverviewSchema = z.object({});
 export type AdminLogsAnalyticsOverviewInput = z.infer<typeof adminLogsAnalyticsOverviewSchema>;

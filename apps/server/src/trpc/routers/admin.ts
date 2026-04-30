@@ -12,6 +12,7 @@ import {
   getPlatformInvitationById,
   getPlatformUserByEmail,
   listAdminUsers,
+  listOrganizationInvitations,
   listPlatformInvitations,
   markPlatformInvitationRevoked,
   refreshPlatformInvitation,
@@ -28,6 +29,7 @@ import {
   deleteAdminOrganizationSchema,
   deleteAdminUserSchema,
   getAdminOrganizationSchema,
+  listAdminOrganizationInvitationsSchema,
   listAdminOrganizationsSchema,
   getAdminUserSchema,
   impersonateAdminUserSchema,
@@ -434,6 +436,13 @@ export const adminRouter = router({
     .input(listAdminOrganizationsSchema)
     .query(async ({ ctx, input }) => {
       return await listAdminOrganizations(ctx.db, input);
+    }),
+
+  listOrganizationInvitations: adminProcedure
+    .use(platformPermissionMiddleware({ organization: ["read"] }))
+    .input(listAdminOrganizationInvitationsSchema)
+    .query(async ({ ctx, input }) => {
+      return await listOrganizationInvitations(ctx.db, input);
     }),
 
   getOrganization: adminProcedure
