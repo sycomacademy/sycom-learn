@@ -8,6 +8,7 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import { logSycomConsoleBanner } from "@sycom/ui/lib/console-banner";
 import { toastManager } from "@sycom/ui/components/toast";
 import superjson from "superjson";
 
@@ -17,6 +18,10 @@ import RouteError from "./components/layout/route-error";
 import { getForwardedCookieHeader } from "./functions/forward-header-cookies";
 import { TRPCProvider } from "./lib/trpc/client";
 import { routeTree, type FileRoutesByTo } from "./routeTree.gen";
+
+if (typeof window !== "undefined") {
+  logSycomConsoleBanner();
+}
 /**
  * Type for the routes in the dashboard.
  */

@@ -1,8 +1,13 @@
+import { logSycomConsoleBanner } from "@sycom/ui/lib/console-banner";
 import "./index.css";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
+
+if (typeof window !== "undefined") {
+  logSycomConsoleBanner();
+}
 
 export const getRouter = () => {
   const router = createTanStackRouter({

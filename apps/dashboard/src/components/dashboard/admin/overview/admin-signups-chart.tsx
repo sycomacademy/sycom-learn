@@ -34,8 +34,8 @@ export function AdminSignupsChart({ data }: { data: SignupChartDay[] }): React.R
         <CardTitle>User growth</CardTitle>
         <CardDescription>Accounts created across the last 7 days.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} style={{ height: 256, minWidth: 0, width: "100%" }}>
+      <CardContent className="min-w-0">
+        <ChartContainer className="h-64 w-full min-w-0" config={chartConfig}>
           <AreaChart
             accessibilityLayer
             data={data}

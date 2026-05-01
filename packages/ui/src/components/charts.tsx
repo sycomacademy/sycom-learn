@@ -5,7 +5,7 @@ import { Legend, ResponsiveContainer, Tooltip } from "recharts";
 
 import { cn } from "@sycom/ui/lib/utils";
 
-// Format: { THEME_NAME: CSS_SELECTOR }ea
+// Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
 
 export type ChartConfig = {
@@ -101,7 +101,13 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle config={config} id={chartId} />
-        <ResponsiveContainer height="100%" minHeight={0} minWidth={0} width="100%">
+        <ResponsiveContainer
+          height="100%"
+          initialDimension={{ height: 1, width: 1 }}
+          minHeight={0}
+          minWidth={0}
+          width="100%"
+        >
           {children}
         </ResponsiveContainer>
       </div>
