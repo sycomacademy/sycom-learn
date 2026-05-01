@@ -240,7 +240,7 @@ export const inviteRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "An account with this email already exists. Sign in and open Organisation setup.",
+            "An account with this email already exists. Sign in and open Organization setup.",
         });
       }
 

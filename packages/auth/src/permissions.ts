@@ -16,6 +16,7 @@ const platformStatements = {
   feedback: ["submit", "list", "update"],
   report: ["submit", "list", "update"],
   organization: ["create", "read", "update", "delete"],
+  course: ["create", "list", "read", "update", "delete", "seed"],
   audit: ["read"],
 } as const;
 
@@ -26,6 +27,7 @@ export const platformAdminRole = platformAc.newRole({
   feedback: ["submit", "list", "update"],
   report: ["submit", "list", "update"],
   organization: ["create", "read", "update", "delete"],
+  course: ["create", "list", "read", "update", "delete", "seed"],
   audit: ["read"],
 });
 
@@ -33,12 +35,14 @@ export const contentCreatorRole = platformAc.newRole({
   ...platformBuiltInUserAc.statements,
   feedback: ["submit"],
   report: ["submit"],
+  course: ["create", "read", "update", "delete"],
 });
 
 export const publicStudentRole = platformAc.newRole({
   ...platformBuiltInUserAc.statements,
   feedback: ["submit"],
   report: ["submit"],
+  course: ["read"],
 });
 
 export const platformRoles = {
@@ -50,12 +54,16 @@ export const platformRoles = {
 // ---------------------------------------------------------------------------
 // Organization-level access control (roles *inside* an org: admin/teacher/student)
 // ---------------------------------------------------------------------------
-// `course` has only "assign" and "read" — orgs surface catalog courses to
-// cohorts and view content, but never edit it. SOT lives on the platform side.
+// Courses are dual-scope: an org can author its own courses *and* receive
+// platform-seeded forks. Owner/admin manage all org courses; teachers can
+// only see/edit courses they're listed on (filtering happens at the query
+// layer via the course_instructor join — ACL only encodes the verb set).
+// `assign` here means assigning a course to a cohort within the org;
+// platform→org seeding is the platform-scoped `course: seed` permission.
 
 const orgStatements = {
   ...orgDefaultStatements,
-  course: ["assign", "read"],
+  course: ["create", "read", "update", "delete", "assign"],
   enrollment: ["create", "read", "delete"],
   report: ["read"],
 } as const;
@@ -64,14 +72,14 @@ export const orgAc = createAccessControl(orgStatements);
 
 export const orgOwnerRole = orgAc.newRole({
   ...orgBuiltInOwnerAc.statements,
-  course: ["assign", "read"],
+  course: ["create", "read", "update", "delete", "assign"],
   enrollment: ["create", "read", "delete"],
   report: ["read"],
 });
 
 export const orgAdminRole = orgAc.newRole({
   ...orgBuiltInAdminAc.statements,
-  course: ["assign", "read"],
+  course: ["create", "read", "update", "delete", "assign"],
   enrollment: ["create", "read", "delete"],
   report: ["read"],
 });
@@ -80,7 +88,7 @@ export const orgTeacherRole = orgAc.newRole({
   ...orgBuiltInMemberAc.statements,
   invitation: ["create", "cancel"],
   member: ["create"],
-  course: ["assign", "read"],
+  course: ["read", "update"],
   enrollment: ["create", "read", "delete"],
   report: ["read"],
 });

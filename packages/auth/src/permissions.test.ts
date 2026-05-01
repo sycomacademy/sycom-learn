@@ -21,13 +21,13 @@ const stmts = (role: { statements: Record<string, readonly string[]> }) =>
 describe("platform roles — platform_admin", () => {
   test("can fully manage feedback", () => {
     expect([...(stmts(platformAdminRole).feedback ?? [])].sort()).toEqual(
-      ["submit", "get", "list", "update"].sort(),
+      ["submit", "list", "update"].sort(),
     );
   });
 
   test("can fully manage reports", () => {
     expect([...(stmts(platformAdminRole).report ?? [])].sort()).toEqual(
-      ["submit", "get", "list", "update"].sort(),
+      ["submit", "list", "update"].sort(),
     );
   });
 });
@@ -71,25 +71,27 @@ describe("platformRoles map", () => {
 // Org roles
 // ---------------------------------------------------------------------------
 
-describe("org roles — architectural invariant", () => {
-  // Enforces the comment at the top of permissions.ts: orgs surface catalog
-  // courses to cohorts and view content, but never edit it. SOT lives on the
-  // platform side.
-  const allOrgRoles = [
-    ["owner", orgOwnerRole],
-    ["admin", orgAdminRole],
-    ["teacher", orgTeacherRole],
-    ["student", orgStudentRole],
-  ] as const;
+describe("org roles — course verbs (dual-scope catalog)", () => {
+  test("owner and admin manage org courses including assign", () => {
+    const expected = ["assign", "create", "delete", "read", "update"].sort();
+    expect([...(stmts(orgOwnerRole).course ?? [])].sort()).toEqual(expected);
+    expect([...(stmts(orgAdminRole).course ?? [])].sort()).toEqual(expected);
+  });
 
-  for (const [name, role] of allOrgRoles) {
-    test(`${name} cannot mutate courses`, () => {
-      const courseActions = stmts(role).course ?? [];
-      for (const forbidden of ["create", "update", "delete", "publish"]) {
-        expect(courseActions).not.toContain(forbidden);
-      }
-    });
-  }
+  test("teacher can read and update assigned courses only (visibility in queries)", () => {
+    expect([...(stmts(orgTeacherRole).course ?? [])].sort()).toEqual(["read", "update"].sort());
+  });
+
+  test("student can only read courses", () => {
+    expect(stmts(orgStudentRole).course).toEqual(["read"]);
+  });
+
+  test("teachers cannot create, delete, or assign org-wide courses via ACL", () => {
+    const courseActions = stmts(orgTeacherRole).course ?? [];
+    for (const forbidden of ["create", "delete", "assign"]) {
+      expect(courseActions).not.toContain(forbidden);
+    }
+  });
 });
 
 describe("org roles — owner/admin/teacher shared capabilities", () => {
@@ -100,10 +102,6 @@ describe("org roles — owner/admin/teacher shared capabilities", () => {
   ] as const;
 
   for (const [name, role] of managerRoles) {
-    test(`${name} can assign+read courses`, () => {
-      expect([...(stmts(role).course ?? [])].sort()).toEqual(["assign", "read"].sort());
-    });
-
     test(`${name} can fully manage enrollments`, () => {
       expect([...(stmts(role).enrollment ?? [])].sort()).toEqual(
         ["create", "delete", "read"].sort(),

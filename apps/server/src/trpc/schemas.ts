@@ -1,4 +1,5 @@
 import { organizationRoleEnum, userRoleEnum } from "@sycom/db/schema/auth";
+import { COURSE_STATUSES, DIFFICULTY_LEVELS, INSTRUCTOR_ROLES } from "@sycom/db/schema/catalog";
 import {
   storageEntityTypeEnum,
   storageFolderEnum,
@@ -395,3 +396,130 @@ export const deleteAssetInputSchema = z.object({
   resourceType: z.enum(storageResourceTypeEnum.enumValues).optional(),
 });
 export type StorageDeleteAssetInput = z.infer<typeof deleteAssetInputSchema>;
+
+// catalog
+const courseSlugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2, "Slug must be at least 2 characters")
+  .max(80, "Slug must be at most 80 characters")
+  .regex(slugPattern, "Slug must be lowercase letters, numbers, and hyphens")
+  .refine((value) => !value.includes("--"), "Slug cannot contain consecutive hyphens");
+
+export const listAdminCoursesSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  statuses: z.array(z.enum(COURSE_STATUSES)).optional(),
+  categoryIds: z.array(z.string().min(1)).optional(),
+  instructorId: z.string().min(1).optional(),
+  sortBy: z.enum(["title", "createdAt", "updatedAt", "status", "difficulty"]).default("updatedAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListAdminCoursesInput = z.infer<typeof listAdminCoursesSchema>;
+
+export const getAdminCourseSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type GetAdminCourseInput = z.infer<typeof getAdminCourseSchema>;
+
+export const createAdminCourseSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(160),
+  slug: courseSlugSchema,
+  description: z.string().trim().max(2000).optional(),
+  imageUrl: z.string().trim().min(1).optional(),
+  difficulty: z.enum(DIFFICULTY_LEVELS).default("beginner"),
+  estimatedDuration: z.number().int().positive().max(100_000).optional(),
+  status: z.enum(COURSE_STATUSES).default("draft"),
+  instructorIds: z.array(z.string().min(1)).default([]),
+  categoryIds: z.array(z.string().min(1)).default([]),
+});
+export type CreateAdminCourseInput = z.infer<typeof createAdminCourseSchema>;
+
+export const updateAdminCourseSchema = z.object({
+  courseId: z.string().min(1),
+  patch: z
+    .object({
+      title: z.string().trim().min(1).max(160).optional(),
+      slug: courseSlugSchema.optional(),
+      description: z.string().trim().max(2000).nullable().optional(),
+      imageUrl: z.string().trim().min(1).nullable().optional(),
+      difficulty: z.enum(DIFFICULTY_LEVELS).optional(),
+      estimatedDuration: z.number().int().positive().max(100_000).nullable().optional(),
+      status: z.enum(COURSE_STATUSES).optional(),
+    })
+    .refine((patch) => Object.keys(patch).length > 0, "At least one field must change"),
+});
+export type UpdateAdminCourseInput = z.infer<typeof updateAdminCourseSchema>;
+
+export const deleteAdminCourseSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type DeleteAdminCourseInput = z.infer<typeof deleteAdminCourseSchema>;
+
+export const seedAdminCourseSchema = z.object({
+  courseId: z.string().min(1),
+  organizationIds: z.array(z.string().min(1)).min(1, "Pick at least one organization"),
+});
+export type SeedAdminCourseInput = z.infer<typeof seedAdminCourseSchema>;
+
+export const addAdminCourseInstructorSchema = z.object({
+  courseId: z.string().min(1),
+  userId: z.string().min(1),
+  role: z.enum(INSTRUCTOR_ROLES).default("secondary"),
+});
+export type AddAdminCourseInstructorInput = z.infer<typeof addAdminCourseInstructorSchema>;
+
+export const removeAdminCourseInstructorSchema = z.object({
+  courseId: z.string().min(1),
+  userId: z.string().min(1),
+});
+export type RemoveAdminCourseInstructorInput = z.infer<typeof removeAdminCourseInstructorSchema>;
+
+export const setAdminCourseCategoriesSchema = z.object({
+  courseId: z.string().min(1),
+  categoryIds: z.array(z.string().min(1)),
+});
+export type SetAdminCourseCategoriesInput = z.infer<typeof setAdminCourseCategoriesSchema>;
+
+const categorySlugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2)
+  .max(60)
+  .regex(slugPattern, "Slug must be lowercase letters, numbers, and hyphens");
+
+export const listAdminCategoriesSchema = z.object({
+  limit: z.number().int().min(1).max(200).default(50),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  sortBy: z.enum(["name", "slug", "order"]).default("name"),
+  sortDirection: z.enum(["asc", "desc"]).default("asc"),
+});
+export type ListAdminCategoriesInput = z.infer<typeof listAdminCategoriesSchema>;
+
+export const createAdminCategorySchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  slug: categorySlugSchema,
+  order: z.number().int().min(0).max(10_000).default(0),
+});
+export type CreateAdminCategoryInput = z.infer<typeof createAdminCategorySchema>;
+
+export const updateAdminCategorySchema = z.object({
+  categoryId: z.string().min(1),
+  patch: z
+    .object({
+      name: z.string().trim().min(1).max(80).optional(),
+      slug: categorySlugSchema.optional(),
+      order: z.number().int().min(0).max(10_000).optional(),
+    })
+    .refine((patch) => Object.keys(patch).length > 0, "At least one field must change"),
+});
+export type UpdateAdminCategoryInput = z.infer<typeof updateAdminCategorySchema>;
+
+export const deleteAdminCategorySchema = z.object({
+  categoryId: z.string().min(1),
+});
+export type DeleteAdminCategoryInput = z.infer<typeof deleteAdminCategorySchema>;

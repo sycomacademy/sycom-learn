@@ -1,6 +1,7 @@
 export * from "./admin";
 export * from "./admin-overview";
 export * from "./audit-log";
+export * from "./catalog";
 export * from "./feedback";
 export * from "./health";
 export * from "./organization-invitations";
