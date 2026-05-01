@@ -77,7 +77,7 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
           title: "Organization created",
           description:
             data.owner.kind === "existing"
-              ? `${input.name} is live and we emailed ${input.ownerEmail} a link to organisation setup (they're already signed up).`
+              ? `${input.name} is live and we emailed ${input.ownerEmail} a link to organization setup (they're already signed up).`
               : `${input.name} is live and we emailed ${input.ownerEmail} to set their password and join as owner.`,
           type: "success",
         });

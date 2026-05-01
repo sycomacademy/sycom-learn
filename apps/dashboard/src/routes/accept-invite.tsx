@@ -21,7 +21,7 @@ export const Route = createFileRoute("/accept-invite")({
       { title: "Accept invite | Sycom LMS" },
       {
         name: "description",
-        content: "Accept your Sycom LMS invitation or organisation owner invite.",
+        content: "Accept your Sycom LMS invitation or organization owner invite.",
       },
     ],
   }),

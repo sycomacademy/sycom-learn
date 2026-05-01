@@ -436,7 +436,7 @@ export const adminRouter = router({
             organizationName: input.name,
             inviterName,
             inviteeName: inviteeDisplayName,
-            ctaUrl: `${dashboardOrigin.replace(/\/$/, "")}/dashboard/organisation/setup`,
+            ctaUrl: `${dashboardOrigin.replace(/\/$/, "")}/dashboard/onboarding/organization`,
             scenario: "existing_account",
           });
         } else {
@@ -460,7 +460,7 @@ export const adminRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message:
-            "Organization was created but the invitation email failed to send. Contact the organisation owner manually.",
+            "Organization was created but the invitation email failed to send. Contact the organization owner manually.",
         });
       }
 

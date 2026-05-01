@@ -23,7 +23,7 @@ export function OrgInvitesToolbar({
     <div className="flex items-center gap-2">
       <div className="min-w-0 flex-1">
         <label className="sr-only" htmlFor="org-invites-search">
-          Search invites by email, name, or organisation
+          Search invites by email, name, or organization
         </label>
         <InputGroup className="w-full max-w-md">
           <InputGroupAddon align="inline-start">
@@ -32,7 +32,7 @@ export function OrgInvitesToolbar({
           <InputGroupInput
             id="org-invites-search"
             onChange={(e) => onSearchChange(e.currentTarget.value)}
-            placeholder="Search by email, name, or organisation..."
+            placeholder="Search by email, name, or organization..."
             type="search"
             value={search}
           />

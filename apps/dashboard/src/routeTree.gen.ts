@@ -35,7 +35,7 @@ import { Route as DashboardSupportContactRouteImport } from "./routes/dashboard/
 import { Route as DashboardSettingsSecurityRouteImport } from "./routes/dashboard/settings/security";
 import { Route as DashboardSettingsPreferencesRouteImport } from "./routes/dashboard/settings/preferences";
 import { Route as DashboardSettingsGeneralRouteImport } from "./routes/dashboard/settings/general";
-import { Route as DashboardOrganisationSetupRouteImport } from "./routes/dashboard/organisation/setup";
+import { Route as DashboardOnboardingOrganizationRouteImport } from "./routes/dashboard/onboarding/organization";
 import { Route as DashboardAdminUsersRouteRouteImport } from "./routes/dashboard/admin/users/route";
 import { Route as DashboardAdminOrganizationsRouteRouteImport } from "./routes/dashboard/admin/organizations/route";
 import { Route as DashboardAdminLogsAnalyticsRouteRouteImport } from "./routes/dashboard/admin/logs-analytics/route";
@@ -180,9 +180,9 @@ const DashboardSettingsGeneralRoute = DashboardSettingsGeneralRouteImport.update
   path: "/general",
   getParentRoute: () => DashboardSettingsRouteRoute,
 } as any);
-const DashboardOrganisationSetupRoute = DashboardOrganisationSetupRouteImport.update({
-  id: "/organisation/setup",
-  path: "/organisation/setup",
+const DashboardOnboardingOrganizationRoute = DashboardOnboardingOrganizationRouteImport.update({
+  id: "/onboarding/organization",
+  path: "/onboarding/organization",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
 const DashboardAdminUsersRouteRoute = DashboardAdminUsersRouteRouteImport.update({
@@ -280,7 +280,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/admin/logs-analytics": typeof DashboardAdminLogsAnalyticsRouteRouteWithChildren;
   "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
   "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
-  "/dashboard/organisation/setup": typeof DashboardOrganisationSetupRoute;
+  "/dashboard/onboarding/organization": typeof DashboardOnboardingOrganizationRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
@@ -314,7 +314,7 @@ export interface FileRoutesByTo {
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard": typeof DashboardIndexRoute;
-  "/dashboard/organisation/setup": typeof DashboardOrganisationSetupRoute;
+  "/dashboard/onboarding/organization": typeof DashboardOnboardingOrganizationRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
@@ -358,7 +358,7 @@ export interface FileRoutesById {
   "/dashboard/admin/logs-analytics": typeof DashboardAdminLogsAnalyticsRouteRouteWithChildren;
   "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
   "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
-  "/dashboard/organisation/setup": typeof DashboardOrganisationSetupRoute;
+  "/dashboard/onboarding/organization": typeof DashboardOnboardingOrganizationRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
   "/dashboard/settings/security": typeof DashboardSettingsSecurityRoute;
@@ -402,7 +402,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/logs-analytics"
     | "/dashboard/admin/organizations"
     | "/dashboard/admin/users"
-    | "/dashboard/organisation/setup"
+    | "/dashboard/onboarding/organization"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
@@ -436,7 +436,7 @@ export interface FileRouteTypes {
     | "/verify-email"
     | "/dashboard/$"
     | "/dashboard"
-    | "/dashboard/organisation/setup"
+    | "/dashboard/onboarding/organization"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
@@ -479,7 +479,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/logs-analytics"
     | "/dashboard/admin/organizations"
     | "/dashboard/admin/users"
-    | "/dashboard/organisation/setup"
+    | "/dashboard/onboarding/organization"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
     | "/dashboard/settings/security"
@@ -693,11 +693,11 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardSettingsGeneralRouteImport;
       parentRoute: typeof DashboardSettingsRouteRoute;
     };
-    "/dashboard/organisation/setup": {
-      id: "/dashboard/organisation/setup";
-      path: "/organisation/setup";
-      fullPath: "/dashboard/organisation/setup";
-      preLoaderRoute: typeof DashboardOrganisationSetupRouteImport;
+    "/dashboard/onboarding/organization": {
+      id: "/dashboard/onboarding/organization";
+      path: "/onboarding/organization";
+      fullPath: "/dashboard/onboarding/organization";
+      preLoaderRoute: typeof DashboardOnboardingOrganizationRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/dashboard/admin/users": {
@@ -926,7 +926,7 @@ interface DashboardRouteRouteChildren {
   DashboardSupportRouteRoute: typeof DashboardSupportRouteRouteWithChildren;
   DashboardSplatRoute: typeof DashboardSplatRoute;
   DashboardIndexRoute: typeof DashboardIndexRoute;
-  DashboardOrganisationSetupRoute: typeof DashboardOrganisationSetupRoute;
+  DashboardOnboardingOrganizationRoute: typeof DashboardOnboardingOrganizationRoute;
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
@@ -935,7 +935,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardSupportRouteRoute: DashboardSupportRouteRouteWithChildren,
   DashboardSplatRoute: DashboardSplatRoute,
   DashboardIndexRoute: DashboardIndexRoute,
-  DashboardOrganisationSetupRoute: DashboardOrganisationSetupRoute,
+  DashboardOnboardingOrganizationRoute: DashboardOnboardingOrganizationRoute,
 };
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(

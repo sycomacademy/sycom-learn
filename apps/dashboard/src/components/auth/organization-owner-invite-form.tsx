@@ -66,11 +66,11 @@ export function OrganizationOwnerInviteForm({ token }: { token: string }) {
       onSuccess: async () => {
         toastManager.add({
           title: "Account ready",
-          description: "Sign in to finish organisation setup.",
+          description: "Sign in to finish organization setup.",
           type: "success",
         });
         await router.navigate({
-          href: `/sign-in?redirect=${encodeURIComponent("/dashboard/organisation/setup")}`,
+          href: `/sign-in?redirect=${encodeURIComponent("/dashboard/onboarding/organization")}`,
           replace: true,
         });
       },

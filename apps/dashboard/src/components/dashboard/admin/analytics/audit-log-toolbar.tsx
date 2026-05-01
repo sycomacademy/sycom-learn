@@ -23,7 +23,7 @@ export function AuditLogToolbar({
     <div className="flex items-center gap-2">
       <div className="min-w-0 flex-1">
         <label className="sr-only" htmlFor="audit-log-search">
-          Search audit log by actor, event, or organisation
+          Search audit log by actor, event, or organization
         </label>
         <InputGroup className="w-full max-w-md">
           <InputGroupAddon align="inline-start">
@@ -32,7 +32,7 @@ export function AuditLogToolbar({
           <InputGroupInput
             id="audit-log-search"
             onChange={(e) => onSearchChange(e.currentTarget.value)}
-            placeholder="Search by actor, event, or organisation..."
+            placeholder="Search by actor, event, or organization..."
             type="search"
             value={search}
           />

@@ -515,7 +515,7 @@ function FeaturesSection() {
             Everything your security team needs to learn together.
           </h2>
           <p className="mt-4 text-base text-muted-foreground">
-            Build isolated environments per organisation, roll out structured curricula, and watch
+            Build isolated environments per organization, roll out structured curricula, and watch
             real progress against real threats.
           </p>
         </div>
@@ -592,7 +592,7 @@ function MultiTenantIcon() {
       role="img"
       aria-label="Overlapping tenant boundaries"
     >
-      <title>Multi-tenant organisations</title>
+      <title>Multi-tenant organizations</title>
       {rects.map((r, i) => {
         const id = `mt-rect-${i}`;
         const begin = i === 0 ? "0.15s" : `mt-rect-${i - 1}.end`;
@@ -791,7 +791,7 @@ function HowItWorksSection() {
   const steps = [
     {
       n: "01",
-      title: "Create your organisation",
+      title: "Create your organization",
       body: "Spin up an isolated tenant with your branding, roles, and policies in under a minute.",
     },
     {
@@ -861,13 +861,13 @@ function HowItWorksSection() {
 
 function PricingSection() {
   const free = [
-    "1 organisation",
+    "1 organization",
     "Up to 5 team members",
     "Core learning paths",
     "Basic progress reports",
   ];
   const enterprise = [
-    "Unlimited organisations",
+    "Unlimited organizations",
     "Unlimited members and cohorts",
     "Custom curricula and labs",
     "SSO, audit logs, SLAs",
@@ -1019,7 +1019,7 @@ function CtaFooterSection() {
           Start training your team today.
         </h2>
         <p className="max-w-xl text-base text-background/70">
-          Stand up your organisation, enrol your team, and ship your first learning path this week.
+          Stand up your organization, enrol your team, and ship your first learning path this week.
         </p>
         <a
           href={SIGN_UP_HREF}

@@ -144,7 +144,7 @@ function AdminOrganizationsInvitesPage() {
         statuses={search.statuses ?? []}
       />
 
-      <DataTable<OrgInviteRow> emptyMessage="No organisation invites yet." table={table} />
+      <DataTable<OrgInviteRow> emptyMessage="No organization invites yet." table={table} />
     </div>
   );
 }

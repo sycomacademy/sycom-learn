@@ -18,7 +18,7 @@ export function OrgOwnerAssignedEmail({
   organizationName = "Example Academy",
   inviterName = "Jane Admin",
   inviteeName = "Alex Owner",
-  ctaUrl = "https://example.com/dashboard/organisation/setup",
+  ctaUrl = "https://example.com/dashboard/onboarding/organization",
   scenario = "existing_account",
 }: OrgOwnerAssignedEmailProps) {
   const isNewAccount = scenario === "new_account";
@@ -61,22 +61,22 @@ export function OrgOwnerAssignedEmail({
           {isNewAccount ? (
             <Text className="text-sm leading-6" style={{ color: colors.foreground }}>
               Click the button below to set your password and finish creating your account. You can
-              then continue to your organisation setup.
+              then continue to your organization setup.
             </Text>
           ) : (
             <Text className="text-sm leading-6" style={{ color: colors.foreground }}>
-              Sign in with your existing account, then open your organisation setup to get started.
+              Sign in with your existing account, then open your organization setup to get started.
             </Text>
           )}
 
           <Section className="mt-8 mb-8 text-center">
             <Button href={ctaUrl}>
-              {isNewAccount ? "Accept invite" : "Open organisation setup"}
+              {isNewAccount ? "Accept invite" : "Open organization setup"}
             </Button>
           </Section>
 
           <Text className="text-xs" style={{ color: colors.muted }}>
-            This message was sent because a platform administrator assigned you as organisation
+            This message was sent because a platform administrator assigned you as organization
             owner. If you were not expecting it, you can ignore this email.
           </Text>
 
@@ -99,6 +99,6 @@ OrgOwnerAssignedEmail.PreviewProps = {
   organizationName: "Example Academy",
   inviterName: "Jane Admin",
   inviteeName: "Alex Owner",
-  ctaUrl: "https://example.com/dashboard/organisation/setup",
+  ctaUrl: "https://example.com/dashboard/onboarding/organization",
   scenario: "existing_account",
 } satisfies OrgOwnerAssignedEmailProps;
