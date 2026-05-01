@@ -1,14 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getCoreRowModel,
   useReactTable,
+  type ColumnFiltersState,
   type PaginationState,
   type SortingState,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { PublicInviteDialog } from "@/components/dashboard/admin/users/invite-user-dialog";
 import { PublicInvitesFilters } from "@/components/dashboard/admin/users/public-invites-filters";
 import {
   PUBLIC_INVITES_COLUMNS,
@@ -17,6 +17,8 @@ import {
 import {
   listPublicInvitesSchema,
   type ListPublicInvitesInput,
+  type PlatformInvitationFilterStatus,
+  type SortField,
 } from "@/components/dashboard/admin/users/public-invites-schema";
 import { PublicInvitesToolbar } from "@/components/dashboard/admin/users/public-invites-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
@@ -33,41 +35,39 @@ export const Route = createFileRoute("/dashboard/admin/users/public-invites")({
   component: AdminUsersPublicInvitesPage,
 });
 
-type SortField = ListPublicInvitesInput["sortBy"];
-
 function AdminUsersPublicInvitesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const [inviteOpen, setInviteOpen] = useState(false);
 
-  const query = useQuery(trpc.admin.listPlatformInvitations.queryOptions(search));
+  const query = useSuspenseQuery(trpc.admin.listPlatformInvitations.queryOptions(search));
 
-  const sorting = useMemo<SortingState>(
-    () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],
-    [search.sortBy, search.sortDirection],
-  );
-
-  const pagination = useMemo<PaginationState>(
+  const tableState = useMemo(
     () => ({
-      pageIndex: Math.floor(search.offset / search.limit),
-      pageSize: search.limit,
+      sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,
+      pagination: {
+        pageIndex: Math.floor(search.offset / search.limit),
+        pageSize: search.limit,
+      } as PaginationState,
+      columnFilters: (search.statuses?.length
+        ? [{ id: "status", value: search.statuses }]
+        : []) as ColumnFiltersState,
     }),
-    [search.offset, search.limit],
+    [search.sortBy, search.sortDirection, search.offset, search.limit, search.statuses],
   );
 
   const table = useReactTable<PublicInviteRow>({
-    data: query.data?.rows ?? [],
+    data: query.data.rows,
     columns: PUBLIC_INVITES_COLUMNS,
     getCoreRowModel: getCoreRowModel(),
-    state: { sorting, pagination },
+    state: tableState,
     manualSorting: true,
     manualPagination: true,
-    rowCount: query.data?.totalCount ?? 0,
+    manualFiltering: true,
+    rowCount: query.data.totalCount,
     onSortingChange: (updater) => {
-      const next = typeof updater === "function" ? updater(sorting) : updater;
+      const next = typeof updater === "function" ? updater(tableState.sorting) : updater;
       const first = next[0];
-
       navigate({
         search: (prev: ListPublicInvitesInput) => ({
           ...prev,
@@ -78,8 +78,7 @@ function AdminUsersPublicInvitesPage() {
       });
     },
     onPaginationChange: (updater) => {
-      const next = typeof updater === "function" ? updater(pagination) : updater;
-
+      const next = typeof updater === "function" ? updater(tableState.pagination) : updater;
       navigate({
         search: (prev: ListPublicInvitesInput) => ({
           ...prev,
@@ -88,30 +87,26 @@ function AdminUsersPublicInvitesPage() {
         }),
       });
     },
+    onColumnFiltersChange: (updater) => {
+      const next = typeof updater === "function" ? updater(tableState.columnFilters) : updater;
+      const statuses = next.find((f) => f.id === "status")?.value as
+        | PlatformInvitationFilterStatus[]
+        | undefined;
+      navigate({
+        search: (prev: ListPublicInvitesInput) => ({
+          ...prev,
+          statuses: statuses?.length ? statuses : undefined,
+          offset: 0,
+        }),
+      });
+    },
   });
 
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
-      <PublicInvitesToolbar
-        isFetching={query.isFetching}
-        onNewInvite={() => setInviteOpen(true)}
-        onRefresh={() => query.refetch()}
-      />
+      <PublicInvitesToolbar isFetching={query.isFetching} onRefresh={() => query.refetch()} />
 
-      <PublicInviteDialog onOpenChange={setInviteOpen} open={inviteOpen} />
-
-      <PublicInvitesFilters
-        onStatusesChange={(statuses) =>
-          navigate({
-            search: (prev: ListPublicInvitesInput) => ({
-              ...prev,
-              statuses: statuses.length > 0 ? statuses : undefined,
-              offset: 0,
-            }),
-          })
-        }
-        statuses={search.statuses ?? []}
-      />
+      <PublicInvitesFilters table={table} />
 
       <DataTable<PublicInviteRow> emptyMessage="No public invites yet." table={table} />
     </div>

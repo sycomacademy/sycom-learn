@@ -1,18 +1,17 @@
-import { Plus, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { InviteUserDialog } from "@/components/dashboard/admin/users/invite-user-dialog";
 import { Button } from "@sycom/ui/components/button";
 import { cn } from "@sycom/ui/lib/utils";
 
 export type PublicInvitesToolbarProps = {
   isFetching?: boolean;
   onRefresh?: () => void;
-  onNewInvite?: () => void;
 };
 
 export function PublicInvitesToolbar({
   isFetching = false,
-  onNewInvite,
   onRefresh,
 }: PublicInvitesToolbarProps): ReactNode {
   return (
@@ -24,13 +23,10 @@ export function PublicInvitesToolbar({
         size="icon"
         variant="outline"
       >
-        <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
+        <RefreshCcw className={cn("size-4", isFetching && "animate-spin")} />
       </Button>
 
-      <Button onClick={onNewInvite}>
-        <Plus className="size-4" />
-        New invite
-      </Button>
+      <InviteUserDialog />
     </div>
   );
 }

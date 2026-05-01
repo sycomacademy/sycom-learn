@@ -1,8 +1,10 @@
 import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
+import type { Table } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 
-import { PLATFORM_INVITE_FILTER_LABELS } from "./public-invites-helpers";
+import type { PublicInviteRow } from "./public-invites-columns";
 import {
+  PLATFORM_INVITE_FILTER_LABELS,
   platformInvitationFilterStatusSchema,
   type PlatformInvitationFilterStatus,
 } from "./public-invites-schema";
@@ -15,14 +17,14 @@ const STATUS_OPTIONS: FilterOption[] = platformInvitationFilterStatusSchema.opti
 );
 
 export type PublicInvitesFiltersProps = {
-  statuses: PlatformInvitationFilterStatus[];
-  onStatusesChange: (next: PlatformInvitationFilterStatus[]) => void;
+  table: Table<PublicInviteRow>;
 };
 
-export function PublicInvitesFilters({
-  onStatusesChange,
-  statuses,
-}: PublicInvitesFiltersProps): ReactNode {
+export function PublicInvitesFilters({ table }: PublicInvitesFiltersProps): ReactNode {
+  const statuses =
+    (table.getColumn("status")?.getFilterValue() as PlatformInvitationFilterStatus[] | undefined) ??
+    [];
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <FilterCombobox
@@ -33,7 +35,9 @@ export function PublicInvitesFilters({
           return `${selected.length} statuses`;
         }}
         label="Status"
-        onValueChange={(values) => onStatusesChange(values as PlatformInvitationFilterStatus[])}
+        onValueChange={(values) =>
+          table.getColumn("status")?.setFilterValue(values.length ? values : undefined)
+        }
         options={STATUS_OPTIONS}
         value={statuses}
       />
