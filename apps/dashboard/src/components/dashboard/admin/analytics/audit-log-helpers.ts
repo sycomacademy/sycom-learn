@@ -24,9 +24,9 @@ export function timeAgo(date: Date | string | number): string {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (seconds < 60) return "just now";
+  if (seconds < 60) return "Just now";
   if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-  if (hours < 24) return `about ${hours} hour${hours === 1 ? "" : "s"} ago`;
+  if (hours < 24) return `About ${hours} hour${hours === 1 ? "" : "s"} ago`;
   if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
 
   return new Intl.DateTimeFormat("en-GB", {
