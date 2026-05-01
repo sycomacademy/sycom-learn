@@ -121,7 +121,10 @@ function AdminLogsAnalyticsActivityPage() {
     <div className="flex flex-col gap-4 px-6 py-6">
       <AuditLogToolbar
         isFetching={query.isFetching || isSearchPending}
-        onRefresh={() => query.refetch()}
+        onRefresh={() => {
+          void query.refetch();
+          void eventNamesQuery.refetch();
+        }}
         onSearchChange={setSearchInput}
         search={searchInput}
       />
