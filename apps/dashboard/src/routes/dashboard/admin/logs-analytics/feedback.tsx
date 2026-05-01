@@ -8,12 +8,15 @@ import {
 } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { FEEDBACK_COLUMNS, type FeedbackRow } from "@/components/dashboard/admin/feedback-columns";
+import {
+  FEEDBACK_COLUMNS,
+  type FeedbackRow,
+} from "@/components/dashboard/admin/analytics/feedback-columns";
 import {
   listAdminFeedbackSchema,
   type ListAdminFeedbackInput,
-} from "@/components/dashboard/admin/feedback-schema";
-import { FeedbackToolbar } from "@/components/dashboard/admin/feedback-toolbar";
+} from "@/components/dashboard/admin/analytics/feedback-schema";
+import { FeedbackToolbar } from "@/components/dashboard/admin/analytics/feedback-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 

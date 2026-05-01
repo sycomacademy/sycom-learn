@@ -7,18 +7,17 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, useTransition } from "react";
-
 import {
   AUDIT_LOG_COLUMNS,
   type AuditLogRow,
-} from "@/components/dashboard/admin/audit-log-columns";
-import { AuditLogFilters } from "@/components/dashboard/admin/audit-log-filters";
+} from "@/components/dashboard/admin/analytics/audit-log-columns";
+import { AuditLogFilters } from "@/components/dashboard/admin/analytics/audit-log-filters";
 import {
   listAuditLogSchema,
   type AuditActorTypeFilter,
   type ListAuditLogInput,
-} from "@/components/dashboard/admin/audit-log-schema";
-import { AuditLogToolbar } from "@/components/dashboard/admin/audit-log-toolbar";
+} from "@/components/dashboard/admin/analytics/audit-log-schema";
+import { AuditLogToolbar } from "@/components/dashboard/admin/analytics/audit-log-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -36,13 +35,18 @@ export const Route = createFileRoute("/dashboard/admin/logs-analytics/")({
 
 type SortField = ListAuditLogInput["sortBy"];
 
+// Map TanStack Table column IDs → server sortBy field names
+const SORT_FIELD_MAP: Record<string, SortField> = {
+  createdAt: "createdAt",
+  event: "event",
+};
+
 function AdminLogsAnalyticsActivityPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
   const [isSearchPending, startSearchTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(search.search ?? "");
-
   const query = useQuery(trpc.admin.listAuditLog.queryOptions(search));
   const eventNamesQuery = useQuery(trpc.admin.listAuditEventNames.queryOptions({}));
 
@@ -94,8 +98,8 @@ function AdminLogsAnalyticsActivityPage() {
       navigate({
         search: (prev: ListAuditLogInput) => ({
           ...prev,
-          sortBy: first ? (first.id as SortField) : undefined,
-          sortDirection: first ? (first.desc ? "desc" : "asc") : undefined,
+          sortBy: first ? (SORT_FIELD_MAP[first.id] ?? "createdAt") : "createdAt",
+          sortDirection: first ? (first.desc ? "desc" : "asc") : "desc",
           offset: 0,
         }),
       });

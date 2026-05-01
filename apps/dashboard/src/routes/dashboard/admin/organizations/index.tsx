@@ -8,16 +8,16 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { CreateOrganizationDialog } from "@/components/dashboard/admin/create-organization-dialog";
+import { CreateOrganizationDialog } from "@/components/dashboard/admin/orgs/create-organization-dialog";
 import {
   ORGANIZATION_COLUMNS,
   type OrganizationRow,
-} from "@/components/dashboard/admin/organizations-columns";
+} from "@/components/dashboard/admin/orgs/organizations-columns";
 import {
   listAdminOrganizationsSchema,
   type ListAdminOrganizationsInput,
-} from "@/components/dashboard/admin/organizations-schema";
-import { OrganizationsToolbar } from "@/components/dashboard/admin/organizations-toolbar";
+} from "@/components/dashboard/admin/orgs/organizations-schema";
+import { OrganizationsToolbar } from "@/components/dashboard/admin/orgs/organizations-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 

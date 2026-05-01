@@ -12,14 +12,14 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   ORG_INVITES_COLUMNS,
   type OrgInviteRow,
-} from "@/components/dashboard/admin/org-invites-columns";
-import { OrgInvitesFilters } from "@/components/dashboard/admin/org-invites-filters";
+} from "@/components/dashboard/admin/orgs/org-invites-columns";
+import { OrgInvitesFilters } from "@/components/dashboard/admin/orgs/org-invites-filters";
 import {
   listOrgInvitesSchema,
   type ListOrgInvitesInput,
   type OrganizationInvitationFilterStatus,
-} from "@/components/dashboard/admin/org-invites-schema";
-import { OrgInvitesToolbar } from "@/components/dashboard/admin/org-invites-toolbar";
+} from "@/components/dashboard/admin/orgs/org-invites-schema";
+import { OrgInvitesToolbar } from "@/components/dashboard/admin/orgs/org-invites-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 

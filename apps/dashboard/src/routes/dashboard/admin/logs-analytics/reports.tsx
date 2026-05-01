@@ -8,13 +8,16 @@ import {
 } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { ReportsFilters } from "@/components/dashboard/admin/reports-filters";
-import { REPORTS_COLUMNS, type ReportRow } from "@/components/dashboard/admin/reports-columns";
+import { ReportsFilters } from "@/components/dashboard/admin/analytics/reports-filters";
+import {
+  REPORTS_COLUMNS,
+  type ReportRow,
+} from "@/components/dashboard/admin/analytics/reports-columns";
 import {
   listAdminReportsSchema,
   type ListAdminReportsInput,
-} from "@/components/dashboard/admin/reports-schema";
-import { ReportsToolbar } from "@/components/dashboard/admin/reports-toolbar";
+} from "@/components/dashboard/admin/analytics/reports-schema";
+import { ReportsToolbar } from "@/components/dashboard/admin/analytics/reports-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 

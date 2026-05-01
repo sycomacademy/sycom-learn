@@ -8,17 +8,17 @@ import {
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 
-import { PublicInviteDialog } from "@/components/dashboard/admin/invite-user-dialog";
-import { PublicInvitesFilters } from "@/components/dashboard/admin/public-invites-filters";
+import { PublicInviteDialog } from "@/components/dashboard/admin/users/invite-user-dialog";
+import { PublicInvitesFilters } from "@/components/dashboard/admin/users/public-invites-filters";
 import {
   PUBLIC_INVITES_COLUMNS,
   type PublicInviteRow,
-} from "@/components/dashboard/admin/public-invites-columns";
+} from "@/components/dashboard/admin/users/public-invites-columns";
 import {
   listPublicInvitesSchema,
   type ListPublicInvitesInput,
-} from "@/components/dashboard/admin/public-invites-schema";
-import { PublicInvitesToolbar } from "@/components/dashboard/admin/public-invites-toolbar";
+} from "@/components/dashboard/admin/users/public-invites-schema";
+import { PublicInvitesToolbar } from "@/components/dashboard/admin/users/public-invites-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 

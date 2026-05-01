@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AdminOverview } from "@/components/dashboard/admin/admin-overview";
+import { AdminOverview } from "@/components/dashboard/admin/overview/admin-overview";
 import { JsonViewer } from "@sycom/ui/components/elements/json-viewer";
 import { useUser } from "@/hooks/use-user";
 

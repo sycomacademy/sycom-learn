@@ -8,14 +8,14 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { InviteUserDialog } from "@/components/dashboard/admin/invite-user-dialog";
-import { USER_COLUMNS, type UserRow } from "@/components/dashboard/admin/users-columns";
-import { UsersFilters } from "@/components/dashboard/admin/users-filters";
+import { InviteUserDialog } from "@/components/dashboard/admin/users/invite-user-dialog";
+import { USER_COLUMNS, type UserRow } from "@/components/dashboard/admin/users/users-columns";
+import { UsersFilters } from "@/components/dashboard/admin/users/users-filters";
 import {
   listAdminUsersSchema,
   type ListAdminUsersInput,
-} from "@/components/dashboard/admin/users-schema";
-import { UsersToolbar } from "@/components/dashboard/admin/users-toolbar";
+} from "@/components/dashboard/admin/users/users-schema";
+import { UsersToolbar } from "@/components/dashboard/admin/users/users-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 
