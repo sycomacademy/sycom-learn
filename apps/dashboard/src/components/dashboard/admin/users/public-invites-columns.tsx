@@ -57,13 +57,6 @@ export const PUBLIC_INVITES_COLUMNS = [
     enableSorting: true,
     meta: { className: "text-muted-foreground" },
   }),
-  columnHelper.accessor("expiresAt", {
-    id: "expiresAt",
-    header: "Expires",
-    cell: ({ row }) => formatDateTime(row.original.expiresAt),
-    enableSorting: true,
-    meta: { className: "text-muted-foreground" },
-  }),
   columnHelper.display({
     id: "actions",
     header: "",

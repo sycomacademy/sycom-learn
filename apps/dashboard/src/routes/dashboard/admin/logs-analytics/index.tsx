@@ -19,7 +19,7 @@ import {
 } from "@/components/dashboard/admin/analytics/audit-log-schema";
 import { AuditLogToolbar } from "@/components/dashboard/admin/analytics/audit-log-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
-import { useDebouncedUrlSearchDraft } from "@/hooks/use-debounced-search";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/admin/logs-analytics/")({
@@ -46,7 +46,7 @@ function AdminLogsAnalyticsActivityPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const { searchInput, setSearchInput, isSearchPending } = useDebouncedUrlSearchDraft({
+  const { searchInput, setSearchInput, isSearchPending } = useDebouncedSearch({
     committedValue: search.search,
     onDebouncedCommit: (next) =>
       navigate({

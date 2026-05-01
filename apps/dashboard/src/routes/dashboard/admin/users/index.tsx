@@ -61,14 +61,7 @@ function UsersAllPage() {
         ...(search.statuses?.length ? [{ id: "status", value: search.statuses }] : []),
       ] as ColumnFiltersState,
     }),
-    [
-      search.sortBy,
-      search.sortDirection,
-      search.offset,
-      search.limit,
-      search.roles,
-      search.statuses,
-    ],
+    [search],
   );
 
   const table = useReactTable<UserRow>({

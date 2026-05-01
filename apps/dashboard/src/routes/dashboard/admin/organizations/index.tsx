@@ -19,7 +19,7 @@ import {
 } from "@/components/dashboard/admin/orgs/organizations-schema";
 import { OrganizationsToolbar } from "@/components/dashboard/admin/orgs/organizations-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
-import { useDebouncedUrlSearchDraft } from "@/hooks/use-debounced-search";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/admin/organizations/")({
@@ -40,7 +40,7 @@ function OrganizationsAllPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
   const [createOpen, setCreateOpen] = useState(false);
-  const { searchInput, setSearchInput, isSearchPending } = useDebouncedUrlSearchDraft({
+  const { searchInput, setSearchInput, isSearchPending } = useDebouncedSearch({
     committedValue: search.search,
     onDebouncedCommit: (next) =>
       navigate({

@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+function isValidDateTimeString(value: string): boolean {
+  return !Number.isNaN(Date.parse(value));
+}
+
+const isoDateTimeStringSchema = z.string().refine(isValidDateTimeString, "Invalid date-time value");
+
+export const publicInvitesSentRangeSchema = z.object({
+  from: isoDateTimeStringSchema.optional(),
+  to: isoDateTimeStringSchema.optional(),
+});
+export type PublicInvitesSentRange = z.infer<typeof publicInvitesSentRangeSchema>;
+
 export const platformInvitationFilterStatusSchema = z.enum([
   "accepted",
   "expired",
@@ -28,8 +40,31 @@ export const listPublicInvitesSchema = z.object({
   limit: z.number().int().min(1).max(100).default(20),
   offset: z.number().int().min(0).default(0),
   statuses: z.array(platformInvitationFilterStatusSchema).optional(),
-  sortBy: z.enum(["name", "email", "createdAt", "expiresAt"]).default("createdAt"),
+  sentFrom: isoDateTimeStringSchema.optional(),
+  sentTo: isoDateTimeStringSchema.optional(),
+  sortBy: z.enum(["name", "email", "createdAt"]).default("createdAt"),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
 });
 export type ListPublicInvitesInput = z.infer<typeof listPublicInvitesSchema>;
 export type SortField = ListPublicInvitesInput["sortBy"];
+
+export function getPublicInvitesQueryInput(input: ListPublicInvitesInput) {
+  return {
+    ...input,
+    sentFrom: input.sentFrom ? new Date(input.sentFrom) : undefined,
+    sentTo: input.sentTo ? new Date(input.sentTo) : undefined,
+  };
+}
+
+export function getPublicInvitesSentRangeFilter(
+  input: ListPublicInvitesInput,
+): PublicInvitesSentRange | undefined {
+  if (!input.sentFrom && !input.sentTo) {
+    return undefined;
+  }
+
+  return {
+    from: input.sentFrom,
+    to: input.sentTo,
+  };
+}

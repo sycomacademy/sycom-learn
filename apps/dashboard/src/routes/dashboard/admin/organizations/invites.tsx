@@ -21,7 +21,7 @@ import {
 } from "@/components/dashboard/admin/orgs/org-invites-schema";
 import { OrgInvitesToolbar } from "@/components/dashboard/admin/orgs/org-invites-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
-import { useDebouncedUrlSearchDraft } from "@/hooks/use-debounced-search";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/admin/organizations/invites")({
@@ -41,7 +41,7 @@ function AdminOrganizationsInvitesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const { searchInput, setSearchInput, isSearchPending } = useDebouncedUrlSearchDraft({
+  const { searchInput, setSearchInput, isSearchPending } = useDebouncedSearch({
     committedValue: search.search,
     onDebouncedCommit: (next) =>
       navigate({

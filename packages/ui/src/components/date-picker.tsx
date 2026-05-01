@@ -28,6 +28,7 @@ export interface DatePickerProps extends Omit<
   buttonProps?: Omit<ButtonProps, "children" | "className" | "render">;
   className?: string;
   numberOfMonths?: number;
+  clearLabel?: string;
 }
 
 function formatDateRange(value: DateRange | undefined): string {
@@ -50,6 +51,7 @@ export function DatePicker({
   buttonProps,
   className,
   numberOfMonths = 2,
+  clearLabel = "Clear",
   ...calendarProps
 }: DatePickerProps): React.ReactElement {
   const [internalValue, setInternalValue] = React.useState<DateRange | undefined>(defaultValue);
@@ -61,6 +63,11 @@ export function DatePicker({
     }
 
     onValueChange?.(nextValue);
+  }
+
+  function handleClear() {
+    setInternalValue(undefined);
+    onValueChange?.(undefined);
   }
 
   const label = formatDateRange(selectedValue);
@@ -84,14 +91,23 @@ export function DatePicker({
         {label || placeholder}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar
-          defaultMonth={selectedValue?.from}
-          mode="range"
-          numberOfMonths={numberOfMonths}
-          onSelect={handleSelect}
-          selected={selectedValue}
-          {...calendarProps}
-        />
+        <div className="flex flex-col">
+          <Calendar
+            defaultMonth={selectedValue?.from}
+            mode="range"
+            numberOfMonths={numberOfMonths}
+            onSelect={handleSelect}
+            selected={selectedValue}
+            {...calendarProps}
+          />
+          {clearLabel && (
+            <div className="flex justify-end border-t px-2 py-2">
+              <Button onClick={handleClear} size="sm" variant="ghost" disabled={!selectedValue}>
+                {clearLabel}
+              </Button>
+            </div>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -16,7 +16,7 @@ import {
 import { CoursesToolbar } from "@/components/dashboard/catalog/courses-toolbar";
 import { CreateCourseDialog } from "@/components/dashboard/catalog/create-course-dialog";
 import { DataTable } from "@/components/dashboard/data-table";
-import { useDebouncedUrlSearchDraft } from "@/hooks/use-debounced-search";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
 import type { CourseStatus } from "@sycom/db/schema/catalog";
 
@@ -36,7 +36,7 @@ function CatalogAllPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
   const [createOpen, setCreateOpen] = useState(false);
-  const { searchInput, setSearchInput, isSearchPending } = useDebouncedUrlSearchDraft({
+  const { searchInput, setSearchInput, isSearchPending } = useDebouncedSearch({
     committedValue: search.search,
     onDebouncedCommit: (next) =>
       navigate({

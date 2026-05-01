@@ -1,4 +1,5 @@
 import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
+import { DatePicker, type DatePickerProps } from "@sycom/ui/components/date-picker";
 import type { Table } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 
@@ -7,7 +8,10 @@ import {
   PLATFORM_INVITE_FILTER_LABELS,
   platformInvitationFilterStatusSchema,
   type PlatformInvitationFilterStatus,
+  type PublicInvitesSentRange,
 } from "./public-invites-schema";
+
+type DateRangeValue = DatePickerProps["value"];
 
 const STATUS_OPTIONS: FilterOption[] = platformInvitationFilterStatusSchema.options.map(
   (value: PlatformInvitationFilterStatus) => ({
@@ -24,6 +28,15 @@ export function PublicInvitesFilters({ table }: PublicInvitesFiltersProps): Reac
   const statuses =
     (table.getColumn("status")?.getFilterValue() as PlatformInvitationFilterStatus[] | undefined) ??
     [];
+  const sentRange = table.getColumn("createdAt")?.getFilterValue() as
+    | PublicInvitesSentRange
+    | undefined;
+  const selectedRange: DateRangeValue = sentRange
+    ? {
+        from: sentRange.from ? new Date(sentRange.from) : undefined,
+        to: sentRange.to ? new Date(sentRange.to) : undefined,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -36,10 +49,30 @@ export function PublicInvitesFilters({ table }: PublicInvitesFiltersProps): Reac
         }}
         label="Status"
         onValueChange={(values) =>
-          table.getColumn("status")?.setFilterValue(values.length ? values : undefined)
+          table
+            .getColumn("status")
+            ?.setFilterValue(
+              values.length ? (values as PlatformInvitationFilterStatus[]) : undefined,
+            )
         }
         options={STATUS_OPTIONS}
         value={statuses}
+      />
+      <DatePicker
+        buttonProps={{ size: "sm" }}
+        className="w-72"
+        onValueChange={(next) =>
+          table.getColumn("createdAt")?.setFilterValue(
+            next?.from || next?.to
+              ? {
+                  from: next.from?.toISOString(),
+                  to: next.to?.toISOString(),
+                }
+              : undefined,
+          )
+        }
+        placeholder="Sent date"
+        value={selectedRange}
       />
     </div>
   );

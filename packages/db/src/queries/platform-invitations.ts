@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, ilike, lte, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, ilike, lte, or, type SQL } from "drizzle-orm";
 
 import type { Database } from "..";
 import {
@@ -34,7 +34,9 @@ export type ListPlatformInvitationsFilter = {
   limit: number;
   offset: number;
   statuses?: PlatformInvitationFilterStatus[];
-  sortBy: "name" | "email" | "createdAt" | "expiresAt";
+  sentFrom?: Date;
+  sentTo?: Date;
+  sortBy: "name" | "email" | "createdAt";
   sortDirection: "asc" | "desc";
 };
 
@@ -113,7 +115,7 @@ export async function listPlatformInvitations(
   database: Database,
   input: ListPlatformInvitationsFilter,
 ): Promise<ListPlatformInvitationsResult> {
-  const { limit, offset, sortBy, sortDirection, statuses } = input;
+  const { limit, offset, sentFrom, sentTo, sortBy, sortDirection, statuses } = input;
   const now = new Date();
   const filters: SQL[] = [];
 
@@ -137,12 +139,19 @@ export async function listPlatformInvitations(
     }
   }
 
+  if (sentFrom) {
+    filters.push(gte(platform_invitation.createdAt, sentFrom));
+  }
+
+  if (sentTo) {
+    filters.push(lte(platform_invitation.createdAt, sentTo));
+  }
+
   const where = filters.length > 0 ? and(...filters) : undefined;
   const sortColumn = {
     name: platform_invitation.name,
     email: platform_invitation.email,
     createdAt: platform_invitation.createdAt,
-    expiresAt: platform_invitation.expiresAt,
   }[sortBy];
   const orderBy = sortDirection === "asc" ? asc(sortColumn) : desc(sortColumn);
 

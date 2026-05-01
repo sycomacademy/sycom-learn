@@ -15,21 +15,25 @@ import {
   type PublicInviteRow,
 } from "@/components/dashboard/admin/users/public-invites-columns";
 import {
+  getPublicInvitesQueryInput,
+  getPublicInvitesSentRangeFilter,
   listPublicInvitesSchema,
   type ListPublicInvitesInput,
   type PlatformInvitationFilterStatus,
+  type PublicInvitesSentRange,
   type SortField,
 } from "@/components/dashboard/admin/users/public-invites-schema";
 import { PublicInvitesToolbar } from "@/components/dashboard/admin/users/public-invites-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
+import { toEndOfDayIso, toStartOfDayIso } from "@sycom/ui/lib/date";
 
 export const Route = createFileRoute("/dashboard/admin/users/public-invites")({
   validateSearch: listPublicInvitesSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     await context.queryClient.ensureQueryData(
-      context.trpc.admin.listPlatformInvitations.queryOptions(deps),
+      context.trpc.admin.listPlatformInvitations.queryOptions(getPublicInvitesQueryInput(deps)),
     );
   },
   component: AdminUsersPublicInvitesPage,
@@ -40,7 +44,8 @@ function AdminUsersPublicInvitesPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
 
-  const query = useSuspenseQuery(trpc.admin.listPlatformInvitations.queryOptions(search));
+  const queryInput = useMemo(() => getPublicInvitesQueryInput(search), [search]);
+  const query = useSuspenseQuery(trpc.admin.listPlatformInvitations.queryOptions(queryInput));
 
   const tableState = useMemo(
     () => ({
@@ -49,11 +54,14 @@ function AdminUsersPublicInvitesPage() {
         pageIndex: Math.floor(search.offset / search.limit),
         pageSize: search.limit,
       } as PaginationState,
-      columnFilters: (search.statuses?.length
-        ? [{ id: "status", value: search.statuses }]
-        : []) as ColumnFiltersState,
+      columnFilters: [
+        ...(search.statuses?.length ? [{ id: "status", value: search.statuses }] : []),
+        ...(getPublicInvitesSentRangeFilter(search)
+          ? [{ id: "createdAt", value: getPublicInvitesSentRangeFilter(search) }]
+          : []),
+      ] as ColumnFiltersState,
     }),
-    [search.sortBy, search.sortDirection, search.offset, search.limit, search.statuses],
+    [search],
   );
 
   const table = useReactTable<PublicInviteRow>({
@@ -89,13 +97,19 @@ function AdminUsersPublicInvitesPage() {
     },
     onColumnFiltersChange: (updater) => {
       const next = typeof updater === "function" ? updater(tableState.columnFilters) : updater;
-      const statuses = next.find((f) => f.id === "status")?.value as
+      const statuses = next.find((filter) => filter.id === "status")?.value as
         | PlatformInvitationFilterStatus[]
         | undefined;
+      const sentRange = next.find((filter) => filter.id === "createdAt")?.value as
+        | PublicInvitesSentRange
+        | undefined;
+
       navigate({
         search: (prev: ListPublicInvitesInput) => ({
           ...prev,
           statuses: statuses?.length ? statuses : undefined,
+          sentFrom: sentRange?.from ? toStartOfDayIso(new Date(sentRange.from)) : undefined,
+          sentTo: sentRange?.to ? toEndOfDayIso(new Date(sentRange.to)) : undefined,
           offset: 0,
         }),
       });
@@ -104,7 +118,7 @@ function AdminUsersPublicInvitesPage() {
 
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
-      <PublicInvitesToolbar isFetching={query.isFetching} onRefresh={() => query.refetch()} />
+      <PublicInvitesToolbar isFetching={query.isFetching} onRefresh={query.refetch} />
 
       <PublicInvitesFilters table={table} />
 
