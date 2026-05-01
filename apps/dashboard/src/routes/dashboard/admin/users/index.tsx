@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useIsFetching } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getCoreRowModel,
@@ -38,8 +38,9 @@ function UsersAllPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
 
-  const { searchInput, setSearchInput, isSearchPending } = useDebouncedSearch({
+  const { searchInput, setSearchInput } = useDebouncedSearch({
     committedValue: search.search,
+    delayMs: 600,
     onDebouncedCommit: (next) =>
       navigate({
         replace: true,
@@ -48,7 +49,7 @@ function UsersAllPage() {
   });
 
   const query = useSuspenseQuery(trpc.admin.listUsers.queryOptions(search));
-
+  const isFetching = useIsFetching({ queryKey: trpc.admin.listUsers.queryKey() }) > 0;
   const tableState = useMemo(
     () => ({
       sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,
@@ -113,7 +114,7 @@ function UsersAllPage() {
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
       <UsersToolbar
-        isFetching={query.isFetching || isSearchPending}
+        isFetching={isFetching}
         onRefresh={query.refetch}
         onSearchChange={setSearchInput}
         search={searchInput}

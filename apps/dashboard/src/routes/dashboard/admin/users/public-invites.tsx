@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useIsFetching } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getCoreRowModel,
@@ -46,7 +46,7 @@ function AdminUsersPublicInvitesPage() {
 
   const queryInput = useMemo(() => getPublicInvitesQueryInput(search), [search]);
   const query = useSuspenseQuery(trpc.admin.listPlatformInvitations.queryOptions(queryInput));
-
+  const isFetching = useIsFetching({ queryKey: trpc.admin.listPlatformInvitations.queryKey() }) > 0;
   const tableState = useMemo(
     () => ({
       sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,
@@ -118,7 +118,7 @@ function AdminUsersPublicInvitesPage() {
 
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
-      <PublicInvitesToolbar isFetching={query.isFetching} onRefresh={query.refetch} />
+      <PublicInvitesToolbar isFetching={isFetching} onRefresh={query.refetch} />
 
       <PublicInvitesFilters table={table} />
 

@@ -21,23 +21,25 @@ export function useDebouncedSearch(options: UseDebouncedSearchOptions) {
   const commitRef = useRef(onDebouncedCommit);
   commitRef.current = onDebouncedCommit;
 
-  const [isSearchPending, startTransition] = useTransition();
+  const [isTransitionPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(() => committedValue ?? "");
+  const normalizedCommittedValue = committedValue ?? undefined;
+  const normalizedDraftValue = searchInput.trim() || undefined;
+  const isSearchPending = isTransitionPending || normalizedCommittedValue !== normalizedDraftValue;
 
   useEffect(() => {
     setSearchInput(committedValue ?? "");
   }, [committedValue]);
 
   useEffect(() => {
-    const next = searchInput.trim() || undefined;
-    if ((committedValue ?? undefined) === next) return;
+    if (normalizedCommittedValue === normalizedDraftValue) return;
     const handle = window.setTimeout(() => {
       startTransition(() => {
-        commitRef.current(next);
+        commitRef.current(normalizedDraftValue);
       });
     }, delayMs);
     return () => window.clearTimeout(handle);
-  }, [committedValue, delayMs, searchInput, startTransition]);
+  }, [delayMs, normalizedCommittedValue, normalizedDraftValue, startTransition]);
 
   return { searchInput, setSearchInput, isSearchPending };
 }
