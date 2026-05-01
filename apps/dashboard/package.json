@@ -11,6 +11,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.2.5",
     "@better-auth/passkey": "1.6.9",
     "@hookform/resolvers": "catalog:",
     "@sycom/auth": "workspace:*",
@@ -21,11 +22,11 @@
     "@sycom/ui": "workspace:*",
     "@tailwindcss/vite": "^4.2.4",
     "@tanstack/react-query": "^5.100.6",
-    "@tanstack/react-router": "^1.168.26",
+    "@tanstack/react-router": "^1.169.1",
     "@tanstack/react-router-ssr-query": "^1.166.12",
-    "@tanstack/react-start": "^1.167.52",
+    "@tanstack/react-start": "^1.167.57",
     "@tanstack/react-table": "^8.21.3",
-    "@tanstack/router-plugin": "^1.167.29",
+    "@tanstack/router-plugin": "^1.167.31",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "@trpc/tanstack-react-query": "^11.17.0",

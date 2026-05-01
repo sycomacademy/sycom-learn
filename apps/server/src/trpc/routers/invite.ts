@@ -13,7 +13,6 @@ import { TRPCError } from "@trpc/server";
 import { createHash } from "node:crypto";
 
 import { publicProcedure, router } from "../init";
-import { audit } from "../utils/audit";
 import {
   acceptOrganizationInvitationSchema,
   acceptPlatformInvitationSchema,
@@ -99,13 +98,6 @@ export const inviteRouter = router({
       acceptedUserId: createdUser.user.id,
     });
 
-    await audit(ctx, {
-      event: "platform_invite.accepted",
-      entityType: "platform_invitation",
-      entityId: invitation.id,
-      metadata: { acceptedUserId: createdUser.user.id, email: invitation.email },
-    });
-
     return { success: true };
   }),
 
@@ -142,13 +134,6 @@ export const inviteRouter = router({
 
     await markPlatformInvitationRejected(ctx.db, {
       invitationId: invitation.id,
-    });
-
-    await audit(ctx, {
-      event: "platform_invite.rejected",
-      entityType: "platform_invitation",
-      entityId: invitation.id,
-      metadata: { email: invitation.email },
     });
 
     return { success: true };
@@ -240,18 +225,6 @@ export const inviteRouter = router({
         });
       }
 
-      await audit(ctx, {
-        event: "org.invitation.accepted",
-        entityType: "invitation",
-        entityId: invitation.id,
-        organizationId: invitation.organizationId,
-        metadata: {
-          acceptedUserId: createdUser.user.id,
-          email: invitation.email,
-          role: invitation.role,
-        },
-      });
-
       return { success: true };
     }),
 
@@ -286,14 +259,6 @@ export const inviteRouter = router({
 
       await markOrganizationInvitationRejected(ctx.db, {
         invitationId: invitation.id,
-      });
-
-      await audit(ctx, {
-        event: "org.invitation.rejected",
-        entityType: "invitation",
-        entityId: invitation.id,
-        organizationId: invitation.organizationId,
-        metadata: { email: invitation.email },
       });
 
       return { success: true };

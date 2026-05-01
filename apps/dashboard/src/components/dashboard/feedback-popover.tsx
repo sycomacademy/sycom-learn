@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@sycom/ui/components/button";
-import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@sycom/ui/components/popover";
 import { Textarea } from "@sycom/ui/components/textarea";
@@ -15,13 +15,15 @@ import { useUser } from "@/hooks/use-user";
 import { useTRPCClient } from "@/lib/trpc/client";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
 
+const FEEDBACK_MAX_LENGTH = 500;
+
 const submitFeedbackSchema = z.object({
   message: z
     .string()
     .check(
       z.trim(),
       z.minLength(5, "Feedback must be at least 5 characters"),
-      z.maxLength(2000, "Feedback must be less than 2000 characters"),
+      z.maxLength(FEEDBACK_MAX_LENGTH, "Feedback must be 500 characters or fewer"),
     ),
 });
 type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
@@ -113,12 +115,16 @@ export function FeedbackPopover() {
                     </FieldLabel>
                     <FormControl>
                       <Textarea
-                        maxLength={2000}
+                        className="field-sizing-fixed resize-none"
+                        maxLength={FEEDBACK_MAX_LENGTH}
                         placeholder="What could we do better?"
                         rows={4}
                         {...field}
                       />
                     </FormControl>
+                    <FieldDescription className="text-right text-xs">
+                      {field.value?.length ?? 0}/{FEEDBACK_MAX_LENGTH}
+                    </FieldDescription>
                     <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
                   </Field>
                 </FormItem>

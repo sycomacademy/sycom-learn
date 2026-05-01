@@ -10,8 +10,8 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { auditPlugin } from "./audit-plugin";
 import { orgAc, orgRoles, platformAc, platformRoles } from "./permissions";
 import type { UserRole } from "@sycom/db/schema/auth";
+import { dash } from "@better-auth/infra";
 import { betterAuthLogger, sendResetPasswordEmail, sendVerificationEmail } from "./config";
-
 export function createAuth() {
   const db = createDb();
   const passkeyOrigin = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
@@ -151,6 +151,7 @@ export function createAuth() {
         issuer: "Sycom LMS",
       }),
       auditPlugin({ db }),
+      dash(),
     ],
   });
 }

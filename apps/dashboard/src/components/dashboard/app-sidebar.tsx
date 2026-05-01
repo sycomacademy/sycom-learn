@@ -125,7 +125,7 @@ export function AppSidebar(): React.ReactElement {
       <SidebarHeader>
         <Link
           className="flex w-fit items-center gap-2 text-sm font-semibold text-sidebar-foreground"
-          href="/dashboard"
+          to="/dashboard"
         >
           <Image
             alt="Sycom Solutions logo"

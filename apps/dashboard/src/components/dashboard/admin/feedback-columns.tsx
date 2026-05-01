@@ -1,6 +1,7 @@
 import { formatDateTime } from "@sycom/ui/lib/date";
 import { createColumnHelper } from "@tanstack/react-table";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
+import { FeedbackActions } from "./feedback-actions";
 
 export type FeedbackRow = AppRouterOutputs["feedback"]["listFeedback"]["rows"][number];
 
@@ -19,7 +20,7 @@ export const FEEDBACK_COLUMNS = [
     id: "message",
     header: "Message",
     cell: ({ row }) => (
-      <p className="line-clamp-2 max-w-xl text-sm text-muted-foreground">{row.original.message}</p>
+      <p className="max-w-xl truncate text-sm text-muted-foreground">{row.original.message}</p>
     ),
     enableSorting: false,
     meta: { className: "w-full max-w-xl" },
@@ -33,5 +34,11 @@ export const FEEDBACK_COLUMNS = [
       headerClassName: "w-[12.5rem] whitespace-nowrap",
       className: "w-[12.5rem] whitespace-nowrap text-muted-foreground",
     },
+  }),
+  columnHelper.display({
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => <FeedbackActions feedback={row.original} />,
+    meta: { headerClassName: "w-28", className: "w-28 pe-2 text-end" },
   }),
 ];

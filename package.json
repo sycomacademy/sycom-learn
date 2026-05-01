@@ -10,7 +10,7 @@
       "dotenv": "^17.4.2",
       "zod": "^4.4.1",
       "@types/bun": "^1.3.13",
-      "hono": "^4.12.15",
+      "hono": "^4.12.16",
       "@trpc/server": "^11.17.0",
       "better-auth": "1.6.9",
       "lucide-react": "^1.14.0",
