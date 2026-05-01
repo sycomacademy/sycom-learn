@@ -445,6 +445,16 @@ export async function getOrganizationBySlug(
   return row ?? null;
 }
 
+export async function getOrganizationById(
+  database: Database,
+  input: { organizationId: string },
+): Promise<Organization | null> {
+  const row = await database.query.organization.findFirst({
+    where: eq(organization.id, input.organizationId),
+  });
+  return row ?? null;
+}
+
 export async function deleteOrganization(
   database: Database,
   input: { organizationId: string },

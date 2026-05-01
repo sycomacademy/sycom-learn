@@ -21,6 +21,7 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
+import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 import { createShortcutBindings } from "@/lib/shortcuts/bindings";
 import { shortcutIds } from "@/lib/shortcuts/definitions";
 import { getShortcutLabelById } from "@/lib/shortcuts/format";
@@ -64,12 +65,14 @@ export function DashboardUserMenu(): React.ReactElement {
         return;
       }
 
-      await queryClient.cancelQueries();
-      queryClient.clear();
-
       toastManager.add({ title: "Signed out", type: "success" });
 
+      queryClient.removeQueries({ queryKey: SESSION_QUERY_KEY });
+
       await router.navigate({ to: "/sign-in", replace: true });
+
+      await queryClient.cancelQueries();
+      queryClient.clear();
     } catch {
       toastManager.add({
         title: "Couldn't reach server. Check your connection and try again.",

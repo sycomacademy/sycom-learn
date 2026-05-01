@@ -8,6 +8,7 @@ import {
   getAdminOrganizationById,
   getAdminUserById,
   getAdminDashboardOverview,
+  getOrganizationById,
   getOrganizationBySlug,
   listAdminOrganizations,
   getPlatformInvitationById,
@@ -15,6 +16,7 @@ import {
   listAdminUsers,
   listAuditLog,
   listDistinctAuditEventNames,
+  recordApplicationAuditEvent,
   listOrganizationInvitations,
   listPlatformInvitations,
   markPlatformInvitationRevoked,
@@ -49,6 +51,7 @@ import {
   unbanAdminUserSchema,
 } from "../schemas";
 import { platformPermissionMiddleware } from "../middleware/permissions";
+import { auditRequestMeta } from "../lib/request-audit";
 
 const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -461,6 +464,33 @@ export const adminRouter = router({
         });
       }
 
+      // Application audit only: org provisioning runs through @sycom/db + this tRPC mutation.
+      // The Better Auth audit plugin only records org creation when clients call
+      // `POST /organization/create` (organization plugin HTTP route), which this flow does not use.
+      {
+        const { ip, userAgent } = auditRequestMeta(ctx);
+        await recordApplicationAuditEvent(ctx.db, {
+          event: "organization_created",
+          eventTitle: "Organization Created",
+          eventSubtitle: `${input.name} was created`,
+          actorId: ctx.session.user.id,
+          actorType: "user",
+          organizationId: result.organization.id,
+          ip,
+          userAgent,
+          metadata: {
+            adminId: ctx.session.user.id,
+            adminName: ctx.session.user.name,
+            adminEmail: ctx.session.user.email,
+            organizationId: result.organization.id,
+            organizationName: input.name,
+            organizationSlug: result.organization.slug,
+            ownerEmail: input.ownerEmail,
+            ownerOutcome: result.owner.kind,
+          },
+        });
+      }
+
       return {
         success: true,
         organizationId: result.organization.id,
@@ -499,10 +529,38 @@ export const adminRouter = router({
     .use(platformPermissionMiddleware({ organization: ["delete"] }))
     .input(deleteAdminOrganizationSchema)
     .mutation(async ({ ctx, input }) => {
+      const org = await getOrganizationById(ctx.db, {
+        organizationId: input.organizationId,
+      });
+
       const result = await deleteOrganization(ctx.db, input);
 
       if (!result.deleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+
+      // Application audit only: deletion is Sycom DB + tRPC. Better Auth's plugin has no hook for this.
+      // Omit organizationId on the row: the org row is gone and FK would fail; keep ids in metadata.
+      {
+        const { ip, userAgent } = auditRequestMeta(ctx);
+        await recordApplicationAuditEvent(ctx.db, {
+          event: "organization_deleted",
+          eventTitle: "Organization Deleted",
+          eventSubtitle: `${org?.name ?? "Organization"} was deleted`,
+          actorId: ctx.session.user.id,
+          actorType: "user",
+          organizationId: null,
+          ip,
+          userAgent,
+          metadata: {
+            adminId: ctx.session.user.id,
+            adminName: ctx.session.user.name,
+            adminEmail: ctx.session.user.email,
+            organizationId: input.organizationId,
+            organizationName: org?.name,
+            organizationSlug: org?.slug,
+          },
+        });
       }
 
       return { success: true };

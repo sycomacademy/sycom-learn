@@ -8,11 +8,13 @@ import {
   markOrganizationInvitationRejected,
   markPlatformInvitationAccepted,
   markPlatformInvitationRejected,
+  recordApplicationAuditEvent,
 } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 import { createHash } from "node:crypto";
 
 import { publicProcedure, router } from "../init";
+import { auditRequestMeta } from "../lib/request-audit";
 import {
   acceptOrganizationInvitationSchema,
   acceptPlatformInvitationSchema,
@@ -98,6 +100,32 @@ export const inviteRouter = router({
       acceptedUserId: createdUser.user.id,
     });
 
+    // Application audit only: public invites are Sycom `platform_invitation` + tRPC, not Better Auth HTTP.
+    // (Platform accounts are still created via `auth.api.createUser`, which the plugin may log separately as `user_signed_up`.)
+    {
+      const { ip, userAgent } = auditRequestMeta(ctx);
+      await recordApplicationAuditEvent(ctx.db, {
+        event: "platform_invitation_accepted",
+        eventTitle: "Platform Invitation Accepted",
+        eventSubtitle: `${invitation.name} accepted invite`,
+        actorId: createdUser.user.id,
+        actorType: "user",
+        organizationId: null,
+        ip,
+        userAgent,
+        metadata: {
+          userId: createdUser.user.id,
+          userName: createdUser.user.name,
+          userEmail: createdUser.user.email,
+          invitationId: invitation.id,
+          inviteEmail: invitation.email,
+          inviteRole: invitation.role,
+          inviterUserId: invitation.inviterUserId,
+          inviterName: invitation.inviterName,
+        },
+      });
+    }
+
     return { success: true };
   }),
 
@@ -135,6 +163,28 @@ export const inviteRouter = router({
     await markPlatformInvitationRejected(ctx.db, {
       invitationId: invitation.id,
     });
+
+    // Application audit only: token-based decline has no Better Auth session; same custom invite pipeline as accept.
+    {
+      const { ip, userAgent } = auditRequestMeta(ctx);
+      await recordApplicationAuditEvent(ctx.db, {
+        event: "platform_invitation_rejected",
+        eventTitle: "Platform Invitation Declined",
+        eventSubtitle: `${invitation.name} declined invite`,
+        actorId: null,
+        actorType: "system",
+        organizationId: null,
+        ip,
+        userAgent,
+        metadata: {
+          invitationId: invitation.id,
+          userEmail: invitation.email,
+          userName: invitation.name,
+          inviterUserId: invitation.inviterUserId,
+          inviterName: invitation.inviterName,
+        },
+      });
+    }
 
     return { success: true };
   }),
@@ -225,6 +275,32 @@ export const inviteRouter = router({
         });
       }
 
+      // Application audit only: org-owner invites use Sycom `invitation` rows + tRPC (not `POST /organization/accept-invitation`).
+      {
+        const { ip, userAgent } = auditRequestMeta(ctx);
+        await recordApplicationAuditEvent(ctx.db, {
+          event: "organization_invitation_accepted",
+          eventTitle: "Organization Invitation Accepted",
+          eventSubtitle: `${displayName} joined ${invitation.organizationName}`,
+          actorId: createdUser.user.id,
+          actorType: "user",
+          organizationId: invitation.organizationId,
+          ip,
+          userAgent,
+          metadata: {
+            userId: createdUser.user.id,
+            userName: createdUser.user.name,
+            userEmail: createdUser.user.email,
+            invitationId: invitation.id,
+            inviteEmail: invitation.email,
+            organizationId: invitation.organizationId,
+            organizationName: invitation.organizationName,
+            organizationSlug: invitation.organizationSlug,
+            inviterName: invitation.inviterName,
+          },
+        });
+      }
+
       return { success: true };
     }),
 
@@ -260,6 +336,30 @@ export const inviteRouter = router({
       await markOrganizationInvitationRejected(ctx.db, {
         invitationId: invitation.id,
       });
+
+      // Application audit only: org-owner invite rejection is tRPC + DB, not a Better Auth organization-plugin route.
+      {
+        const { ip, userAgent } = auditRequestMeta(ctx);
+        await recordApplicationAuditEvent(ctx.db, {
+          event: "organization_invitation_rejected",
+          eventTitle: "Organization Invitation Declined",
+          eventSubtitle: `Invite to ${invitation.organizationName} was declined`,
+          actorId: null,
+          actorType: "system",
+          organizationId: invitation.organizationId,
+          ip,
+          userAgent,
+          metadata: {
+            invitationId: invitation.id,
+            userEmail: invitation.email,
+            userName: invitation.inviteeName,
+            organizationId: invitation.organizationId,
+            organizationName: invitation.organizationName,
+            organizationSlug: invitation.organizationSlug,
+            inviterName: invitation.inviterName,
+          },
+        });
+      }
 
       return { success: true };
     }),

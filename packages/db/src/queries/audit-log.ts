@@ -170,6 +170,72 @@ export async function recordAuditEvent(
 }
 
 // ---------------------------------------------------------------------------
+// Application-layer audit (tRPC / custom flows)
+// Mirrors metadata shape produced by @sycom/auth audit-plugin `write()` so
+// admin UI + JSON "event data" stay consistent.
+// ---------------------------------------------------------------------------
+
+export type ApplicationAuditWriteInput = {
+  event: string;
+  eventTitle: string;
+  eventSubtitle: string;
+  actorId: string | null;
+  actorType: AuditActorType;
+  organizationId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  metadata: Record<string, unknown>;
+};
+
+function compactAuditMetadata(input: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
+}
+
+/** Same rules as `write()` in packages/auth/src/audit-plugin/server.ts */
+export function normalizeApplicationAuditMetadata(
+  metadata: Record<string, unknown>,
+  actorId: string | null,
+  actorType: AuditActorType,
+  userAgent?: string | null,
+): Record<string, unknown> {
+  const m = compactAuditMetadata(metadata);
+  return compactAuditMetadata({
+    ...m,
+    userAgent: m.userAgent ?? userAgent ?? undefined,
+    triggeredBy: m.triggeredBy ?? actorId ?? undefined,
+    triggerContext:
+      m.triggerContext ?? (actorType === "system" ? "system" : m.adminId ? "admin" : "user"),
+  });
+}
+
+/** Swallows errors so auditing never breaks calling mutations. */
+export async function recordApplicationAuditEvent(
+  database: Database,
+  input: ApplicationAuditWriteInput,
+): Promise<void> {
+  try {
+    await recordAuditEvent(database, {
+      event: input.event,
+      eventTitle: input.eventTitle,
+      eventSubtitle: input.eventSubtitle,
+      actorType: input.actorType,
+      actorId: input.actorId,
+      organizationId: input.organizationId ?? null,
+      ip: input.ip ?? null,
+      userAgent: input.userAgent ?? null,
+      metadata: normalizeApplicationAuditMetadata(
+        input.metadata,
+        input.actorId,
+        input.actorType,
+        input.userAgent,
+      ),
+    });
+  } catch {
+    // Audit log failures must never break product flows (same as the auth audit plugin).
+  }
+}
+
+// ---------------------------------------------------------------------------
 // listDistinctAuditEventNames
 // ---------------------------------------------------------------------------
 
