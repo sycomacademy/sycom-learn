@@ -35,6 +35,7 @@ import { ThemeToggleIcon } from "@sycom/ui/components/animated/icons/theme-toggl
 import { useTheme } from "next-themes";
 import type { UserRole } from "@sycom/db/schema/auth";
 import { useKeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-provider";
+import { Link } from "../layout/foresight-link";
 
 export function DashboardUserMenu(): React.ReactElement {
   const { openShortcutsDialog } = useKeyboardShortcutsDialog();
@@ -136,22 +137,20 @@ export function DashboardUserMenu(): React.ReactElement {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <AnimateIcon animateOnHover>
-            <DropdownMenuItem
-              closeOnClick
-              onClick={() => void router.navigate({ to: "/dashboard/settings/security" })}
-            >
-              <SettingsIcon aria-hidden />
-              <span className="flex-1">Settings</span>
-            </DropdownMenuItem>
+            <Link to="/dashboard/settings">
+              <DropdownMenuItem closeOnClick>
+                <SettingsIcon aria-hidden />
+                <span className="flex-1">Settings</span>
+              </DropdownMenuItem>
+            </Link>
           </AnimateIcon>
           <AnimateIcon animateOnHover>
-            <DropdownMenuItem
-              closeOnClick
-              onClick={() => void router.navigate({ to: "/support/contact" })}
-            >
-              <MessageCircleQuestionIcon aria-hidden />
-              <span className="flex-1">Support</span>
-            </DropdownMenuItem>
+            <Link to="/dashboard/support/contact">
+              <DropdownMenuItem closeOnClick>
+                <MessageCircleQuestionIcon aria-hidden />
+                <span className="flex-1">Support</span>
+              </DropdownMenuItem>
+            </Link>
           </AnimateIcon>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

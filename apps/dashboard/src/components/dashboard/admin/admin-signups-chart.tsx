@@ -35,54 +35,52 @@ export function AdminSignupsChart({ data }: { data: SignupChartDay[] }): React.R
         <CardDescription>Accounts created across the last 7 days.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="aspect-auto h-64 w-full">
-          <ChartContainer className="aspect-auto h-64 w-full" config={chartConfig}>
-            <AreaChart
-              accessibilityLayer
-              data={data}
-              margin={{
-                left: 12,
-                right: 12,
-              }}
-            >
-              <CartesianGrid vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="date"
-                tickFormatter={(value) =>
-                  typeof value === "string" ? formatShortMonthDay(value) : ""
-                }
-                tickLine={false}
-                tickMargin={10}
-              />
-              <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={28} />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    indicator="line"
-                    labelFormatter={(label, payload) => {
-                      const rawDate =
-                        typeof label === "string"
-                          ? label
-                          : (payload?.[0]?.payload as { date?: string } | undefined)?.date;
+        <ChartContainer config={chartConfig} style={{ height: 256, minWidth: 0, width: "100%" }}>
+          <AreaChart
+            accessibilityLayer
+            data={data}
+            margin={{
+              left: 12,
+              right: 12,
+            }}
+          >
+            <CartesianGrid vertical={false} />
+            <XAxis
+              axisLine={false}
+              dataKey="date"
+              tickFormatter={(value) =>
+                typeof value === "string" ? formatShortMonthDay(value) : ""
+              }
+              tickLine={false}
+              tickMargin={10}
+            />
+            <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={28} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  indicator="line"
+                  labelFormatter={(label, payload) => {
+                    const rawDate =
+                      typeof label === "string"
+                        ? label
+                        : (payload?.[0]?.payload as { date?: string } | undefined)?.date;
 
-                      return rawDate ? formatDate(rawDate) : null;
-                    }}
-                  />
-                }
-                cursor={false}
-              />
-              <Area
-                dataKey="total"
-                fill="var(--color-total)"
-                fillOpacity={0.2}
-                stroke="var(--color-total)"
-                strokeWidth={2}
-                type="monotone"
-              />
-            </AreaChart>
-          </ChartContainer>
-        </div>
+                    return rawDate ? formatDate(rawDate) : null;
+                  }}
+                />
+              }
+              cursor={false}
+            />
+            <Area
+              dataKey="total"
+              fill="var(--color-total)"
+              fillOpacity={0.2}
+              stroke="var(--color-total)"
+              strokeWidth={2}
+              type="monotone"
+            />
+          </AreaChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

@@ -4,11 +4,13 @@ import type { ComponentPropsWithoutRef, Ref } from "react";
 import { useCallback } from "react";
 
 import useForesight from "@/hooks/use-foresight";
+import type { TRoutes } from "@/router";
 
 type RouterLinkProps = ComponentPropsWithoutRef<typeof RouterLink>;
 
-type ForesightLinkProps = Omit<RouterLinkProps, "preload"> &
-  Omit<ForesightRegisterOptions, "element" | "callback"> & {
+type ForesightLinkProps = Omit<RouterLinkProps, "preload" | "to"> & {
+  to: TRoutes;
+} & Omit<ForesightRegisterOptions, "element" | "callback"> & {
     ref?: Ref<HTMLAnchorElement>;
   };
 

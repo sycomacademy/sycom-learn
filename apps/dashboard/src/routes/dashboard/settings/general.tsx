@@ -10,9 +10,10 @@ import {
   CardPanel,
   CardTitle,
 } from "@sycom/ui/components/card";
-import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
 import { Input } from "@sycom/ui/components/input";
+import { Textarea } from "@sycom/ui/components/textarea";
 import { toastManager } from "@sycom/ui/components/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -34,7 +35,14 @@ const fullNameSchema = z.object({
 
 type FullNameInput = z.infer<typeof fullNameSchema>;
 
+const bioSchema = z.object({
+  bio: z.string().check(z.maxLength(500, "Bio must be 500 characters or fewer")),
+});
+
+type BioInput = z.infer<typeof bioSchema>;
+
 type User = AppRouterOutputs["profile"]["get"]["user"];
+type Profile = AppRouterOutputs["profile"]["get"]["profile"];
 
 export const Route = createFileRoute("/dashboard/settings/general")({
   component: GeneralSettings,
@@ -42,7 +50,7 @@ export const Route = createFileRoute("/dashboard/settings/general")({
 
 function GeneralSettings() {
   const {
-    data: { user },
+    data: { user, profile },
   } = useUser();
 
   return (
@@ -50,6 +58,7 @@ function GeneralSettings() {
       <ProfileCard user={user} />
       <FullNameCard user={user} />
       <EmailAddressCard user={user} />
+      <BioCard profile={profile} />
     </div>
   );
 }
@@ -224,6 +233,78 @@ function EmailAddressCard({ user }: { user: User }) {
           Save
         </Button>
       </CardFooter>
+    </Card>
+  );
+}
+
+function BioCard({ profile }: { profile: Profile }) {
+  const { updateProfile } = useUserMutation();
+  const currentBio = profile?.bio ?? "";
+
+  const bioForm = useForm<BioInput>({
+    resolver: zodResolver(bioSchema),
+    defaultValues: { bio: currentBio },
+  });
+
+  const onSubmitBio = async (data: BioInput) => {
+    const nextBio = data.bio.trim();
+    const normalizedCurrentBio = currentBio.trim();
+
+    if (nextBio === normalizedCurrentBio) {
+      return;
+    }
+
+    try {
+      await updateProfile.mutateAsync({ bio: nextBio });
+      toastManager.add({ title: "Bio updated", type: "success" });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Couldn't update bio. Please try again.";
+      toastManager.add({ title: "Failed to update bio", description: message, type: "error" });
+      bioForm.reset({ bio: currentBio });
+    }
+  };
+
+  return (
+    <Card>
+      <Form {...bioForm}>
+        <form onSubmit={bioForm.handleSubmit(onSubmitBio)}>
+          <CardHeader>
+            <CardTitle className="text-sm">Bio</CardTitle>
+            <CardDescription className="text-sm">
+              Share a short intro about yourself.
+            </CardDescription>
+          </CardHeader>
+          <CardPanel className="py-0">
+            <FormField
+              control={bioForm.control}
+              name="bio"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <Field>
+                    <FormControl>
+                      <Textarea
+                        maxLength={500}
+                        placeholder="e.g., SOC analyst and instructor focused on threat detection, incident response, and hands-on blue team labs."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FieldDescription className="text-right">
+                      {field.value?.length ?? 0}/500
+                    </FieldDescription>
+                    <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+                  </Field>
+                </FormItem>
+              )}
+            />
+          </CardPanel>
+          <CardFooter className="justify-end pt-0">
+            <Button className="w-40" loading={bioForm.formState.isSubmitting} type="submit">
+              Save
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }

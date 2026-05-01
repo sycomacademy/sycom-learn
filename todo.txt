@@ -19,6 +19,7 @@
 
 - cool features
     - 404 page stuff
+    - tours
 
 - features
     - add queue system for emails and other tasks (triggerdev)
