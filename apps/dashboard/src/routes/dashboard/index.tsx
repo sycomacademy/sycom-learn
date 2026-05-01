@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { AdminOverview } from "@/components/dashboard/admin/overview/admin-overview";
 import { JsonViewer } from "@sycom/ui/components/elements/json-viewer";
-import { useUser } from "@/hooks/use-user";
+import { useUser, type ProfileOutput } from "@/hooks/use-user";
+import type { UserRole } from "@sycom/db/schema/auth";
 
 export const Route = createFileRoute("/dashboard/")({
   loader: async ({ context }) => {
@@ -21,10 +22,19 @@ export const Route = createFileRoute("/dashboard/")({
 function RouteComponent() {
   const { data } = useUser();
 
-  if (data.user.role === "platform_admin") {
-    return <AdminOverview />;
+  switch (data.user.role as UserRole) {
+    case "platform_admin":
+      return <AdminOverview />;
+    case "content_creator":
+      return <DashboardContent data={data} />;
+    case "public_student":
+      return <DashboardContent data={data} />;
+    default:
+      return <DashboardContent data={data} />;
   }
+}
 
+function DashboardContent({ data }: { data: ProfileOutput }) {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
       <div>

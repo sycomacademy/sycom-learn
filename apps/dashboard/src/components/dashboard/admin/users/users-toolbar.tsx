@@ -1,22 +1,21 @@
-import { Plus, RefreshCcw, Search } from "lucide-react";
+import { RefreshCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@sycom/ui/components/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/components/input-group";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { cn } from "@sycom/ui/lib/utils";
+import { InviteUserDialog } from "./invite-user-dialog";
 
 export type UsersToolbarProps = {
   search: string;
   onSearchChange: (next: string) => void;
   isFetching?: boolean;
   onRefresh?: () => void;
-  onNewInvite?: () => void;
 };
 
 export function UsersToolbar({
   isFetching = false,
-  onNewInvite,
   onRefresh,
   onSearchChange,
   search,
@@ -51,10 +50,7 @@ export function UsersToolbar({
         <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
       </Button>
 
-      <Button onClick={onNewInvite}>
-        <Plus className="size-4" />
-        New invite
-      </Button>
+      <InviteUserDialog />
     </div>
   );
 }

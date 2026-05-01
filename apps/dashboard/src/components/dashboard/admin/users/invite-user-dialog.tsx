@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
@@ -7,12 +8,14 @@ import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@sycom/ui/components/button";
 import {
   Dialog,
+  DialogTrigger,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogPanel,
   DialogPopup,
   DialogTitle,
+  DialogClose,
 } from "@sycom/ui/components/dialog";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
@@ -28,6 +31,7 @@ import {
 import { toastManager } from "@sycom/ui/components/toast";
 
 import { ROLE_OPTIONS } from "./users-helpers";
+import { Plus } from "lucide-react";
 
 const inviteUserSchema = z.object({
   email: z.email("Enter a valid email"),
@@ -37,12 +41,8 @@ const inviteUserSchema = z.object({
 
 type InviteUserInput = z.infer<typeof inviteUserSchema>;
 
-type InviteUserDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
-
-export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) {
+export function InviteUserDialog() {
+  const [open, setOpen] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const listInvitesQueryKey = trpc.admin.listPlatformInvitations.queryKey();
@@ -60,9 +60,9 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
           description: `${input.name} will receive an invitation email at ${input.email}.`,
           type: "success",
         });
-        onOpenChange(false);
-        form.reset({ email: "", name: "", role: "public_student" });
+        form.reset();
         await queryClient.invalidateQueries({ queryKey: listInvitesQueryKey });
+        setOpen(false);
       },
       onError: (error) => {
         toastManager.add({
@@ -77,20 +77,25 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
   const onSubmit = async (data: InviteUserInput) => {
     try {
       await inviteMutation.mutateAsync(data);
-    } catch {
-      // onError toast already fired by mutation
-    }
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    onOpenChange(next);
-    if (!next) {
-      form.reset({ email: "", name: "", role: "public_student" });
+    } catch (error) {
+      toastManager.add({
+        title: "Couldn't send invite",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        type: "error",
+      });
     }
   };
 
   return (
-    <Dialog onOpenChange={handleOpenChange} open={open}>
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogTrigger
+        render={
+          <Button>
+            <Plus className="size-4" />
+            New invite
+          </Button>
+        }
+      ></DialogTrigger>
       <DialogPopup>
         <DialogHeader>
           <DialogTitle>Invite user</DialogTitle>
@@ -179,9 +184,9 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
               />
 
               <DialogFooter variant="bare">
-                <Button onClick={() => handleOpenChange(false)} type="button" variant="outline">
+                <DialogClose render={<Button type="button" variant="outline" />}>
                   Cancel
-                </Button>
+                </DialogClose>
                 <Button loading={form.formState.isSubmitting} type="submit">
                   Send invite
                 </Button>

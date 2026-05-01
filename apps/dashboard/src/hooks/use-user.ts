@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
+
+export type ProfileOutput = AppRouterOutputs["profile"]["get"];
+export type User = ProfileOutput["user"];
+export type Session = ProfileOutput["session"];
+export type Profile = ProfileOutput["profile"];
 
 export function useUser() {
   const trpc = useTRPC();

@@ -3,19 +3,17 @@ import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
 import { formatDate } from "@sycom/ui/lib/date";
 import { createColumnHelper } from "@tanstack/react-table";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
-
+import type { UserRow } from "./users-schema";
 import { UserActions } from "./user-actions";
-import { getUserInitials, getUserStatus, ROLE_LABELS, STATUS_CONFIG } from "./users-helpers";
-
-export type UserRow = AppRouterOutputs["admin"]["listUsers"]["rows"][number];
+import { getUserStatus, ROLE_LABELS, STATUS_CONFIG } from "./users-schema";
+import { getInitials } from "@sycom/ui/lib/string";
 
 function UserCell({ user }: { user: UserRow }) {
   return (
     <div className="flex max-w-72 min-w-0 items-center gap-3">
       <Avatar className="size-8 rounded-md">
         <AvatarFallback className="rounded-md text-xs font-medium text-muted-foreground">
-          {getUserInitials(user.name)}
+          {getInitials(user.name)}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0">

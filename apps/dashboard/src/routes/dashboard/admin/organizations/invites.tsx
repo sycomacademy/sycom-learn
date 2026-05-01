@@ -7,7 +7,7 @@ import {
   type PaginationState,
   type SortingState,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo } from "react";
 
 import {
   ORG_INVITES_COLUMNS,
@@ -21,6 +21,7 @@ import {
 } from "@/components/dashboard/admin/orgs/org-invites-schema";
 import { OrgInvitesToolbar } from "@/components/dashboard/admin/orgs/org-invites-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
+import { useDebouncedUrlSearchDraft } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/admin/organizations/invites")({
@@ -40,30 +41,16 @@ function AdminOrganizationsInvitesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const [isSearchPending, startSearchTransition] = useTransition();
-  const [searchInput, setSearchInput] = useState(search.search ?? "");
+  const { searchInput, setSearchInput, isSearchPending } = useDebouncedUrlSearchDraft({
+    committedValue: search.search,
+    onDebouncedCommit: (next) =>
+      navigate({
+        replace: true,
+        search: (prev: ListOrgInvitesInput) => ({ ...prev, search: next, offset: 0 }),
+      }),
+  });
 
   const query = useQuery(trpc.admin.listOrganizationInvitations.queryOptions(search));
-
-  useEffect(() => {
-    setSearchInput(search.search ?? "");
-  }, [search.search]);
-
-  useEffect(() => {
-    const next = searchInput.trim() || undefined;
-    if ((search.search ?? undefined) === next) return;
-
-    const handle = setTimeout(() => {
-      startSearchTransition(() => {
-        navigate({
-          replace: true,
-          search: (prev: ListOrgInvitesInput) => ({ ...prev, search: next, offset: 0 }),
-        });
-      });
-    }, 300);
-
-    return () => clearTimeout(handle);
-  }, [searchInput, navigate, search.search, startSearchTransition]);
 
   const sorting = useMemo<SortingState>(
     () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],

@@ -10,8 +10,6 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/mini";
-
 import { useUser } from "@/hooks/use-user";
 import { useTRPC } from "@/lib/trpc/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar";
@@ -70,31 +68,17 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { formatDateTime } from "@sycom/ui/lib/date";
 import type { UserRole } from "@sycom/db/schema/auth";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
-
+import { getInitials } from "@sycom/ui/lib/string";
+import type { UserRow, SetUserRoleInput, BanUserInput, UserStatus } from "./users-schema";
 import {
-  getUserInitials,
   getUserStatus,
+  banUserSchema,
+  setUserRoleSchema,
   ROLE_LABELS,
   ROLE_OPTIONS,
   STATUS_CONFIG,
-} from "./users-helpers";
-
-const banUserSchema = z.object({
-  banReason: z.string().check(z.minLength(1, "Ban reason is required"), z.maxLength(500)),
-});
-
-type BanUserInput = z.infer<typeof banUserSchema>;
-
-const setUserRoleSchema = z.object({
-  role: z.enum(["platform_admin", "content_creator", "public_student"]),
-});
-
-type SetUserRoleInput = z.infer<typeof setUserRoleSchema>;
-
-type UserRow = AppRouterOutputs["admin"]["listUsers"]["rows"][number];
-type AdminUserDetails = AppRouterOutputs["admin"]["getUser"];
-type UserStatus = (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG];
+  type AdminUserDetails,
+} from "./users-schema";
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -115,7 +99,7 @@ function UserDetailsSheetContent({ user }: { user: AdminUserDetails }) {
           <Avatar className="size-12 rounded-md">
             {user.image ? <AvatarImage alt={user.name} src={buildImageUrl(user.image)} /> : null}
             <AvatarFallback className="rounded-md text-sm font-medium text-muted-foreground">
-              {getUserInitials(user.name)}
+              {getInitials(user.name)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 space-y-2">
@@ -570,13 +554,11 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
   const [roleOpen, setRoleOpen] = useState(false);
   const [impersonateOpen, setImpersonateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-
   const isSelf = currentUser.id === user.id;
   const isTargetAdmin = user.role === "platform_admin";
   const currentRole = user.role ?? "public_student";
   const listUsersQueryKey = trpc.admin.listUsers.queryKey();
   const getUserQueryKey = trpc.admin.getUser.queryKey({ userId: user.id });
-
   const userDetailsQuery = useQuery({
     ...trpc.admin.getUser.queryOptions({ userId: user.id }),
     enabled: viewOpen,
@@ -680,7 +662,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
   const impersonateMutation = useMutation({
     ...trpc.admin.impersonateUser.mutationOptions({
       onSuccess: () => {
-        window.location.assign("/dashboard");
+        window.location.reload();
       },
       onError: (error) => {
         toastManager.add({

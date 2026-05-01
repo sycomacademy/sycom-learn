@@ -1,9 +1,9 @@
 import type { UserRole } from "@sycom/db/schema/auth";
 import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
-import type { ReactNode } from "react";
-
-import { ROLE_OPTIONS, STATUS_LABELS } from "./users-helpers";
+import type { Table } from "@tanstack/react-table";
+import { ROLE_OPTIONS, STATUS_LABELS } from "./users-schema";
 import { adminUserStatusSchema, type AdminUserStatus } from "./users-schema";
+import type { UserRow } from "./users-schema";
 
 const roleOptions: FilterOption[] = ROLE_OPTIONS.map((option) => ({ ...option }));
 
@@ -15,24 +15,22 @@ const STATUS_OPTIONS: FilterOption[] = adminUserStatusSchema.options.map(
 );
 
 export type UsersFiltersProps = {
-  roles: UserRole[];
-  onRolesChange: (next: UserRole[]) => void;
-  statuses: AdminUserStatus[];
-  onStatusesChange: (next: AdminUserStatus[]) => void;
+  table: Table<UserRow>;
 };
 
-export function UsersFilters({
-  onRolesChange,
-  onStatusesChange,
-  roles,
-  statuses,
-}: UsersFiltersProps): ReactNode {
+export function UsersFilters({ table }: UsersFiltersProps) {
+  const roles = (table.getColumn("role")?.getFilterValue() as UserRole[] | undefined) ?? [];
+  const statuses =
+    (table.getColumn("status")?.getFilterValue() as AdminUserStatus[] | undefined) ?? [];
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <FilterCombobox
         allLabel="All roles"
         label="Role"
-        onValueChange={(values) => onRolesChange(values as UserRole[])}
+        onValueChange={(values) =>
+          table.getColumn("role")?.setFilterValue(values.length ? values : undefined)
+        }
         options={roleOptions}
         value={roles}
       />
@@ -44,7 +42,9 @@ export function UsersFilters({
           return `${selected.length} statuses`;
         }}
         label="Status"
-        onValueChange={(values) => onStatusesChange(values as AdminUserStatus[])}
+        onValueChange={(values) =>
+          table.getColumn("status")?.setFilterValue(values.length ? values : undefined)
+        }
         options={STATUS_OPTIONS}
         value={statuses}
       />

@@ -1,6 +1,6 @@
 import { flexRender, type RowData, type Table as TanstackTable } from "@tanstack/react-table";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { Button } from "@sycom/ui/components/button";
 import {
@@ -27,7 +27,6 @@ import {
 import { cn } from "@sycom/ui/lib/utils";
 
 declare module "@tanstack/react-table" {
-  // biome-ignore lint/correctness/noUnusedVariables: declaration merging
   interface ColumnMeta<TData extends RowData, TValue> {
     className?: string;
     headerClassName?: string;
@@ -48,13 +47,16 @@ export function DataTable<TData>({
   emptyMessage = "No results.",
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   table,
-}: DataTableProps<TData>): ReactNode {
+}: DataTableProps<TData>): ReactElement {
   const totalCount = table.getRowCount();
   const { pageIndex, pageSize } = table.getState().pagination;
   const start = totalCount === 0 ? 0 : pageIndex * pageSize + 1;
   const end = Math.min((pageIndex + 1) * pageSize, totalCount);
   const rows = table.getRowModel().rows;
   const columnCount = table.getAllLeafColumns().length;
+  const pageSizeItems = pageSizeOptions.map((n) => ({ value: String(n), label: String(n) }));
+  const canPreviousPage = table.getCanPreviousPage();
+  const canNextPage = table.getCanNextPage();
 
   return (
     <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
@@ -123,7 +125,7 @@ export function DataTable<TData>({
         <div className="flex items-center gap-2 text-muted-foreground">
           <span>Rows per page</span>
           <Select
-            items={pageSizeOptions.map((n) => ({ value: String(n), label: String(n) }))}
+            items={pageSizeItems}
             onValueChange={(v) => table.setPageSize(Number(v))}
             value={String(pageSize)}
           >
@@ -148,10 +150,9 @@ export function DataTable<TData>({
             <PaginationContent className="gap-0.5">
               <PaginationItem>
                 <PaginationLink
-                  aria-disabled={!table.getCanPreviousPage()}
+                  aria-disabled={!canPreviousPage}
                   aria-label="Previous page"
-                  className={cn(!table.getCanPreviousPage() && "pointer-events-none opacity-50")}
-                  href="#"
+                  className={cn(!canPreviousPage && "pointer-events-none opacity-50")}
                   onClick={(e) => {
                     e.preventDefault();
                     table.previousPage();
@@ -163,10 +164,9 @@ export function DataTable<TData>({
               </PaginationItem>
               <PaginationItem>
                 <PaginationLink
-                  aria-disabled={!table.getCanNextPage()}
+                  aria-disabled={!canNextPage}
                   aria-label="Next page"
-                  className={cn(!table.getCanNextPage() && "pointer-events-none opacity-50")}
-                  href="#"
+                  className={cn(!canNextPage && "pointer-events-none opacity-50")}
                   onClick={(e) => {
                     e.preventDefault();
                     table.nextPage();
