@@ -26,7 +26,7 @@ export const Route = createFileRoute("/dashboard/admin/users/public-invites")({
   validateSearch: listPublicInvitesSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
-    await context.queryClient.fetchQuery(
+    await context.queryClient.ensureQueryData(
       context.trpc.admin.listPlatformInvitations.queryOptions(deps),
     );
   },

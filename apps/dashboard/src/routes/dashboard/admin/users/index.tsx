@@ -23,7 +23,7 @@ export const Route = createFileRoute("/dashboard/admin/users/")({
   validateSearch: listAdminUsersSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
-    await context.queryClient.fetchQuery(context.trpc.admin.listUsers.queryOptions(deps));
+    await context.queryClient.ensureQueryData(context.trpc.admin.listUsers.queryOptions(deps));
   },
   component: UsersAllPage,
 });

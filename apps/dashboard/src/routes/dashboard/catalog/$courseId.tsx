@@ -29,7 +29,7 @@ import {
 import { Spinner } from "@sycom/ui/components/spinner";
 import { toastManager } from "@sycom/ui/components/toast";
 
-export const Route = createFileRoute("/dashboard/admin/catalog/$courseId")({
+export const Route = createFileRoute("/dashboard/catalog/$courseId")({
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(
       context.trpc.catalog.get.queryOptions({ courseId: params.courseId }),

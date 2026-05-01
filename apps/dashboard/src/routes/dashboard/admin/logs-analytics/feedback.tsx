@@ -24,7 +24,9 @@ export const Route = createFileRoute("/dashboard/admin/logs-analytics/feedback")
   validateSearch: listAdminFeedbackSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
-    await context.queryClient.fetchQuery(context.trpc.feedback.listFeedback.queryOptions(deps));
+    await context.queryClient.ensureQueryData(
+      context.trpc.feedback.listFeedback.queryOptions(deps),
+    );
   },
   component: AdminLogsAnalyticsFeedbackPage,
 });

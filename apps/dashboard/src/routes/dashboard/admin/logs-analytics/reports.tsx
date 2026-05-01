@@ -25,7 +25,7 @@ export const Route = createFileRoute("/dashboard/admin/logs-analytics/reports")(
   validateSearch: listAdminReportsSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
-    await context.queryClient.fetchQuery(context.trpc.feedback.listReports.queryOptions(deps));
+    await context.queryClient.ensureQueryData(context.trpc.feedback.listReports.queryOptions(deps));
   },
   component: AdminLogsAnalyticsReportsPage,
 });

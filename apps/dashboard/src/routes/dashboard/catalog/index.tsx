@@ -19,7 +19,7 @@ import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 import type { CourseStatus } from "@sycom/db/schema/catalog";
 
-export const Route = createFileRoute("/dashboard/admin/catalog/")({
+export const Route = createFileRoute("/dashboard/catalog/")({
   validateSearch: listAdminCoursesSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
