@@ -208,8 +208,6 @@ export const listAdminAuditLogSchema = z.object({
   actorId: z.string().min(1).optional(),
   actorTypes: z.array(auditActorTypeSchema).optional(),
   events: z.array(z.string().min(1)).optional(),
-  entityType: z.string().min(1).optional(),
-  entityId: z.string().min(1).optional(),
   organizationId: z.string().min(1).optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),

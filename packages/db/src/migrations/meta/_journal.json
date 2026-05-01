@@ -43,6 +43,13 @@
       "when": 1777575348984,
       "tag": "0005_curious_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1746063600000,
+      "tag": "0006_audit_log_titles",
+      "breakpoints": true
     }
   ]
 }

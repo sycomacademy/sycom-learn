@@ -3,20 +3,24 @@ import { and, asc, count, desc, eq, gte, ilike, inArray, lte, or, type SQL } fro
 import type { Database } from "..";
 import { auditLog, organization, user, type AuditActorType, type NewAuditLog } from "../schema";
 
+// ---------------------------------------------------------------------------
+// Public types
+// ---------------------------------------------------------------------------
+
 export type AuditLogRow = {
   id: string;
+  event: string;
+  eventTitle: string;
+  eventSubtitle: string;
   actorType: AuditActorType;
   actorId: string | null;
   actorName: string | null;
   actorEmail: string | null;
-  event: string;
-  entityType: string | null;
-  entityId: string | null;
   organizationId: string | null;
   organizationName: string | null;
-  metadata: Record<string, unknown> | null;
   ip: string | null;
   userAgent: string | null;
+  metadata: Record<string, unknown> | null;
   createdAt: Date;
 };
 
@@ -26,8 +30,6 @@ export type ListAuditLogFilter = {
   actorId?: string;
   actorTypes?: AuditActorType[];
   events?: string[];
-  entityType?: string;
-  entityId?: string;
   organizationId?: string;
   dateFrom?: Date;
   dateTo?: Date;
@@ -41,6 +43,10 @@ export type ListAuditLogResult = {
   totalCount: number;
 };
 
+// ---------------------------------------------------------------------------
+// listAuditLog
+// ---------------------------------------------------------------------------
+
 export async function listAuditLog(
   database: Database,
   input: ListAuditLogFilter,
@@ -50,8 +56,6 @@ export async function listAuditLog(
     actorTypes,
     dateFrom,
     dateTo,
-    entityId,
-    entityType,
     events,
     limit,
     offset,
@@ -60,6 +64,7 @@ export async function listAuditLog(
     sortBy,
     sortDirection,
   } = input;
+
   const filters: SQL[] = [];
 
   if (actorId) {
@@ -72,14 +77,6 @@ export async function listAuditLog(
 
   if (events && events.length > 0) {
     filters.push(inArray(auditLog.event, events));
-  }
-
-  if (entityType) {
-    filters.push(eq(auditLog.entityType, entityType));
-  }
-
-  if (entityId) {
-    filters.push(eq(auditLog.entityId, entityId));
   }
 
   if (organizationId) {
@@ -98,6 +95,8 @@ export async function listAuditLog(
     const pattern = `%${search}%`;
     const combinedSearch = or(
       ilike(auditLog.event, pattern),
+      ilike(auditLog.eventTitle, pattern),
+      ilike(auditLog.eventSubtitle, pattern),
       ilike(user.name, pattern),
       ilike(user.email, pattern),
       ilike(organization.name, pattern),
@@ -141,13 +140,13 @@ export async function listAuditLog(
   return {
     rows: rows.map((row) => ({
       id: row.log.id,
+      event: row.log.event,
+      eventTitle: row.log.eventTitle,
+      eventSubtitle: row.log.eventSubtitle,
       actorType: row.log.actorType,
       actorId: row.log.actorId,
       actorName: row.actorName,
       actorEmail: row.actorEmail,
-      event: row.log.event,
-      entityType: row.log.entityType,
-      entityId: row.log.entityId,
       organizationId: row.log.organizationId,
       organizationName: row.organizationName,
       metadata: row.log.metadata,
@@ -159,12 +158,20 @@ export async function listAuditLog(
   };
 }
 
+// ---------------------------------------------------------------------------
+// recordAuditEvent
+// ---------------------------------------------------------------------------
+
 export async function recordAuditEvent(
   database: Database,
   input: Omit<NewAuditLog, "id" | "createdAt"> & { metadata?: Record<string, unknown> | null },
 ): Promise<void> {
   await database.insert(auditLog).values(input);
 }
+
+// ---------------------------------------------------------------------------
+// listDistinctAuditEventNames
+// ---------------------------------------------------------------------------
 
 export async function listDistinctAuditEventNames(database: Database): Promise<string[]> {
   const rows = await database
