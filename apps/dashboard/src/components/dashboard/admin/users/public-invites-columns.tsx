@@ -5,7 +5,7 @@ import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { PublicInviteActions } from "./public-invite-actions";
 import { PLATFORM_INVITE_STATUS_CONFIG } from "./public-invites-helpers";
-import { ROLE_LABELS } from "./users-helpers";
+import { ROLE_LABELS } from "./users-schema";
 
 export type PublicInviteRow = AppRouterOutputs["admin"]["listPlatformInvitations"]["rows"][number];
 

@@ -29,8 +29,7 @@ import {
   SelectValue,
 } from "@sycom/ui/components/select";
 import { toastManager } from "@sycom/ui/components/toast";
-
-import { ROLE_OPTIONS } from "./users-helpers";
+import { ROLE_OPTIONS } from "./users-schema";
 import { Plus } from "lucide-react";
 
 const inviteUserSchema = z.object({
