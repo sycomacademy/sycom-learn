@@ -1,89 +1,148 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { EditIcon, Plus, Trash2Icon } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/mini";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@sycom/ui/components/button";
 import {
   Dialog,
+  DialogClose,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogPanel,
   DialogPopup,
   DialogTitle,
+  DialogTrigger,
 } from "@sycom/ui/components/dialog";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
 import { Input } from "@sycom/ui/components/input";
 import { toastManager } from "@sycom/ui/components/toast";
 import { slugify } from "@sycom/ui/lib/string";
-import { useState } from "react";
 
-type CategoryRow = AppRouterOutputs["catalog"]["listCategories"]["rows"][number];
+import {
+  categoryFormSchema,
+  DEFAULT_CATEGORY_FORM_VALUES,
+  getCategoryFormValues,
+  type CategoryFormInput,
+  type CategoryRow,
+} from "./categories-schema";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogClose,
+} from "@sycom/ui/components/alert-dialog";
 
-const categoryFormSchema = z.object({
-  name: z.string().check(z.minLength(1, "Name is required"), z.maxLength(80)),
-  slug: z
-    .string()
-    .check(
-      z.minLength(2, "Slug must be at least 2 characters"),
-      z.maxLength(60),
-      z.regex(
-        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
-        "Use lowercase letters, numbers, and hyphens only",
-      ),
-    ),
-  order: z.string().check(z.maxLength(8)),
-});
+function CategoryFormFields({
+  form,
+  isEditing,
+  slugTouched,
+  setSlugTouched,
+}: {
+  form: ReturnType<typeof useForm<CategoryFormInput>>;
+  isEditing: boolean;
+  slugTouched: boolean;
+  setSlugTouched: (next: boolean) => void;
+}) {
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel>Name</FieldLabel>
+              <FormControl>
+                <Input
+                  autoComplete="off"
+                  placeholder="Statistics"
+                  {...field}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value;
+                    field.onChange(value);
+                    if (!slugTouched && !isEditing) {
+                      form.setValue("slug", slugify(value), { shouldValidate: true });
+                    }
+                  }}
+                />
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
 
-type CategoryFormInput = z.infer<typeof categoryFormSchema>;
+      <FormField
+        control={form.control}
+        name="slug"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel>Slug</FieldLabel>
+              <FormControl>
+                <Input
+                  autoComplete="off"
+                  placeholder="statistics"
+                  {...field}
+                  onChange={(event) => {
+                    setSlugTouched(true);
+                    field.onChange(event.currentTarget.value);
+                  }}
+                />
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
 
-const DEFAULT_VALUES: CategoryFormInput = {
-  name: "",
-  slug: "",
-  order: "0",
-};
+      <FormField
+        control={form.control}
+        name="order"
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <Field>
+              <FieldLabel>Display order</FieldLabel>
+              <FormControl>
+                <Input autoComplete="off" inputMode="numeric" {...field} />
+              </FormControl>
+              <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
+            </Field>
+          </FormItem>
+        )}
+      />
+    </>
+  );
+}
 
-type CategoryFormDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  category?: CategoryRow;
-};
-
-export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFormDialogProps) {
+export function CreateCategoryDialog() {
+  const [open, setOpen] = useState(false);
+  const [slugTouched, setSlugTouched] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [slugTouched, setSlugTouched] = useState(false);
 
   const form = useForm<CategoryFormInput>({
     resolver: zodResolver(categoryFormSchema),
-    defaultValues: category
-      ? { name: category.name, slug: category.slug, order: String(category.order) }
-      : DEFAULT_VALUES,
+    defaultValues: DEFAULT_CATEGORY_FORM_VALUES,
   });
-
-  useEffect(() => {
-    form.reset(
-      category
-        ? { name: category.name, slug: category.slug, order: String(category.order) }
-        : DEFAULT_VALUES,
-    );
-    setSlugTouched(false);
-  }, [category, open, form]);
-
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: trpc.catalog.listCategories.queryKey() });
 
   const createMutation = useMutation({
     ...trpc.catalog.createCategory.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Category created", type: "success" });
-        onOpenChange(false);
-        await invalidate();
+        form.reset(DEFAULT_CATEGORY_FORM_VALUES);
+        setSlugTouched(false);
+        setOpen(false);
+        await queryClient.invalidateQueries({ queryKey: trpc.catalog.listCategories.queryKey() });
       },
       onError: (error) =>
         toastManager.add({
@@ -94,12 +153,87 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
     }),
   });
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      form.reset(DEFAULT_CATEGORY_FORM_VALUES);
+      setSlugTouched(false);
+    }
+  };
+
+  const onSubmit = async (data: CategoryFormInput) => {
+    const orderNum = data.order.trim() === "" ? 0 : Number.parseInt(data.order, 10);
+    if (Number.isNaN(orderNum) || orderNum < 0) {
+      form.setError("order", { message: "Enter a non-negative whole number" });
+      return;
+    }
+
+    await createMutation.mutateAsync({ name: data.name, slug: data.slug, order: orderNum });
+  };
+
+  return (
+    <Dialog onOpenChange={handleOpenChange} open={open}>
+      <DialogTrigger
+        render={
+          <Button>
+            <Plus className="size-4" />
+            New category
+          </Button>
+        }
+      />
+      <DialogPopup className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>New category</DialogTitle>
+          <DialogDescription>
+            Categories tag the catalog so students can browse by topic.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogPanel>
+          <Form {...form}>
+            <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+              <CategoryFormFields
+                form={form}
+                isEditing={false}
+                setSlugTouched={setSlugTouched}
+                slugTouched={slugTouched}
+              />
+
+              <DialogFooter variant="bare">
+                <DialogClose render={<Button type="button" variant="outline" />}>
+                  Cancel
+                </DialogClose>
+                <Button loading={createMutation.isPending} type="submit">
+                  Create category
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogPanel>
+      </DialogPopup>
+    </Dialog>
+  );
+}
+
+export function EditCategoryDialog({ category }: { category: CategoryRow }) {
+  const [open, setOpen] = useState(false);
+  const [slugTouched, setSlugTouched] = useState(false);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const defaultValues = getCategoryFormValues(category);
+
+  const form = useForm<CategoryFormInput>({
+    resolver: zodResolver(categoryFormSchema),
+    defaultValues,
+  });
+
   const updateMutation = useMutation({
     ...trpc.catalog.updateCategory.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Category updated", type: "success" });
-        onOpenChange(false);
-        await invalidate();
+        form.reset(defaultValues);
+        setSlugTouched(false);
+        setOpen(false);
+        await queryClient.invalidateQueries({ queryKey: trpc.catalog.listCategories.queryKey() });
       },
       onError: (error) =>
         toastManager.add({
@@ -110,8 +244,13 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
     }),
   });
 
-  const isEditing = Boolean(category);
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      form.reset(defaultValues);
+      setSlugTouched(false);
+    }
+  };
 
   const onSubmit = async (data: CategoryFormInput) => {
     const orderNum = data.order.trim() === "" ? 0 : Number.parseInt(data.order, 10);
@@ -120,21 +259,25 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
       return;
     }
 
-    if (category) {
-      await updateMutation.mutateAsync({
-        categoryId: category.id,
-        patch: { name: data.name, slug: data.slug, order: orderNum },
-      });
-    } else {
-      await createMutation.mutateAsync({ name: data.name, slug: data.slug, order: orderNum });
-    }
+    await updateMutation.mutateAsync({
+      categoryId: category.id,
+      patch: { name: data.name, slug: data.slug, order: orderNum },
+    });
   };
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
+      <DialogTrigger
+        render={
+          <Button size="sm" variant="outline">
+            <EditIcon className="size-4" />
+            Edit
+          </Button>
+        }
+      />
       <DialogPopup className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit category" : "New category"}</DialogTitle>
+          <DialogTitle>Edit category</DialogTitle>
           <DialogDescription>
             Categories tag the catalog so students can browse by topic.
           </DialogDescription>
@@ -142,79 +285,19 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
         <DialogPanel>
           <Form {...form}>
             <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <Field>
-                      <FieldLabel>Name</FieldLabel>
-                      <FormControl>
-                        <Input
-                          autoComplete="off"
-                          placeholder="Statistics"
-                          {...field}
-                          onChange={(event) => {
-                            const value = event.currentTarget.value;
-                            field.onChange(value);
-                            if (!slugTouched && !isEditing) {
-                              form.setValue("slug", slugify(value), { shouldValidate: true });
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                    </Field>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <Field>
-                      <FieldLabel>Slug</FieldLabel>
-                      <FormControl>
-                        <Input
-                          autoComplete="off"
-                          placeholder="statistics"
-                          {...field}
-                          onChange={(event) => {
-                            setSlugTouched(true);
-                            field.onChange(event.currentTarget.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                    </Field>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="order"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <Field>
-                      <FieldLabel>Display order</FieldLabel>
-                      <FormControl>
-                        <Input autoComplete="off" inputMode="numeric" {...field} />
-                      </FormControl>
-                      <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
-                    </Field>
-                  </FormItem>
-                )}
+              <CategoryFormFields
+                form={form}
+                isEditing={true}
+                setSlugTouched={setSlugTouched}
+                slugTouched={slugTouched}
               />
 
               <DialogFooter variant="bare">
-                <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
+                <DialogClose render={<Button type="button" variant="outline" />}>
                   Cancel
-                </Button>
-                <Button loading={isPending} type="submit">
-                  {isEditing ? "Save changes" : "Create category"}
+                </DialogClose>
+                <Button loading={updateMutation.isPending} type="submit">
+                  Save changes
                 </Button>
               </DialogFooter>
             </form>
@@ -222,5 +305,84 @@ export function CategoryFormDialog({ open, onOpenChange, category }: CategoryFor
         </DialogPanel>
       </DialogPopup>
     </Dialog>
+  );
+}
+
+export function DeleteCategoryDialog({ category }: { category: CategoryRow }) {
+  const [open, setOpen] = useState(false);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    ...trpc.catalog.deleteCategory.mutationOptions({
+      onSuccess: async () => {
+        toastManager.add({ title: "Category deleted", type: "success" });
+        setOpen(false);
+        await queryClient.invalidateQueries({ queryKey: trpc.catalog.listCategories.queryKey() });
+      },
+      onError: (error) =>
+        toastManager.add({
+          title: "Couldn't delete category",
+          description: error.message,
+          type: "error",
+        }),
+    }),
+  });
+
+  return (
+    <AlertDialog onOpenChange={setOpen} open={open}>
+      <AlertDialogTrigger
+        render={
+          <Button size="sm" variant="outline">
+            <Trash2Icon className="size-4" />
+            Delete
+          </Button>
+        }
+      />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete category</AlertDialogTitle>
+          <AlertDialogDescription>
+            <strong>{category.name}</strong> is currently used by {category.courseCount} course
+            {category.courseCount === 1 ? "" : "s"}. Deleting it will remove this category from the
+            taxonomy.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
+          <Button
+            loading={deleteMutation.isPending}
+            onClick={() => deleteMutation.mutate({ categoryId: category.id })}
+            variant="destructive"
+          >
+            Delete category
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+export function CategoryListItem({ category }: { category: CategoryRow }) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-sm font-medium">{category.name}</h3>
+            <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+              {category.courseCount} course{category.courseCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">/{category.slug}</p>
+          <p className="text-xs text-muted-foreground">Display order: {category.order}</p>
+        </div>
+
+        <div className="flex items-center gap-2 sm:shrink-0">
+          <EditCategoryDialog category={category} />
+          <DeleteCategoryDialog category={category} />
+        </div>
+      </div>
+    </div>
   );
 }

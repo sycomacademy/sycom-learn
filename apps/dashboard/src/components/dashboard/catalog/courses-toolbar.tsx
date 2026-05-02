@@ -1,40 +1,30 @@
 import { Button } from "@sycom/ui/components/button";
-import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/components/input-group";
 import { Spinner } from "@sycom/ui/components/spinner";
-import { COURSE_STATUSES, type CourseStatus } from "@sycom/db/schema/catalog";
+import { Tabs, TabsList, TabsTab } from "@sycom/ui/components/tabs";
 import { cn } from "@sycom/ui/lib/utils";
-import { Plus, RefreshCcw, Search } from "lucide-react";
+import { LayoutGridIcon, ListIcon, Plus, RefreshCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
 
-const STATUS_LABELS: Record<CourseStatus, string> = {
-  draft: "Draft",
-  published: "Published",
-};
-
-const STATUS_OPTIONS: FilterOption[] = COURSE_STATUSES.map((value) => ({
-  value,
-  label: STATUS_LABELS[value],
-}));
+import { CreateCourseDialog } from "./create-course-dialog";
+import type { CourseViewMode } from "./courses-schema";
 
 export type CoursesToolbarProps = {
   search: string;
   onSearchChange: (next: string) => void;
-  statuses: CourseStatus[];
-  onStatusesChange: (next: CourseStatus[]) => void;
   isFetching?: boolean;
   onRefresh?: () => void;
-  onNewCourse?: () => void;
+  view: CourseViewMode;
+  onViewChange: (next: CourseViewMode) => void;
 };
 
 export function CoursesToolbar({
   isFetching = false,
-  onNewCourse,
   onRefresh,
   onSearchChange,
-  onStatusesChange,
+  onViewChange,
   search,
-  statuses,
+  view,
 }: CoursesToolbarProps): ReactNode {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -56,33 +46,41 @@ export function CoursesToolbar({
         </InputGroup>
       </div>
 
-      <FilterCombobox
-        allLabel="All statuses"
-        formatTriggerLabel={(_, selected) => {
-          if (selected.length === 0) return "All statuses";
-          if (selected.length === 1) return selected[0]?.label ?? "All statuses";
-          return `${selected.length} statuses`;
-        }}
-        label="Status"
-        onValueChange={(values) => onStatusesChange(values as CourseStatus[])}
-        options={STATUS_OPTIONS}
-        value={statuses}
-      />
+      <div className="flex flex-col items-stretch gap-2 sm:items-end">
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            aria-label="Refresh"
+            disabled={isFetching}
+            onClick={onRefresh}
+            size="icon"
+            variant="outline"
+          >
+            <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
+          </Button>
 
-      <Button
-        aria-label="Refresh"
-        disabled={isFetching}
-        onClick={onRefresh}
-        size="icon"
-        variant="outline"
-      >
-        <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
-      </Button>
+          <CreateCourseDialog
+            trigger={
+              <Button>
+                <Plus className="size-4" />
+                New course
+              </Button>
+            }
+          />
+        </div>
 
-      <Button onClick={onNewCourse}>
-        <Plus className="size-4" />
-        New course
-      </Button>
+        <Tabs onValueChange={(next) => onViewChange(next as CourseViewMode)} value={view}>
+          <TabsList className="grid w-full grid-cols-2 sm:w-auto" variant="default">
+            <TabsTab className="gap-2" value="cards">
+              <LayoutGridIcon className="size-4" />
+              Cards
+            </TabsTab>
+            <TabsTab className="gap-2" value="list">
+              <ListIcon className="size-4" />
+              List
+            </TabsTab>
+          </TabsList>
+        </Tabs>
+      </div>
     </div>
   );
 }

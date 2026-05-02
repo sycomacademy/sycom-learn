@@ -23,7 +23,7 @@ import {
 } from "@sycom/ui/components/dropdown-menu";
 import { toastManager } from "@sycom/ui/components/toast";
 
-import type { CourseRow } from "./courses-columns";
+import type { CourseRow } from "./courses-schema";
 import { SeedCourseDialog } from "./seed-course-dialog";
 
 export function CourseActions({ course }: { course: CourseRow }): ReactNode {
@@ -68,7 +68,7 @@ export function CourseActions({ course }: { course: CourseRow }): ReactNode {
           <DropdownMenuItem
             onClick={() =>
               void navigate({
-                to: "/dashboard/admin/catalog/$courseId",
+                to: "/dashboard/catalog/$courseId",
                 params: { courseId: course.id },
               })
             }

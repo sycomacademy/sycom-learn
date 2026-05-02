@@ -6,28 +6,14 @@ import { formatDate } from "@sycom/ui/lib/date";
 import { getInitials } from "@sycom/ui/lib/string";
 import { createColumnHelper } from "@tanstack/react-table";
 import { BookOpenIcon } from "lucide-react";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { CourseActions } from "./courses-actions";
-
-export type CourseRow = AppRouterOutputs["catalog"]["list"]["rows"][number];
-
-const STATUS_LABELS: Record<CourseRow["status"], string> = {
-  draft: "Draft",
-  published: "Published",
-};
-
-const STATUS_VARIANT: Record<CourseRow["status"], "secondary" | "default"> = {
-  draft: "secondary",
-  published: "default",
-};
-
-const DIFFICULTY_LABELS: Record<CourseRow["difficulty"], string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
-  expert: "Expert",
-};
+import {
+  COURSE_DIFFICULTY_LABELS,
+  COURSE_STATUS_LABELS,
+  COURSE_STATUS_VARIANTS,
+  type CourseRow,
+} from "./courses-schema";
 
 function CourseCell({ course }: { course: CourseRow }) {
   return (
@@ -118,8 +104,8 @@ export const COURSE_COLUMNS = [
     id: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge size="sm" variant={STATUS_VARIANT[row.original.status]}>
-        {STATUS_LABELS[row.original.status]}
+      <Badge size="sm" variant={COURSE_STATUS_VARIANTS[row.original.status]}>
+        {COURSE_STATUS_LABELS[row.original.status]}
       </Badge>
     ),
     enableSorting: true,
@@ -128,7 +114,7 @@ export const COURSE_COLUMNS = [
     id: "difficulty",
     header: "Difficulty",
     cell: ({ row }) => (
-      <span className="text-sm">{DIFFICULTY_LABELS[row.original.difficulty]}</span>
+      <span className="text-sm">{COURSE_DIFFICULTY_LABELS[row.original.difficulty]}</span>
     ),
     enableSorting: true,
     meta: { className: "text-muted-foreground" },

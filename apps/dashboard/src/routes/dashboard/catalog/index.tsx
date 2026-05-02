@@ -1,43 +1,49 @@
-import { useQuery } from "@tanstack/react-query";
+import { useIsFetching, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getCoreRowModel,
   useReactTable,
+  type ColumnFiltersState,
   type PaginationState,
   type SortingState,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { COURSE_COLUMNS, type CourseRow } from "@/components/dashboard/catalog/courses-columns";
+import { CoursesCardGrid } from "@/components/dashboard/catalog/courses-card-grid";
+import { COURSE_COLUMNS } from "@/components/dashboard/catalog/courses-columns";
+import { CoursesFilters } from "@/components/dashboard/catalog/courses-filters";
 import {
+  getCoursesQueryInput,
   listAdminCoursesSchema,
+  type CourseRow,
+  type CourseSortField,
+  type CourseStatus,
+  type CourseViewMode,
   type ListAdminCoursesInput,
 } from "@/components/dashboard/catalog/courses-schema";
 import { CoursesToolbar } from "@/components/dashboard/catalog/courses-toolbar";
-import { CreateCourseDialog } from "@/components/dashboard/catalog/create-course-dialog";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
-import type { CourseStatus } from "@sycom/db/schema/catalog";
 
 export const Route = createFileRoute("/dashboard/catalog/")({
   validateSearch: listAdminCoursesSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
-    await context.queryClient.ensureQueryData(context.trpc.catalog.list.queryOptions(deps));
+    await context.queryClient.ensureQueryData(
+      context.trpc.catalog.list.queryOptions(getCoursesQueryInput(deps)),
+    );
   },
   component: CatalogAllPage,
 });
-
-type SortField = ListAdminCoursesInput["sortBy"];
 
 function CatalogAllPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const [createOpen, setCreateOpen] = useState(false);
-  const { searchInput, setSearchInput, isSearchPending } = useDebouncedSearch({
+  const { searchInput, setSearchInput } = useDebouncedSearch({
     committedValue: search.search,
+    delayMs: 600,
     onDebouncedCommit: (next) =>
       navigate({
         replace: true,
@@ -45,43 +51,48 @@ function CatalogAllPage() {
       }),
   });
 
-  const query = useQuery(trpc.catalog.list.queryOptions(search));
-
-  const sorting = useMemo<SortingState>(
-    () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],
-    [search.sortBy, search.sortDirection],
-  );
-
-  const pagination = useMemo<PaginationState>(
+  const queryInput = useMemo(() => getCoursesQueryInput(search), [search]);
+  const query = useSuspenseQuery(trpc.catalog.list.queryOptions(queryInput));
+  const isFetching = useIsFetching({ queryKey: trpc.catalog.list.queryKey() }) > 0;
+  const tableState = useMemo(
     () => ({
-      pageIndex: Math.floor(search.offset / search.limit),
-      pageSize: search.limit,
+      sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,
+      pagination: {
+        pageIndex: Math.floor(search.offset / search.limit),
+        pageSize: search.limit,
+      } as PaginationState,
+      columnFilters: (search.statuses?.length
+        ? [{ id: "status", value: search.statuses }]
+        : []) as ColumnFiltersState,
     }),
-    [search.offset, search.limit],
+    [search],
   );
 
   const table = useReactTable<CourseRow>({
-    data: query.data?.rows ?? [],
+    data: query.data.rows,
     columns: COURSE_COLUMNS,
     getCoreRowModel: getCoreRowModel(),
-    state: { sorting, pagination },
+    state: tableState,
     manualSorting: true,
     manualPagination: true,
-    rowCount: query.data?.totalCount ?? 0,
+    manualFiltering: true,
+    rowCount: query.data.totalCount,
     onSortingChange: (updater) => {
-      const next = typeof updater === "function" ? updater(sorting) : updater;
+      const next = typeof updater === "function" ? updater(tableState.sorting) : updater;
       const first = next[0];
+
       navigate({
         search: (prev: ListAdminCoursesInput) => ({
           ...prev,
-          sortBy: first ? (first.id as SortField) : "updatedAt",
+          sortBy: first ? (first.id as CourseSortField) : "updatedAt",
           sortDirection: first ? (first.desc ? "desc" : "asc") : "desc",
           offset: 0,
         }),
       });
     },
     onPaginationChange: (updater) => {
-      const next = typeof updater === "function" ? updater(pagination) : updater;
+      const next = typeof updater === "function" ? updater(tableState.pagination) : updater;
+
       navigate({
         search: (prev: ListAdminCoursesInput) => ({
           ...prev,
@@ -90,31 +101,69 @@ function CatalogAllPage() {
         }),
       });
     },
+    onColumnFiltersChange: (updater) => {
+      const next = typeof updater === "function" ? updater(tableState.columnFilters) : updater;
+      const statuses = next.find((filter) => filter.id === "status")?.value as
+        | CourseStatus[]
+        | undefined;
+
+      navigate({
+        search: (prev: ListAdminCoursesInput) => ({
+          ...prev,
+          statuses: statuses?.length ? statuses : undefined,
+          offset: 0,
+        }),
+      });
+    },
   });
+
+  const pageIndex = tableState.pagination.pageIndex;
+  const pageSize = tableState.pagination.pageSize;
 
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
       <CoursesToolbar
-        isFetching={query.isFetching || isSearchPending}
-        onNewCourse={() => setCreateOpen(true)}
-        onRefresh={() => query.refetch()}
+        isFetching={isFetching}
+        onRefresh={query.refetch}
         onSearchChange={setSearchInput}
-        onStatusesChange={(statuses) =>
+        onViewChange={(view: CourseViewMode) =>
           navigate({
-            search: (prev: ListAdminCoursesInput) => ({
-              ...prev,
-              statuses: statuses.length === 0 ? undefined : (statuses as CourseStatus[]),
-              offset: 0,
-            }),
+            search: (prev: ListAdminCoursesInput) => ({ ...prev, view }),
           })
         }
         search={searchInput}
-        statuses={search.statuses ?? []}
+        view={search.view}
       />
 
-      <CreateCourseDialog onOpenChange={setCreateOpen} open={createOpen} />
+      <CoursesFilters table={table} />
 
-      <DataTable<CourseRow> emptyMessage="No courses yet." table={table} />
+      {search.view === "cards" ? (
+        <CoursesCardGrid
+          courses={query.data.rows}
+          onPageChange={(nextPageIndex) =>
+            navigate({
+              search: (prev: ListAdminCoursesInput) => ({
+                ...prev,
+                offset: nextPageIndex * pageSize,
+              }),
+            })
+          }
+          onPageSizeChange={(nextPageSize) =>
+            navigate({
+              search: (prev: ListAdminCoursesInput) => ({
+                ...prev,
+                limit: nextPageSize,
+                offset: 0,
+              }),
+            })
+          }
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={query.data.totalCount}
+        />
+      ) : (
+        <DataTable<CourseRow> emptyMessage="No courses yet." table={table} />
+      )}
     </div>
   );
 }

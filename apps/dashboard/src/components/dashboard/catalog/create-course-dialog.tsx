@@ -3,24 +3,21 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/mini";
+import type { ReactElement } from "react";
 
 import { useTRPC } from "@/lib/trpc/client";
-import {
-  COURSE_STATUSES,
-  DIFFICULTY_LEVELS,
-  type CourseStatus,
-  type DifficultyLevel,
-} from "@sycom/db/schema/catalog";
+import { COURSE_STATUSES, DIFFICULTY_LEVELS } from "@sycom/db/schema/catalog";
 import { Button } from "@sycom/ui/components/button";
 import {
   Dialog,
+  DialogClose,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogPanel,
   DialogPopup,
   DialogTitle,
+  DialogTrigger,
 } from "@sycom/ui/components/dialog";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
@@ -36,50 +33,20 @@ import { Textarea } from "@sycom/ui/components/textarea";
 import { toastManager } from "@sycom/ui/components/toast";
 import { slugify } from "@sycom/ui/lib/string";
 
-const createCourseSchema = z.object({
-  title: z.string().check(z.minLength(1, "Title is required"), z.maxLength(160)),
-  slug: z.string().check(
-    z.minLength(2, "Slug must be at least 2 characters"),
-    z.maxLength(80, "Slug must be at most 80 characters"),
-    z.regex(
-      /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
-      "Use lowercase letters, numbers, and hyphens only",
-    ),
-    z.refine((value) => !value.includes("--"), "No consecutive hyphens"),
-  ),
-  description: z.string().check(z.maxLength(2000)),
-  difficulty: z.enum(DIFFICULTY_LEVELS),
-  status: z.enum(COURSE_STATUSES),
-});
-
-type CreateCourseFormInput = z.infer<typeof createCourseSchema>;
-
-const DEFAULT_VALUES: CreateCourseFormInput = {
-  title: "",
-  slug: "",
-  description: "",
-  difficulty: "beginner",
-  status: "draft",
-};
-
-const DIFFICULTY_LABELS: Record<DifficultyLevel, string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
-  expert: "Expert",
-};
-
-const STATUS_LABELS: Record<CourseStatus, string> = {
-  draft: "Draft",
-  published: "Published",
-};
+import {
+  COURSE_DIFFICULTY_LABELS,
+  COURSE_STATUS_LABELS,
+  createCourseSchema,
+  DEFAULT_CREATE_COURSE_VALUES,
+  type CreateCourseFormInput,
+} from "./courses-schema";
 
 type CreateCourseDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  trigger?: ReactElement;
 };
 
-export function CreateCourseDialog({ open, onOpenChange }: CreateCourseDialogProps) {
+export function CreateCourseDialog({ trigger }: CreateCourseDialogProps) {
+  const [open, setOpen] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -88,7 +55,7 @@ export function CreateCourseDialog({ open, onOpenChange }: CreateCourseDialogPro
 
   const form = useForm<CreateCourseFormInput>({
     resolver: zodResolver(createCourseSchema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: DEFAULT_CREATE_COURSE_VALUES,
   });
 
   const createMutation = useMutation({
@@ -99,8 +66,8 @@ export function CreateCourseDialog({ open, onOpenChange }: CreateCourseDialogPro
           description: `${input.title} is in the public catalog.`,
           type: "success",
         });
-        onOpenChange(false);
-        form.reset(DEFAULT_VALUES);
+        setOpen(false);
+        form.reset(DEFAULT_CREATE_COURSE_VALUES);
         setSlugTouched(false);
         await queryClient.invalidateQueries({ queryKey: listKey });
         await navigate({ to: "/dashboard/admin/catalog/$courseId", params: { courseId } });
@@ -128,15 +95,16 @@ export function CreateCourseDialog({ open, onOpenChange }: CreateCourseDialogPro
   };
 
   const handleOpenChange = (next: boolean) => {
-    onOpenChange(next);
+    setOpen(next);
     if (!next) {
-      form.reset(DEFAULT_VALUES);
+      form.reset(DEFAULT_CREATE_COURSE_VALUES);
       setSlugTouched(false);
     }
   };
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
+      {trigger ? <DialogTrigger render={trigger}></DialogTrigger> : null}
       <DialogPopup className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Create course</DialogTitle>
@@ -235,7 +203,7 @@ export function CreateCourseDialog({ open, onOpenChange }: CreateCourseDialogPro
                             <SelectContent>
                               {DIFFICULTY_LEVELS.map((level) => (
                                 <SelectItem key={level} value={level}>
-                                  {DIFFICULTY_LABELS[level]}
+                                  {COURSE_DIFFICULTY_LABELS[level]}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -262,7 +230,7 @@ export function CreateCourseDialog({ open, onOpenChange }: CreateCourseDialogPro
                             <SelectContent>
                               {COURSE_STATUSES.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {STATUS_LABELS[status]}
+                                  {COURSE_STATUS_LABELS[status]}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -276,9 +244,9 @@ export function CreateCourseDialog({ open, onOpenChange }: CreateCourseDialogPro
               </div>
 
               <DialogFooter variant="bare">
-                <Button onClick={() => handleOpenChange(false)} type="button" variant="outline">
+                <DialogClose render={<Button type="button" variant="outline" />}>
                   Cancel
-                </Button>
+                </DialogClose>
                 <Button loading={form.formState.isSubmitting} type="submit">
                   Create course
                 </Button>
