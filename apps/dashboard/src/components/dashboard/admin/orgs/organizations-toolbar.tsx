@@ -5,18 +5,17 @@ import { Button } from "@sycom/ui/components/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/components/input-group";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { cn } from "@sycom/ui/lib/utils";
+import { CreateOrganizationDialog } from "./create-organization-dialog";
 
 export type OrganizationsToolbarProps = {
   search: string;
   onSearchChange: (next: string) => void;
   isFetching?: boolean;
   onRefresh?: () => void;
-  onNewOrganization?: () => void;
 };
 
 export function OrganizationsToolbar({
   isFetching = false,
-  onNewOrganization,
   onRefresh,
   onSearchChange,
   search,
@@ -51,10 +50,14 @@ export function OrganizationsToolbar({
         <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
       </Button>
 
-      <Button onClick={onNewOrganization}>
-        <Plus className="size-4" />
-        New organization
-      </Button>
+      <CreateOrganizationDialog
+        trigger={
+          <Button>
+            <Plus className="size-4" />
+            New organization
+          </Button>
+        }
+      />
     </div>
   );
 }

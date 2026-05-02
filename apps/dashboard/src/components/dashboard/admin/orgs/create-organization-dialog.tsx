@@ -2,12 +2,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/mini";
+import type { ReactElement } from "react";
 
 import { useTRPC } from "@/lib/trpc/client";
-import { Button } from "@sycom/ui/components/button";
 import {
   Dialog,
+  DialogClose,
+  DialogTrigger,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -21,45 +22,19 @@ import { Input } from "@sycom/ui/components/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/components/input-group";
 import { toastManager } from "@sycom/ui/components/toast";
 import { slugify } from "@sycom/ui/lib/string";
-
-const RESERVED_SLUGS = ["admin", "api", "app", "auth", "dashboard", "public", "www"] as const;
-
-const createOrganizationSchema = z.object({
-  name: z.string().check(z.minLength(1, "Organization name is required"), z.maxLength(120)),
-  slug: z.string().check(
-    z.minLength(2, "Slug must be at least 2 characters"),
-    z.maxLength(63, "Slug must be at most 63 characters"),
-    z.regex(
-      /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
-      "Use lowercase letters, numbers, and hyphens only",
-    ),
-    z.refine((value) => !value.includes("--"), "No consecutive hyphens"),
-    z.refine(
-      (value) => !RESERVED_SLUGS.includes(value as (typeof RESERVED_SLUGS)[number]),
-      "This slug is reserved",
-    ),
-  ),
-  ownerFirstName: z.string().check(z.minLength(1, "Owner first name is required"), z.maxLength(80)),
-  ownerLastName: z.string().check(z.minLength(1, "Owner last name is required"), z.maxLength(80)),
-  ownerEmail: z.email("Enter a valid email"),
-});
-
-type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
-
-const DEFAULT_VALUES: CreateOrganizationInput = {
-  name: "",
-  slug: "",
-  ownerFirstName: "",
-  ownerLastName: "",
-  ownerEmail: "",
-};
+import { Button } from "@sycom/ui/components/button";
+import {
+  createOrganizationSchema,
+  DEFAULT_CREATE_ORGANIZATION_VALUES,
+  type CreateOrganizationInput,
+} from "./organizations-schema";
 
 type CreateOrganizationDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  trigger?: ReactElement;
 };
 
-export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizationDialogProps) {
+export function CreateOrganizationDialog({ trigger }: CreateOrganizationDialogProps) {
+  const [open, setOpen] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const listOrgsQueryKey = trpc.admin.listOrganizations.queryKey();
@@ -67,7 +42,7 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
 
   const form = useForm<CreateOrganizationInput>({
     resolver: zodResolver(createOrganizationSchema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: DEFAULT_CREATE_ORGANIZATION_VALUES,
   });
 
   const createMutation = useMutation({
@@ -81,8 +56,8 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
               : `${input.name} is live and we emailed ${input.ownerEmail} to set their password and join as owner.`,
           type: "success",
         });
-        onOpenChange(false);
-        form.reset(DEFAULT_VALUES);
+        setOpen(false);
+        form.reset(DEFAULT_CREATE_ORGANIZATION_VALUES);
         setSlugTouched(false);
         await queryClient.invalidateQueries({ queryKey: listOrgsQueryKey });
       },
@@ -115,15 +90,16 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
   };
 
   const handleOpenChange = (next: boolean) => {
-    onOpenChange(next);
+    setOpen(next);
     if (!next) {
-      form.reset(DEFAULT_VALUES);
+      form.reset(DEFAULT_CREATE_ORGANIZATION_VALUES);
       setSlugTouched(false);
     }
   };
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
+      {trigger ? <DialogTrigger render={trigger}></DialogTrigger> : null}
       <DialogPopup className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Create organization</DialogTitle>
@@ -250,9 +226,9 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
               />
 
               <DialogFooter variant="bare">
-                <Button onClick={() => handleOpenChange(false)} type="button" variant="outline">
+                <DialogClose render={<Button type="button" variant="outline" />}>
                   Cancel
-                </Button>
+                </DialogClose>
                 <Button loading={form.formState.isSubmitting} type="submit">
                   Create organization
                 </Button>

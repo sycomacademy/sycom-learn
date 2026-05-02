@@ -155,7 +155,9 @@ export const listAdminOrganizationInvitationsSchema = z.object({
   search: z.string().trim().min(1).optional(),
   roles: z.array(z.enum(organizationRoleEnum.enumValues)).optional(),
   statuses: z.array(organizationInvitationFilterStatusSchema).optional(),
-  sortBy: z.enum(["email", "createdAt", "expiresAt", "organizationName"]).default("createdAt"),
+  sentFrom: z.date().optional(),
+  sentTo: z.date().optional(),
+  sortBy: z.enum(["email", "createdAt", "organizationName"]).default("createdAt"),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
 });
 export type ListAdminOrganizationInvitationsInput = z.infer<

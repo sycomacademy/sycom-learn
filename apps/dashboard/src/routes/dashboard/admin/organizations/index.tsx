@@ -1,21 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
+import { useIsFetching, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getCoreRowModel,
   useReactTable,
+  type ColumnFiltersState,
   type PaginationState,
   type SortingState,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { CreateOrganizationDialog } from "@/components/dashboard/admin/orgs/create-organization-dialog";
-import {
-  ORGANIZATION_COLUMNS,
-  type OrganizationRow,
-} from "@/components/dashboard/admin/orgs/organizations-columns";
+import { ORGANIZATION_COLUMNS } from "@/components/dashboard/admin/orgs/organizations-columns";
 import {
   listAdminOrganizationsSchema,
   type ListAdminOrganizationsInput,
+  type OrganizationRow,
+  type OrganizationSortField,
 } from "@/components/dashboard/admin/orgs/organizations-schema";
 import { OrganizationsToolbar } from "@/components/dashboard/admin/orgs/organizations-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
@@ -32,15 +31,11 @@ export const Route = createFileRoute("/dashboard/admin/organizations/")({
   },
   component: OrganizationsAllPage,
 });
-
-type SortField = ListAdminOrganizationsInput["sortBy"];
-
 function OrganizationsAllPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const [createOpen, setCreateOpen] = useState(false);
-  const { searchInput, setSearchInput, isSearchPending } = useDebouncedSearch({
+  const { searchInput, setSearchInput } = useDebouncedSearch({
     committedValue: search.search,
     onDebouncedCommit: (next) =>
       navigate({
@@ -49,44 +44,44 @@ function OrganizationsAllPage() {
       }),
   });
 
-  const query = useQuery(trpc.admin.listOrganizations.queryOptions(search));
-
-  const sorting = useMemo<SortingState>(
-    () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],
-    [search.sortBy, search.sortDirection],
-  );
-
-  const pagination = useMemo<PaginationState>(
+  const query = useSuspenseQuery(trpc.admin.listOrganizations.queryOptions(search));
+  const isFetching = useIsFetching({ queryKey: trpc.admin.listOrganizations.queryKey() }) > 0;
+  const tableState = useMemo(
     () => ({
-      pageIndex: Math.floor(search.offset / search.limit),
-      pageSize: search.limit,
+      sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,
+      pagination: {
+        pageIndex: Math.floor(search.offset / search.limit),
+        pageSize: search.limit,
+      } as PaginationState,
+      columnFilters: [] as ColumnFiltersState,
     }),
-    [search.offset, search.limit],
+    [search],
   );
 
   const table = useReactTable<OrganizationRow>({
-    data: query.data?.rows ?? [],
+    data: query.data.rows,
     columns: ORGANIZATION_COLUMNS,
     getCoreRowModel: getCoreRowModel(),
-    state: { sorting, pagination },
+    state: tableState,
     manualSorting: true,
     manualPagination: true,
-    rowCount: query.data?.totalCount ?? 0,
+    manualFiltering: true,
+    rowCount: query.data.totalCount,
     onSortingChange: (updater) => {
-      const next = typeof updater === "function" ? updater(sorting) : updater;
+      const next = typeof updater === "function" ? updater(tableState.sorting) : updater;
       const first = next[0];
 
       navigate({
         search: (prev: ListAdminOrganizationsInput) => ({
           ...prev,
-          sortBy: first ? (first.id as SortField) : undefined,
+          sortBy: first ? (first.id as OrganizationSortField) : undefined,
           sortDirection: first ? (first.desc ? "desc" : "asc") : undefined,
           offset: 0,
         }),
       });
     },
     onPaginationChange: (updater) => {
-      const next = typeof updater === "function" ? updater(pagination) : updater;
+      const next = typeof updater === "function" ? updater(tableState.pagination) : updater;
 
       navigate({
         search: (prev: ListAdminOrganizationsInput) => ({
@@ -101,14 +96,11 @@ function OrganizationsAllPage() {
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
       <OrganizationsToolbar
-        isFetching={query.isFetching || isSearchPending}
-        onNewOrganization={() => setCreateOpen(true)}
-        onRefresh={() => query.refetch()}
+        isFetching={isFetching}
+        onRefresh={query.refetch}
         onSearchChange={setSearchInput}
         search={searchInput}
       />
-
-      <CreateOrganizationDialog onOpenChange={setCreateOpen} open={createOpen} />
 
       <DataTable<OrganizationRow> emptyMessage="No organizations found." table={table} />
     </div>

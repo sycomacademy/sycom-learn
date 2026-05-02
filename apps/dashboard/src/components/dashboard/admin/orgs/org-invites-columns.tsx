@@ -1,11 +1,8 @@
 import { Badge } from "@sycom/ui/components/badge";
 import { formatDateTime } from "@sycom/ui/lib/date";
 import { createColumnHelper } from "@tanstack/react-table";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-import { ORG_INVITE_STATUS_CONFIG, ORG_ROLE_LABELS } from "./org-invites-helpers";
-
-export type OrgInviteRow = AppRouterOutputs["admin"]["listOrganizationInvitations"]["rows"][number];
+import { ORG_INVITE_STATUS_CONFIG, ORG_ROLE_LABELS, type OrgInviteRow } from "./org-invites-schema";
 
 function OrganizationCell({ invite }: { invite: OrgInviteRow }) {
   return (

@@ -2,13 +2,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar
 import { formatDate } from "@sycom/ui/lib/date";
 import { getInitials } from "@sycom/ui/lib/string";
 import { createColumnHelper } from "@tanstack/react-table";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { buildImageUrl } from "@sycom/ui/image/cdn";
 
 import { OrganizationActions } from "./organizations-actions";
-
-export type OrganizationRow = AppRouterOutputs["admin"]["listOrganizations"]["rows"][number];
+import type { OrganizationRow } from "./organizations-schema";
 
 function OrganizationCell({ organization }: { organization: OrganizationRow }) {
   return (
