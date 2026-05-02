@@ -762,7 +762,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
         onOpenChange={(open) => dispatchDialogs({ type: "set", dialog: "viewOpen", open })}
         open={viewOpen}
       >
-        <SheetPopup>
+        <SheetPopup variant="inset">
           {userDetailsQuery.isLoading ? (
             <SheetPanel className="flex min-h-64 items-center justify-center">
               <Spinner className="size-5" />

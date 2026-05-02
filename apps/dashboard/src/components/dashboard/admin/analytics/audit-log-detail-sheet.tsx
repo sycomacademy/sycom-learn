@@ -137,7 +137,7 @@ export function AuditLogActions({ row }: { row: AuditLogDetailRow }): ReactNode 
           </Button>
         }
       />
-      <SheetPopup>
+      <SheetPopup variant="inset">
         <AuditLogSheetContent row={row} />
       </SheetPopup>
     </Sheet>

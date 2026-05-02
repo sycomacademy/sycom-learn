@@ -78,7 +78,7 @@ export function ReportsActions({ report }: { report: ReportRow }): ReactNode {
           </Button>
         }
       />
-      <SheetPopup>
+      <SheetPopup variant="inset">
         <SheetHeader>
           <div className="space-y-3 pe-8">
             <div>

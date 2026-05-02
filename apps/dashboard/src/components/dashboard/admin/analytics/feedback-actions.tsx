@@ -25,7 +25,7 @@ export function FeedbackActions({ feedback }: { feedback: FeedbackRow }): ReactN
           </Button>
         }
       />
-      <SheetPopup>
+      <SheetPopup variant="inset">
         <SheetHeader>
           <SheetTitle>Feedback details</SheetTitle>
           <SheetDescription>Submitted by {feedback.email}</SheetDescription>

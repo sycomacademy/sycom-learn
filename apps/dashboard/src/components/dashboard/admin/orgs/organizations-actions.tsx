@@ -343,7 +343,7 @@ export function OrganizationActions({
       </DropdownMenu>
 
       <Sheet onOpenChange={setViewOpen} open={viewOpen}>
-        <SheetPopup>
+        <SheetPopup variant="inset">
           {detailsQuery.isLoading ? (
             <SheetPanel className="flex min-h-64 items-center justify-center">
               <Spinner className="size-5" />
