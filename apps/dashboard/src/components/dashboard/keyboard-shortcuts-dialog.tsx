@@ -34,6 +34,11 @@ export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcut
   );
 
   const categories = [...new Set(rows.map((row) => row.category))];
+  const rowsByCategory = rows.reduce<Record<string, typeof rows>>((groupedRows, row) => {
+    groupedRows[row.category] ??= [];
+    groupedRows[row.category].push(row);
+    return groupedRows;
+  }, {});
 
   const handleClose = () => {
     onOpenChange(false);
@@ -55,24 +60,22 @@ export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcut
                 <dt className="mb-2 text-xs font-medium text-muted-foreground">{category}</dt>
                 <dd>
                   <ul className="flex flex-col divide-y divide-border rounded-lg border bg-muted/40">
-                    {rows
-                      .filter((row) => row.category === category)
-                      .map((row) => (
-                        <li
-                          className={cn(
-                            "flex items-center gap-4 px-3 py-2.5 text-sm first:rounded-t-lg last:rounded-b-lg",
-                          )}
-                          key={row.id}
+                    {rowsByCategory[category]?.map((row) => (
+                      <li
+                        className={cn(
+                          "flex items-center gap-4 px-3 py-2.5 text-sm first:rounded-t-lg last:rounded-b-lg",
+                        )}
+                        key={row.id}
+                      >
+                        <span className="min-w-0 flex-1 text-foreground">{row.description}</span>
+                        <kbd
+                          className="shrink-0 rounded border bg-background px-2 py-0.5 font-sans text-xs font-medium tracking-widest text-muted-foreground"
+                          translate="no"
                         >
-                          <span className="min-w-0 flex-1 text-foreground">{row.description}</span>
-                          <kbd
-                            className="shrink-0 rounded border bg-background px-2 py-0.5 font-sans text-xs font-medium tracking-widest text-muted-foreground"
-                            translate="no"
-                          >
-                            {row.label}
-                          </kbd>
-                        </li>
-                      ))}
+                          {row.label}
+                        </kbd>
+                      </li>
+                    ))}
                   </ul>
                 </dd>
               </div>

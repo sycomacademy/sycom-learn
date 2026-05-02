@@ -21,26 +21,19 @@ export function DashboardGreeting({
   const useDeviceTimezone = profileSettings?.useDeviceTimezone ?? true;
   const useTimeBasedGreeting = useDeviceTimezone === true;
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  const [greeting, setGreeting] = useState(() =>
-    useTimeBasedGreeting ? getTimeOfDayGreetingForTimeZone(tz) : "Welcome",
-  );
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     if (!useTimeBasedGreeting) {
-      setGreeting("Welcome");
       return;
     }
 
-    setGreeting(getTimeOfDayGreetingForTimeZone(tz));
-
-    const interval = setInterval(
-      () => setGreeting(getTimeOfDayGreetingForTimeZone(tz)),
-      10 * 60 * 1000,
-    );
+    const interval = setInterval(() => setNow(new Date()), 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [tz, useTimeBasedGreeting]);
+  }, [useTimeBasedGreeting]);
+
+  const greeting = useTimeBasedGreeting ? getTimeOfDayGreetingForTimeZone(tz, now) : "Welcome";
 
   const fromName =
     typeof userName === "string" && userName.trim().length > 0

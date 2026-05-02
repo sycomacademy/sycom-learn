@@ -19,7 +19,7 @@ import GlobalError from "@/components/layout/global-error";
 import { RootLoader } from "@/components/layout/loader";
 
 import appCss from "../index.css?url";
-export type RouterAppContext = {
+type RouterAppContext = {
   trpc: TRPCOptionsProxy<AppRouter>;
   queryClient: QueryClient;
   router: RegisteredRouter;

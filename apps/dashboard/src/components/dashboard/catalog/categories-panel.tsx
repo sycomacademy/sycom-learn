@@ -13,7 +13,7 @@ type CourseDetail = AppRouterOutputs["catalog"]["get"];
 export function CategoriesPanel({ course }: { course: CourseDetail }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState<string[]>(course.categories.map((c) => c.id));
+  const [selected, setSelected] = useState<string[]>(() => course.categories.map((c) => c.id));
 
   useEffect(() => {
     setSelected(course.categories.map((c) => c.id));
@@ -54,7 +54,7 @@ export function CategoriesPanel({ course }: { course: CourseDetail }) {
     .map((c) => c.id)
     .sort()
     .join(",");
-  const selectedIds = [...selected].sort().join(",");
+  const selectedIds = selected.toSorted().join(",");
   const isDirty = initialIds !== selectedIds;
 
   return (

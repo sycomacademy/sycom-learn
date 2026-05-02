@@ -27,7 +27,7 @@ export const FlickeringGrid: React.FC<FlickeringGridProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState(false);
+  const isInViewRef = useRef(false);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const memoizedColor = useMemo(() => {
@@ -54,8 +54,7 @@ export const FlickeringGrid: React.FC<FlickeringGridProps> = ({
       const dpr = window.devicePixelRatio || 1;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
+      canvas.style.cssText = `width:${w}px;height:${h}px`;
       const cols = Math.floor(w / (squareSize + gridGap));
       const rows = Math.floor(h / (squareSize + gridGap));
 
@@ -136,7 +135,7 @@ export const FlickeringGrid: React.FC<FlickeringGridProps> = ({
 
     let lastTime = 0;
     const animate = (time: number) => {
-      if (!isInView) {
+      if (!isInViewRef.current) {
         return;
       }
 
@@ -164,23 +163,26 @@ export const FlickeringGrid: React.FC<FlickeringGridProps> = ({
 
     const intersectionObserver = new IntersectionObserver(
       ([entry]) => {
-        setIsInView(entry.isIntersecting);
+        isInViewRef.current = entry.isIntersecting;
+
+        if (entry.isIntersecting) {
+          animationFrameId = requestAnimationFrame(animate);
+          return;
+        }
+
+        cancelAnimationFrame(animationFrameId);
       },
       { threshold: 0 },
     );
 
     intersectionObserver.observe(canvas);
 
-    if (isInView) {
-      animationFrameId = requestAnimationFrame(animate);
-    }
-
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
     };
-  }, [setupCanvas, updateSquares, drawGrid, width, height, isInView]);
+  }, [setupCanvas, updateSquares, drawGrid, width, height]);
 
   return (
     <div className={cn("h-full w-full", className)} ref={containerRef} {...props}>

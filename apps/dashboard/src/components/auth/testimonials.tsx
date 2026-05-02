@@ -1,4 +1,4 @@
-import { AnimatePresence, LazyMotion, domAnimation, m } from "motion/react";
+import { AnimatePresence, LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 
 const testimonials = [
@@ -34,17 +34,20 @@ const testimonials = [
 ];
 
 export function LoginTestimonials() {
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(() => Math.floor(Math.random() * testimonials.length));
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
-    setCurrent(Math.floor(Math.random() * testimonials.length));
+    if (shouldReduceMotion) {
+      return;
+    }
 
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % testimonials.length);
     }, 6000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [shouldReduceMotion]);
 
   const testimonial = testimonials[current];
 
@@ -55,16 +58,22 @@ export function LoginTestimonials() {
           <m.div
             animate={{ opacity: 1 }}
             className="space-y-4 text-center"
-            exit={{ opacity: 0 }}
-            initial={{ opacity: 0 }}
+            exit={shouldReduceMotion ? undefined : { opacity: 0 }}
+            initial={shouldReduceMotion ? false : { opacity: 0 }}
             key={current}
-            transition={{ duration: 0.3 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3 }}
           >
             <m.div
-              animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+              animate={
+                shouldReduceMotion ? { opacity: 1 } : { opacity: 1, filter: "blur(0px)", y: 0 }
+              }
               className="relative mx-auto max-w-lg"
-              initial={{ opacity: 0, filter: "blur(2px)", y: 10 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+              initial={shouldReduceMotion ? false : { opacity: 0, filter: "blur(2px)", y: 10 }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.6, delay: 0.1, ease: "easeOut" }
+              }
             >
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.02]">
                 <svg
@@ -77,7 +86,7 @@ export function LoginTestimonials() {
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M4.54533 4.828C4.16133 4.828 3.84333 4.684 3.59133 4.396C3.35133 4.108 3.23133 3.712 3.23133 3.208C3.23133 2.644 3.41133 2.104 3.77133 1.588C4.13133 1.072 4.68933 0.616 5.44533 0.22L5.76933 0.67C5.12133 1.054 4.68933 1.438 4.47333 1.822C4.25733 2.206 4.14933 2.626 4.14933 3.082L3.68133 3.82C3.68133 3.52 3.77133 3.28 3.95133 3.1C4.14333 2.908 4.38333 2.812 4.67133 2.812C4.94733 2.812 5.18133 2.902 5.37333 3.082C5.56533 3.262 5.66133 3.502 5.66133 3.802C5.66133 4.09 5.55933 4.336 5.35533 4.54C5.15133 4.732 4.88133 4.828 4.54533 4.828ZM1.50333 4.828C1.11933 4.828 0.801328 4.684 0.549328 4.396C0.309328 4.108 0.189328 3.712 0.189328 3.208C0.189328 2.644 0.369328 2.104 0.729328 1.588C1.08933 1.072 1.64733 0.616 2.40333 0.22L2.72733 0.67C2.07933 1.054 1.64733 1.438 1.43133 1.822C1.21533 2.206 1.10733 2.626 1.10733 3.082L0.639328 3.82C0.639328 3.52 0.729328 3.28 0.909328 3.1C1.10133 2.908 1.34133 2.812 1.62933 2.812C1.90533 2.812 2.13933 2.902 2.33133 3.082C2.52333 3.262 2.61933 3.502 2.61933 3.802C2.61933 4.09 2.51733 4.336 2.31333 4.54C2.10933 4.732 1.83933 4.828 1.50333 4.828Z"
+                    d="M4.55 4.83C4.16 4.83 3.84 4.68 3.59 4.4C3.35 4.11 3.23 3.71 3.23 3.21C3.23 2.64 3.41 2.1 3.77 1.59C4.13 1.07 4.69 0.62 5.45 0.22L5.77 0.67C5.12 1.05 4.69 1.44 4.47 1.82C4.26 2.21 4.15 2.63 4.15 3.08L3.68 3.82C3.68 3.52 3.77 3.28 3.95 3.1C4.14 2.91 4.38 2.81 4.67 2.81C4.95 2.81 5.18 2.9 5.37 3.08C5.57 3.26 5.66 3.5 5.66 3.8C5.66 4.09 5.56 4.34 5.36 4.54C5.15 4.73 4.88 4.83 4.55 4.83ZM1.5 4.83C1.12 4.83 0.8 4.68 0.55 4.4C0.31 4.11 0.19 3.71 0.19 3.21C0.19 2.64 0.37 2.1 0.73 1.59C1.09 1.07 1.65 0.62 2.4 0.22L2.73 0.67C2.08 1.05 1.65 1.44 1.43 1.82C1.22 2.21 1.11 2.63 1.11 3.08L0.64 3.82C0.64 3.52 0.73 3.28 0.91 3.1C1.1 2.91 1.34 2.81 1.63 2.81C1.91 2.81 2.14 2.9 2.33 3.08C2.52 3.26 2.62 3.5 2.62 3.8C2.62 4.09 2.52 4.34 2.31 4.54C2.11 4.73 1.84 4.83 1.5 4.83Z"
                     fill="white"
                   />
                 </svg>
@@ -92,10 +101,16 @@ export function LoginTestimonials() {
             </m.div>
 
             <m.p
-              animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+              animate={
+                shouldReduceMotion ? { opacity: 1 } : { opacity: 1, filter: "blur(0px)", y: 0 }
+              }
               className="font-sans text-xs text-white/40"
-              initial={{ opacity: 0, filter: "blur(2px)", y: 10 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+              initial={shouldReduceMotion ? false : { opacity: 0, filter: "blur(2px)", y: 10 }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.6, delay: 0.3, ease: "easeOut" }
+              }
             >
               {testimonial?.name}, {testimonial?.title}
             </m.p>

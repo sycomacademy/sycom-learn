@@ -52,7 +52,7 @@ import {
   SmartphoneIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
@@ -690,6 +690,64 @@ const verifyTotpSchema = z.object({
 type PasswordConfirmationInput = z.infer<typeof passwordConfirmationSchema>;
 type VerifyTotpInput = z.infer<typeof verifyTotpSchema>;
 
+type EnabledAction = "disable" | "regenerate" | null;
+
+type TwoFactorState = {
+  backupCodes: string[];
+  setupDialogOpen: boolean;
+  totpUri: string | null;
+  enabledAction: EnabledAction;
+  showEnablePassword: boolean;
+  showManagePassword: boolean;
+};
+
+type TwoFactorAction =
+  | { type: "setEnabledAction"; value: EnabledAction }
+  | { type: "setManageBackupCodes"; backupCodes: string[] }
+  | { type: "startSetup"; backupCodes: string[]; totpUri: string | null }
+  | { type: "setSetupDialogOpen"; open: boolean }
+  | { type: "toggleEnablePasswordVisibility" }
+  | { type: "toggleManagePasswordVisibility" }
+  | { type: "verifySuccess" }
+  | { type: "disableSuccess" };
+
+const initialTwoFactorState: TwoFactorState = {
+  backupCodes: [],
+  setupDialogOpen: false,
+  totpUri: null,
+  enabledAction: null,
+  showEnablePassword: false,
+  showManagePassword: false,
+};
+
+function twoFactorStateReducer(state: TwoFactorState, action: TwoFactorAction): TwoFactorState {
+  switch (action.type) {
+    case "setEnabledAction":
+      return { ...state, enabledAction: action.value };
+    case "setManageBackupCodes":
+      return { ...state, backupCodes: action.backupCodes };
+    case "startSetup":
+      return {
+        ...state,
+        backupCodes: action.backupCodes,
+        setupDialogOpen: true,
+        totpUri: action.totpUri,
+      };
+    case "setSetupDialogOpen":
+      return action.open
+        ? { ...state, setupDialogOpen: true }
+        : { ...state, setupDialogOpen: false, totpUri: null };
+    case "toggleEnablePasswordVisibility":
+      return { ...state, showEnablePassword: !state.showEnablePassword };
+    case "toggleManagePasswordVisibility":
+      return { ...state, showManagePassword: !state.showManagePassword };
+    case "verifySuccess":
+      return { ...state, setupDialogOpen: false, totpUri: null };
+    case "disableSuccess":
+      return { ...state, backupCodes: [] };
+  }
+}
+
 function SecurityTwoFactorAuthentication() {
   const queryClient = useQueryClient();
   const trpc = useTRPC();
@@ -697,12 +755,15 @@ function SecurityTwoFactorAuthentication() {
     data: { user },
   } = useUser();
   const twoFactorEnabled = Boolean(user.twoFactorEnabled);
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [setupDialogOpen, setSetupDialogOpen] = useState(false);
-  const [totpUri, setTotpUri] = useState<string | null>(null);
-  const [enabledAction, setEnabledAction] = useState<"disable" | "regenerate" | null>(null);
-  const [showEnablePassword, setShowEnablePassword] = useState(false);
-  const [showManagePassword, setShowManagePassword] = useState(false);
+  const [state, dispatchState] = useReducer(twoFactorStateReducer, initialTwoFactorState);
+  const {
+    backupCodes,
+    enabledAction,
+    setupDialogOpen,
+    showEnablePassword,
+    showManagePassword,
+    totpUri,
+  } = state;
 
   const enableForm = useForm<PasswordConfirmationInput>({
     resolver: zodResolver(passwordConfirmationSchema),
@@ -733,9 +794,11 @@ function SecurityTwoFactorAuthentication() {
         return;
       }
 
-      setBackupCodes(response?.backupCodes ?? []);
-      setTotpUri(response?.totpURI ?? null);
-      setSetupDialogOpen(true);
+      dispatchState({
+        type: "startSetup",
+        backupCodes: response?.backupCodes ?? [],
+        totpUri: response?.totpURI ?? null,
+      });
       verifyForm.reset({ code: "" });
       toastManager.add({ title: "2FA setup started", type: "success" });
     } catch (error) {
@@ -766,8 +829,7 @@ function SecurityTwoFactorAuthentication() {
         return;
       }
 
-      setSetupDialogOpen(false);
-      setTotpUri(null);
+      dispatchState({ type: "verifySuccess" });
       verifyForm.reset({ code: "" });
       toastManager.add({ title: "Two-factor enabled", type: "success" });
       void queryClient.invalidateQueries(trpc.profile.get.queryOptions());
@@ -797,7 +859,7 @@ function SecurityTwoFactorAuthentication() {
       }
 
       manageEnabledForm.reset({ password: "" });
-      setBackupCodes([]);
+      dispatchState({ type: "disableSuccess" });
       toastManager.add({ title: "Two-factor disabled", type: "success" });
       void queryClient.invalidateQueries(trpc.profile.get.queryOptions());
     } catch (error) {
@@ -827,7 +889,7 @@ function SecurityTwoFactorAuthentication() {
         return;
       }
 
-      setBackupCodes(response?.backupCodes ?? []);
+      dispatchState({ type: "setManageBackupCodes", backupCodes: response?.backupCodes ?? [] });
       manageEnabledForm.reset({ password: "" });
       toastManager.add({ title: "Backup codes regenerated", type: "success" });
     } catch (error) {
@@ -848,16 +910,15 @@ function SecurityTwoFactorAuthentication() {
   };
 
   const resetTwoFactorDialog = (open: boolean) => {
-    setSetupDialogOpen(open);
+    dispatchState({ type: "setSetupDialogOpen", open });
 
     if (!open) {
-      setTotpUri(null);
       verifyForm.reset({ code: "" });
     }
   };
 
   const submitEnabledAction = (action: "disable" | "regenerate") => {
-    setEnabledAction(action);
+    dispatchState({ type: "setEnabledAction", value: action });
 
     void manageEnabledForm
       .handleSubmit(async (data) => {
@@ -869,7 +930,7 @@ function SecurityTwoFactorAuthentication() {
         await handleDisable(data);
       })()
       .finally(() => {
-        setEnabledAction(null);
+        dispatchState({ type: "setEnabledAction", value: null });
       });
   };
 
@@ -911,7 +972,9 @@ function SecurityTwoFactorAuthentication() {
                                   aria-label={
                                     showManagePassword ? "Hide password" : "Show password"
                                   }
-                                  onClick={() => setShowManagePassword((state) => !state)}
+                                  onClick={() =>
+                                    dispatchState({ type: "toggleManagePasswordVisibility" })
+                                  }
                                 >
                                   {showManagePassword ? (
                                     <EyeOffIcon className="size-3.5" />
@@ -1011,7 +1074,9 @@ function SecurityTwoFactorAuthentication() {
                             <InputGroupAddon align="inline-end">
                               <InputGroupButton
                                 aria-label={showEnablePassword ? "Hide password" : "Show password"}
-                                onClick={() => setShowEnablePassword((state) => !state)}
+                                onClick={() =>
+                                  dispatchState({ type: "toggleEnablePasswordVisibility" })
+                                }
                               >
                                 {showEnablePassword ? (
                                   <EyeOffIcon className="size-3.5" />

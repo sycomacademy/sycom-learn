@@ -214,7 +214,7 @@ export function CreateCategoryDialog() {
   );
 }
 
-export function EditCategoryDialog({ category }: { category: CategoryRow }) {
+function EditCategoryDialog({ category }: { category: CategoryRow }) {
   const [open, setOpen] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
   const trpc = useTRPC();
@@ -308,7 +308,7 @@ export function EditCategoryDialog({ category }: { category: CategoryRow }) {
   );
 }
 
-export function DeleteCategoryDialog({ category }: { category: CategoryRow }) {
+function DeleteCategoryDialog({ category }: { category: CategoryRow }) {
   const [open, setOpen] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();

@@ -13,7 +13,7 @@ export type ListAdminOrganizationsInput = z.infer<typeof listAdminOrganizationsS
 export type OrganizationSortField = ListAdminOrganizationsInput["sortBy"];
 export type OrganizationRow = AppRouterOutputs["admin"]["listOrganizations"]["rows"][number];
 
-export const RESERVED_ORGANIZATION_SLUGS = [
+const RESERVED_ORGANIZATION_SLUGS = [
   "admin",
   "api",
   "app",

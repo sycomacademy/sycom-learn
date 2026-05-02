@@ -13,7 +13,6 @@ import { cn } from "@sycom/ui/lib/utils";
 import { useLocation } from "@tanstack/react-router";
 import { FingerprintIcon } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
 
 type AuthMethodsProps = {
   disabledSocialReason: string;
@@ -37,14 +36,13 @@ export function AuthMethods({
   const shouldOpenByDefault =
     !isSignUpPath &&
     (lastUsedMethod === "passkey" || lastUsedMethod === "google" || lastUsedMethod === "linkedin");
-  const [openItems, setOpenItems] = useState<string[]>([]);
-
-  useEffect(() => {
-    setOpenItems(shouldOpenByDefault ? ["methods"] : []);
-  }, [shouldOpenByDefault]);
 
   return (
-    <Accordion className="w-full" onValueChange={setOpenItems} value={openItems}>
+    <Accordion
+      className="w-full"
+      defaultValue={shouldOpenByDefault ? ["methods"] : []}
+      key={`${pathname}:${lastUsedMethod ?? "none"}`}
+    >
       <AccordionItem value="methods">
         <AccordionTrigger className="py-2 text-sm font-medium">{title}</AccordionTrigger>
         <AccordionContent className="space-y-3 overflow-visible px-1 pt-3 pb-1">

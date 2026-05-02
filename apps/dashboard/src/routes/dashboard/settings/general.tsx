@@ -80,22 +80,23 @@ function ProfileCard({ user }: { user: User }) {
       const file = new File([blob], fileName, { type: blob.type });
       const result = await uploadFile({ file, signedParams });
 
-      await trpcClient.storage.saveAsset.mutate({
-        publicId: result.publicId,
-        secureUrl: result.secureUrl,
-        folder: "user_avatars",
-        entityType: "user",
-        entityId: user.id,
-        resourceType: result.resourceType,
-        format: result.format,
-        bytes: result.bytes,
-        width: result.width,
-        height: result.height,
-        name: fileName,
-      });
-
-      // Do not optimistically patch avatar: only update UI after storage + profile writes complete.
-      await updateAvatar.mutateAsync({ publicId: result.publicId });
+      await Promise.all([
+        trpcClient.storage.saveAsset.mutate({
+          publicId: result.publicId,
+          secureUrl: result.secureUrl,
+          folder: "user_avatars",
+          entityType: "user",
+          entityId: user.id,
+          resourceType: result.resourceType,
+          format: result.format,
+          bytes: result.bytes,
+          width: result.width,
+          height: result.height,
+          name: fileName,
+        }),
+        // Keep the UI update gated on both writes completing, but let the writes run together.
+        updateAvatar.mutateAsync({ publicId: result.publicId }),
+      ]);
       toastManager.add({ title: "Avatar updated", type: "success" });
     } catch (error) {
       const message =

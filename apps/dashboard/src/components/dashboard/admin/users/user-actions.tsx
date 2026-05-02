@@ -8,7 +8,7 @@ import {
   Trash2Icon,
   UserRoundIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useReducer, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { useUser } from "@/hooks/use-user";
 import { useTRPC } from "@/lib/trpc/client";
@@ -225,6 +225,31 @@ type UserActionsMenuProps = {
   onImpersonate: () => void;
   onDelete: () => void;
 };
+
+type UserDialogKey = "viewOpen" | "banOpen" | "roleOpen" | "impersonateOpen" | "deleteOpen";
+
+type UserDialogsState = Record<UserDialogKey, boolean>;
+
+type UserDialogsAction = {
+  type: "set";
+  dialog: UserDialogKey;
+  open: boolean;
+};
+
+const initialUserDialogsState: UserDialogsState = {
+  viewOpen: false,
+  banOpen: false,
+  roleOpen: false,
+  impersonateOpen: false,
+  deleteOpen: false,
+};
+
+function userDialogsReducer(state: UserDialogsState, action: UserDialogsAction): UserDialogsState {
+  switch (action.type) {
+    case "set":
+      return { ...state, [action.dialog]: action.open };
+  }
+}
 
 function UserActionsMenu({
   user,
@@ -549,11 +574,8 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
   const {
     data: { user: currentUser },
   } = useUser();
-  const [viewOpen, setViewOpen] = useState(false);
-  const [banOpen, setBanOpen] = useState(false);
-  const [roleOpen, setRoleOpen] = useState(false);
-  const [impersonateOpen, setImpersonateOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [dialogsState, dispatchDialogs] = useReducer(userDialogsReducer, initialUserDialogsState);
+  const { viewOpen, banOpen, roleOpen, impersonateOpen, deleteOpen } = dialogsState;
   const isSelf = currentUser.id === user.id;
   const isTargetAdmin = user.role === "platform_admin";
   const currentRole = user.role ?? "public_student";
@@ -575,7 +597,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
   });
 
   const handleRoleOpenChange = (open: boolean) => {
-    setRoleOpen(open);
+    dispatchDialogs({ type: "set", dialog: "roleOpen", open });
 
     if (open) {
       roleForm.reset({ role: currentRole });
@@ -583,7 +605,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
   };
 
   const handleBanOpenChange = (open: boolean) => {
-    setBanOpen(open);
+    dispatchDialogs({ type: "set", dialog: "banOpen", open });
 
     if (!open) {
       banForm.reset({ banReason: "" });
@@ -605,7 +627,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
           description: `${user.name} can no longer sign in.`,
           type: "success",
         });
-        setBanOpen(false);
+        dispatchDialogs({ type: "set", dialog: "banOpen", open: false });
         await invalidateUsers();
       },
       onError: (error) => {
@@ -646,7 +668,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
           description: `${user.name} is now ${ROLE_LABELS[input.role]}.`,
           type: "success",
         });
-        setRoleOpen(false);
+        dispatchDialogs({ type: "set", dialog: "roleOpen", open: false });
         await invalidateUsers();
       },
       onError: (error) => {
@@ -682,7 +704,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
           description: `${user.name} has been permanently removed.`,
           type: "success",
         });
-        setDeleteOpen(false);
+        dispatchDialogs({ type: "set", dialog: "deleteOpen", open: false });
         await invalidateUsers();
       },
       onError: (error) => {
@@ -716,7 +738,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
       return;
     }
 
-    setBanOpen(true);
+    dispatchDialogs({ type: "set", dialog: "banOpen", open: true });
   };
 
   return (
@@ -727,14 +749,19 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
         canImpersonate={canImpersonate}
         canManageRole={canManageRole}
         onBanToggle={handleBanToggle}
-        onChangeRole={() => setRoleOpen(true)}
-        onDelete={() => setDeleteOpen(true)}
-        onImpersonate={() => setImpersonateOpen(true)}
-        onView={() => setViewOpen(true)}
+        onChangeRole={() => dispatchDialogs({ type: "set", dialog: "roleOpen", open: true })}
+        onDelete={() => dispatchDialogs({ type: "set", dialog: "deleteOpen", open: true })}
+        onImpersonate={() =>
+          dispatchDialogs({ type: "set", dialog: "impersonateOpen", open: true })
+        }
+        onView={() => dispatchDialogs({ type: "set", dialog: "viewOpen", open: true })}
         user={user}
       />
 
-      <Sheet onOpenChange={setViewOpen} open={viewOpen}>
+      <Sheet
+        onOpenChange={(open) => dispatchDialogs({ type: "set", dialog: "viewOpen", open })}
+        open={viewOpen}
+      >
         <SheetPopup>
           {userDetailsQuery.isLoading ? (
             <SheetPanel className="flex min-h-64 items-center justify-center">
@@ -760,7 +787,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
 
       <ChangeRoleDialog
         currentRole={currentRole}
-        onCancel={() => setRoleOpen(false)}
+        onCancel={() => dispatchDialogs({ type: "set", dialog: "roleOpen", open: false })}
         onOpenChange={handleRoleOpenChange}
         onSubmit={onRoleSubmit}
         open={roleOpen}
@@ -771,7 +798,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
 
       <BanUserDialog
         banForm={banForm}
-        onCancel={() => setBanOpen(false)}
+        onCancel={() => dispatchDialogs({ type: "set", dialog: "banOpen", open: false })}
         onOpenChange={handleBanOpenChange}
         onSubmit={onBanSubmit}
         open={banOpen}
@@ -780,9 +807,9 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
 
       <ImpersonateUserDialog
         isPending={impersonateMutation.isPending}
-        onCancel={() => setImpersonateOpen(false)}
+        onCancel={() => dispatchDialogs({ type: "set", dialog: "impersonateOpen", open: false })}
         onConfirm={() => impersonateMutation.mutate({ userId: user.id })}
-        onOpenChange={setImpersonateOpen}
+        onOpenChange={(open) => dispatchDialogs({ type: "set", dialog: "impersonateOpen", open })}
         open={impersonateOpen}
         status={status}
         user={user}
@@ -791,7 +818,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
       <DeleteUserDialog
         isPending={deleteMutation.isPending}
         onConfirm={() => deleteMutation.mutate({ userId: user.id })}
-        onOpenChange={setDeleteOpen}
+        onOpenChange={(open) => dispatchDialogs({ type: "set", dialog: "deleteOpen", open })}
         open={deleteOpen}
         user={user}
       />
