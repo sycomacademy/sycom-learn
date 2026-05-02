@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTab } from "@sycom/ui/components/tabs";
 
 type CourseDetailTabRoute =
   | "/dashboard/course/$courseId"
+  | "/dashboard/course/$courseId/curriculum"
   | "/dashboard/course/$courseId/members"
   | "/dashboard/course/$courseId/announcements"
   | "/dashboard/course/$courseId/analytics"
@@ -21,6 +22,9 @@ function getActiveCourseTab(pathname: string, courseId: string): CourseDetailTab
 
   if (normalized === base) {
     return "/dashboard/course/$courseId";
+  }
+  if (normalized === `${base}/curriculum`) {
+    return "/dashboard/course/$courseId/curriculum";
   }
   if (normalized === `${base}/members`) {
     return "/dashboard/course/$courseId/members";
@@ -91,6 +95,13 @@ function CourseDetailLayout() {
             value="/dashboard/course/$courseId"
           >
             Details
+          </TabsTab>
+          <TabsTab
+            nativeButton={false}
+            render={<Link params={{ courseId }} to="/dashboard/course/$courseId/curriculum" />}
+            value="/dashboard/course/$courseId/curriculum"
+          >
+            Curriculum
           </TabsTab>
           <TabsTab
             nativeButton={false}

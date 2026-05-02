@@ -10,7 +10,7 @@ function CourseDetailsPlaceholderPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Details & content</CardTitle>
+        <CardTitle>Details</CardTitle>
         <CardDescription>Course overview and authoring will appear here.</CardDescription>
       </CardHeader>
       <CardPanel>

@@ -8,9 +8,19 @@ import { useForm } from "react-hook-form";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 import { DIFFICULTY_LEVELS } from "@sycom/db/schema/course";
 import { Button } from "@sycom/ui/components/button";
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+  ComboboxValue,
+} from "@sycom/ui/components/combobox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { FileUploader } from "@sycom/ui/components/file-uploader";
-import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
 import { Input } from "@sycom/ui/components/input";
 import {
@@ -81,7 +91,7 @@ export function CreateCourseSheet({ trigger }: CreateCourseSheetProps) {
     enabled: open,
   });
 
-  const categoryOptions: FilterOption[] = (categoriesQuery.data?.rows ?? []).map((c) => ({
+  const categoryOptions = (categoriesQuery.data?.rows ?? []).map((c) => ({
     value: c.id,
     label: c.name,
   }));
@@ -322,7 +332,7 @@ export function CreateCourseSheet({ trigger }: CreateCourseSheetProps) {
                 name="categoryIds"
                 render={({ field, fieldState }) => (
                   <FormItem>
-                    <Field className="w-full">
+                    <Field className="w-full" invalid={!!fieldState.error}>
                       <FieldLabel className="text-xs">Categories</FieldLabel>
                       {categoriesQuery.isLoading ? (
                         <div className="flex min-h-10 items-center gap-2">
@@ -335,16 +345,46 @@ export function CreateCourseSheet({ trigger }: CreateCourseSheetProps) {
                         </p>
                       ) : (
                         <FormControl>
-                          <FilterCombobox
-                            size="default"
-                            allLabel="None"
-                            className="w-full max-w-none justify-between sm:w-full"
-                            label="Categories"
-                            onValueChange={field.onChange}
-                            options={categoryOptions}
-                            resetWhenAllSelected={false}
-                            value={field.value ?? []}
-                          />
+                          <Combobox
+                            itemToStringLabel={(item) => item.label}
+                            items={categoryOptions}
+                            multiple
+                            onValueChange={(next) => field.onChange(next.map((item) => item.value))}
+                            value={categoryOptions.filter((item) =>
+                              (field.value ?? []).includes(item.value),
+                            )}
+                          >
+                            <ComboboxChips aria-invalid={!!fieldState.error} className="w-full">
+                              <ComboboxValue>
+                                {(selected: typeof categoryOptions) => (
+                                  <>
+                                    {selected.map((item) => (
+                                      <ComboboxChip aria-label={item.label} key={item.value}>
+                                        {item.label}
+                                      </ComboboxChip>
+                                    ))}
+                                    <ComboboxChipsInput
+                                      aria-label="Select categories"
+                                      disabled={form.formState.isSubmitting}
+                                      placeholder={
+                                        selected.length > 0 ? undefined : "Select categories..."
+                                      }
+                                    />
+                                  </>
+                                )}
+                              </ComboboxValue>
+                            </ComboboxChips>
+                            <ComboboxPopup>
+                              <ComboboxEmpty>No categories found.</ComboboxEmpty>
+                              <ComboboxList>
+                                {(item: (typeof categoryOptions)[number]) => (
+                                  <ComboboxItem key={item.value} value={item}>
+                                    {item.label}
+                                  </ComboboxItem>
+                                )}
+                              </ComboboxList>
+                            </ComboboxPopup>
+                          </Combobox>
                         </FormControl>
                       )}
                       <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
