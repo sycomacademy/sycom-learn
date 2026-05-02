@@ -127,6 +127,7 @@ export const COURSE_COLUMNS = [
   columnHelper.display({
     id: "categories",
     header: "Categories",
+    enableColumnFilter: true,
     cell: ({ row }) => <CategoriesCell course={row.original} />,
   }),
   columnHelper.accessor("updatedAt", {

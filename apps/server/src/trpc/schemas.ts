@@ -416,6 +416,7 @@ export const listAdminCoursesSchema = z.object({
   offset: z.number().int().min(0).default(0),
   search: z.string().trim().min(1).optional(),
   statuses: z.array(z.enum(COURSE_STATUSES)).optional(),
+  difficulties: z.array(z.enum(DIFFICULTY_LEVELS)).optional(),
   categoryIds: z.array(z.string().min(1)).optional(),
   instructorId: z.string().min(1).optional(),
   sortBy: z.enum(["title", "createdAt", "updatedAt", "status", "difficulty"]).default("updatedAt"),

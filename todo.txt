@@ -14,6 +14,7 @@
     - metadata,ogs, sitemap, robots.txt, etc.
     - FCP, LCP, TTFB etc. and lighthouse scores stuff
     - bundle size optimization and request waterfalls
+    - react-doctor scan
 
 - cool features
     - 404 page stuff

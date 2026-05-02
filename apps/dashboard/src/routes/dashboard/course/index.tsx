@@ -19,6 +19,7 @@ import {
   type CourseSortField,
   type CourseStatus,
   type CourseViewMode,
+  type DifficultyLevel,
   type ListAdminCoursesInput,
 } from "@/components/dashboard/course/courses-schema";
 import { CoursesToolbar } from "@/components/dashboard/course/courses-toolbar";
@@ -32,6 +33,14 @@ export const Route = createFileRoute("/dashboard/course/")({
   loader: async ({ context, deps }) => {
     await context.queryClient.ensureQueryData(
       context.trpc.course.list.queryOptions(getCoursesQueryInput(deps)),
+    );
+    await context.queryClient.ensureQueryData(
+      context.trpc.course.listCategories.queryOptions({
+        limit: 200,
+        offset: 0,
+        sortBy: "name",
+        sortDirection: "asc",
+      }),
     );
   },
   component: CoursesPage,
@@ -61,9 +70,11 @@ function CoursesPage() {
         pageIndex: Math.floor(search.offset / search.limit),
         pageSize: search.limit,
       } as PaginationState,
-      columnFilters: (search.statuses?.length
-        ? [{ id: "status", value: search.statuses }]
-        : []) as ColumnFiltersState,
+      columnFilters: [
+        ...(search.statuses?.length ? [{ id: "status", value: search.statuses }] : []),
+        ...(search.difficulties?.length ? [{ id: "difficulty", value: search.difficulties }] : []),
+        ...(search.categoryIds?.length ? [{ id: "categories", value: search.categoryIds }] : []),
+      ] as ColumnFiltersState,
     }),
     [search],
   );
@@ -106,11 +117,19 @@ function CoursesPage() {
       const statuses = next.find((filter) => filter.id === "status")?.value as
         | CourseStatus[]
         | undefined;
+      const difficulties = next.find((filter) => filter.id === "difficulty")?.value as
+        | DifficultyLevel[]
+        | undefined;
+      const categoryIds = next.find((filter) => filter.id === "categories")?.value as
+        | string[]
+        | undefined;
 
       navigate({
         search: (prev: ListAdminCoursesInput) => ({
           ...prev,
           statuses: statuses?.length ? statuses : undefined,
+          difficulties: difficulties?.length ? difficulties : undefined,
+          categoryIds: categoryIds?.length ? categoryIds : undefined,
           offset: 0,
         }),
       });

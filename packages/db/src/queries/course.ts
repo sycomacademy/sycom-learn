@@ -48,6 +48,7 @@ export type ListCoursesFilter = {
   organizationId?: string;
   search?: string;
   statuses?: CourseStatus[];
+  difficulties?: DifficultyLevel[];
   categoryIds?: string[];
   instructorId?: string;
   limit: number;
@@ -208,6 +209,7 @@ export async function listCourses(
     organizationId,
     search,
     statuses,
+    difficulties,
     categoryIds,
     instructorId,
     limit,
@@ -225,6 +227,9 @@ export async function listCourses(
   }
   if (statuses && statuses.length > 0) {
     filters.push(inArray(course.status, statuses));
+  }
+  if (difficulties && difficulties.length > 0) {
+    filters.push(inArray(course.difficulty, difficulties));
   }
   if (categoryIds && categoryIds.length > 0) {
     filters.push(
