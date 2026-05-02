@@ -1,12 +1,15 @@
 import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
+import type { Table } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 
-import { REPORT_STATUS_LABELS, REPORT_TYPE_LABELS } from "./reports-helpers";
 import {
   feedbackReportStatusSchema,
   feedbackReportTypeSchema,
+  REPORT_STATUS_LABELS,
+  REPORT_TYPE_LABELS,
   type FeedbackReportStatus,
   type FeedbackReportType,
+  type ReportRow,
 } from "./reports-schema";
 
 const STATUS_OPTIONS: FilterOption[] = feedbackReportStatusSchema.options.map((value) => ({
@@ -20,18 +23,15 @@ const TYPE_OPTIONS: FilterOption[] = feedbackReportTypeSchema.options.map((value
 }));
 
 export type ReportsFiltersProps = {
-  statuses: FeedbackReportStatus[];
-  types: FeedbackReportType[];
-  onStatusesChange: (next: FeedbackReportStatus[]) => void;
-  onTypesChange: (next: FeedbackReportType[]) => void;
+  table: Table<ReportRow>;
 };
 
-export function ReportsFilters({
-  onStatusesChange,
-  onTypesChange,
-  statuses,
-  types,
-}: ReportsFiltersProps): ReactNode {
+export function ReportsFilters({ table }: ReportsFiltersProps): ReactNode {
+  const statuses =
+    (table.getColumn("status")?.getFilterValue() as FeedbackReportStatus[] | undefined) ?? [];
+  const types =
+    (table.getColumn("type")?.getFilterValue() as FeedbackReportType[] | undefined) ?? [];
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <FilterCombobox
@@ -42,7 +42,11 @@ export function ReportsFilters({
           return `${selected.length} statuses`;
         }}
         label="Status"
-        onValueChange={(values) => onStatusesChange(values as FeedbackReportStatus[])}
+        onValueChange={(values) =>
+          table
+            .getColumn("status")
+            ?.setFilterValue(values.length ? (values as FeedbackReportStatus[]) : undefined)
+        }
         options={STATUS_OPTIONS}
         value={statuses}
       />
@@ -54,7 +58,11 @@ export function ReportsFilters({
           return `${selected.length} types`;
         }}
         label="Type"
-        onValueChange={(values) => onTypesChange(values as FeedbackReportType[])}
+        onValueChange={(values) =>
+          table
+            .getColumn("type")
+            ?.setFilterValue(values.length ? (values as FeedbackReportType[]) : undefined)
+        }
         options={TYPE_OPTIONS}
         value={types}
       />

@@ -1,3 +1,4 @@
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
 import { z } from "zod";
 
 export const listAdminFeedbackSchema = z.object({
@@ -7,3 +8,5 @@ export const listAdminFeedbackSchema = z.object({
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
 });
 export type ListAdminFeedbackInput = z.infer<typeof listAdminFeedbackSchema>;
+export type FeedbackSortField = ListAdminFeedbackInput["sortBy"];
+export type FeedbackRow = AppRouterOutputs["feedback"]["listFeedback"]["rows"][number];

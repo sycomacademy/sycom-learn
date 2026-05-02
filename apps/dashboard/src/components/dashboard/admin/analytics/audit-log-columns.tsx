@@ -2,12 +2,9 @@ import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { formatDateTime } from "@sycom/ui/lib/date";
 import { getInitials } from "@sycom/ui/lib/string";
 import { createColumnHelper } from "@tanstack/react-table";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { AuditLogActions } from "./audit-log-detail-sheet";
-import { timeAgo } from "./audit-log-helpers";
-
-export type AuditLogRow = AppRouterOutputs["admin"]["listAuditLog"]["rows"][number];
+import { timeAgo, type AuditLogRow } from "./audit-log-schema";
 
 // ---------------------------------------------------------------------------
 // Cells
@@ -85,7 +82,7 @@ export const AUDIT_LOG_COLUMNS = [
     enableSorting: true,
   }),
   columnHelper.accessor("actorName", {
-    id: "by",
+    id: "actorType",
     header: "By",
     cell: ({ row }) => <ByCell row={row.original} />,
     enableSorting: false,

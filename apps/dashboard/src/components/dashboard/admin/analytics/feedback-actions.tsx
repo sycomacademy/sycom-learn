@@ -1,6 +1,5 @@
 import { EyeIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { Button } from "@sycom/ui/components/button";
 import {
@@ -13,8 +12,7 @@ import {
   SheetTrigger,
 } from "@sycom/ui/components/sheet";
 import { formatDateTime } from "@sycom/ui/lib/date";
-
-type FeedbackRow = AppRouterOutputs["feedback"]["listFeedback"]["rows"][number];
+import type { FeedbackRow } from "./feedback-schema";
 
 export function FeedbackActions({ feedback }: { feedback: FeedbackRow }): ReactNode {
   return (

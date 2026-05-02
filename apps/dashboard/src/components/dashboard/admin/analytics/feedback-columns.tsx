@@ -1,9 +1,7 @@
 import { formatDateTime } from "@sycom/ui/lib/date";
 import { createColumnHelper } from "@tanstack/react-table";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 import { FeedbackActions } from "./feedback-actions";
-
-export type FeedbackRow = AppRouterOutputs["feedback"]["listFeedback"]["rows"][number];
+import type { FeedbackRow } from "./feedback-schema";
 
 const columnHelper = createColumnHelper<FeedbackRow>();
 

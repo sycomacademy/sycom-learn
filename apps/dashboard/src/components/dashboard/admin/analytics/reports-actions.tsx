@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCheckIcon, CircleDashedIcon, EyeIcon, LinkIcon, XCircleIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { Button } from "@sycom/ui/components/button";
 import { Badge } from "@sycom/ui/components/badge";
@@ -19,9 +18,7 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { formatDateTime } from "@sycom/ui/lib/date";
 
 import { useTRPC } from "@/lib/trpc/client";
-import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "./reports-helpers";
-
-type ReportRow = AppRouterOutputs["feedback"]["listReports"]["rows"][number];
+import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS, type ReportRow } from "./reports-schema";
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (

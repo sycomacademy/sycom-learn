@@ -1,21 +1,23 @@
-import { useQuery } from "@tanstack/react-query";
+import { useIsFetching, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getCoreRowModel,
   useReactTable,
+  type ColumnFiltersState,
   type PaginationState,
   type SortingState,
 } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { ReportsFilters } from "@/components/dashboard/admin/analytics/reports-filters";
-import {
-  REPORTS_COLUMNS,
-  type ReportRow,
-} from "@/components/dashboard/admin/analytics/reports-columns";
+import { REPORTS_COLUMNS } from "@/components/dashboard/admin/analytics/reports-columns";
 import {
   listAdminReportsSchema,
+  type FeedbackReportStatus,
+  type FeedbackReportType,
   type ListAdminReportsInput,
+  type ReportsSortField,
+  type ReportRow,
 } from "@/components/dashboard/admin/analytics/reports-schema";
 import { ReportsToolbar } from "@/components/dashboard/admin/analytics/reports-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
@@ -35,50 +37,71 @@ function AdminLogsAnalyticsReportsPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
 
-  const query = useQuery(trpc.feedback.listReports.queryOptions(search));
-
-  const sorting = useMemo<SortingState>(
-    () => [{ id: search.sortBy, desc: search.sortDirection === "desc" }],
-    [search.sortBy, search.sortDirection],
-  );
-
-  const pagination = useMemo<PaginationState>(
+  const query = useSuspenseQuery(trpc.feedback.listReports.queryOptions(search));
+  const isFetching = useIsFetching({ queryKey: trpc.feedback.listReports.queryKey() }) > 0;
+  const tableState = useMemo(
     () => ({
-      pageIndex: Math.floor(search.offset / search.limit),
-      pageSize: search.limit,
+      sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,
+      pagination: {
+        pageIndex: Math.floor(search.offset / search.limit),
+        pageSize: search.limit,
+      } as PaginationState,
+      columnFilters: [
+        ...(search.statuses?.length ? [{ id: "status", value: search.statuses }] : []),
+        ...(search.types?.length ? [{ id: "type", value: search.types }] : []),
+      ] as ColumnFiltersState,
     }),
-    [search.offset, search.limit],
+    [search],
   );
 
   const table = useReactTable<ReportRow>({
-    data: query.data?.rows ?? [],
+    data: query.data.rows,
     columns: REPORTS_COLUMNS,
     getCoreRowModel: getCoreRowModel(),
-    state: { sorting, pagination },
+    state: tableState,
     manualSorting: true,
     manualPagination: true,
-    rowCount: query.data?.totalCount ?? 0,
+    manualFiltering: true,
+    rowCount: query.data.totalCount,
     onSortingChange: (updater) => {
-      const next = typeof updater === "function" ? updater(sorting) : updater;
+      const next = typeof updater === "function" ? updater(tableState.sorting) : updater;
       const first = next[0];
 
       navigate({
         search: (prev: ListAdminReportsInput) => ({
           ...prev,
-          sortBy: first ? (first.id as ListAdminReportsInput["sortBy"]) : undefined,
+          sortBy: first ? (first.id as ReportsSortField) : undefined,
           sortDirection: first ? (first.desc ? "desc" : "asc") : undefined,
           offset: 0,
         }),
       });
     },
     onPaginationChange: (updater) => {
-      const next = typeof updater === "function" ? updater(pagination) : updater;
+      const next = typeof updater === "function" ? updater(tableState.pagination) : updater;
 
       navigate({
         search: (prev: ListAdminReportsInput) => ({
           ...prev,
           offset: next.pageIndex * next.pageSize,
           limit: next.pageSize,
+        }),
+      });
+    },
+    onColumnFiltersChange: (updater) => {
+      const next = typeof updater === "function" ? updater(tableState.columnFilters) : updater;
+      const statuses = next.find((filter) => filter.id === "status")?.value as
+        | FeedbackReportStatus[]
+        | undefined;
+      const types = next.find((filter) => filter.id === "type")?.value as
+        | FeedbackReportType[]
+        | undefined;
+
+      navigate({
+        search: (prev: ListAdminReportsInput) => ({
+          ...prev,
+          statuses: statuses?.length ? statuses : undefined,
+          types: types?.length ? types : undefined,
+          offset: 0,
         }),
       });
     },
@@ -93,30 +116,9 @@ function AdminLogsAnalyticsReportsPage() {
         </p>
       </div>
 
-      <ReportsToolbar isFetching={query.isFetching} onRefresh={() => query.refetch()} />
+      <ReportsToolbar isFetching={isFetching} onRefresh={query.refetch} />
 
-      <ReportsFilters
-        onStatusesChange={(statuses) =>
-          navigate({
-            search: (prev: ListAdminReportsInput) => ({
-              ...prev,
-              statuses: statuses.length > 0 ? statuses : undefined,
-              offset: 0,
-            }),
-          })
-        }
-        onTypesChange={(types) =>
-          navigate({
-            search: (prev: ListAdminReportsInput) => ({
-              ...prev,
-              types: types.length > 0 ? types : undefined,
-              offset: 0,
-            }),
-          })
-        }
-        statuses={search.statuses ?? []}
-        types={search.types ?? []}
-      />
+      <ReportsFilters table={table} />
 
       <DataTable<ReportRow> emptyMessage="No reports submitted yet." table={table} />
     </div>

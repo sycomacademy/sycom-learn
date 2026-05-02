@@ -1,6 +1,5 @@
 import { EyeIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import {
   Sheet,
@@ -17,9 +16,9 @@ import { Button } from "@sycom/ui/components/button";
 import { formatDateTime } from "@sycom/ui/lib/date";
 import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { getInitials } from "@sycom/ui/lib/string";
-import { timeAgo } from "./audit-log-helpers";
+import { timeAgo, type AuditLogRow } from "./audit-log-schema";
 
-export type AuditLogDetailRow = AppRouterOutputs["admin"]["listAuditLog"]["rows"][number];
+export type AuditLogDetailRow = AuditLogRow;
 
 type DetailRowProps = { label: string; value: ReactNode };
 

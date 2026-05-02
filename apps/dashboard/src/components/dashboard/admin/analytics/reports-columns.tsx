@@ -1,12 +1,9 @@
 import { Badge } from "@sycom/ui/components/badge";
 import { formatDateTime } from "@sycom/ui/lib/date";
 import { createColumnHelper } from "@tanstack/react-table";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "./reports-helpers";
+import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS, type ReportRow } from "./reports-schema";
 import { ReportsActions } from "./reports-actions";
-
-export type ReportRow = AppRouterOutputs["feedback"]["listReports"]["rows"][number];
 
 const columnHelper = createColumnHelper<ReportRow>();
 
