@@ -15,6 +15,8 @@ export interface FileUploaderProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   maxFileCount?: number;
   multiple?: boolean;
   disabled?: boolean;
+  /** When set, associates an external `<label htmlFor={inputId}>` with the hidden file input. */
+  inputId?: string;
   progresses?: Record<string, number>;
   onFilesChange?: (files: FileWithPreview[]) => void;
 }
@@ -25,6 +27,7 @@ export function FileUploader({
   maxFileCount = 1,
   multiple = false,
   disabled = false,
+  inputId,
   progresses,
   onFilesChange,
   className,
@@ -53,7 +56,7 @@ export function FileUploader({
   const isDisabled = disabled || isFull;
 
   return (
-    <div className="relative flex flex-col gap-4 overflow-hidden">
+    <div className="relative flex w-full min-w-0 flex-col gap-4 overflow-hidden">
       <div
         aria-disabled={isDisabled || undefined}
         className={cn(
@@ -80,8 +83,11 @@ export function FileUploader({
         {...divProps}
       >
         <input
-          {...getInputProps({ disabled: isDisabled })}
-          aria-label="Upload files"
+          {...getInputProps({
+            disabled: isDisabled,
+            ...(inputId ? { id: inputId } : {}),
+          })}
+          {...(inputId ? {} : { "aria-label": "Upload files" })}
           className="sr-only"
           tabIndex={-1}
         />

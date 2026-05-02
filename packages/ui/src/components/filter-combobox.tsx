@@ -29,6 +29,7 @@ export type FilterComboboxProps = {
   formatTriggerLabel?: (label: string, selected: FilterOption[]) => ReactNode;
   allLabel?: string;
   className?: string;
+  size?: "sm" | "default" | "lg" | "xs" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 };
 
 function buildDefaultFormatter(allLabel?: string) {
@@ -49,6 +50,7 @@ export function FilterCombobox({
   options,
   resetWhenAllSelected = true,
   searchPlaceholder,
+  size = "sm",
   value,
 }: FilterComboboxProps): ReactNode {
   const format = formatTriggerLabel ?? buildDefaultFormatter(allLabel);
@@ -75,7 +77,7 @@ export function FilterCombobox({
         render={
           <Button
             className={cn("w-44 justify-between gap-2", className)}
-            size="sm"
+            size={size}
             variant="outline"
           />
         }
@@ -96,7 +98,17 @@ export function FilterCombobox({
             size="sm"
           />
         </div>
-        <div className="flex justify-end px-2 pt-1">
+        <div className="flex justify-end gap-2 px-2 pt-1">
+          {!resetWhenAllSelected && options.length > 0 ? (
+            <Button
+              disabled={value.length === options.length}
+              onClick={() => onValueChange(options.map((o) => o.value))}
+              size="sm"
+              variant="link"
+            >
+              All
+            </Button>
+          ) : null}
           <Button
             disabled={value.length === 0}
             onClick={() => onValueChange([])}

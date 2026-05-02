@@ -128,20 +128,20 @@ export function CoursesCardGrid({
   const canNextPage = end < totalCount;
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div className="overflow-hidden">
       {courses.length === 0 ? (
         <div className="flex min-h-72 items-center justify-center px-6 py-10 text-center text-muted-foreground">
           No courses yet.
         </div>
       ) : (
-        <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 py-4 sm:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => (
             <CourseCard course={course} key={course.id} />
           ))}
         </div>
       )}
 
-      <div className="flex flex-col items-stretch gap-3 border-t px-4 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col items-stretch gap-3 border px-4 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-muted-foreground">
           <span>Cards per page</span>
           <Select

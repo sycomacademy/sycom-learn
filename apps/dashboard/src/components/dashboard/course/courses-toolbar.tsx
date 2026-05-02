@@ -6,7 +6,7 @@ import { cn } from "@sycom/ui/lib/utils";
 import { LayoutGridIcon, ListIcon, Plus, RefreshCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { CreateCourseDialog } from "./create-course-dialog";
+import { CreateCourseSheet } from "./create-course-sheet";
 import type { CourseViewMode } from "./courses-schema";
 
 export type CoursesToolbarProps = {
@@ -58,7 +58,7 @@ export function CoursesToolbar({
             <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
           </Button>
 
-          <CreateCourseDialog
+          <CreateCourseSheet
             trigger={
               <Button>
                 <Plus className="size-4" />

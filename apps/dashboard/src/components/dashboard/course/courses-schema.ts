@@ -59,7 +59,8 @@ export const createCourseSchema = z.object({
   ),
   description: z.string().check(z.maxLength(2000)),
   difficulty: z.enum(DIFFICULTY_LEVELS),
-  status: z.enum(COURSE_STATUSES),
+  categoryIds: z.array(z.string().min(1)),
+  coverImage: z.any().optional(),
 });
 
 export type CreateCourseFormInput = z.infer<typeof createCourseSchema>;
@@ -69,7 +70,8 @@ export const DEFAULT_CREATE_COURSE_VALUES: CreateCourseFormInput = {
   slug: "",
   description: "",
   difficulty: "beginner",
-  status: "draft",
+  categoryIds: [],
+  coverImage: undefined,
 };
 
 export function getCoursesQueryInput(input: ListAdminCoursesInput) {
