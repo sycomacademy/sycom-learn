@@ -56,7 +56,7 @@ function CourseCard({ course }: CourseCardProps) {
           className="h-auto w-full justify-start rounded-none p-0 text-left text-inherit group-hover:border-border hover:bg-inherit"
           onClick={() =>
             void navigate({
-              to: "/dashboard/catalog/$courseId",
+              to: "/dashboard/course/$courseId",
               params: { courseId: course.id },
             })
           }

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { useTRPC } from "@/lib/trpc/client";
-import { type InstructorRole } from "@sycom/db/schema/catalog";
+import { type InstructorRole } from "@sycom/db/schema/course";
 import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
 import { Button } from "@sycom/ui/components/button";
@@ -30,7 +30,7 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { getInitials } from "@sycom/ui/lib/string";
 
-type CourseDetail = AppRouterOutputs["catalog"]["get"];
+type CourseDetail = AppRouterOutputs["course"]["get"];
 
 const ROLE_LABELS: Record<InstructorRole, string> = {
   main: "Main",
@@ -44,11 +44,11 @@ export function InstructorsPanel({ course }: { course: CourseDetail }) {
 
   const invalidate = () =>
     queryClient.invalidateQueries({
-      queryKey: trpc.catalog.get.queryKey({ courseId: course.id }),
+      queryKey: trpc.course.get.queryKey({ courseId: course.id }),
     });
 
   const removeMutation = useMutation({
-    ...trpc.catalog.removeInstructor.mutationOptions({
+    ...trpc.course.removeInstructor.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Instructor removed", type: "success" });
         await invalidate();
@@ -148,14 +148,14 @@ function AddInstructorDialog({
   );
 
   const addMutation = useMutation({
-    ...trpc.catalog.addInstructor.mutationOptions({
+    ...trpc.course.addInstructor.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Instructor added", type: "success" });
         onOpenChange(false);
         setUserId("");
         setRole("secondary");
         await queryClient.invalidateQueries({
-          queryKey: trpc.catalog.get.queryKey({ courseId }),
+          queryKey: trpc.course.get.queryKey({ courseId }),
         });
       },
       onError: (error) =>

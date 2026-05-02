@@ -6,37 +6,37 @@ import { useCallback, useMemo, useRef } from "react";
 import {
   CreateCategoryDialog,
   CategoryListItem,
-} from "@/components/dashboard/catalog/category-form-dialog";
+} from "@/components/dashboard/course/category-form-dialog";
 import {
   categoriesSearchSchema,
   categoryListPageSize,
   getCategoriesListInput,
   type CategoryRow,
   type CategoriesSearchInput,
-} from "@/components/dashboard/catalog/categories-schema";
+} from "@/components/dashboard/course/categories-schema";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/components/input-group";
 import { Spinner } from "@sycom/ui/components/spinner";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-type CategoryListResult = AppRouterOutputs["catalog"]["listCategories"];
+type CategoryListResult = AppRouterOutputs["course"]["listCategories"];
 
 function getCategoryInfiniteQueryOptions(
-  trpc: Pick<ReturnType<typeof useTRPC>, "catalog">,
+  trpc: Pick<ReturnType<typeof useTRPC>, "course">,
   search: CategoriesSearchInput,
 ) {
   return {
     initialPageParam: 0,
-    queryKey: [...trpc.catalog.listCategories.queryKey(), search.search ?? ""],
+    queryKey: [...trpc.course.listCategories.queryKey(), search.search ?? ""],
     queryFn: async (context: unknown): Promise<CategoryListResult> => {
       const pageParam = (context as { pageParam: number }).pageParam;
-      const queryOptions = trpc.catalog.listCategories.queryOptions(
+      const queryOptions = trpc.course.listCategories.queryOptions(
         getCategoriesListInput(search, pageParam),
       );
       const queryFn = queryOptions.queryFn;
       if (!queryFn) {
-        throw new Error("Missing query function for catalog.listCategories.");
+        throw new Error("Missing query function for course.listCategories.");
       }
 
       type QueryContext = Parameters<NonNullable<typeof queryFn>>[0];
@@ -55,22 +55,22 @@ function getCategoryInfiniteQueryOptions(
   };
 }
 
-export const Route = createFileRoute("/dashboard/catalog/categories")({
+export const Route = createFileRoute("/dashboard/course/categories")({
   validateSearch: categoriesSearchSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     const trpc = context.trpc;
     await context.queryClient.ensureInfiniteQueryData({
       initialPageParam: 0,
-      queryKey: [...trpc.catalog.listCategories.queryKey(), deps.search ?? ""],
+      queryKey: [...trpc.course.listCategories.queryKey(), deps.search ?? ""],
       queryFn: async (context): Promise<CategoryListResult> => {
         const pageParam = context.pageParam as number;
-        const queryOptions = trpc.catalog.listCategories.queryOptions(
+        const queryOptions = trpc.course.listCategories.queryOptions(
           getCategoriesListInput(deps, pageParam),
         );
         const queryFn = queryOptions.queryFn;
         if (!queryFn) {
-          throw new Error("Missing query function for catalog.listCategories.");
+          throw new Error("Missing query function for course.listCategories.");
         }
 
         return await queryFn({
@@ -87,10 +87,10 @@ export const Route = createFileRoute("/dashboard/catalog/categories")({
       },
     });
   },
-  component: CatalogCategoriesPage,
+  component: CourseCategoriesPage,
 });
 
-function CatalogCategoriesPage() {
+function CourseCategoriesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
@@ -108,7 +108,7 @@ function CatalogCategoriesPage() {
 
   const infiniteQuery = useSuspenseInfiniteQuery(getCategoryInfiniteQueryOptions(trpc, search));
 
-  const isFetching = useIsFetching({ queryKey: trpc.catalog.listCategories.queryKey() }) > 0;
+  const isFetching = useIsFetching({ queryKey: trpc.course.listCategories.queryKey() }) > 0;
   const categories = useMemo(
     () => infiniteQuery.data.pages.flatMap((page) => page.rows) as CategoryRow[],
     [infiniteQuery.data],
@@ -159,7 +159,7 @@ function CatalogCategoriesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-semibold">Categories</h2>
-          <p className="text-sm text-muted-foreground">Tags used to organize the public catalog.</p>
+          <p className="text-sm text-muted-foreground">Tags used to organize public courses.</p>
         </div>
 
         <CreateCategoryDialog />

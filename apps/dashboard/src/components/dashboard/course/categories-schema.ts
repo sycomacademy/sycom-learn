@@ -8,7 +8,7 @@ export const categoriesSearchSchema = z.object({
 });
 
 export type CategoriesSearchInput = z.infer<typeof categoriesSearchSchema>;
-export type CategoryRow = AppRouterOutputs["catalog"]["listCategories"]["rows"][number];
+export type CategoryRow = AppRouterOutputs["course"]["listCategories"]["rows"][number];
 
 export const categoryFormSchema = z.object({
   name: z.string().check(z.minLength(1, "Name is required"), z.maxLength(80)),

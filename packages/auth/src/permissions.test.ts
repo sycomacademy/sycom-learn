@@ -71,7 +71,7 @@ describe("platformRoles map", () => {
 // Org roles
 // ---------------------------------------------------------------------------
 
-describe("org roles — course verbs (dual-scope catalog)", () => {
+describe("org roles — course verbs (dual-scope)", () => {
   test("owner and admin manage org courses including assign", () => {
     const expected = ["assign", "create", "delete", "read", "update"].sort();
     expect([...(stmts(orgOwnerRole).course ?? [])].sort()).toEqual(expected);

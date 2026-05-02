@@ -9,9 +9,9 @@ import {
 } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { CoursesCardGrid } from "@/components/dashboard/catalog/courses-card-grid";
-import { COURSE_COLUMNS } from "@/components/dashboard/catalog/courses-columns";
-import { CoursesFilters } from "@/components/dashboard/catalog/courses-filters";
+import { CoursesCardGrid } from "@/components/dashboard/course/courses-card-grid";
+import { COURSE_COLUMNS } from "@/components/dashboard/course/courses-columns";
+import { CoursesFilters } from "@/components/dashboard/course/courses-filters";
 import {
   getCoursesQueryInput,
   listAdminCoursesSchema,
@@ -20,24 +20,24 @@ import {
   type CourseStatus,
   type CourseViewMode,
   type ListAdminCoursesInput,
-} from "@/components/dashboard/catalog/courses-schema";
-import { CoursesToolbar } from "@/components/dashboard/catalog/courses-toolbar";
+} from "@/components/dashboard/course/courses-schema";
+import { CoursesToolbar } from "@/components/dashboard/course/courses-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
 
-export const Route = createFileRoute("/dashboard/catalog/")({
+export const Route = createFileRoute("/dashboard/course/")({
   validateSearch: listAdminCoursesSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     await context.queryClient.ensureQueryData(
-      context.trpc.catalog.list.queryOptions(getCoursesQueryInput(deps)),
+      context.trpc.course.list.queryOptions(getCoursesQueryInput(deps)),
     );
   },
-  component: CatalogAllPage,
+  component: CoursesPage,
 });
 
-function CatalogAllPage() {
+function CoursesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
@@ -52,8 +52,8 @@ function CatalogAllPage() {
   });
 
   const queryInput = useMemo(() => getCoursesQueryInput(search), [search]);
-  const query = useSuspenseQuery(trpc.catalog.list.queryOptions(queryInput));
-  const isFetching = useIsFetching({ queryKey: trpc.catalog.list.queryKey() }) > 0;
+  const query = useSuspenseQuery(trpc.course.list.queryOptions(queryInput));
+  const isFetching = useIsFetching({ queryKey: trpc.course.list.queryKey() }) > 0;
   const tableState = useMemo(
     () => ({
       sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,

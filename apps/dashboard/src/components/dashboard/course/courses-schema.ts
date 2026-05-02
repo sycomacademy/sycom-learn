@@ -3,7 +3,7 @@ import {
   DIFFICULTY_LEVELS,
   type CourseStatus,
   type DifficultyLevel,
-} from "@sycom/db/schema/catalog";
+} from "@sycom/db/schema/course";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 import { z } from "zod";
 
@@ -21,7 +21,7 @@ export const listAdminCoursesSchema = z.object({
 export type ListAdminCoursesInput = z.infer<typeof listAdminCoursesSchema>;
 export type CourseViewMode = ListAdminCoursesInput["view"];
 export type CourseSortField = ListAdminCoursesInput["sortBy"];
-export type CourseRow = AppRouterOutputs["catalog"]["list"]["rows"][number];
+export type CourseRow = AppRouterOutputs["course"]["list"]["rows"][number];
 export type { CourseStatus, DifficultyLevel };
 
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {

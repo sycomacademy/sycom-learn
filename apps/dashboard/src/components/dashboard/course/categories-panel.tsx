@@ -8,7 +8,7 @@ import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-c
 import { Spinner } from "@sycom/ui/components/spinner";
 import { toastManager } from "@sycom/ui/components/toast";
 
-type CourseDetail = AppRouterOutputs["catalog"]["get"];
+type CourseDetail = AppRouterOutputs["course"]["get"];
 
 export function CategoriesPanel({ course }: { course: CourseDetail }) {
   const trpc = useTRPC();
@@ -20,7 +20,7 @@ export function CategoriesPanel({ course }: { course: CourseDetail }) {
   }, [course.categories]);
 
   const categoriesQuery = useQuery(
-    trpc.catalog.listCategories.queryOptions({
+    trpc.course.listCategories.queryOptions({
       limit: 200,
       offset: 0,
       sortBy: "name",
@@ -29,11 +29,11 @@ export function CategoriesPanel({ course }: { course: CourseDetail }) {
   );
 
   const setMutation = useMutation({
-    ...trpc.catalog.setCategories.mutationOptions({
+    ...trpc.course.setCategories.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Categories saved", type: "success" });
         await queryClient.invalidateQueries({
-          queryKey: trpc.catalog.get.queryKey({ courseId: course.id }),
+          queryKey: trpc.course.get.queryKey({ courseId: course.id }),
         });
       },
       onError: (error) =>

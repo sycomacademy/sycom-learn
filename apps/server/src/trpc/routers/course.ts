@@ -43,7 +43,7 @@ function isUniqueViolation(err: unknown): boolean {
   return typeof message === "string" && message.includes("duplicate key");
 }
 
-export const catalogRouter = router({
+export const courseRouter = router({
   // ---- Courses ----
   list: adminProcedure
     .use(platformPermissionMiddleware({ course: ["read"] }))
@@ -111,7 +111,7 @@ export const catalogRouter = router({
       await recordApplicationAuditEvent(ctx.db, {
         event: "course_created",
         eventTitle: "Course created",
-        eventSubtitle: `${input.title} was added to the public catalog`,
+        eventSubtitle: `${input.title} was added to public courses`,
         actorId: ctx.session.user.id,
         actorType: "user",
         organizationId: null,
@@ -187,7 +187,7 @@ export const catalogRouter = router({
       await recordApplicationAuditEvent(ctx.db, {
         event: "course_deleted",
         eventTitle: "Course deleted",
-        eventSubtitle: `${existing.title} was removed from the public catalog`,
+        eventSubtitle: `${existing.title} was removed from public courses`,
         actorId: ctx.session.user.id,
         actorType: "user",
         organizationId: null,
@@ -236,7 +236,7 @@ export const catalogRouter = router({
         await recordApplicationAuditEvent(ctx.db, {
           event: "course_seeded_to_organization",
           eventTitle: "Course seeded",
-          eventSubtitle: `${source.title} was seeded from the public catalog`,
+          eventSubtitle: `${source.title} was seeded from public courses`,
           actorId: ctx.session.user.id,
           actorType: "user",
           organizationId: result.organizationId,
@@ -365,7 +365,7 @@ export const catalogRouter = router({
       await recordApplicationAuditEvent(ctx.db, {
         event: "category_created",
         eventTitle: "Category created",
-        eventSubtitle: `${input.name} was added to the catalog taxonomy`,
+        eventSubtitle: `${input.name} was added to the course taxonomy`,
         actorId: ctx.session.user.id,
         actorType: "user",
         organizationId: null,

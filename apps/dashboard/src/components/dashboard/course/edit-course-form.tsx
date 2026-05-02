@@ -11,7 +11,7 @@ import {
   DIFFICULTY_LEVELS,
   type CourseStatus,
   type DifficultyLevel,
-} from "@sycom/db/schema/catalog";
+} from "@sycom/db/schema/course";
 import { Button } from "@sycom/ui/components/button";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
@@ -26,7 +26,7 @@ import {
 import { Textarea } from "@sycom/ui/components/textarea";
 import { toastManager } from "@sycom/ui/components/toast";
 
-type CourseDetail = AppRouterOutputs["catalog"]["get"];
+type CourseDetail = AppRouterOutputs["course"]["get"];
 
 const editCourseSchema = z.object({
   title: z.string().check(z.minLength(1, "Title is required"), z.maxLength(160)),
@@ -86,7 +86,7 @@ export function EditCourseForm({ course }: { course: CourseDetail }) {
   }, [course, form]);
 
   const updateMutation = useMutation({
-    ...trpc.catalog.update.mutationOptions({
+    ...trpc.course.update.mutationOptions({
       onSuccess: async () => {
         toastManager.add({
           title: "Course saved",
@@ -95,9 +95,9 @@ export function EditCourseForm({ course }: { course: CourseDetail }) {
         });
         await Promise.all([
           queryClient.invalidateQueries({
-            queryKey: trpc.catalog.get.queryKey({ courseId: course.id }),
+            queryKey: trpc.course.get.queryKey({ courseId: course.id }),
           }),
-          queryClient.invalidateQueries({ queryKey: trpc.catalog.list.queryKey() }),
+          queryClient.invalidateQueries({ queryKey: trpc.course.list.queryKey() }),
         ]);
       },
       onError: (error) => {
@@ -191,7 +191,7 @@ export function EditCourseForm({ course }: { course: CourseDetail }) {
               <Field>
                 <FieldLabel>Cover image (Cloudinary public ID)</FieldLabel>
                 <FormControl>
-                  <Input autoComplete="off" placeholder="catalog/intro-to-stats" {...field} />
+                  <Input autoComplete="off" placeholder="intro-to-stats" {...field} />
                 </FormControl>
                 <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
               </Field>

@@ -34,15 +34,15 @@ export function CourseActions({ course }: { course: CourseRow }): ReactNode {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const deleteMutation = useMutation({
-    ...trpc.catalog.delete.mutationOptions({
+    ...trpc.course.delete.mutationOptions({
       onSuccess: async () => {
         toastManager.add({
           title: "Course deleted",
-          description: `${course.title} was removed from the catalog.`,
+          description: `${course.title} was removed.`,
           type: "success",
         });
         setDeleteOpen(false);
-        await queryClient.invalidateQueries({ queryKey: trpc.catalog.list.queryKey() });
+        await queryClient.invalidateQueries({ queryKey: trpc.course.list.queryKey() });
       },
       onError: (error) => {
         toastManager.add({
@@ -68,7 +68,7 @@ export function CourseActions({ course }: { course: CourseRow }): ReactNode {
           <DropdownMenuItem
             onClick={() =>
               void navigate({
-                to: "/dashboard/catalog/$courseId",
+                to: "/dashboard/course/$courseId",
                 params: { courseId: course.id },
               })
             }

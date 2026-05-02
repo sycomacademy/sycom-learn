@@ -12,7 +12,7 @@ import {
   type CourseStatus,
   type DifficultyLevel,
   type InstructorRole,
-} from "../schema/catalog";
+} from "../schema/course";
 
 // ---------------------------------------------------------------------------
 // Types

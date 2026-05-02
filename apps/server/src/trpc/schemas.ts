@@ -1,5 +1,5 @@
 import { organizationRoleEnum, userRoleEnum } from "@sycom/db/schema/auth";
-import { COURSE_STATUSES, DIFFICULTY_LEVELS, INSTRUCTOR_ROLES } from "@sycom/db/schema/catalog";
+import { COURSE_STATUSES, DIFFICULTY_LEVELS, INSTRUCTOR_ROLES } from "@sycom/db/schema/course";
 import {
   storageEntityTypeEnum,
   storageFolderEnum,
@@ -401,7 +401,7 @@ export const deleteAssetInputSchema = z.object({
 });
 export type StorageDeleteAssetInput = z.infer<typeof deleteAssetInputSchema>;
 
-// catalog
+// course (platform-owned courses UI + taxonomy)
 const courseSlugSchema = z
   .string()
   .trim()

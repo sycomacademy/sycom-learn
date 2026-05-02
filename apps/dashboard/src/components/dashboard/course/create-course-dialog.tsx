@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import type { ReactElement } from "react";
 
 import { useTRPC } from "@/lib/trpc/client";
-import { COURSE_STATUSES, DIFFICULTY_LEVELS } from "@sycom/db/schema/catalog";
+import { COURSE_STATUSES, DIFFICULTY_LEVELS } from "@sycom/db/schema/course";
 import { Button } from "@sycom/ui/components/button";
 import {
   Dialog,
@@ -50,7 +50,7 @@ export function CreateCourseDialog({ trigger }: CreateCourseDialogProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const listKey = trpc.catalog.list.queryKey();
+  const listKey = trpc.course.list.queryKey();
   const [slugTouched, setSlugTouched] = useState(false);
 
   const form = useForm<CreateCourseFormInput>({
@@ -59,18 +59,18 @@ export function CreateCourseDialog({ trigger }: CreateCourseDialogProps) {
   });
 
   const createMutation = useMutation({
-    ...trpc.catalog.create.mutationOptions({
+    ...trpc.course.create.mutationOptions({
       onSuccess: async ({ courseId }, input) => {
         toastManager.add({
           title: "Course created",
-          description: `${input.title} is in the public catalog.`,
+          description: `${input.title} is now a public course.`,
           type: "success",
         });
         setOpen(false);
         form.reset(DEFAULT_CREATE_COURSE_VALUES);
         setSlugTouched(false);
         await queryClient.invalidateQueries({ queryKey: listKey });
-        await navigate({ to: "/dashboard/admin/catalog/$courseId", params: { courseId } });
+        await navigate({ to: "/dashboard/course/$courseId", params: { courseId } });
       },
       onError: (error) => {
         toastManager.add({
@@ -109,8 +109,8 @@ export function CreateCourseDialog({ trigger }: CreateCourseDialogProps) {
         <DialogHeader>
           <DialogTitle>Create course</DialogTitle>
           <DialogDescription>
-            Start a public catalog course. You can add instructors, categories, and content from the
-            course detail page.
+            Start a public course. You can add instructors, categories, and content from the course
+            detail page.
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>

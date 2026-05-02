@@ -2,7 +2,7 @@ import { checkHealth } from "@sycom/db/queries/health";
 
 import { publicProcedure, router } from "../init";
 import { adminRouter } from "./admin";
-import { catalogRouter } from "./catalog";
+import { courseRouter } from "./course";
 import { feedbackRouter } from "./feedback";
 import { inviteRouter } from "./invite";
 import { profileRouter } from "./profile";
@@ -12,7 +12,7 @@ import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => checkHealth()),
   admin: adminRouter,
-  catalog: catalogRouter,
+  course: courseRouter,
   feedback: feedbackRouter,
   invite: inviteRouter,
   profile: profileRouter,

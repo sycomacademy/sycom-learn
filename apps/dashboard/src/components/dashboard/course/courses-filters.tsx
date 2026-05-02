@@ -1,4 +1,4 @@
-import type { CourseStatus } from "@sycom/db/schema/catalog";
+import type { CourseStatus } from "@sycom/db/schema/course";
 import { FilterCombobox, type FilterOption } from "@sycom/ui/components/filter-combobox";
 import type { Table } from "@tanstack/react-table";
 

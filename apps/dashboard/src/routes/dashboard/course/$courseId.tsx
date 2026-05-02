@@ -3,10 +3,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeftIcon, MoreHorizontalIcon, ShareIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 
-import { CategoriesPanel } from "@/components/dashboard/catalog/categories-panel";
-import { EditCourseForm } from "@/components/dashboard/catalog/edit-course-form";
-import { InstructorsPanel } from "@/components/dashboard/catalog/instructors-panel";
-import { SeedCourseDialog } from "@/components/dashboard/catalog/seed-course-dialog";
+import { CategoriesPanel } from "@/components/dashboard/course/categories-panel";
+import { EditCourseForm } from "@/components/dashboard/course/edit-course-form";
+import { InstructorsPanel } from "@/components/dashboard/course/instructors-panel";
+import { SeedCourseDialog } from "@/components/dashboard/course/seed-course-dialog";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   AlertDialog,
@@ -29,10 +29,10 @@ import {
 import { Spinner } from "@sycom/ui/components/spinner";
 import { toastManager } from "@sycom/ui/components/toast";
 
-export const Route = createFileRoute("/dashboard/catalog/$courseId")({
+export const Route = createFileRoute("/dashboard/course/$courseId")({
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(
-      context.trpc.catalog.get.queryOptions({ courseId: params.courseId }),
+      context.trpc.course.get.queryOptions({ courseId: params.courseId }),
     );
   },
   component: CourseDetailPage,
@@ -47,14 +47,14 @@ function CourseDetailPage() {
   const [seedOpen, setSeedOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const query = useQuery(trpc.catalog.get.queryOptions({ courseId }));
+  const query = useQuery(trpc.course.get.queryOptions({ courseId }));
 
   const deleteMutation = useMutation({
-    ...trpc.catalog.delete.mutationOptions({
+    ...trpc.course.delete.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Course deleted", type: "success" });
-        await queryClient.invalidateQueries({ queryKey: trpc.catalog.list.queryKey() });
-        await navigate({ to: "/dashboard/admin/catalog" });
+        await queryClient.invalidateQueries({ queryKey: trpc.course.list.queryKey() });
+        await navigate({ to: "/dashboard/course" });
       },
       onError: (error) =>
         toastManager.add({
@@ -81,11 +81,11 @@ function CourseDetailPage() {
         </p>
         <Button
           className="mt-3"
-          onClick={() => void navigate({ to: "/dashboard/admin/catalog" })}
+          onClick={() => void navigate({ to: "/dashboard/course" })}
           variant="outline"
         >
           <ArrowLeftIcon className="size-4" />
-          Back to catalog
+          Back to courses
         </Button>
       </div>
     );
@@ -98,11 +98,11 @@ function CourseDetailPage() {
       <div>
         <button
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => void navigate({ to: "/dashboard/admin/catalog" })}
+          onClick={() => void navigate({ to: "/dashboard/course" })}
           type="button"
         >
           <ArrowLeftIcon className="size-3" />
-          Back to catalog
+          Back to courses
         </button>
         <div className="mt-2 flex items-start justify-between gap-4">
           <div className="min-w-0">

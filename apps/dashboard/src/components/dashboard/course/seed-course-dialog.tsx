@@ -49,7 +49,7 @@ export function SeedCourseDialog({
   }));
 
   const seedMutation = useMutation({
-    ...trpc.catalog.seed.mutationOptions({
+    ...trpc.course.seed.mutationOptions({
       onSuccess: async ({ seeded }) => {
         toastManager.add({
           title: "Course seeded",
@@ -58,7 +58,7 @@ export function SeedCourseDialog({
         });
         onOpenChange(false);
         setSelected([]);
-        await queryClient.invalidateQueries({ queryKey: trpc.catalog.list.queryKey() });
+        await queryClient.invalidateQueries({ queryKey: trpc.course.list.queryKey() });
       },
       onError: (error) => {
         toastManager.add({

@@ -136,13 +136,13 @@ export function CreateCategoryDialog() {
   });
 
   const createMutation = useMutation({
-    ...trpc.catalog.createCategory.mutationOptions({
+    ...trpc.course.createCategory.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Category created", type: "success" });
         form.reset(DEFAULT_CATEGORY_FORM_VALUES);
         setSlugTouched(false);
         setOpen(false);
-        await queryClient.invalidateQueries({ queryKey: trpc.catalog.listCategories.queryKey() });
+        await queryClient.invalidateQueries({ queryKey: trpc.course.listCategories.queryKey() });
       },
       onError: (error) =>
         toastManager.add({
@@ -184,9 +184,7 @@ export function CreateCategoryDialog() {
       <DialogPopup className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New category</DialogTitle>
-          <DialogDescription>
-            Categories tag the catalog so students can browse by topic.
-          </DialogDescription>
+          <DialogDescription>Categories help students browse courses by topic.</DialogDescription>
         </DialogHeader>
         <DialogPanel>
           <Form {...form}>
@@ -227,13 +225,13 @@ function EditCategoryDialog({ category }: { category: CategoryRow }) {
   });
 
   const updateMutation = useMutation({
-    ...trpc.catalog.updateCategory.mutationOptions({
+    ...trpc.course.updateCategory.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Category updated", type: "success" });
         form.reset(defaultValues);
         setSlugTouched(false);
         setOpen(false);
-        await queryClient.invalidateQueries({ queryKey: trpc.catalog.listCategories.queryKey() });
+        await queryClient.invalidateQueries({ queryKey: trpc.course.listCategories.queryKey() });
       },
       onError: (error) =>
         toastManager.add({
@@ -278,9 +276,7 @@ function EditCategoryDialog({ category }: { category: CategoryRow }) {
       <DialogPopup className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit category</DialogTitle>
-          <DialogDescription>
-            Categories tag the catalog so students can browse by topic.
-          </DialogDescription>
+          <DialogDescription>Categories help students browse courses by topic.</DialogDescription>
         </DialogHeader>
         <DialogPanel>
           <Form {...form}>
@@ -314,11 +310,11 @@ function DeleteCategoryDialog({ category }: { category: CategoryRow }) {
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    ...trpc.catalog.deleteCategory.mutationOptions({
+    ...trpc.course.deleteCategory.mutationOptions({
       onSuccess: async () => {
         toastManager.add({ title: "Category deleted", type: "success" });
         setOpen(false);
-        await queryClient.invalidateQueries({ queryKey: trpc.catalog.listCategories.queryKey() });
+        await queryClient.invalidateQueries({ queryKey: trpc.course.listCategories.queryKey() });
       },
       onError: (error) =>
         toastManager.add({

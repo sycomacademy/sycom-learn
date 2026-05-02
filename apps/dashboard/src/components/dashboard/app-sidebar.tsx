@@ -67,7 +67,7 @@ const PLATFORM_ADMIN_NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Courses",
-    items: [{ icon: LayersIcon, label: "Catalog", to: "/dashboard/catalog" }],
+    items: [{ icon: LayersIcon, label: "Courses", to: "/dashboard/course" }],
   },
 ];
 
@@ -78,7 +78,7 @@ const PLATFORM_ADMIN_NAV_GROUPS: NavGroup[] = [
 //   },
 //   {
 //     label: "Courses",
-//     items: [{ icon: LayersIcon, label: "Catalog", to: "/dashboard/admin/catalog" }],
+//     items: [{ icon: LayersIcon, label: "Courses", to: "/dashboard/course" }],
 //   },
 // ];
 
