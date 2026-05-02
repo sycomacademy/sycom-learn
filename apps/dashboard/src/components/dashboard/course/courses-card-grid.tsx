@@ -1,6 +1,5 @@
-import { useNavigate } from "@tanstack/react-router";
-import { ChevronLeftIcon, ChevronRightIcon, BookOpenIcon } from "lucide-react";
-
+import { BookOpenIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@sycom/ui/components/badge";
 import { Button } from "@sycom/ui/components/button";
 import {
@@ -43,8 +42,6 @@ type CourseCardProps = {
 };
 
 function CourseCard({ course }: CourseCardProps) {
-  const navigate = useNavigate();
-
   return (
     <Card className="group overflow-hidden">
       <div className="relative">
@@ -54,11 +51,12 @@ function CourseCard({ course }: CourseCardProps) {
 
         <Button
           className="h-auto w-full justify-start rounded-none p-0 text-left text-inherit group-hover:border-border hover:bg-inherit"
-          onClick={() =>
-            void navigate({
-              to: "/dashboard/course/$courseId",
-              params: { courseId: course.id },
-            })
+          render={
+            <Link
+              to="/dashboard/course/$courseId"
+              params={{ courseId: course.id }}
+              preload="intent"
+            />
           }
           variant="ghost"
         >
