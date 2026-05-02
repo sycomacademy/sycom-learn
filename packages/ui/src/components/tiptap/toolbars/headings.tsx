@@ -12,7 +12,7 @@ import {
 } from "@sycom/components/ui/dropdown-menu";
 import { cn } from "@sycom/ui/lib/utils";
 import { useToolbar } from "./toolbar-provider";
-import { useMediaQuery } from "@sycom/hooks/use-media-querry";
+import { useMediaQuery } from "@sycom/hooks/use-media-query";
 import { MobileToolbarGroup, MobileToolbarItem } from "./mobile-toolbar-group";
 
 const levels = [1, 2, 3, 4] as const;
