@@ -411,7 +411,7 @@ const courseSlugSchema = z
   .regex(slugPattern, "Slug must be lowercase letters, numbers, and hyphens")
   .refine((value) => !value.includes("--"), "Slug cannot contain consecutive hyphens");
 
-export const listAdminCoursesSchema = z.object({
+export const listCoursesSchema = z.object({
   limit: z.number().int().min(1).max(100).default(20),
   offset: z.number().int().min(0).default(0),
   search: z.string().trim().min(1).optional(),
@@ -422,14 +422,14 @@ export const listAdminCoursesSchema = z.object({
   sortBy: z.enum(["title", "createdAt", "updatedAt", "status", "difficulty"]).default("updatedAt"),
   sortDirection: z.enum(["asc", "desc"]).default("desc"),
 });
-export type ListAdminCoursesInput = z.infer<typeof listAdminCoursesSchema>;
+export type ListCoursesInput = z.infer<typeof listCoursesSchema>;
 
-export const getAdminCourseSchema = z.object({
+export const getCourseSchema = z.object({
   courseId: z.string().min(1),
 });
-export type GetAdminCourseInput = z.infer<typeof getAdminCourseSchema>;
+export type GetCourseInput = z.infer<typeof getCourseSchema>;
 
-export const createAdminCourseSchema = z.object({
+export const createCourseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(160),
   slug: courseSlugSchema,
   description: z.string().trim().max(2000).optional(),
@@ -440,15 +440,16 @@ export const createAdminCourseSchema = z.object({
   instructorIds: z.array(z.string().min(1)).default([]),
   categoryIds: z.array(z.string().min(1)).default([]),
 });
-export type CreateAdminCourseInput = z.infer<typeof createAdminCourseSchema>;
+export type CreateCourseInput = z.infer<typeof createCourseSchema>;
 
-export const updateAdminCourseSchema = z.object({
+export const updateCourseSchema = z.object({
   courseId: z.string().min(1),
   patch: z
     .object({
       title: z.string().trim().min(1).max(160).optional(),
       slug: courseSlugSchema.optional(),
       description: z.string().trim().max(2000).nullable().optional(),
+      summary: z.string().trim().max(20_000).nullable().optional(),
       imageUrl: z.string().trim().min(1).nullable().optional(),
       difficulty: z.enum(DIFFICULTY_LEVELS).optional(),
       estimatedDuration: z.number().int().positive().max(100_000).nullable().optional(),
@@ -456,12 +457,12 @@ export const updateAdminCourseSchema = z.object({
     })
     .refine((patch) => Object.keys(patch).length > 0, "At least one field must change"),
 });
-export type UpdateAdminCourseInput = z.infer<typeof updateAdminCourseSchema>;
+export type UpdateCourseInput = z.infer<typeof updateCourseSchema>;
 
-export const deleteAdminCourseSchema = z.object({
+export const deleteCourseSchema = z.object({
   courseId: z.string().min(1),
 });
-export type DeleteAdminCourseInput = z.infer<typeof deleteAdminCourseSchema>;
+export type DeleteCourseInput = z.infer<typeof deleteCourseSchema>;
 
 export const seedAdminCourseSchema = z.object({
   courseId: z.string().min(1),
@@ -469,24 +470,24 @@ export const seedAdminCourseSchema = z.object({
 });
 export type SeedAdminCourseInput = z.infer<typeof seedAdminCourseSchema>;
 
-export const addAdminCourseInstructorSchema = z.object({
+export const addCourseInstructorSchema = z.object({
   courseId: z.string().min(1),
   userId: z.string().min(1),
   role: z.enum(INSTRUCTOR_ROLES).default("secondary"),
 });
-export type AddAdminCourseInstructorInput = z.infer<typeof addAdminCourseInstructorSchema>;
+export type AddCourseInstructorInput = z.infer<typeof addCourseInstructorSchema>;
 
-export const removeAdminCourseInstructorSchema = z.object({
+export const removeCourseInstructorSchema = z.object({
   courseId: z.string().min(1),
   userId: z.string().min(1),
 });
-export type RemoveAdminCourseInstructorInput = z.infer<typeof removeAdminCourseInstructorSchema>;
+export type RemoveCourseInstructorInput = z.infer<typeof removeCourseInstructorSchema>;
 
-export const setAdminCourseCategoriesSchema = z.object({
+export const setCourseCategoriesSchema = z.object({
   courseId: z.string().min(1),
   categoryIds: z.array(z.string().min(1)),
 });
-export type SetAdminCourseCategoriesInput = z.infer<typeof setAdminCourseCategoriesSchema>;
+export type SetCourseCategoriesInput = z.infer<typeof setCourseCategoriesSchema>;
 
 const categorySlugSchema = z
   .string()

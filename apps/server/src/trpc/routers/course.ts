@@ -16,45 +16,38 @@ import {
 } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 
-import { adminProcedure, router } from "../init";
+import { adminProcedure, protectedProcedure, router } from "../init";
 import { auditRequestMeta } from "../lib/request-audit";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 import {
-  addAdminCourseInstructorSchema,
+  addCourseInstructorSchema,
   createAdminCategorySchema,
-  createAdminCourseSchema,
+  createCourseSchema,
   deleteAdminCategorySchema,
-  deleteAdminCourseSchema,
-  getAdminCourseSchema,
+  deleteCourseSchema,
+  getCourseSchema,
   listAdminCategoriesSchema,
-  listAdminCoursesSchema,
-  removeAdminCourseInstructorSchema,
+  listCoursesSchema,
+  removeCourseInstructorSchema,
   seedAdminCourseSchema,
-  setAdminCourseCategoriesSchema,
+  setCourseCategoriesSchema,
   updateAdminCategorySchema,
-  updateAdminCourseSchema,
+  updateCourseSchema,
 } from "../schemas";
-
-function isUniqueViolation(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const code = (err as { code?: unknown }).code;
-  if (code === "23505") return true;
-  const message = (err as { message?: unknown }).message;
-  return typeof message === "string" && message.includes("duplicate key");
-}
+import { isUniqueViolation } from "../utils/helpers";
 
 export const courseRouter = router({
   // ---- Courses ----
-  list: adminProcedure
-    .use(platformPermissionMiddleware({ course: ["read"] }))
-    .input(listAdminCoursesSchema)
+  list: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["list"] }))
+    .input(listCoursesSchema)
     .query(async ({ ctx, input }) => {
       return await listCourses(ctx.db, { ...input, scope: "platform" });
     }),
 
-  get: adminProcedure
+  get: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["read"] }))
-    .input(getAdminCourseSchema)
+    .input(getCourseSchema)
     .query(async ({ ctx, input }) => {
       const detail = await getCourseById(ctx.db, input);
       if (!detail || detail.organizationId !== null) {
@@ -63,9 +56,9 @@ export const courseRouter = router({
       return detail;
     }),
 
-  create: adminProcedure
+  create: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["create"] }))
-    .input(createAdminCourseSchema)
+    .input(createCourseSchema)
     .mutation(async ({ ctx, input }) => {
       let courseRow: { id: string };
       try {
@@ -131,9 +124,9 @@ export const courseRouter = router({
       return { courseId: courseRow.id };
     }),
 
-  update: adminProcedure
+  update: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["update"] }))
-    .input(updateAdminCourseSchema)
+    .input(updateCourseSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await getCourseById(ctx.db, { courseId: input.courseId });
       if (!existing || existing.organizationId !== null) {
@@ -172,9 +165,9 @@ export const courseRouter = router({
       return { success: true };
     }),
 
-  delete: adminProcedure
+  delete: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["delete"] }))
-    .input(deleteAdminCourseSchema)
+    .input(deleteCourseSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await getCourseById(ctx.db, { courseId: input.courseId });
       if (!existing || existing.organizationId !== null) {
@@ -255,9 +248,9 @@ export const courseRouter = router({
     }),
 
   // ---- Instructors ----
-  addInstructor: adminProcedure
+  addInstructor: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["update"] }))
-    .input(addAdminCourseInstructorSchema)
+    .input(addCourseInstructorSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await getCourseById(ctx.db, { courseId: input.courseId });
       if (!existing || existing.organizationId !== null) {
@@ -292,9 +285,9 @@ export const courseRouter = router({
       return { success: true };
     }),
 
-  removeInstructor: adminProcedure
+  removeInstructor: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["update"] }))
-    .input(removeAdminCourseInstructorSchema)
+    .input(removeCourseInstructorSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await getCourseById(ctx.db, { courseId: input.courseId });
       if (!existing || existing.organizationId !== null) {
@@ -323,9 +316,9 @@ export const courseRouter = router({
       return { success: true };
     }),
 
-  setCategories: adminProcedure
+  setCategories: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["update"] }))
-    .input(setAdminCourseCategoriesSchema)
+    .input(setCourseCategoriesSchema)
     .mutation(async ({ ctx, input }) => {
       const existing = await getCourseById(ctx.db, { courseId: input.courseId });
       if (!existing || existing.organizationId !== null) {
@@ -337,7 +330,7 @@ export const courseRouter = router({
     }),
 
   // ---- Categories ----
-  listCategories: adminProcedure
+  listCategories: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["read"] }))
     .input(listAdminCategoriesSchema)
     .query(async ({ ctx, input }) => {
