@@ -8,14 +8,9 @@ import { Separator } from "@sycom/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
 import { useToolbar } from "./toolbar-provider";
-import type { Extension } from "@tiptap/core";
-import type { ColorOptions } from "@tiptap/extension-color";
-import type { HighlightOptions } from "@tiptap/extension-highlight";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
-import { useMediaQuery } from "@sycom/hooks/use-media-querry";
+import { useMediaQuery } from "@sycom/hooks/use-media-query";
 import { MobileToolbarGroup, MobileToolbarItem } from "./mobile-toolbar-group";
-
-type TextStylingExtensions = Extension<ColorOptions, any> | Extension<HighlightOptions, any>;
 
 const TEXT_COLORS = [
   { name: "Default", color: "var(--editor-text-default)" },

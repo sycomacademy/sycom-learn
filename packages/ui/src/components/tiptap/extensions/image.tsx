@@ -81,17 +81,16 @@ function TiptapImage(props: NodeViewProps) {
   const [imageUrl, setImageUrl] = useState("");
   const [altText, setAltText] = useState(node.attrs.alt || "");
 
-  const { previewUrl, fileInputRef, handleFileChange, handleRemove, uploading, error } =
-    useImageUpload({
-      onUpload: (imageUrl) => {
-        updateAttributes({
-          src: imageUrl,
-          alt: altText || fileInputRef.current?.files?.[0]?.name,
-        });
-        handleRemove();
-        setOpenedMore(false);
-      },
-    });
+  const { fileInputRef, handleFileChange, handleRemove, uploading, error } = useImageUpload({
+    onUpload: (imageUrl) => {
+      updateAttributes({
+        src: imageUrl,
+        alt: altText || fileInputRef.current?.files?.[0]?.name,
+      });
+      handleRemove();
+      setOpenedMore(false);
+    },
+  });
 
   function handleResizingPosition({
     e,
@@ -218,7 +217,7 @@ function TiptapImage(props: NodeViewProps) {
       className={cn(
         "relative flex flex-col rounded-md border-2 border-transparent transition-all duration-200",
         selected ? "border-blue-300" : "",
-        node.attrs.align === "left" && "left-0 -translate-x-0",
+        node.attrs.align === "left" && "left-0 translate-x-0",
         node.attrs.align === "center" && "left-1/2 -translate-x-1/2",
         node.attrs.align === "right" && "left-full -translate-x-full",
       )}
@@ -366,7 +365,9 @@ function TiptapImage(props: NodeViewProps) {
                         <div className="space-y-2">
                           <Input
                             value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                              setImageUrl(event.target.value)
+                            }
                             placeholder="Enter image URL..."
                             className="text-xs"
                           />
@@ -385,7 +386,9 @@ function TiptapImage(props: NodeViewProps) {
                         <p className="mb-2 text-xs font-medium">Alt Text</p>
                         <Input
                           value={altText}
-                          onChange={(e) => setAltText(e.target.value)}
+                          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                            setAltText(event.target.value)
+                          }
                           placeholder="Alt text (optional)"
                           className="text-xs"
                         />

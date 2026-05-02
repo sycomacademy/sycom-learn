@@ -1,6 +1,6 @@
 import { type Editor as CoreEditor, Extension, type Range } from "@tiptap/core";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Plugin, PluginKey, type EditorState, type Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 
 declare module "@tiptap/core" {
@@ -35,6 +35,10 @@ declare module "@tiptap/core" {
        */
       setCaseSensitive: (caseSensitive: boolean) => ReturnType;
     };
+  }
+
+  interface Storage {
+    searchAndReplace: SearchAndReplaceStorage;
   }
 }
 
@@ -106,7 +110,11 @@ function processSearches(
   };
 }
 
-const replace = (replaceTerm: string, results: Range[], { state, dispatch }: any) => {
+const replace = (
+  replaceTerm: string,
+  results: Range[],
+  { state, dispatch }: { state: EditorState; dispatch?: ((tr: Transaction) => void) | null },
+) => {
   const firstResult = results[0];
 
   if (!firstResult) {
@@ -115,9 +123,7 @@ const replace = (replaceTerm: string, results: Range[], { state, dispatch }: any
 
   const { from, to } = firstResult;
 
-  if (dispatch) {
-    dispatch(state.tr.insertText(replaceTerm, from, to));
-  }
+  dispatch?.(state.tr.insertText(replaceTerm, from, to));
 };
 
 const rebaseNextResult = (
@@ -154,7 +160,7 @@ const rebaseNextResult = (
 const replaceAll = (
   replaceTerm: string,
   results: Range[],
-  { tr, dispatch }: { tr: any; dispatch: any },
+  { tr, dispatch }: { tr: Transaction; dispatch?: ((tr: Transaction) => void) | null },
 ) => {
   if (!results.length) {
     return;
@@ -174,7 +180,7 @@ const replaceAll = (
     }
   }
 
-  dispatch(tr);
+  dispatch?.(tr);
 };
 
 const selectNext = (editor: CoreEditor) => {
@@ -223,7 +229,12 @@ const selectPrevious = (editor: CoreEditor) => {
     editor.storage.searchAndReplace.selectedResult -= 1;
   }
 
-  const { from } = results[editor.storage.searchAndReplace.selectedResult];
+  const result = results[editor.storage.searchAndReplace.selectedResult];
+  if (!result) {
+    return;
+  }
+
+  const { from } = result;
 
   const view: EditorView | undefined = editor.view;
 

@@ -1,7 +1,6 @@
 "use client";
 /* eslint-disable */
 // @ts-nocheck
-import { PopoverClose } from "@radix-ui/react-popover";
 import { Trash2, X } from "lucide-react";
 
 import React, { type FormEvent } from "react";
@@ -12,7 +11,12 @@ import { Label } from "@sycom/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@sycom/components/ui/popover";
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+} from "@sycom/components/ui/popover";
 import { useToolbar } from "./toolbar-provider";
 import { getUrlFromString } from "@sycom/lib/tiptap-utils";
 
@@ -62,13 +66,7 @@ const LinkToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </TooltipContent>
         </Tooltip>
 
-        <PopoverContent
-          onCloseAutoFocus={(e) => {
-            e.preventDefault();
-          }}
-          className="relative px-3 py-2.5"
-          render={<div className="relative" />}
-        >
+        <PopoverContent className="relative px-3 py-2.5" render={<div className="relative" />}>
           <PopoverClose className="absolute top-3 right-3">
             <X className="h-4 w-4" />
           </PopoverClose>

@@ -10,7 +10,7 @@ import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table
 import { TextStyleKit } from "@tiptap/extension-text-style";
 import Typography from "@tiptap/extension-typography";
 import { CharacterCount, Placeholder } from "@tiptap/extensions";
-import type { DOMOutputSpec, Node as ProseMirrorNode } from "@tiptap/pm/model";
+import type { DOMOutputSpec, Node as ProseMirrorNode, NodeType } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
 import {
   ReactRenderer,
@@ -269,7 +269,7 @@ const Slash = Node.create<SlashOptions>({
         allow: ({ state, range }) => {
           const $from = state.doc.resolve(range.from);
           const type = state.schema.nodes[this.name];
-          const allow = !!$from.parent.type.contentMatch.matchType(type);
+          const allow = !!$from.parent.type.contentMatch.matchType(type as NodeType);
 
           return allow;
         },
@@ -406,13 +406,7 @@ type EditorSlashMenuProps = {
 };
 
 const EditorSlashMenu = ({ items, editor, range }: EditorSlashMenuProps) => (
-  <Command
-    className="border shadow"
-    id="slash-command"
-    onKeyDown={(e) => {
-      e.stopPropagation();
-    }}
-  >
+  <Command id="slash-command">
     <CommandEmpty className="flex w-full items-center justify-center p-4 text-sm text-muted-foreground">
       <p>No results</p>
     </CommandEmpty>

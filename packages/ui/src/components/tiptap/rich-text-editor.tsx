@@ -1,5 +1,6 @@
 "use client";
 import "./tiptap.css";
+
 import { cn } from "@sycom/ui/lib/utils";
 import { ImageExtension } from "@sycom/components/tiptap/extensions/image";
 import { ImagePlaceholder } from "@sycom/components/tiptap/extensions/image-placeholder";
@@ -10,16 +11,17 @@ import Link from "@tiptap/extension-link";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import TextAlign from "@tiptap/extension-text-align";
-import TextStyle from "@tiptap/extension-text-style";
+import { TextStyle } from "@tiptap/extension-text-style";
 import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, type Extension, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TipTapFloatingMenu } from "@sycom/components/tiptap/extensions/floating-menu";
 import { FloatingToolbar } from "@sycom/components/tiptap/extensions/floating-toolbar";
-import { EditorToolbar } from "./toolbars/editor-toolbar";
 import Placeholder from "@tiptap/extension-placeholder";
 import { content } from "@sycom/lib/content";
+
+import { EditorToolbar } from "./toolbars/editor-toolbar";
 
 const extensions = [
   StarterKit.configure({

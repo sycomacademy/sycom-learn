@@ -74,7 +74,7 @@ export const ImagePlaceholder = Node.create<ImagePlaceholderOptions>({
 });
 
 function ImagePlaceholderComponent(props: NodeViewProps) {
-  const { editor, extension, selected } = props;
+  const { editor, selected } = props;
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
   const [url, setUrl] = useState("");
@@ -211,7 +211,9 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                       <div className="space-y-2">
                         <Input
                           value={altText}
-                          onChange={(e) => setAltText(e.target.value)}
+                          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                            setAltText(event.target.value)
+                          }
                           placeholder="Alt text (optional)"
                         />
                         <div className="flex justify-end gap-2">
@@ -256,8 +258,8 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                   <div className="space-y-2">
                     <Input
                       value={url}
-                      onChange={(e) => {
-                        setUrl(e.target.value);
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setUrl(event.target.value);
                         if (urlError) setUrlError(false);
                       }}
                       placeholder="Enter image URL..."
@@ -269,7 +271,9 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                   <div className="space-y-2">
                     <Input
                       value={altText}
-                      onChange={(e) => setAltText(e.target.value)}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                        setAltText(event.target.value)
+                      }
                       placeholder="Alt text (optional)"
                     />
                   </div>

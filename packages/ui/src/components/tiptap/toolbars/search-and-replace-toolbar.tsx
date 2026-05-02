@@ -81,16 +81,7 @@ export function SearchAndReplaceToolbar() {
         </TooltipContent>
       </Tooltip>
 
-      <PopoverContent
-        align="end"
-        onCloseAutoFocus={(e) => {
-          e.preventDefault();
-        }}
-        onEscapeKeyDown={() => {
-          setOpen(false);
-        }}
-        className="relative flex w-[400px] px-3 py-2.5"
-      >
+      <PopoverContent align="end" className="relative flex w-[400px] px-3 py-2.5">
         {!replacing ? (
           <div className={cn("relative flex items-center gap-1.5")}>
             <Input

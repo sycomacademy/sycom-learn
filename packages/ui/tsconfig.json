@@ -4,7 +4,12 @@
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "paths": {
-      "@sycom/ui/*": ["./src/*"]
+      "@sycom/ui/*": ["./src/*"],
+      "@sycom/components/*": ["./src/components/*"],
+      "@sycom/components/ui/*": ["./src/components/*"],
+      "@sycom/components/tiptap/*": ["./src/components/tiptap/*"],
+      "@sycom/hooks/*": ["./src/hooks/*"],
+      "@sycom/lib/*": ["./src/lib/*"]
     }
   },
   "include": [

@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@sycom/ui/components/select";
+import { ImageZoom } from "@sycom/ui/components/kibo-ui/image-zoom";
 import { Switch } from "@sycom/ui/components/switch";
 import { Textarea } from "@sycom/ui/components/textarea";
 import { toastManager } from "@sycom/ui/components/toast";
@@ -260,13 +261,15 @@ function CourseDetailsPage() {
                     Thumbnail
                   </FieldLabel>
                   {course.imageUrl && !selectedCoverImage ? (
-                    <Image
-                      alt={course.title}
-                      className="mb-3 aspect-video w-full max-w-sm rounded-md object-cover"
-                      height={180}
-                      src={course.imageUrl}
-                      width={320}
-                    />
+                    <ImageZoom>
+                      <Image
+                        alt={course.title}
+                        className="mb-3 aspect-video w-full max-w-sm rounded-md object-cover"
+                        height={180}
+                        src={course.imageUrl}
+                        width={320}
+                      />
+                    </ImageZoom>
                   ) : null}
                   <FormControl>
                     <FileUploader
