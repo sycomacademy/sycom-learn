@@ -7,7 +7,7 @@ import { ScrollArea } from "@sycom/components/ui/scroll-area";
 import { Separator } from "@sycom/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
-import { useToolbar } from "./toolbar-provider";
+import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { useMediaQuery } from "@sycom/hooks/use-media-query";
 import { MobileToolbarGroup, MobileToolbarItem } from "./mobile-toolbar-group";
@@ -74,9 +74,16 @@ const ColorHighlightButton = ({
 export const ColorHighlightToolbar = () => {
   const { editor } = useToolbar();
   const isMobile = useMediaQuery("(max-width: 640px)");
-
-  const currentColor = editor?.getAttributes("textStyle").color;
-  const currentHighlight = editor?.getAttributes("highlight").color;
+  const textStyleState = useToolbarEditorState((currentEditor) => ({
+    currentColor: currentEditor.getAttributes("textStyle").color as string | undefined,
+    currentHighlight: currentEditor.getAttributes("highlight").color as string | undefined,
+    canStyle:
+      currentEditor.isEditable &&
+      currentEditor.can().chain().focus().setHighlight({ color: "" }).run() &&
+      currentEditor.can().chain().focus().setColor("").run(),
+  }));
+  const currentColor = textStyleState.currentColor;
+  const currentHighlight = textStyleState.currentHighlight;
 
   const handleSetColor = (color: string) => {
     editor
@@ -94,8 +101,7 @@ export const ColorHighlightToolbar = () => {
       .run();
   };
 
-  const isDisabled =
-    !editor?.can().chain().setHighlight().run() || !editor?.can().chain().setColor("").run();
+  const isDisabled = !textStyleState.canStyle;
 
   if (isMobile) {
     return (

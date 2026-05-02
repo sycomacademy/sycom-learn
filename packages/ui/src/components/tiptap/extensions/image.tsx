@@ -292,7 +292,10 @@ function TiptapImage(props: NodeViewProps) {
           >
             <Button
               size="icon"
-              className={cn("size-7", node.attrs.align === "left" && "bg-accent")}
+              className={cn(
+                "size-7",
+                node.attrs.align === "left" && "bg-accent text-accent-foreground",
+              )}
               variant="ghost"
               onClick={() => updateAttributes({ align: "left" })}
             >
@@ -300,7 +303,10 @@ function TiptapImage(props: NodeViewProps) {
             </Button>
             <Button
               size="icon"
-              className={cn("size-7", node.attrs.align === "center" && "bg-accent")}
+              className={cn(
+                "size-7",
+                node.attrs.align === "center" && "bg-accent text-accent-foreground",
+              )}
               variant="ghost"
               onClick={() => updateAttributes({ align: "center" })}
             >
@@ -308,7 +314,10 @@ function TiptapImage(props: NodeViewProps) {
             </Button>
             <Button
               size="icon"
-              className={cn("size-7", node.attrs.align === "right" && "bg-accent")}
+              className={cn(
+                "size-7",
+                node.attrs.align === "right" && "bg-accent text-accent-foreground",
+              )}
               variant="ghost"
               onClick={() => updateAttributes({ align: "right" })}
             >
@@ -321,7 +330,7 @@ function TiptapImage(props: NodeViewProps) {
               >
                 <MoreVertical className="size-4" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" alignOffset={-90} className="mt-1 text-sm">
+              <DropdownMenuContent align="start" alignOffset={-90} className="mt-1 w-40 text-sm">
                 <DropdownMenuItem onClick={() => setEditingCaption(true)}>
                   <Edit className="mr-2 size-4" /> Edit Caption
                 </DropdownMenuItem>

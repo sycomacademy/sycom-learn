@@ -1,6 +1,6 @@
 "use client";
 
-import type { Editor } from "@tiptap/react";
+import { type Editor, useEditorState } from "@tiptap/react";
 import React from "react";
 
 export interface ToolbarContextProps {
@@ -27,3 +27,12 @@ export const useToolbar = () => {
 
   return context;
 };
+
+export function useToolbarEditorState<T>(selector: (editor: Editor) => T): T {
+  const { editor } = useToolbar();
+
+  return useEditorState({
+    editor,
+    selector: ({ editor: currentEditor }) => selector(currentEditor),
+  });
+}

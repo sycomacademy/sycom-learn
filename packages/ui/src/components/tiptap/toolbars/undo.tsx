@@ -3,13 +3,16 @@
 import { Button, type ButtonProps } from "@sycom/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
-import { useToolbar } from "./toolbar-provider";
+import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 import { Undo2 } from "lucide-react";
 import React from "react";
 
 const UndoToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
+    const canUndo = useToolbarEditorState((currentEditor) =>
+      currentEditor.can().chain().focus().undo().run(),
+    );
 
     return (
       <Tooltip>
@@ -23,7 +26,7 @@ const UndoToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 editor?.chain().focus().undo().run();
                 onClick?.(e);
               }}
-              disabled={!editor?.can().chain().focus().undo().run()}
+              disabled={!canUndo}
               ref={ref}
               {...props}
             />

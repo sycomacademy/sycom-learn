@@ -17,13 +17,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@sycom/components/ui/popover";
-import { useToolbar } from "./toolbar-provider";
+import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 import { getUrlFromString } from "@sycom/lib/tiptap-utils";
 
 const LinkToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, ...props }, ref) => {
     const { editor } = useToolbar();
     const [link, setLink] = React.useState("");
+    const linkState = useToolbarEditorState((currentEditor) => ({
+      isActive: currentEditor.isActive("link"),
+      href: (currentEditor.getAttributes("link") as { href?: string }).href ?? "",
+      canEdit: currentEditor.isEditable,
+    }));
 
     const handleSubmit = (e: FormEvent) => {
       e.preventDefault();
@@ -32,8 +37,8 @@ const LinkToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     React.useEffect(() => {
-      setLink(editor?.getAttributes("link").href ?? "");
-    }, [editor]);
+      setLink(linkState.href);
+    }, [linkState.href]);
 
     return (
       <Popover>
@@ -41,14 +46,14 @@ const LinkToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
           <TooltipTrigger
             render={
               <PopoverTrigger
-                disabled={!editor?.can().chain().setLink({ href: "" }).run()}
+                disabled={!linkState.canEdit}
                 render={
                   <Button
                     variant="ghost"
                     size="sm"
                     className={cn(
                       "h-8 w-max px-3 font-normal",
-                      editor?.isActive("link") && "bg-accent",
+                      linkState.isActive && "bg-accent text-accent-foreground",
                       className,
                     )}
                     ref={ref}
@@ -83,7 +88,7 @@ const LinkToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 placeholder="https://example.com"
               />
               <div className="flex items-center gap-3">
-                {editor?.getAttributes("link").href && (
+                {linkState.href && (
                   <Button
                     type="reset"
                     size="sm"
@@ -99,7 +104,7 @@ const LinkToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
                   </Button>
                 )}
                 <Button size="sm" className="h-8">
-                  {editor?.getAttributes("link").href ? "Update" : "Confirm"}
+                  {linkState.href ? "Update" : "Confirm"}
                 </Button>
               </div>
             </div>

@@ -6,11 +6,14 @@ import React from "react";
 import { Button, type ButtonProps } from "@sycom/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
-import { useToolbar } from "./toolbar-provider";
+import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 
 const ImagePlaceholderToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
+    const isActive = useToolbarEditorState((currentEditor) =>
+      currentEditor.isActive("image-placeholder"),
+    );
     return (
       <Tooltip>
         <TooltipTrigger
@@ -20,7 +23,7 @@ const ImagePlaceholderToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>
               size="icon"
               className={cn(
                 "h-8 w-8 p-0 sm:h-9 sm:w-9",
-                editor?.isActive("image-placeholder") && "bg-accent",
+                isActive && "bg-accent text-accent-foreground",
                 className,
               )}
               onClick={(e) => {

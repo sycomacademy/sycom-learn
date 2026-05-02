@@ -1,8 +1,6 @@
 "use client";
-/* eslint-disable */
-// @ts-nocheck
 import { ArrowLeftIcon, ArrowRightIcon, X, Repeat } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 import { Button } from "@sycom/components/ui/button";
 import { Checkbox } from "@sycom/components/ui/checkbox";
@@ -12,26 +10,43 @@ import { Popover, PopoverContent, PopoverTrigger } from "@sycom/components/ui/po
 import { Separator } from "@sycom/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
-import { useToolbar } from "./toolbar-provider";
+import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 import { type SearchAndReplaceStorage } from "../extensions/search-and-replace";
 
 export function SearchAndReplaceToolbar() {
   const { editor } = useToolbar();
+  const searchState = useToolbarEditorState((currentEditor) => ({
+    canOpen: currentEditor.isEditable,
+    results: currentEditor.storage.searchAndReplace.results,
+    selectedResult: currentEditor.storage.searchAndReplace.selectedResult,
+    searchTerm: currentEditor.storage.searchAndReplace.searchTerm,
+    replaceTerm: currentEditor.storage.searchAndReplace.replaceTerm,
+    caseSensitive: currentEditor.storage.searchAndReplace.caseSensitive,
+  }));
 
   const [open, setOpen] = useState(false);
   const [replacing, setReplacing] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [replaceText, setReplaceText] = useState("");
-  const [checked, setChecked] = useState(false);
+  const [searchText, setSearchText] = useState(searchState.searchTerm);
+  const [replaceText, setReplaceText] = useState(searchState.replaceTerm);
+  const [checked, setChecked] = useState(searchState.caseSensitive);
 
-  const results = editor?.storage?.searchAndReplace.results as SearchAndReplaceStorage["results"];
-  const selectedResult = editor?.storage?.searchAndReplace
-    .selectedResult as SearchAndReplaceStorage["selectedResult"];
+  const results = searchState.results as SearchAndReplaceStorage["results"];
+  const selectedResult = searchState.selectedResult as SearchAndReplaceStorage["selectedResult"];
+  const resultCount = results.length;
+  const resultLabel = `${resultCount === 0 ? 0 : selectedResult + 1}/${resultCount}`;
 
   const replace = () => editor?.chain().replace().run();
   const replaceAll = () => editor?.chain().replaceAll().run();
   const selectNext = () => editor?.chain().selectNextResult().run();
   const selectPrevious = () => editor?.chain().selectPreviousResult().run();
+
+  useEffect(() => {
+    if (!open) {
+      setSearchText(searchState.searchTerm);
+      setReplaceText(searchState.replaceTerm);
+      setChecked(searchState.caseSensitive);
+    }
+  }, [open, searchState.caseSensitive, searchState.replaceTerm, searchState.searchTerm]);
 
   useEffect(() => {
     editor?.chain().setSearchTerm(searchText).run();
@@ -54,12 +69,12 @@ export function SearchAndReplaceToolbar() {
   }, [open]);
 
   return (
-    <Popover open={open}>
+    <Popover onOpenChange={setOpen} open={open}>
       <Tooltip>
         <TooltipTrigger
           render={
             <PopoverTrigger
-              disabled={!editor}
+              disabled={!searchState.canOpen}
               render={
                 <Button
                   variant="ghost"
@@ -87,18 +102,28 @@ export function SearchAndReplaceToolbar() {
             <Input
               value={searchText}
               className="w-48"
-              onChange={(e) => {
-                setSearchText(e.target.value);
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                setSearchText(event.target.value);
               }}
               placeholder="Search..."
             />
-            <span>
-              {results?.length === 0 ? selectedResult : selectedResult + 1}/{results?.length}
-            </span>
-            <Button onClick={selectPrevious} size="icon" variant="ghost" className="size-7">
+            <span>{resultLabel}</span>
+            <Button
+              disabled={resultCount === 0}
+              onClick={selectPrevious}
+              size="icon"
+              variant="ghost"
+              className="size-7"
+            >
               <ArrowLeftIcon className="size-4" />
             </Button>
-            <Button onClick={selectNext} size="icon" className="size-7" variant="ghost">
+            <Button
+              disabled={resultCount === 0}
+              onClick={selectNext}
+              size="icon"
+              className="size-7"
+              variant="ghost"
+            >
               <ArrowRightIcon className="h-4 w-4" />
             </Button>
             <Separator orientation="vertical" className="mx-0.5 h-7" />
@@ -150,20 +175,20 @@ export function SearchAndReplaceToolbar() {
                 <Label className="text-gray-11 mb-1 text-xs">Search</Label>
                 <Input
                   value={searchText}
-                  onChange={(e) => {
-                    setSearchText(e.target.value);
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    setSearchText(event.target.value);
                   }}
                   placeholder="Search..."
                 />
-                {results?.length === 0 ? selectedResult : selectedResult + 1}/{results?.length}
+                {resultLabel}
               </div>
               <div className="mb-2">
                 <Label className="text-gray-11 mb-1 text-xs">Replace with</Label>
                 <Input
                   className="w-full"
                   value={replaceText}
-                  onChange={(e) => {
-                    setReplaceText(e.target.value);
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    setReplaceText(event.target.value);
                   }}
                   placeholder="Replace..."
                 />
@@ -171,8 +196,8 @@ export function SearchAndReplaceToolbar() {
               <div className="mt-3 flex items-center space-x-2">
                 <Checkbox
                   checked={checked}
-                  onCheckedChange={(checked: boolean) => {
-                    setChecked(checked);
+                  onCheckedChange={(nextChecked) => {
+                    setChecked(nextChecked === true);
                   }}
                   id="match_case"
                 />
@@ -188,6 +213,7 @@ export function SearchAndReplaceToolbar() {
             <div className="actions mt-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
+                  disabled={resultCount === 0}
                   onClick={selectPrevious}
                   size="icon"
                   className="h-7 w-7"
@@ -195,13 +221,20 @@ export function SearchAndReplaceToolbar() {
                 >
                   <ArrowLeftIcon className="h-4 w-4" />
                 </Button>
-                <Button onClick={selectNext} size="icon" className="h-7 w-7" variant="secondary">
+                <Button
+                  disabled={resultCount === 0}
+                  onClick={selectNext}
+                  size="icon"
+                  className="h-7 w-7"
+                  variant="secondary"
+                >
                   <ArrowRightIcon className="h-4 w-4" />
                 </Button>
               </div>
 
               <div className="main-actions flex items-center gap-2">
                 <Button
+                  disabled={resultCount === 0}
                   size="sm"
                   className="h-7 px-3 text-xs"
                   variant="secondary"
@@ -209,7 +242,12 @@ export function SearchAndReplaceToolbar() {
                 >
                   Replace All
                 </Button>
-                <Button onClick={replace} size="sm" className="h-7 px-3 text-xs">
+                <Button
+                  disabled={resultCount === 0}
+                  onClick={replace}
+                  size="sm"
+                  className="h-7 px-3 text-xs"
+                >
                   Replace
                 </Button>
               </div>

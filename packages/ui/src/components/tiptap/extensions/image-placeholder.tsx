@@ -154,13 +154,13 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
           <div
             onClick={() => setIsExpanded(true)}
             className={cn(
-              "group relative flex cursor-pointer flex-col items-center gap-4 rounded-lg border-2 border-dashed p-8 transition-all hover:bg-accent",
+              "group relative flex cursor-pointer flex-col items-center gap-4 rounded-lg border-2 border-dashed p-8 transition-all hover:bg-accent hover:text-accent-foreground",
               selected && "border-primary bg-primary/5",
               isDragActive && "border-primary bg-primary/5",
               error && "border-destructive bg-destructive/5",
             )}
           >
-            <div className="rounded-full bg-background p-4 shadow-sm transition-colors group-hover:bg-accent">
+            <div className="rounded-full bg-background p-4 text-accent-foreground shadow-sm transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
               <Image className="h-6 w-6" />
             </div>
             <div className="text-center">

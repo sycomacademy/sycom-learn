@@ -68,7 +68,7 @@ export const MobileToolbarItem = ({
   <button
     className={cn(
       "flex w-full items-center rounded-md px-4 py-2 text-sm transition-colors hover:bg-accent",
-      active && "bg-accent",
+      active && "bg-accent text-accent-foreground",
     )}
     onClick={(e) => {
       onClick?.(e);
