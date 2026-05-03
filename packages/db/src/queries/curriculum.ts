@@ -1,13 +1,15 @@
 import { and, asc, eq, max } from "drizzle-orm";
 
 import type { Database } from "..";
-import { LESSON_TYPES, lesson, section } from "../schema/course";
+import { lesson, section, type LessonType } from "../schema/course";
 
 export type CurriculumLesson = {
   id: string;
   sectionId: string;
   title: string;
-  type: (typeof LESSON_TYPES)[number];
+  type: LessonType;
+  openAt: Date | null;
+  dueAt: Date | null;
   order: number;
   content: unknown;
   updatedAt: Date;
@@ -86,6 +88,8 @@ export async function getCourseCurriculum(
         sectionId: lesson.sectionId,
         title: lesson.title,
         type: lesson.type,
+        openAt: lesson.openAt,
+        dueAt: lesson.dueAt,
         order: lesson.order,
         content: lesson.content,
         updatedAt: lesson.updatedAt,
@@ -165,7 +169,9 @@ export async function createLesson(
     courseId: string;
     sectionId: string;
     title: string;
-    type?: (typeof LESSON_TYPES)[number];
+    type?: LessonType;
+    openAt?: Date | null;
+    dueAt?: Date | null;
   },
 ): Promise<CurriculumLesson | null> {
   const [matchingSection] = await database
@@ -189,6 +195,8 @@ export async function createLesson(
       sectionId: input.sectionId,
       title: input.title,
       type: input.type ?? "article",
+      openAt: input.openAt ?? null,
+      dueAt: input.dueAt ?? null,
       order: (orderRow?.value ?? -1) + 1,
       content: null,
     })
@@ -197,6 +205,8 @@ export async function createLesson(
       sectionId: lesson.sectionId,
       title: lesson.title,
       type: lesson.type,
+      openAt: lesson.openAt,
+      dueAt: lesson.dueAt,
       order: lesson.order,
       content: lesson.content,
       updatedAt: lesson.updatedAt,

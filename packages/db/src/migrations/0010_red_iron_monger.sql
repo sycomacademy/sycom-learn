@@ -52,6 +52,7 @@ CREATE TABLE "lesson_progress" (
 --> statement-breakpoint
 ALTER TABLE "lesson" ADD COLUMN "open_at" timestamp;--> statement-breakpoint
 ALTER TABLE "lesson" ADD COLUMN "due_at" timestamp;--> statement-breakpoint
+UPDATE "lesson" SET "type" = 'quiz' WHERE "type" = 'test';--> statement-breakpoint
 ALTER TABLE "certificate" ADD CONSTRAINT "certificate_enrollment_id_enrollment_id_fk" FOREIGN KEY ("enrollment_id") REFERENCES "public"."enrollment"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "certificate" ADD CONSTRAINT "certificate_course_id_course_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."course"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "certificate" ADD CONSTRAINT "certificate_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "auth"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

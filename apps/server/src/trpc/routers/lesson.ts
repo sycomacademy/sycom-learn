@@ -25,6 +25,7 @@ import {
   assertCanUpdatePublicCourse,
   canUpdatePublicCourse,
 } from "../lib/public-course-access";
+import { assertValidLessonConfiguration } from "../lib/lesson-validation";
 import { protectedProcedure, router } from "../init";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 
@@ -67,6 +68,13 @@ export const lessonRouter = router({
       const detail = await getCourseById(ctx.db, { courseId: input.courseId });
       assertUpdatablePublicCourseOrThrow(detail, ctx.session);
 
+      assertValidLessonConfiguration({
+        type: input.type,
+        content: null,
+        openAt: input.openAt ?? null,
+        dueAt: input.dueAt ?? null,
+      });
+
       const created = await createLesson(ctx.db, input);
       if (!created) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Section not found" });
@@ -99,6 +107,8 @@ export const lessonRouter = router({
         courseId: row.courseId,
         title: row.title,
         type: row.type,
+        openAt: row.openAt,
+        dueAt: row.dueAt,
         order: row.order,
         estimatedDuration: row.estimatedDuration,
         content,
@@ -118,10 +128,25 @@ export const lessonRouter = router({
       const detail = await getCourseById(ctx.db, { courseId: row.courseId });
       assertUpdatablePublicCourseOrThrow(detail, ctx.session);
 
+      const nextType = input.patch.type ?? row.type;
+      const nextContent = input.patch.content ?? row.content;
+      const nextOpenAt = input.patch.openAt !== undefined ? input.patch.openAt : row.openAt;
+      const nextDueAt = input.patch.dueAt !== undefined ? input.patch.dueAt : row.dueAt;
+
+      assertValidLessonConfiguration({
+        type: nextType,
+        content: nextContent,
+        openAt: nextOpenAt,
+        dueAt: nextDueAt,
+      });
+
       const updated = await updateLessonPatch(ctx.db, {
         lessonId: input.lessonId,
         title: input.patch.title,
         content: input.patch.content,
+        type: input.patch.type,
+        openAt: input.patch.openAt,
+        dueAt: input.patch.dueAt,
       });
 
       if (!updated) {

@@ -492,6 +492,8 @@ export async function seedCourseToOrganizations(
             title: lesson.title,
             content: lesson.content,
             type: lesson.type,
+            openAt: lesson.openAt,
+            dueAt: lesson.dueAt,
             order: lesson.order,
             estimatedDuration: lesson.estimatedDuration,
           })
@@ -558,6 +560,8 @@ export async function seedCourseToOrganizations(
             title: l.title,
             content: l.content,
             type: l.type,
+            openAt: l.openAt,
+            dueAt: l.dueAt,
             order: l.order,
             estimatedDuration: l.estimatedDuration,
           };

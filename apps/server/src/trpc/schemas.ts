@@ -1,5 +1,10 @@
 import { organizationRoleEnum, userRoleEnum } from "@sycom/db/schema/auth";
-import { COURSE_STATUSES, DIFFICULTY_LEVELS, INSTRUCTOR_ROLES } from "@sycom/db/schema/course";
+import {
+  COURSE_STATUSES,
+  DIFFICULTY_LEVELS,
+  INSTRUCTOR_ROLES,
+  LESSON_TYPES,
+} from "@sycom/db/schema/course";
 import {
   storageEntityTypeEnum,
   storageFolderEnum,
@@ -416,6 +421,9 @@ export const createLessonInputSchema = z.object({
   courseId: z.string().min(1),
   sectionId: z.string().min(1),
   title: z.string().trim().min(1, "Lesson title is required").max(200),
+  type: z.enum(LESSON_TYPES).default("article"),
+  openAt: z.coerce.date().nullable().optional(),
+  dueAt: z.coerce.date().nullable().optional(),
 });
 export type CreateLessonInput = z.infer<typeof createLessonInputSchema>;
 
@@ -430,6 +438,9 @@ export const updateLessonInputSchema = z.object({
     .object({
       title: z.string().trim().min(1).max(200).optional(),
       content: z.unknown().optional(),
+      type: z.enum(LESSON_TYPES).optional(),
+      openAt: z.coerce.date().nullable().optional(),
+      dueAt: z.coerce.date().nullable().optional(),
     })
     .refine((patch) => Object.keys(patch).length > 0, "At least one field must change"),
 });
@@ -441,6 +452,41 @@ export const checkLessonAnswerInputSchema = z.object({
   selected: z.array(z.string().min(1)),
 });
 export type CheckLessonAnswerInput = z.infer<typeof checkLessonAnswerInputSchema>;
+
+// enrollment
+export const enrollInCourseInputSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type EnrollInCourseInput = z.infer<typeof enrollInCourseInputSchema>;
+
+export const getMyCourseProgressInputSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type GetMyCourseProgressInput = z.infer<typeof getMyCourseProgressInputSchema>;
+
+export const markLessonStartedInputSchema = z.object({
+  courseId: z.string().min(1),
+  lessonId: z.string().min(1),
+});
+export type MarkLessonStartedInput = z.infer<typeof markLessonStartedInputSchema>;
+
+export const markLessonCompletedInputSchema = z.object({
+  courseId: z.string().min(1),
+  lessonId: z.string().min(1),
+});
+export type MarkLessonCompletedInput = z.infer<typeof markLessonCompletedInputSchema>;
+
+export const submitLessonAttemptInputSchema = z.object({
+  courseId: z.string().min(1),
+  lessonId: z.string().min(1),
+  answers: z.array(
+    z.object({
+      questionId: z.string().min(1),
+      selected: z.array(z.string().min(1)),
+    }),
+  ),
+});
+export type SubmitLessonAttemptInput = z.infer<typeof submitLessonAttemptInputSchema>;
 
 // course (platform-owned courses UI + taxonomy)
 const courseSlugSchema = z

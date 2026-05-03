@@ -140,13 +140,18 @@ type CurriculumSectionItemProps = {
   onDeleteLesson: (lessonId: string) => Promise<void>;
   onDeleteSection: (sectionId: string) => Promise<void>;
   onMoveLessonToSection: (lessonId: string, sectionId: string) => void;
+  onSaveLesson: (
+    lessonId: string,
+    patch: {
+      content: import("@tiptap/core").JSONContent | null;
+      dueAt: Date | null;
+      openAt: Date | null;
+      type: CurriculumSection["lessons"][number]["type"];
+    },
+  ) => Promise<void>;
   onUpdateSectionSchedule: (
     sectionId: string,
     patch: { dueAt?: Date | null; openAt?: Date | null },
-  ) => Promise<void>;
-  onSaveLessonContent: (
-    lessonId: string,
-    content: import("@tiptap/core").JSONContent | null,
   ) => Promise<void>;
   onToggleExpandedLesson: (lessonId: string) => void;
   onToggleSection: (sectionId: string) => void;
@@ -164,8 +169,8 @@ function CurriculumSectionItemImpl({
   onDeleteLesson,
   onDeleteSection,
   onMoveLessonToSection,
+  onSaveLesson,
   onUpdateSectionSchedule,
-  onSaveLessonContent,
   onToggleExpandedLesson,
   onToggleSection,
   onUpdateLessonTitle,
@@ -271,7 +276,7 @@ function CurriculumSectionItemImpl({
                           onDeleteLesson={onDeleteLesson}
                           moveTargets={moveTargets}
                           onMoveToSection={onMoveLessonToSection}
-                          onSaveContent={onSaveLessonContent}
+                          onSaveLesson={onSaveLesson}
                           onToggleExpanded={onToggleExpandedLesson}
                           onUpdateTitle={onUpdateLessonTitle}
                           saving={savingLessonId === lesson.id}

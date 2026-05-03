@@ -15,9 +15,20 @@ import {
   EditablePreview,
 } from "@sycom/ui/components/elements/editable";
 import { SortableItemHandle } from "@sycom/ui/components/elements/sortable";
+import { Calendar } from "@sycom/ui/components/calendar";
+import { Input } from "@sycom/ui/components/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@sycom/ui/components/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@sycom/ui/components/select";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { cn } from "@sycom/ui/lib/utils";
 import {
+  CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   GripVerticalIcon,
@@ -34,6 +45,96 @@ import {
   type CurriculumLesson,
   type CurriculumSection,
 } from "./curriculum-schema";
+
+const LESSON_TYPE_OPTIONS = [
+  { label: "Article", value: "article" },
+  { label: "Quiz", value: "quiz" },
+  { label: "Exam", value: "exam" },
+] as const;
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  hour: "numeric",
+  minute: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+function formatTimeInputValue(value: Date | null) {
+  if (!value) return "";
+
+  const hours = String(value.getHours()).padStart(2, "0");
+  const minutes = String(value.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function setDateTimePart(base: Date | null, nextDate: Date | null, timeValue?: string) {
+  if (!nextDate) return null;
+
+  const next = new Date(nextDate);
+  const [hours, minutes] = (timeValue ?? formatTimeInputValue(base)).split(":");
+  next.setHours(Number.parseInt(hours || "0", 10), Number.parseInt(minutes || "0", 10), 0, 0);
+  return next;
+}
+
+function setTimePart(base: Date | null, timeValue: string) {
+  if (!base) return null;
+
+  const next = new Date(base);
+  const [hours, minutes] = timeValue.split(":");
+  next.setHours(Number.parseInt(hours || "0", 10), Number.parseInt(minutes || "0", 10), 0, 0);
+  return next;
+}
+
+function LessonDateTimeField({
+  label,
+  onValueChange,
+  value,
+}: {
+  label: string;
+  onValueChange: (value: Date | null) => void;
+  value: Date | null;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            className={cn("text-xs font-normal", !value && "text-muted-foreground")}
+            size="sm"
+            variant="outline"
+          />
+        }
+      >
+        <CalendarIcon className="size-4" />
+        {value ? dateTimeFormatter.format(value) : label}
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <div className="flex flex-col gap-3 p-3">
+          <Calendar
+            mode="single"
+            numberOfMonths={1}
+            onSelect={(nextDate) => onValueChange(setDateTimePart(value, nextDate ?? null))}
+            selected={value ?? undefined}
+          />
+          <div className="flex items-center gap-2">
+            <Input
+              className="w-28"
+              disabled={!value}
+              nativeInput
+              onChange={(event) => onValueChange(setTimePart(value, event.currentTarget.value))}
+              type="time"
+              value={formatTimeInputValue(value)}
+            />
+            <Button disabled={!value} onClick={() => onValueChange(null)} size="sm" variant="ghost">
+              Clear
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const loadRichTextEditor = () =>
   import("@sycom/ui/components/tiptap/rich-text-editor").then((module) => ({
@@ -83,7 +184,15 @@ type CurriculumLessonItemProps = {
   onDeleteLesson: (lessonId: string) => Promise<void>;
   saving: boolean;
   onMoveToSection: (lessonId: string, sectionId: string) => void;
-  onSaveContent: (lessonId: string, content: JSONContent | null) => Promise<void>;
+  onSaveLesson: (
+    lessonId: string,
+    patch: {
+      content: JSONContent | null;
+      dueAt: Date | null;
+      openAt: Date | null;
+      type: CurriculumLesson["type"];
+    },
+  ) => Promise<void>;
   onToggleExpanded: (lessonId: string) => void;
   onUpdateTitle: (lessonId: string, title: string) => Promise<void>;
 };
@@ -95,12 +204,15 @@ function CurriculumLessonItemImpl({
   onDeleteLesson,
   saving,
   onMoveToSection,
-  onSaveContent,
+  onSaveLesson,
   onToggleExpanded,
   onUpdateTitle,
 }: CurriculumLessonItemProps) {
   const onUpload = useLessonEditorUpload(lesson.id);
   const [content, setContent] = useState<JSONContent | null>(null);
+  const [draftType, setDraftType] = useState<CurriculumLesson["type"]>(lesson.type);
+  const [draftOpenAt, setDraftOpenAt] = useState<Date | null>(lesson.openAt);
+  const [draftDueAt, setDraftDueAt] = useState<Date | null>(lesson.dueAt);
 
   useEffect(() => {
     if (expanded) {
@@ -109,6 +221,12 @@ function CurriculumLessonItemImpl({
       setContent(normalizeLessonContent(lesson.content));
     }
   }, [expanded, lesson.content]);
+
+  useEffect(() => {
+    setDraftType(lesson.type);
+    setDraftOpenAt(lesson.openAt);
+    setDraftDueAt(lesson.dueAt);
+  }, [lesson.type, lesson.openAt, lesson.dueAt]);
 
   return (
     <Collapsible open={expanded}>
@@ -183,6 +301,38 @@ function CurriculumLessonItemImpl({
 
         <CollapsibleContent>
           <div className="border-t py-3">
+            <div className="flex flex-wrap items-center gap-2 border-b px-3 pb-3">
+              <Select
+                onValueChange={(value) => setDraftType(value as CurriculumLesson["type"])}
+                value={draftType}
+              >
+                <SelectTrigger className="w-36" size="sm">
+                  <SelectValue placeholder="Lesson type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LESSON_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {draftType === "exam" || draftOpenAt || draftDueAt ? (
+                <>
+                  <LessonDateTimeField
+                    label="Open at"
+                    onValueChange={setDraftOpenAt}
+                    value={draftOpenAt}
+                  />
+                  <LessonDateTimeField
+                    label="Due at"
+                    onValueChange={setDraftDueAt}
+                    value={draftDueAt}
+                  />
+                </>
+              ) : null}
+            </div>
             <Suspense
               fallback={
                 <div className="flex min-h-80 items-center justify-center rounded-xl border bg-card/40">
@@ -203,7 +353,12 @@ function CurriculumLessonItemImpl({
               <Button
                 loading={saving}
                 onClick={() =>
-                  void onSaveContent(lesson.id, content ?? createEmptyLessonDocument())
+                  void onSaveLesson(lesson.id, {
+                    content: content ?? createEmptyLessonDocument(),
+                    dueAt: draftDueAt,
+                    openAt: draftOpenAt,
+                    type: draftType,
+                  })
                 }
                 size="sm"
               >

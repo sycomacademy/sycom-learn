@@ -3,6 +3,7 @@ import { checkHealth } from "@sycom/db/queries/health";
 import { publicProcedure, router } from "../init";
 import { adminRouter } from "./admin";
 import { courseRouter } from "./course";
+import { enrollmentRouter } from "./enrollment";
 import { feedbackRouter } from "./feedback";
 import { inviteRouter } from "./invite";
 import { lessonRouter } from "./lesson";
@@ -14,6 +15,7 @@ export const appRouter = router({
   healthCheck: publicProcedure.query(() => checkHealth()),
   admin: adminRouter,
   course: courseRouter,
+  enrollment: enrollmentRouter,
   feedback: feedbackRouter,
   invite: inviteRouter,
   lesson: lessonRouter,

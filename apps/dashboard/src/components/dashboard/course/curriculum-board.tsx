@@ -279,20 +279,28 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     }
   };
 
-  const handleSaveLessonContent = async (lessonId: string, content: JSONContent | null) => {
+  const handleSaveLesson = async (
+    lessonId: string,
+    patch: {
+      content: JSONContent | null;
+      dueAt: Date | null;
+      openAt: Date | null;
+      type: CurriculumSection["lessons"][number]["type"];
+    },
+  ) => {
     const previousSections = cloneCurriculumSections(sections);
     setSavingLessonId(lessonId);
     setCurriculum((current) =>
       current.map((section) => ({
         ...section,
         lessons: section.lessons.map((lesson) =>
-          lesson.id === lessonId ? { ...lesson, content, updatedAt: new Date() } : lesson,
+          lesson.id === lessonId ? { ...lesson, ...patch, updatedAt: new Date() } : lesson,
         ),
       })),
     );
 
     try {
-      await trpcClient.lesson.update.mutate({ lessonId, patch: { content } });
+      await trpcClient.lesson.update.mutate({ lessonId, patch });
       toastManager.add({ title: "Lesson saved", type: "success" });
     } catch (error) {
       setSections(previousSections);
@@ -492,7 +500,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
                   onDeleteSection={handleDeleteSection}
                   onDeleteLesson={handleDeleteLesson}
                   onMoveLessonToSection={handleMoveLessonToSection}
-                  onSaveLessonContent={handleSaveLessonContent}
+                  onSaveLesson={handleSaveLesson}
                   onToggleExpandedLesson={(lessonId) => {
                     startTransition(() => {
                       setExpandedLessonId((current) => (current === lessonId ? null : lessonId));
