@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button } from "@sycom/components/ui/button";
 import { FileUploader } from "@sycom/components/ui/file-uploader";
 import {
@@ -89,7 +90,7 @@ function TiptapImage(props: NodeViewProps) {
   const [pickedReplaceFile, setPickedReplaceFile] = useState<FileWithPreview | null>(null);
   const [replaceUploadKey, setReplaceUploadKey] = useState(0);
 
-  const canEdit = editor.isEditable;
+  const canEdit = useEditorEditable(editor);
 
   const handleReplaceFromUpload = () => {
     if (!pickedReplaceFile?.preview) return;
@@ -249,7 +250,7 @@ function TiptapImage(props: NodeViewProps) {
               updateAttributes({ aspectRatio });
             }}
           />
-          {editor?.isEditable && (
+          {canEdit && (
             <>
               <div
                 className="absolute inset-y-0 z-20 flex w-[25px] cursor-col-resize items-center justify-start p-2"
@@ -288,13 +289,13 @@ function TiptapImage(props: NodeViewProps) {
         ) : (
           <div
             className="mt-2 cursor-text text-center text-sm text-muted-foreground"
-            onClick={() => editor?.isEditable && setEditingCaption(true)}
+            onClick={() => canEdit && setEditingCaption(true)}
           >
             {caption || "Add a caption..."}
           </div>
         )}
 
-        {editor?.isEditable && (
+        {canEdit && (
           <div
             className={cn(
               "absolute top-4 right-4 flex items-center gap-1 rounded-md border bg-background/80 p-1 opacity-0 backdrop-blur transition-opacity",

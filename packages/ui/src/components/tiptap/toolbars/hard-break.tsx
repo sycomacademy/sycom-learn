@@ -6,11 +6,16 @@ import React from "react";
 import { Button, type ButtonProps } from "@sycom/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
-import { useToolbar } from "./toolbar-provider";
+import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 
 const HardBreakToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
+    const { canInsert, isEditable } = useToolbarEditorState((currentEditor) => ({
+      canInsert: currentEditor.can().chain().focus().setHardBreak().run(),
+      isEditable: currentEditor.isEditable,
+    }));
+
     return (
       <Tooltip>
         <TooltipTrigger
@@ -19,6 +24,7 @@ const HardBreakToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
               variant="ghost"
               size="icon"
               className={cn("h-8 w-8 p-0 sm:h-9 sm:w-9", className)}
+              disabled={!isEditable || !canInsert}
               onClick={(e) => {
                 editor?.chain().focus().setHardBreak().run();
                 onClick?.(e);

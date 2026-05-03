@@ -21,6 +21,28 @@ export const content = `
           <p>Image uploads and management</p>
       </li>
   </ul>
+  <h2>Tables</h2>
+  <p>
+      Use the <strong>Table</strong> toolbar button to pick rows and columns, or type
+      <strong>/table</strong> for a quick 3×3 with a header row. When the cursor is inside a
+      table, the bubble menu has row, column, merge, and delete actions.
+  </p>
+  <table>
+      <tbody>
+          <tr>
+              <th><p>Feature</p></th>
+              <th><p>How</p></th>
+          </tr>
+          <tr>
+              <td><p>Insert</p></td>
+              <td><p>Toolbar grid or slash command</p></td>
+          </tr>
+          <tr>
+              <td><p>Edit structure</p></td>
+              <td><p>Bubble menu above the selection</p></td>
+          </tr>
+      </tbody>
+  </table>
   <h2>Try It Out!</h2>
   <p>
       Type '/' to see available commands or use the toolbar above to format your

@@ -18,6 +18,7 @@ import {
   Download,
 } from "lucide-react";
 
+import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button, buttonVariants } from "@sycom/components/ui/button";
 import { formatFileSize } from "@sycom/lib/tiptap-utils";
 import { cn } from "@sycom/ui/lib/utils";
@@ -136,7 +137,7 @@ export const FileAttachment = Node.create({
 
 function TiptapFileAttachment(props: NodeViewProps) {
   const { node, editor, selected, deleteNode } = props;
-  const canEdit = editor.isEditable;
+  const canEdit = useEditorEditable(editor);
   const src = node.attrs.src as string | null;
   const name = (node.attrs.name as string) || "file";
   const mimeType = (node.attrs.mimeType as string) || "application/octet-stream";

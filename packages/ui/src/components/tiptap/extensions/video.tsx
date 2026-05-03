@@ -11,6 +11,7 @@ import {
 import { Trash } from "lucide-react";
 import { useState } from "react";
 
+import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button } from "@sycom/components/ui/button";
 import { Input } from "@sycom/components/ui/input";
 import {
@@ -132,7 +133,7 @@ function TiptapVideo(props: NodeViewProps) {
   const { node, editor, selected, deleteNode, updateAttributes } = props;
   const [editingCaption, setEditingCaption] = useState(false);
   const [caption, setCaption] = useState((node.attrs.caption as string) || "");
-  const canEdit = editor.isEditable;
+  const canEdit = useEditorEditable(editor);
 
   return (
     <NodeViewWrapper

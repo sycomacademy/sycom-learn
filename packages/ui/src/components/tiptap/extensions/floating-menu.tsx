@@ -17,6 +17,7 @@ import {
   Minus,
   Paperclip,
   Quote,
+  Table2,
   Video,
 } from "lucide-react";
 import type { Editor } from "@tiptap/core";
@@ -108,6 +109,14 @@ const commandGroups: FloatingMenuGroup[] = [
         icon: Code2,
         keywords: "code snippet pre",
         command: (editor) => editor.chain().focus().toggleCodeBlock().run(),
+      },
+      {
+        title: "Table",
+        description: "Insert a 3x3 table (use the toolbar for custom sizes)",
+        icon: Table2,
+        keywords: "table grid rows columns spreadsheet",
+        command: (editor) =>
+          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
       },
       {
         title: "Horizontal Rule",
@@ -433,7 +442,7 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
         placement: "bottom-start",
       }}
     >
-      <div className="z-50 w-72 overflow-hidden rounded-xl border bg-popover shadow-lg/5">
+      <div className="z-50 w-72 overflow-hidden rounded-xl border border-border/80 bg-popover/95 shadow-lg ring-1 shadow-black/5 ring-black/5 backdrop-blur-md dark:bg-popover/90 dark:shadow-black/25 dark:ring-white/10">
         <Command>
           <CommandList className="max-h-[330px]">
             <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">

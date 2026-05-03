@@ -27,6 +27,8 @@ import StarterKit from "@tiptap/starter-kit";
 import { common, createLowlight } from "lowlight";
 import { TipTapFloatingMenu } from "@sycom/components/tiptap/extensions/floating-menu";
 import { FloatingToolbar } from "@sycom/components/tiptap/extensions/floating-toolbar";
+import { TableBubbleMenu } from "@sycom/components/tiptap/extensions/table-bubble-menu";
+import { TableExtension } from "@sycom/components/tiptap/extensions/table";
 import Placeholder from "@tiptap/extension-placeholder";
 import { content } from "@sycom/lib/content";
 
@@ -89,6 +91,7 @@ const extensions = [
   AudioPlaceholder,
   FileAttachment,
   FilePlaceholder,
+  TableExtension,
   SearchAndReplace,
   Typography,
   Markdown.configure({
@@ -126,6 +129,7 @@ export function RichTextEditorDemo({ className }: { className?: string }) {
     >
       <EditorToolbar editor={editor} />
       <FloatingToolbar editor={editor} />
+      <TableBubbleMenu editor={editor} />
       <TipTapFloatingMenu editor={editor} />
       <EditorContent
         editor={editor}

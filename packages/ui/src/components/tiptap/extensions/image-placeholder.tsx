@@ -6,6 +6,7 @@ import { Input } from "@sycom/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@sycom/components/ui/tabs";
 import { NODE_HANDLES_SELECTED_STYLE_CLASSNAME, isValidUrl } from "@sycom/lib/tiptap-utils";
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
+import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import {
   type CommandProps,
   Node,
@@ -87,7 +88,7 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
   const [urlError, setUrlError] = useState(false);
   const [pickedFile, setPickedFile] = useState<FileWithPreview | null>(null);
 
-  const canEdit = editor.isEditable;
+  const canEdit = useEditorEditable(editor);
 
   const handleInsertFromUpload = () => {
     if (!pickedFile?.preview) return;

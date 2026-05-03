@@ -11,9 +11,10 @@ import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 const OrderedListToolbar = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Toggle>>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
-    const isActive = useToolbarEditorState((currentEditor) =>
-      currentEditor.isActive("orderedList"),
-    );
+    const { isActive, isEditable } = useToolbarEditorState((currentEditor) => ({
+      isActive: currentEditor.isActive("orderedList"),
+      isEditable: currentEditor.isEditable,
+    }));
 
     return (
       <Tooltip>
@@ -27,7 +28,7 @@ const OrderedListToolbar = React.forwardRef<HTMLButtonElement, React.ComponentPr
                 editor?.chain().focus().toggleOrderedList().run();
                 onClick?.(e);
               }}
-              disabled={!editor?.isEditable}
+              disabled={!isEditable}
               ref={ref}
               {...props}
             />

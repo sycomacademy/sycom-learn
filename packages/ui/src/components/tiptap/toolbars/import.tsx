@@ -163,7 +163,7 @@ export function ImportToolbar() {
               />
             }
           />
-          <TooltipContent>Import document (replaces current content)</TooltipContent>
+          <TooltipContent>Import document</TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuGroup>

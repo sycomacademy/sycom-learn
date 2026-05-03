@@ -18,6 +18,7 @@ import { OrderedListToolbar } from "./ordered-list";
 import { HorizontalRuleToolbar } from "./horizontal-rule";
 import { AlignmentTooolbar } from "./alignment";
 import { MediaToolbar } from "./media";
+import { TableToolbar } from "./table";
 import { ColorHighlightToolbar } from "./color-and-highlight";
 import { SearchAndReplaceToolbar } from "./search-and-replace-toolbar";
 import { CodeBlockToolbar } from "./code-block";
@@ -26,7 +27,7 @@ import { ImportToolbar } from "./import";
 
 export const EditorToolbar = ({ editor }: { editor: Editor }) => {
   return (
-    <div className="sticky top-0 z-20 hidden w-full border-b bg-background sm:block">
+    <div className="sticky top-0 z-20 hidden w-full border-b border-border/80 bg-background/85 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-background/75 sm:block">
       <ToolbarProvider editor={editor}>
         <TooltipProvider>
           <ScrollArea scrollbarGutter className="h-fit pt-2.5">
@@ -64,6 +65,7 @@ export const EditorToolbar = ({ editor }: { editor: Editor }) => {
 
                 {/* Media & Styling Group */}
                 <MediaToolbar />
+                <TableToolbar />
                 <ColorHighlightToolbar />
                 <Separator orientation="vertical" className="mx-1 h-7" />
 

@@ -19,6 +19,7 @@ import { HeadingsToolbar } from "../toolbars/headings";
 import { BulletListToolbar } from "../toolbars/bullet-list";
 import { OrderedListToolbar } from "../toolbars/ordered-list";
 import { MediaToolbar } from "../toolbars/media";
+import { TableToolbar } from "../toolbars/table";
 import { AlignmentTooolbar } from "../toolbars/alignment";
 import { BlockquoteToolbar } from "../toolbars/blockquote";
 
@@ -49,12 +50,11 @@ export function FloatingToolbar({ editor }: { editor: Editor | null }) {
             placement: "bottom",
             offset: 10,
           }}
-          shouldShow={() => {
-            // Show toolbar when editor is focused and has selection
-            return editor.isEditable && editor.isFocused;
-          }}
+          shouldShow={({ editor: currentEditor }) =>
+            currentEditor.isEditable && currentEditor.isFocused
+          }
           editor={editor}
-          className="mx-0 w-full min-w-full rounded-sm border bg-background shadow-sm"
+          className="mx-0 w-full min-w-full rounded-xl border border-border/80 bg-background/95 shadow-lg shadow-black/5 backdrop-blur-md dark:shadow-black/20"
         >
           <ToolbarProvider editor={editor}>
             <ScrollArea className="h-fit w-full py-0.5">
@@ -76,6 +76,7 @@ export function FloatingToolbar({ editor }: { editor: Editor | null }) {
                   <ColorHighlightToolbar />
                   <LinkToolbar />
                   <MediaToolbar />
+                  <TableToolbar />
                   <Separator orientation="vertical" className="mx-1 h-6" />
 
                   {/* Additional controls */}

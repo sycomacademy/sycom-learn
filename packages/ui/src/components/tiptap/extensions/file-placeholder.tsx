@@ -6,6 +6,7 @@ import {
   NODE_HANDLES_SELECTED_STYLE_CLASSNAME,
   replaceNodeAtPosition,
 } from "@sycom/lib/tiptap-utils";
+import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import {
   type CommandProps,
   Node,
@@ -85,7 +86,7 @@ function FilePlaceholderComponent(props: NodeViewProps) {
   const uploadInputId = useId();
   const [pickedFile, setPickedFile] = useState<FileWithPreview | null>(null);
 
-  const canEdit = editor.isEditable;
+  const canEdit = useEditorEditable(editor);
 
   const handleInsert = () => {
     if (!pickedFile?.preview) return;
@@ -118,6 +119,22 @@ function FilePlaceholderComponent(props: NodeViewProps) {
 
         <div className="space-y-4 py-2">
           <FileUploader
+            accept="
+              application/pdf,
+              application/msword,
+              application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+              application/vnd.ms-excel,
+              application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
+              application/vnd.ms-powerpoint,
+              application/vnd.openxmlformats-officedocument.presentationml.presentation,
+              text/plain,
+              text/csv,
+              application/zip,
+              application/x-7z-compressed,
+              application/x-rar-compressed,
+              application/x-tar,
+              application/x-gzip
+            "
             className="text-sm"
             maxFileCount={1}
             multiple={false}
@@ -125,6 +142,7 @@ function FilePlaceholderComponent(props: NodeViewProps) {
             inputId={uploadInputId}
             onFilesChange={(files) => setPickedFile(files[0] ?? null)}
           />
+
           <Button
             type="button"
             className="w-full"

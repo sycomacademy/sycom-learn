@@ -11,7 +11,10 @@ import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 const CodeBlockToolbar = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Toggle>>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
-    const isActive = useToolbarEditorState((currentEditor) => currentEditor.isActive("codeBlock"));
+    const { isActive, isEditable } = useToolbarEditorState((currentEditor) => ({
+      isActive: currentEditor.isActive("codeBlock"),
+      isEditable: currentEditor.isEditable,
+    }));
     return (
       <Tooltip>
         <TooltipTrigger
@@ -24,7 +27,7 @@ const CodeBlockToolbar = React.forwardRef<HTMLButtonElement, React.ComponentProp
                 editor?.chain().focus().toggleCodeBlock().run();
                 onClick?.(e);
               }}
-              disabled={!editor?.isEditable}
+              disabled={!isEditable}
               ref={ref}
               {...props}
             />

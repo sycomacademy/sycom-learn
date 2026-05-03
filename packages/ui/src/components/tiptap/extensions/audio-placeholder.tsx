@@ -10,6 +10,7 @@ import {
   isValidUrl,
   replaceNodeAtPosition,
 } from "@sycom/lib/tiptap-utils";
+import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import {
   type CommandProps,
   Node,
@@ -85,7 +86,7 @@ function AudioPlaceholderComponent(props: NodeViewProps) {
   const [urlError, setUrlError] = useState(false);
   const [pickedFile, setPickedFile] = useState<FileWithPreview | null>(null);
 
-  const canEdit = editor.isEditable;
+  const canEdit = useEditorEditable(editor);
 
   const insertAudio = (attrs: { src: string; title: string; caption: string }) => {
     const pos = getPos();

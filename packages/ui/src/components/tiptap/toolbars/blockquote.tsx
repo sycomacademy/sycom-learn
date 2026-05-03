@@ -11,7 +11,10 @@ import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 const BlockquoteToolbar = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Toggle>>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
-    const isActive = useToolbarEditorState((currentEditor) => currentEditor.isActive("blockquote"));
+    const { isActive, isEditable } = useToolbarEditorState((currentEditor) => ({
+      isActive: currentEditor.isActive("blockquote"),
+      isEditable: currentEditor.isEditable,
+    }));
     return (
       <Tooltip>
         <TooltipTrigger
@@ -24,7 +27,7 @@ const BlockquoteToolbar = React.forwardRef<HTMLButtonElement, React.ComponentPro
                 editor?.chain().focus().toggleBlockquote().run();
                 onClick?.(e);
               }}
-              disabled={!editor?.isEditable}
+              disabled={!isEditable}
               ref={ref}
               {...props}
             />

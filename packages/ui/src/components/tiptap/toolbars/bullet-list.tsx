@@ -11,7 +11,10 @@ import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 const BulletListToolbar = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Toggle>>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
-    const isActive = useToolbarEditorState((currentEditor) => currentEditor.isActive("bulletList"));
+    const { isActive, isEditable } = useToolbarEditorState((currentEditor) => ({
+      isActive: currentEditor.isActive("bulletList"),
+      isEditable: currentEditor.isEditable,
+    }));
 
     return (
       <Tooltip>
@@ -25,7 +28,7 @@ const BulletListToolbar = React.forwardRef<HTMLButtonElement, React.ComponentPro
                 editor?.chain().focus().toggleBulletList().run();
                 onClick?.(e);
               }}
-              disabled={!editor?.isEditable}
+              disabled={!isEditable}
               ref={ref}
               {...props}
             />
