@@ -4,6 +4,7 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  AudioLines,
   ChevronRight,
   Code2,
   CodeSquare,
@@ -14,7 +15,9 @@ import {
   List,
   ListOrdered,
   Minus,
+  Paperclip,
   Quote,
+  Video,
 } from "lucide-react";
 import type { Editor } from "@tiptap/core";
 import { FloatingMenu } from "@tiptap/react/menus";
@@ -107,6 +110,18 @@ const commandGroups: FloatingMenuGroup[] = [
         command: (editor) => editor.chain().focus().toggleCodeBlock().run(),
       },
       {
+        title: "Horizontal Rule",
+        description: "Add a horizontal divider",
+        icon: Minus,
+        keywords: "horizontal rule divider",
+        command: (editor) => editor.chain().focus().setHorizontalRule().run(),
+      },
+    ],
+  },
+  {
+    group: "Media",
+    items: [
+      {
         title: "Image",
         description: "Insert an image",
         icon: ImageIcon,
@@ -114,11 +129,25 @@ const commandGroups: FloatingMenuGroup[] = [
         command: (editor) => editor.chain().focus().insertImagePlaceholder().run(),
       },
       {
-        title: "Horizontal Rule",
-        description: "Add a horizontal divider",
-        icon: Minus,
-        keywords: "horizontal rule divider",
-        command: (editor) => editor.chain().focus().setHorizontalRule().run(),
+        title: "Video",
+        description: "Embed a video",
+        icon: Video,
+        keywords: "video movie clip mp4",
+        command: (editor) => editor.chain().focus().insertVideoPlaceholder().run(),
+      },
+      {
+        title: "Audio",
+        description: "Embed an audio clip",
+        icon: AudioLines,
+        keywords: "audio sound voice mp3",
+        command: (editor) => editor.chain().focus().insertAudioPlaceholder().run(),
+      },
+      {
+        title: "File",
+        description: "Attach a file",
+        icon: Paperclip,
+        keywords: "file attachment document pdf zip",
+        command: (editor) => editor.chain().focus().insertFilePlaceholder().run(),
       },
     ],
   },

@@ -4,6 +4,12 @@ import "./tiptap.css";
 import { cn } from "@sycom/ui/lib/utils";
 import { ImageExtension } from "@sycom/components/tiptap/extensions/image";
 import { ImagePlaceholder } from "@sycom/components/tiptap/extensions/image-placeholder";
+import { VideoExtension } from "@sycom/components/tiptap/extensions/video";
+import { VideoPlaceholder } from "@sycom/components/tiptap/extensions/video-placeholder";
+import { AudioExtension } from "@sycom/components/tiptap/extensions/audio";
+import { AudioPlaceholder } from "@sycom/components/tiptap/extensions/audio-placeholder";
+import { FileAttachment } from "@sycom/components/tiptap/extensions/file";
+import { FilePlaceholder } from "@sycom/components/tiptap/extensions/file-placeholder";
 import SearchAndReplace from "@sycom/components/tiptap/extensions/search-and-replace";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Color } from "@tiptap/extension-color";
@@ -77,6 +83,12 @@ const extensions = [
   }),
   ImageExtension,
   ImagePlaceholder,
+  VideoExtension,
+  VideoPlaceholder,
+  AudioExtension,
+  AudioPlaceholder,
+  FileAttachment,
+  FilePlaceholder,
   SearchAndReplace,
   Typography,
   Markdown.configure({

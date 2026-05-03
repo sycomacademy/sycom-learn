@@ -52,6 +52,7 @@
     "lowlight": "^3.3.0",
     "lucide-react": "^1.14.0",
     "mammoth": "^1.12.0",
+    "media-chrome": "^4.19.0",
     "next-themes": "catalog:",
     "qrcode": "^1.5.4",
     "react": "catalog:",

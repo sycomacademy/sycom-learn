@@ -42,3 +42,28 @@ export function getUrlFromString(str: string) {
 export function absoluteUrl(path: string) {
   return `${process.env.NEXT_PUBLIC_APP_URL}${path}`;
 }
+
+/** Replace the block at `pos` with a new node of `nodeTypeName` (same depth / size contract as TipTap placeholders). */
+export function replaceNodeAtPosition(
+  editor: Editor,
+  pos: number,
+  nodeTypeName: string,
+  attrs: Record<string, unknown>,
+): boolean {
+  const { state } = editor;
+  const nodeType = state.schema.nodes[nodeTypeName];
+  if (!nodeType) return false;
+  const current = state.doc.nodeAt(pos);
+  if (!current) return false;
+  const next = nodeType.create(attrs);
+  const tr = state.tr.replaceWith(pos, pos + current.nodeSize, next);
+  editor.view.dispatch(tr);
+  return true;
+}
+
+export function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}

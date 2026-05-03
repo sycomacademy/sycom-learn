@@ -18,7 +18,7 @@ import { ToolbarProvider } from "../toolbars/toolbar-provider";
 import { HeadingsToolbar } from "../toolbars/headings";
 import { BulletListToolbar } from "../toolbars/bullet-list";
 import { OrderedListToolbar } from "../toolbars/ordered-list";
-import { ImagePlaceholderToolbar } from "../toolbars/image-placeholder-toolbar";
+import { MediaToolbar } from "../toolbars/media";
 import { AlignmentTooolbar } from "../toolbars/alignment";
 import { BlockquoteToolbar } from "../toolbars/blockquote";
 
@@ -75,7 +75,7 @@ export function FloatingToolbar({ editor }: { editor: Editor | null }) {
                   {/* Rich formatting */}
                   <ColorHighlightToolbar />
                   <LinkToolbar />
-                  <ImagePlaceholderToolbar />
+                  <MediaToolbar />
                   <Separator orientation="vertical" className="mx-1 h-6" />
 
                   {/* Additional controls */}
