@@ -1,51 +1,59 @@
 "use client";
 
 import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  ChevronRight,
+  Code2,
+  CodeSquare,
   Heading1,
   Heading2,
   Heading3,
-  ListOrdered,
-  List,
-  Code2,
-  ChevronRight,
-  Quote,
   ImageIcon,
+  List,
+  ListOrdered,
   Minus,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  CodeSquare,
-  TextQuote,
+  Quote,
 } from "lucide-react";
-import { BubbleMenu } from "@tiptap/react/menus";
+import type { Editor } from "@tiptap/core";
+import { FloatingMenu } from "@tiptap/react/menus";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
+  CommandGroupLabel,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from "@sycom/ui/components/command";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@sycom/ui/lib/utils";
-import type { Editor } from "@tiptap/core";
-import { ScrollArea } from "@sycom/ui/components/scroll-area";
-import { useDebounce } from "@sycom/ui/hooks/use-debounce";
+import type { ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-interface CommandItemType {
+type FloatingMenuCommand = {
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   keywords: string;
   command: (editor: Editor) => void;
-  group: string;
-}
-
-type CommandGroupType = {
-  group: string;
-  items: Omit<CommandItemType, "group">[];
 };
 
-const groups: CommandGroupType[] = [
+type FloatingMenuGroup = {
+  group: string;
+  items: FloatingMenuCommand[];
+};
+
+type SlashCommandState = {
+  query: string;
+  shouldShow: boolean;
+  range: {
+    from: number;
+    to: number;
+  } | null;
+};
+
+const commandGroups: FloatingMenuGroup[] = [
   {
     group: "Basic blocks",
     items: [
@@ -86,7 +94,7 @@ const groups: CommandGroupType[] = [
       },
       {
         title: "Numbered List",
-        description: "Create a ordered list",
+        description: "Create an ordered list",
         icon: ListOrdered,
         keywords: "numbered ol",
         command: (editor) => editor.chain().focus().toggleOrderedList().run(),
@@ -121,7 +129,7 @@ const groups: CommandGroupType[] = [
         title: "Quote",
         description: "Capture a quotation",
         icon: Quote,
-        keywords: "blockquote cite",
+        keywords: "blockquote cite quote",
         command: (editor) => editor.chain().focus().toggleBlockquote().run(),
       },
       {
@@ -130,13 +138,6 @@ const groups: CommandGroupType[] = [
         icon: CodeSquare,
         keywords: "code inline",
         command: (editor) => editor.chain().focus().toggleCode().run(),
-      },
-      {
-        title: "Blockquote",
-        description: "Block quote",
-        icon: TextQuote,
-        keywords: "blockquote quote",
-        command: (editor) => editor.chain().focus().toggleBlockquote().run(),
       },
     ],
   },
@@ -168,214 +169,290 @@ const groups: CommandGroupType[] = [
   },
 ];
 
-export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 300);
-  const commandRef = useRef<HTMLDivElement>(null);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+function getSlashCommandState(editor: Editor): SlashCommandState {
+  const { state } = editor;
+  const { $from, from } = state.selection;
+  const currentLineText = $from.parent.textBetween(0, $from.parentOffset, "\n", " ");
+  const isSlashCommand =
+    currentLineText.startsWith("/") &&
+    $from.parent.type.name !== "codeBlock" &&
+    $from.parentOffset === currentLineText.length;
 
-  const filteredGroups = useMemo(
-    () =>
-      groups
-        .map((group) => ({
-          ...group,
-          items: group.items.filter(
-            (item) =>
-              item.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-              item.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-              item.keywords.toLowerCase().includes(debouncedSearch.toLowerCase()),
-          ),
-        }))
-        .filter((group) => group.items.length > 0),
-    [debouncedSearch],
+  if (!isSlashCommand) {
+    return {
+      query: "",
+      shouldShow: false,
+      range: null,
+    };
+  }
+
+  return {
+    query: currentLineText.slice(1).trim(),
+    shouldShow: true,
+    range: {
+      from: Math.max(0, from - currentLineText.length),
+      to: from,
+    },
+  };
+}
+
+function getEditorElement(editor: Editor): Element | null {
+  const { element } = editor.options;
+
+  if (element instanceof Element) {
+    return element;
+  }
+
+  if (typeof element === "object" && element?.mount instanceof HTMLElement) {
+    return element.mount;
+  }
+
+  return null;
+}
+
+function isSameSlashCommandState(left: SlashCommandState, right: SlashCommandState): boolean {
+  return (
+    left.query === right.query &&
+    left.shouldShow === right.shouldShow &&
+    left.range?.from === right.range?.from &&
+    left.range?.to === right.range?.to
+  );
+}
+
+function getNextIndex(currentIndex: number, itemCount: number, direction: "up" | "down"): number {
+  if (itemCount === 0) {
+    return -1;
+  }
+
+  if (currentIndex < 0) {
+    return direction === "down" ? 0 : itemCount - 1;
+  }
+
+  if (direction === "down") {
+    return currentIndex < itemCount - 1 ? currentIndex + 1 : 0;
+  }
+
+  return currentIndex > 0 ? currentIndex - 1 : itemCount - 1;
+}
+
+export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [slashCommandState, setSlashCommandState] = useState(() => getSlashCommandState(editor));
+  const slashCommandStateRef = useRef(slashCommandState);
+  const selectedIndexRef = useRef(selectedIndex);
+
+  selectedIndexRef.current = selectedIndex;
+
+  const syncSlashCommandState = useCallback((currentEditor: Editor) => {
+    const nextState = getSlashCommandState(currentEditor);
+    const previousState = slashCommandStateRef.current;
+
+    slashCommandStateRef.current = nextState;
+
+    if (previousState.query !== nextState.query || !nextState.shouldShow) {
+      selectedIndexRef.current = -1;
+      setSelectedIndex(-1);
+    }
+
+    setSlashCommandState((currentState) =>
+      isSameSlashCommandState(currentState, nextState) ? currentState : nextState,
+    );
+  }, []);
+
+  const filteredGroups = useMemo(() => {
+    const normalizedQuery = slashCommandState.query.toLowerCase();
+
+    return commandGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => {
+          if (!normalizedQuery) {
+            return true;
+          }
+
+          return [item.title, item.description, item.keywords].some((value) =>
+            value.toLowerCase().includes(normalizedQuery),
+          );
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [slashCommandState.query]);
+
+  const indexedGroups = useMemo(() => {
+    let flatIndex = 0;
+
+    return filteredGroups.map((group) => ({
+      ...group,
+      items: group.items.map((item) => ({
+        ...item,
+        flatIndex: flatIndex++,
+      })),
+    }));
+  }, [filteredGroups]);
+
+  const flatFilteredItems = useMemo(
+    () => indexedGroups.flatMap((group) => group.items),
+    [indexedGroups],
   );
 
-  const flatFilteredItems = useMemo(() => filteredGroups.flatMap((g) => g.items), [filteredGroups]);
-
   const executeCommand = useCallback(
-    (commandFn: (editor: Editor) => void) => {
-      if (!editor) return;
+    (command: (editor: Editor) => void) => {
+      const currentSlashCommandState = getSlashCommandState(editor);
 
-      try {
-        const { from } = editor.state.selection;
-        const slashCommandLength = search.length + 1;
-
-        editor
-          .chain()
-          .focus()
-          .deleteRange({
-            from: Math.max(0, from - slashCommandLength),
-            to: from,
-          })
-          .run();
-
-        commandFn(editor);
-      } catch (error) {
-        console.error("Error executing command:", error);
-      } finally {
-        setIsOpen(false);
-        setSearch("");
-        setSelectedIndex(-1);
+      if (!currentSlashCommandState.range) {
+        return;
       }
+
+      editor.chain().focus().deleteRange(currentSlashCommandState.range).run();
+      command(editor);
+      syncSlashCommandState(editor);
+      selectedIndexRef.current = -1;
+      setSelectedIndex(-1);
     },
-    [editor, search],
+    [editor, syncSlashCommandState],
   );
 
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!isOpen || !editor) return;
+    (event: KeyboardEvent) => {
+      if (!slashCommandStateRef.current.shouldShow || flatFilteredItems.length === 0) {
+        return;
+      }
 
       const preventDefault = () => {
-        e.preventDefault();
-        e.stopImmediatePropagation();
+        event.preventDefault();
+        event.stopImmediatePropagation();
       };
 
-      switch (e.key) {
+      switch (event.key) {
         case "ArrowDown":
           preventDefault();
-          setSelectedIndex((prev) => {
-            if (prev === -1) return 0;
-            return prev < flatFilteredItems.length - 1 ? prev + 1 : 0;
+          setSelectedIndex((currentIndex) => {
+            const nextIndex = getNextIndex(currentIndex, flatFilteredItems.length, "down");
+            selectedIndexRef.current = nextIndex;
+            return nextIndex;
           });
           break;
 
         case "ArrowUp":
           preventDefault();
-          setSelectedIndex((prev) => {
-            if (prev === -1) return flatFilteredItems.length - 1;
-            return prev > 0 ? prev - 1 : flatFilteredItems.length - 1;
+          setSelectedIndex((currentIndex) => {
+            const nextIndex = getNextIndex(currentIndex, flatFilteredItems.length, "up");
+            selectedIndexRef.current = nextIndex;
+            return nextIndex;
           });
           break;
 
-        case "Enter":
+        case "Enter": {
           preventDefault();
-          const targetIndex = selectedIndex === -1 ? 0 : selectedIndex;
-          if (flatFilteredItems[targetIndex]) {
-            executeCommand(flatFilteredItems[targetIndex].command);
+          const targetIndex = selectedIndexRef.current < 0 ? 0 : selectedIndexRef.current;
+          const selectedItem = flatFilteredItems[targetIndex];
+
+          if (selectedItem) {
+            executeCommand(selectedItem.command);
           }
           break;
+        }
 
         case "Escape":
           preventDefault();
-          setIsOpen(false);
+          selectedIndexRef.current = -1;
           setSelectedIndex(-1);
           break;
       }
     },
-    [isOpen, selectedIndex, flatFilteredItems, executeCommand, editor],
+    [executeCommand, flatFilteredItems],
   );
 
   useEffect(() => {
-    if (!editor?.options.element) return;
+    syncSlashCommandState(editor);
 
-    const editorElement = editor.options.element;
-    const handleEditorKeyDown = (e: Event) => handleKeyDown(e as KeyboardEvent);
+    const handleEditorStateChange = () => syncSlashCommandState(editor);
+    const editorElement = getEditorElement(editor);
 
-    editorElement.addEventListener("keydown", handleEditorKeyDown);
-    return () => editorElement.removeEventListener("keydown", handleEditorKeyDown);
-  }, [handleKeyDown, editor]);
+    editor.on("transaction", handleEditorStateChange);
+    editor.on("selectionUpdate", handleEditorStateChange);
 
-  // Add new effect for resetting selectedIndex
-  useEffect(() => {
-    setSelectedIndex(-1);
-  }, [search]);
-
-  useEffect(() => {
-    if (selectedIndex >= 0 && itemRefs.current[selectedIndex]) {
-      itemRefs.current[selectedIndex]?.focus();
+    if (!editorElement) {
+      return () => {
+        editor.off("transaction", handleEditorStateChange);
+        editor.off("selectionUpdate", handleEditorStateChange);
+      };
     }
+
+    const handleEditorKeyDown = (event: Event) => handleKeyDown(event as KeyboardEvent);
+
+    editorElement.addEventListener("keydown", handleEditorKeyDown, true);
+
+    return () => {
+      editor.off("transaction", handleEditorStateChange);
+      editor.off("selectionUpdate", handleEditorStateChange);
+      editorElement.removeEventListener("keydown", handleEditorKeyDown, true);
+    };
+  }, [editor, handleKeyDown, syncSlashCommandState]);
+
+  useEffect(() => {
+    const selectedItem = selectedIndex >= 0 ? itemRefs.current[selectedIndex] : null;
+    selectedItem?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
   return (
-    <BubbleMenu
+    <FloatingMenu
       editor={editor}
-      shouldShow={({ state }) => {
-        if (!editor) return false;
-
-        const { $from } = state.selection;
-        const currentLineText = $from.parent.textBetween(0, $from.parentOffset, "\n", " ");
-
-        const isSlashCommand =
-          currentLineText.startsWith("/") &&
-          $from.parent.type.name !== "codeBlock" &&
-          $from.parentOffset === currentLineText.length;
-
-        if (!isSlashCommand) {
-          if (isOpen) setIsOpen(false);
-          return false;
-        }
-
-        const query = currentLineText.slice(1).trim();
-        if (query !== search) setSearch(query);
-        if (!isOpen) setIsOpen(true);
-        return true;
-      }}
+      shouldShow={({ editor: currentEditor }) => getSlashCommandState(currentEditor).shouldShow}
       options={{
         placement: "bottom-start",
-        onHide: () => {
-          setIsOpen(false);
-          setSelectedIndex(-1);
-        },
       }}
     >
-      <Command ref={commandRef}>
-        <ScrollArea className="max-h-[330px]">
-          <CommandList>
+      <div className="z-50 w-72 overflow-hidden rounded-xl border bg-popover shadow-lg/5">
+        <Command>
+          <CommandList className="max-h-[330px]">
             <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">
               No results found
             </CommandEmpty>
 
-            {filteredGroups.map((group, groupIndex) => (
-              <CommandGroup
-                key={`${group.group}-${groupIndex}`}
-                heading={
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                    {group.group}
-                  </div>
-                }
-              >
-                {group.items.map((item, itemIndex) => {
-                  const flatIndex =
-                    filteredGroups
-                      .slice(0, groupIndex)
-                      .reduce((acc, g) => acc + g.items.length, 0) + itemIndex;
-
-                  return (
-                    <CommandItem
-                      role="option"
-                      key={`${group.group}-${item.title}-${itemIndex}`}
-                      value={`${group.group}-${item.title}`}
-                      onSelect={() => executeCommand(item.command)}
+            {indexedGroups.map((group) => (
+              <CommandGroup key={group.group}>
+                <CommandGroupLabel>{group.group}</CommandGroupLabel>
+                {group.items.map((item) => (
+                  <CommandItem
+                    role="option"
+                    key={`${group.group}-${item.title}`}
+                    value={`${group.group} ${item.title} ${item.description} ${item.keywords}`}
+                    onSelect={() => executeCommand(item.command)}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                    }}
+                    onClick={() => executeCommand(item.command)}
+                    className={cn(
+                      "gap-3 rounded-md px-2 py-2 aria-selected:bg-accent aria-selected:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground",
+                      item.flatIndex === selectedIndex && "bg-accent text-accent-foreground",
+                    )}
+                    aria-selected={item.flatIndex === selectedIndex}
+                    ref={(element) => {
+                      itemRefs.current[item.flatIndex] = element;
+                    }}
+                  >
+                    <div
                       className={cn(
-                        "gap-3 aria-selected:bg-accent/50",
-                        flatIndex === selectedIndex ? "bg-accent/50" : "",
+                        "flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground",
+                        item.flatIndex === selectedIndex && "border-transparent",
                       )}
-                      aria-selected={flatIndex === selectedIndex}
-                      ref={(el) => {
-                        itemRefs.current[flatIndex] = el;
-                      }}
-                      tabIndex={flatIndex === selectedIndex ? 0 : -1}
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-md border bg-background">
-                        <item.icon className="h-4 w-4" />
-                      </div>
-                      <div className="flex flex-1 flex-col">
-                        <span className="text-sm font-medium">{item.title}</span>
-                        <span className="text-xs text-muted-foreground">{item.description}</span>
-                      </div>
-                      <kbd className="ml-auto flex h-5 items-center rounded bg-muted px-1.5 text-xs text-muted-foreground">
-                        ↵
-                      </kbd>
-                    </CommandItem>
-                  );
-                })}
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-1 flex-col">
+                      <span className="text-sm font-medium">{item.title}</span>
+                      <span className="text-xs text-muted-foreground">{item.description}</span>
+                    </div>
+                    <CommandShortcut>↵</CommandShortcut>
+                  </CommandItem>
+                ))}
               </CommandGroup>
             ))}
           </CommandList>
-        </ScrollArea>
-      </Command>
-    </BubbleMenu>
+        </Command>
+      </div>
+    </FloatingMenu>
   );
 }
