@@ -8,12 +8,25 @@ import {
   ReactNodeViewRenderer,
   mergeAttributes,
 } from "@tiptap/react";
-import { Trash } from "lucide-react";
-import { useState } from "react";
+import { Edit, Link, MoreVertical, Play, Trash, Upload } from "lucide-react";
+import { useId, useState } from "react";
 
 import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button } from "@sycom/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@sycom/components/ui/dropdown-menu";
+import { FileUploader } from "@sycom/components/ui/file-uploader";
 import { Input } from "@sycom/components/ui/input";
+import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
+import { isValidUrl } from "@sycom/lib/tiptap-utils";
 import {
   VideoPlayer,
   VideoPlayerContent,
@@ -27,6 +40,11 @@ import {
   VideoPlayerVolumeRange,
 } from "@sycom/ui/components/kibo-ui/video-player";
 import { cn } from "@sycom/ui/lib/utils";
+
+function fileBaseName(entry: FileWithPreview): string {
+  const f = entry.file;
+  return f instanceof File ? f.name : f.name;
+}
 
 function getYouTubeEmbedUrl(url: string | null | undefined) {
   if (!url) return null;
@@ -242,43 +260,81 @@ export const VideoExtension = Node.create({
 
 function TiptapVideo(props: NodeViewProps) {
   const { node, editor, selected, deleteNode, updateAttributes } = props;
+  const replaceUploadInputId = useId();
   const [editingCaption, setEditingCaption] = useState(false);
   const [caption, setCaption] = useState((node.attrs.caption as string) || "");
+  const [openedMore, setOpenedMore] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [pickedReplaceFile, setPickedReplaceFile] = useState<FileWithPreview | null>(null);
+  const [replaceUploadKey, setReplaceUploadKey] = useState(0);
   const canEdit = useEditorEditable(editor);
   const title = (node.attrs.title as string) || "";
   const src = node.attrs.src as string | null;
   const embedUrl = getYouTubeEmbedUrl(src);
   const aspectRatio = Number(node.attrs.aspectRatio) || 16 / 9;
 
+  const handleCaptionBlur = () => {
+    updateAttributes({ caption });
+    setEditingCaption(false);
+  };
+
+  const handleReplaceFromUpload = () => {
+    if (!pickedReplaceFile?.preview) return;
+
+    updateAttributes({
+      src: pickedReplaceFile.preview,
+      poster: null,
+      title: title || fileBaseName(pickedReplaceFile),
+      aspectRatio: null,
+    });
+    setPickedReplaceFile(null);
+    setReplaceUploadKey((current) => current + 1);
+    setOpenedMore(false);
+  };
+
+  const handleVideoUrlSubmit = () => {
+    const nextUrl = videoUrl.trim();
+    if (!nextUrl || !isValidUrl(nextUrl)) return;
+
+    updateAttributes({
+      src: nextUrl,
+      poster: null,
+      aspectRatio: null,
+    });
+    setVideoUrl("");
+    setPickedReplaceFile(null);
+    setReplaceUploadKey((current) => current + 1);
+    setOpenedMore(false);
+  };
+
+  const handleYoutubeUrlSubmit = () => {
+    const nextUrl = youtubeUrl.trim();
+    const nextEmbedUrl = getYouTubeEmbedUrl(nextUrl);
+    if (!nextEmbedUrl) return;
+
+    updateAttributes({
+      src: nextEmbedUrl,
+      poster: null,
+      aspectRatio: 16 / 9,
+    });
+    setYoutubeUrl("");
+    setPickedReplaceFile(null);
+    setReplaceUploadKey((current) => current + 1);
+    setOpenedMore(false);
+  };
+
   return (
     <NodeViewWrapper
       className={cn(
         "relative flex flex-col rounded-md border-2 border-transparent transition-all duration-200",
         selected ? "border-primary/50" : "",
-        node.attrs.align === "left" && "mr-auto",
-        node.attrs.align === "center" && "mx-auto",
-        node.attrs.align === "right" && "ml-auto",
       )}
       style={{ width: node.attrs.width as string }}
     >
-      <div className="group overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="flex items-center justify-between p-2 px-4">
-          <p className="text-sm font-medium">{title ? title : "Video"}</p>
-          {canEdit ? (
-            <Button
-              aria-label="Delete video"
-              className="h-8 text-destructive"
-              onClick={() => deleteNode()}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
-              <Trash className="size-4" />
-            </Button>
-          ) : null}
-        </div>
+      <div className="group relative overflow-hidden rounded-lg border bg-card shadow-sm">
         {embedUrl ? (
-          <div className="border-t bg-black">
+          <div className="bg-black">
             <iframe
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
@@ -306,7 +362,7 @@ function TiptapVideo(props: NodeViewProps) {
                 }
               }}
             />
-            <VideoPlayerControlBar className="flex flex-wrap items-center gap-0 border-t bg-background/95">
+            <VideoPlayerControlBar className="flex flex-wrap items-center gap-0 bg-background/95">
               <VideoPlayerPlayButton />
               <VideoPlayerSeekBackwardButton />
               <VideoPlayerSeekForwardButton />
@@ -319,18 +375,117 @@ function TiptapVideo(props: NodeViewProps) {
         )}
 
         {canEdit ? (
+          <div
+            className={cn(
+              "absolute top-4 right-4 flex items-center gap-1 rounded-md border bg-background/80 p-1 opacity-0 backdrop-blur transition-opacity",
+              "group-hover:opacity-100",
+              openedMore && "opacity-100",
+            )}
+          >
+            <DropdownMenu onOpenChange={setOpenedMore} open={openedMore}>
+              <DropdownMenuTrigger
+                render={<Button className="size-7" size="icon" variant="ghost" />}
+              >
+                <MoreVertical className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" alignOffset={-90} className="mt-1 w-40 text-sm">
+                <DropdownMenuItem onClick={() => setEditingCaption(true)}>
+                  <Edit className="mr-2 size-4" /> Edit Caption
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Upload className="mr-2 size-4" /> Change Source
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-fit min-w-52 p-2">
+                    <div className="space-y-4">
+                      <div>
+                        <p className="mb-2 text-xs font-medium">Upload Video</p>
+                        <FileUploader
+                          accept="video/*"
+                          className="text-xs"
+                          disabled={!canEdit}
+                          inputId={replaceUploadInputId}
+                          key={replaceUploadKey}
+                          maxFileCount={1}
+                          multiple={false}
+                          onFilesChange={(files) => setPickedReplaceFile(files[0] ?? null)}
+                        />
+                        <Button
+                          className="mt-2 w-full"
+                          disabled={!pickedReplaceFile?.preview || !canEdit}
+                          onClick={handleReplaceFromUpload}
+                          size="sm"
+                          type="button"
+                        >
+                          Replace with upload
+                        </Button>
+                      </div>
+
+                      <div>
+                        <p className="mb-2 text-xs font-medium">Or use URL</p>
+                        <div className="space-y-2">
+                          <Input
+                            className="text-xs"
+                            onChange={(event) => setVideoUrl(event.target.value)}
+                            placeholder="Enter video URL..."
+                            value={videoUrl}
+                          />
+                          <Button
+                            className="w-full"
+                            disabled={!videoUrl.trim() || !isValidUrl(videoUrl.trim())}
+                            onClick={handleVideoUrlSubmit}
+                            size="sm"
+                            type="button"
+                          >
+                            <Link className="mr-2 size-4" /> Replace with URL
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="mb-2 text-xs font-medium">YouTube</p>
+                        <div className="space-y-2">
+                          <Input
+                            className="text-xs"
+                            onChange={(event) => setYoutubeUrl(event.target.value)}
+                            placeholder="Paste a YouTube URL..."
+                            value={youtubeUrl}
+                          />
+                          <Button
+                            className="w-full"
+                            disabled={!getYouTubeEmbedUrl(youtubeUrl.trim())}
+                            onClick={handleYoutubeUrlSubmit}
+                            size="sm"
+                            type="button"
+                          >
+                            <Play className="mr-2 size-4" /> Replace with YouTube
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={deleteNode}
+                >
+                  <Trash className="mr-2 size-4" /> Delete Video
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : null}
+
+        {canEdit ? (
           editingCaption ? (
             <Input
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              onBlur={() => {
-                updateAttributes({ caption });
-                setEditingCaption(false);
-              }}
+              onBlur={handleCaptionBlur}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  updateAttributes({ caption });
-                  setEditingCaption(false);
+                  handleCaptionBlur();
                 }
               }}
               className="rounded-none border-0 border-t text-center text-sm"

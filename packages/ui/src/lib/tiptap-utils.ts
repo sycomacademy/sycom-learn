@@ -40,7 +40,7 @@ export function getUrlFromString(str: string) {
 }
 
 export function absoluteUrl(path: string) {
-  return `${process.env.NEXT_PUBLIC_APP_URL}${path}`;
+  return `${process.env.VITE_APP_URL}${path}`;
 }
 
 /** Replace the block at `pos` with a new node of `nodeTypeName` (same depth / size contract as TipTap placeholders). */

@@ -10,12 +10,12 @@ import {
 } from "@tiptap/react";
 import {
   Archive,
+  Download,
   FileText,
   Image as ImageIcon,
   Music2,
   Trash,
   Video,
-  Download,
 } from "lucide-react";
 
 import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
@@ -30,28 +30,28 @@ export type FileAttachmentAttrs = {
   size: number;
 };
 
-declare module "@tiptap/core" {
-  interface Commands<ReturnType> {
-    fileAttachment: {
-      insertFileAttachment: (attrs: Partial<FileAttachmentAttrs>) => ReturnType;
-    };
-  }
-}
-
 function FileGlyph({ mimeType }: { mimeType: string }) {
   const cls = "size-10 shrink-0 rounded-md border bg-muted p-2 text-muted-foreground";
-  if (mimeType.startsWith("image/")) return <ImageIcon className={cls} aria-hidden />;
-  if (mimeType.startsWith("video/")) return <Video className={cls} aria-hidden />;
-  if (mimeType.startsWith("audio/")) return <Music2 className={cls} aria-hidden />;
+  if (mimeType.startsWith("image/")) return <ImageIcon aria-hidden className={cls} />;
+  if (mimeType.startsWith("video/")) return <Video aria-hidden className={cls} />;
+  if (mimeType.startsWith("audio/")) return <Music2 aria-hidden className={cls} />;
   if (
     mimeType.includes("zip") ||
     mimeType.includes("compressed") ||
     mimeType.includes("tar") ||
     mimeType.includes("rar")
   ) {
-    return <Archive className={cls} aria-hidden />;
+    return <Archive aria-hidden className={cls} />;
   }
-  return <FileText className={cls} aria-hidden />;
+  return <FileText aria-hidden className={cls} />;
+}
+
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    fileAttachment: {
+      insertFileAttachment: (attrs: Partial<FileAttachmentAttrs>) => ReturnType;
+    };
+  }
 }
 
 export const FileAttachment = Node.create({
@@ -146,43 +146,47 @@ function TiptapFileAttachment(props: NodeViewProps) {
   return (
     <NodeViewWrapper
       className={cn(
-        "my-2 flex max-w-xl rounded-lg border bg-card p-3 shadow-sm",
-        selected ? "ring-2 ring-primary/50" : "",
+        "relative my-2 max-w-xl rounded-md border-2 border-transparent transition-all duration-200",
+        selected ? "border-primary/50" : "",
       )}
       data-drag-handle=""
     >
-      <FileGlyph mimeType={mimeType} />
-      <div className="min-w-0 flex-1 pl-3">
-        <p className="truncate text-sm font-medium">{name}</p>
-        <p className="text-xs text-muted-foreground">
-          {mimeType !== "application/octet-stream" ? mimeType : "File"} · {formatFileSize(size)}
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {src ? (
-            <a
-              href={src}
-              download={name}
-              className={cn(
-                buttonVariants({ variant: "secondary", size: "sm" }),
-                "inline-flex h-8 items-center gap-2",
-              )}
-            >
-              <Download className="size-4" />
-              Download
-            </a>
-          ) : null}
-          {canEdit ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 text-destructive"
-              onClick={() => deleteNode()}
-            >
-              <Trash className="size-4" />
-              Remove
-            </Button>
-          ) : null}
+      <div className="group relative overflow-hidden rounded-lg border bg-card p-3 shadow-sm">
+        {canEdit || src ? (
+          <div className="absolute top-4 right-4 flex items-center gap-1 rounded-md border bg-background/80 p-1 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+            {src ? (
+              <a
+                aria-label="Download file"
+                className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-7")}
+                download={name}
+                href={src}
+              >
+                <Download className="size-4" />
+              </a>
+            ) : null}
+            {canEdit ? (
+              <Button
+                aria-label="Delete file"
+                className="size-7 text-destructive"
+                onClick={() => deleteNode()}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
+                <Trash className="size-4" />
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="flex min-w-0 items-center gap-3 pr-12">
+          <FileGlyph mimeType={mimeType} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{name}</p>
+            <p className="text-xs text-muted-foreground">
+              {mimeType !== "application/octet-stream" ? mimeType : "File"} · {formatFileSize(size)}
+            </p>
+          </div>
         </div>
       </div>
     </NodeViewWrapper>

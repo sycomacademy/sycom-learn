@@ -8,12 +8,25 @@ import {
   ReactNodeViewRenderer,
   mergeAttributes,
 } from "@tiptap/react";
-import { Trash } from "lucide-react";
-import { useState } from "react";
+import { Edit, Link, MoreVertical, Trash, Upload } from "lucide-react";
+import { useId, useState } from "react";
 
 import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button } from "@sycom/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@sycom/components/ui/dropdown-menu";
+import { FileUploader } from "@sycom/components/ui/file-uploader";
 import { Input } from "@sycom/components/ui/input";
+import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
+import { isValidUrl } from "@sycom/lib/tiptap-utils";
 import {
   AudioPlayer,
   AudioPlayerContent,
@@ -27,6 +40,11 @@ import {
   AudioPlayerVolumeRange,
 } from "@sycom/ui/components/kibo-ui/audio-player";
 import { cn } from "@sycom/ui/lib/utils";
+
+function fileBaseName(entry: FileWithPreview): string {
+  const f = entry.file;
+  return f instanceof File ? f.name : f.name;
+}
 
 export type AudioAttrs = {
   src: string | null;
@@ -60,14 +78,33 @@ export const AudioExtension = Node.create({
     return [
       {
         tag: "figure[data-tiptap-audio]",
+        getAttrs: (element) => {
+          if (typeof element === "string") return false;
+          const figure = element as HTMLElement;
+          const audio = figure.querySelector("audio");
+          const caption = figure.querySelector("figcaption")?.textContent?.trim() ?? "";
+
+          if (!audio) return false;
+
+          return {
+            src: audio.getAttribute("src"),
+            title: audio.getAttribute("title") ?? "",
+            caption,
+          };
+        },
       },
       {
         tag: "audio[src]",
         getAttrs: (element) => {
           if (typeof element === "string") return false;
           const el = element as HTMLAudioElement;
+          const caption =
+            el.closest("figure")?.querySelector("figcaption")?.textContent?.trim() ?? "";
+
           return {
             src: el.getAttribute("src"),
+            title: el.getAttribute("title") ?? "",
+            caption,
           };
         },
       },
@@ -121,10 +158,43 @@ export const AudioExtension = Node.create({
 
 function TiptapAudio(props: NodeViewProps) {
   const { node, editor, selected, deleteNode, updateAttributes } = props;
+  const replaceUploadInputId = useId();
   const [editingCaption, setEditingCaption] = useState(false);
   const [caption, setCaption] = useState((node.attrs.caption as string) || "");
+  const [openedMore, setOpenedMore] = useState(false);
+  const [audioUrl, setAudioUrl] = useState("");
+  const [pickedReplaceFile, setPickedReplaceFile] = useState<FileWithPreview | null>(null);
+  const [replaceUploadKey, setReplaceUploadKey] = useState(0);
   const canEdit = useEditorEditable(editor);
-  const title = (node.attrs.title as string) || "";
+  const src = (node.attrs.src as string) || "";
+
+  const handleCaptionBlur = () => {
+    updateAttributes({ caption });
+    setEditingCaption(false);
+  };
+
+  const handleReplaceFromUpload = () => {
+    if (!pickedReplaceFile?.preview) return;
+
+    updateAttributes({
+      src: pickedReplaceFile.preview,
+      title: (node.attrs.title as string) || fileBaseName(pickedReplaceFile),
+    });
+    setPickedReplaceFile(null);
+    setReplaceUploadKey((current) => current + 1);
+    setOpenedMore(false);
+  };
+
+  const handleAudioUrlSubmit = () => {
+    const nextUrl = audioUrl.trim();
+    if (!nextUrl || !isValidUrl(nextUrl)) return;
+
+    updateAttributes({ src: nextUrl });
+    setAudioUrl("");
+    setPickedReplaceFile(null);
+    setReplaceUploadKey((current) => current + 1);
+    setOpenedMore(false);
+  };
 
   return (
     <NodeViewWrapper
@@ -134,24 +204,89 @@ function TiptapAudio(props: NodeViewProps) {
       )}
     >
       <div className="group overflow-hidden rounded-lg border bg-card shadow-sm">
-        <div className="flex items-center justify-between p-2 px-4">
-          <p className="text-sm font-medium">{title ? title : "Audio"}</p>
-          {canEdit ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-8 text-destructive"
-              aria-label="Delete audio"
-              onClick={() => deleteNode()}
+        {canEdit ? (
+          <div className="flex justify-end border-b px-3 py-2">
+            <div
+              className="flex items-center gap-1 rounded-md border bg-background/80 p-1 backdrop-blur"
+              data-open={openedMore || undefined}
             >
-              <Trash className="size-4" />
-            </Button>
-          ) : null}
-        </div>
+              <DropdownMenu onOpenChange={setOpenedMore} open={openedMore}>
+                <DropdownMenuTrigger
+                  render={<Button className="size-7" size="icon" variant="ghost" />}
+                >
+                  <MoreVertical className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="mt-1 w-40 text-sm">
+                  <DropdownMenuItem onClick={() => setEditingCaption(true)}>
+                    <Edit className="mr-2 size-4" /> Edit Caption
+                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Upload className="mr-2 size-4" /> Change Source
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-fit min-w-52 p-2">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="mb-2 text-xs font-medium">Upload Audio</p>
+                          <FileUploader
+                            accept="audio/*"
+                            className="text-xs"
+                            disabled={!canEdit}
+                            inputId={replaceUploadInputId}
+                            key={replaceUploadKey}
+                            maxFileCount={1}
+                            multiple={false}
+                            onFilesChange={(files) => setPickedReplaceFile(files[0] ?? null)}
+                          />
+                          <Button
+                            className="mt-2 w-full"
+                            disabled={!pickedReplaceFile?.preview || !canEdit}
+                            onClick={handleReplaceFromUpload}
+                            size="sm"
+                            type="button"
+                          >
+                            Replace with upload
+                          </Button>
+                        </div>
+
+                        <div>
+                          <p className="mb-2 text-xs font-medium">Or use URL</p>
+                          <div className="space-y-2">
+                            <Input
+                              className="text-xs"
+                              onChange={(event) => setAudioUrl(event.target.value)}
+                              placeholder="Enter audio URL..."
+                              value={audioUrl}
+                            />
+                            <Button
+                              className="w-full"
+                              disabled={!audioUrl.trim() || !isValidUrl(audioUrl.trim())}
+                              onClick={handleAudioUrlSubmit}
+                              size="sm"
+                              type="button"
+                            >
+                              <Link className="mr-2 size-4" /> Replace with URL
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={deleteNode}
+                  >
+                    <Trash className="mr-2 size-4" /> Delete Audio
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        ) : null}
         <AudioPlayer className="w-full">
-          <AudioPlayerContent src={node.attrs.src ?? undefined} preload="metadata" />
-          <AudioPlayerControlBar className="flex flex-wrap items-center gap-0 border-t bg-background/95">
+          <AudioPlayerContent src={src || undefined} preload="metadata" />
+          <AudioPlayerControlBar className="flex flex-wrap items-center gap-0 bg-background/95">
             <AudioPlayerPlayButton />
             <AudioPlayerSeekBackwardButton />
             <AudioPlayerSeekForwardButton />
@@ -167,14 +302,10 @@ function TiptapAudio(props: NodeViewProps) {
             <Input
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              onBlur={() => {
-                updateAttributes({ caption });
-                setEditingCaption(false);
-              }}
+              onBlur={handleCaptionBlur}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  updateAttributes({ caption });
-                  setEditingCaption(false);
+                  handleCaptionBlur();
                 }
               }}
               className="rounded-none border-0 border-t text-center text-sm"
