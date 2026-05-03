@@ -6,6 +6,7 @@ import {
   pgTable,
   primaryKey,
   text,
+  timestamp,
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
@@ -144,6 +145,8 @@ export const section = pgTable(
       .references(() => course.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     description: text("description"),
+    openAt: timestamp("open_at"),
+    dueAt: timestamp("due_at"),
     order: integer("order").notNull().default(0),
     createdAt,
     updatedAt,

@@ -66,6 +66,8 @@ export type CourseSectionPreview = {
   id: string;
   title: string;
   description: string | null;
+  openAt: Date | null;
+  dueAt: Date | null;
   order: number;
   lessonCount: number;
 };
@@ -341,6 +343,8 @@ export async function getCourseById(
         id: section.id,
         title: section.title,
         description: section.description,
+        openAt: section.openAt,
+        dueAt: section.dueAt,
         order: section.order,
         lessonCount: sql<number>`(select count(*)::int from ${lesson} where ${lesson.sectionId} = ${section.id})`,
       })
@@ -439,6 +443,8 @@ export async function seedCourseToOrganizations(
       id: section.id,
       title: section.title,
       description: section.description,
+      openAt: section.openAt,
+      dueAt: section.dueAt,
       order: section.order,
     })
     .from(section)
@@ -501,6 +507,8 @@ export async function seedCourseToOrganizations(
             courseId: newCourse.id,
             title: sec.title,
             description: sec.description,
+            openAt: sec.openAt,
+            dueAt: sec.dueAt,
             order: sec.order,
           })
           .returning({ id: section.id });
