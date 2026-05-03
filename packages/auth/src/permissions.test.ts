@@ -40,6 +40,12 @@ describe("platform roles — content_creator", () => {
   test("can submit reports", () => {
     expect(stmts(contentCreatorRole).report).toEqual(["submit"]);
   });
+
+  test("can list and manage courses", () => {
+    expect([...(stmts(contentCreatorRole).course ?? [])].sort()).toEqual(
+      ["create", "delete", "list", "read", "update"].sort(),
+    );
+  });
 });
 
 describe("platform roles — public_student", () => {
@@ -56,6 +62,10 @@ describe("platform roles — public_student", () => {
     for (const forbidden of ["get", "list", "update"]) {
       expect(reportActions).not.toContain(forbidden);
     }
+  });
+
+  test("can list and read courses", () => {
+    expect([...(stmts(publicStudentRole).course ?? [])].sort()).toEqual(["list", "read"].sort());
   });
 });
 

@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 
 import type { Database } from "..";
-import { organization, user } from "../schema/auth";
+import { organization, user, type UserRole } from "../schema/auth";
 import {
   category,
   course,
@@ -46,6 +46,7 @@ export type CourseRow = {
 export type ListCoursesFilter = {
   scope: CourseScope;
   organizationId?: string;
+  actor?: { userId: string; role: UserRole | null | undefined };
   search?: string;
   statuses?: CourseStatus[];
   difficulties?: DifficultyLevel[];
@@ -144,6 +145,30 @@ function buildScopeCondition(scope: CourseScope, organizationId?: string): SQL {
   return eq(course.organizationId, organizationId);
 }
 
+function buildPlatformCourseVisibilityCondition(actor?: {
+  userId: string;
+  role: UserRole | null | undefined;
+}): SQL | undefined {
+  if (!actor?.role) {
+    return sql`false`;
+  }
+
+  if (actor.role === "platform_admin" || actor.role === "public_student") {
+    return undefined;
+  }
+
+  if (actor.role === "content_creator") {
+    return (
+      or(
+        eq(course.createdBy, actor.userId),
+        sql`${course.id} in (select ${courseInstructor.courseId} from ${courseInstructor} where ${eq(courseInstructor.userId, actor.userId)})`,
+      ) ?? undefined
+    );
+  }
+
+  return sql`false`;
+}
+
 async function loadInstructorsForCourses(
   database: Database,
   courseIds: string[],
@@ -209,6 +234,7 @@ export async function listCourses(
   const {
     scope,
     organizationId,
+    actor,
     search,
     statuses,
     difficulties,
@@ -221,6 +247,13 @@ export async function listCourses(
   } = input;
 
   const filters: SQL[] = [buildScopeCondition(scope, organizationId)];
+
+  if (scope === "platform") {
+    const actorVisibility = buildPlatformCourseVisibilityCondition(actor);
+    if (actorVisibility) {
+      filters.push(actorVisibility);
+    }
+  }
 
   if (search) {
     const pattern = `%${search}%`;

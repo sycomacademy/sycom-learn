@@ -1,20 +1,119 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Button } from "@sycom/ui/components/button";
+import { Calendar } from "@sycom/ui/components/calendar";
 import { Collapsible, CollapsibleContent } from "@sycom/ui/components/collapsible";
+import {
+  Editable,
+  EditableArea,
+  EditableInput,
+  EditablePreview,
+} from "@sycom/ui/components/elements/editable";
 import { SortableItem, SortableItemHandle } from "@sycom/ui/components/elements/sortable";
+import { Input } from "@sycom/ui/components/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@sycom/ui/components/popover";
 import { cn } from "@sycom/ui/lib/utils";
 import {
+  CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   GripVerticalIcon,
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 import { CurriculumLessonItem } from "./curriculum-lesson-item";
 import type { CurriculumSection } from "./curriculum-schema";
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  hour: "numeric",
+  minute: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+function formatTimeInputValue(value: Date | null) {
+  if (!value) return "";
+
+  const hours = String(value.getHours()).padStart(2, "0");
+  const minutes = String(value.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function setDateTimePart(base: Date | null, nextDate: Date | null, timeValue?: string) {
+  if (!nextDate) return null;
+
+  const next = new Date(nextDate);
+  const [hours, minutes] = (timeValue ?? formatTimeInputValue(base)).split(":");
+  next.setHours(Number.parseInt(hours || "0", 10), Number.parseInt(minutes || "0", 10), 0, 0);
+  return next;
+}
+
+function setTimePart(base: Date | null, timeValue: string) {
+  if (!base) return null;
+
+  const next = new Date(base);
+  const [hours, minutes] = timeValue.split(":");
+  next.setHours(Number.parseInt(hours || "0", 10), Number.parseInt(minutes || "0", 10), 0, 0);
+  return next;
+}
+
+function SectionDateTimeField({
+  label,
+  onValueChange,
+  value,
+}: {
+  label: string;
+  onValueChange: (value: Date | null) => void;
+  value: Date | null;
+}) {
+  const displayLabel = useMemo(
+    () => (value ? dateTimeFormatter.format(value) : label),
+    [label, value],
+  );
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            className={cn("text-xs font-normal", !value && "text-muted-foreground")}
+            size="sm"
+            variant="outline"
+          />
+        }
+      >
+        <CalendarIcon className="size-4" />
+        {displayLabel}
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <div className="flex flex-col gap-3 p-3">
+          <Calendar
+            mode="single"
+            numberOfMonths={1}
+            onSelect={(nextDate) => onValueChange(setDateTimePart(value, nextDate ?? null))}
+            selected={value ?? undefined}
+          />
+          <div className="flex items-center gap-2">
+            <Input
+              className="w-28"
+              disabled={!value}
+              nativeInput
+              onChange={(event) => onValueChange(setTimePart(value, event.currentTarget.value))}
+              type="time"
+              value={formatTimeInputValue(value)}
+            />
+            <Button disabled={!value} onClick={() => onValueChange(null)} size="sm" variant="ghost">
+              Clear
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function EmptySectionDroppable({ sectionId }: { sectionId: string }) {
   const { isOver, setNodeRef } = useDroppable({
@@ -38,7 +137,13 @@ function EmptySectionDroppable({ sectionId }: { sectionId: string }) {
 type CurriculumSectionItemProps = {
   expandedLessonId: string | null;
   onCreateLesson: (sectionId: string) => Promise<void>;
+  onDeleteLesson: (lessonId: string) => Promise<void>;
+  onDeleteSection: (sectionId: string) => Promise<void>;
   onMoveLessonToSection: (lessonId: string, sectionId: string) => void;
+  onUpdateSectionSchedule: (
+    sectionId: string,
+    patch: { dueAt?: Date | null; openAt?: Date | null },
+  ) => Promise<void>;
   onSaveLessonContent: (
     lessonId: string,
     content: import("@tiptap/core").JSONContent | null,
@@ -46,6 +151,7 @@ type CurriculumSectionItemProps = {
   onToggleExpandedLesson: (lessonId: string) => void;
   onToggleSection: (sectionId: string) => void;
   onUpdateLessonTitle: (lessonId: string, title: string) => Promise<void>;
+  onUpdateSectionTitle: (sectionId: string, title: string) => Promise<void>;
   savingLessonId: string | null;
   section: CurriculumSection;
   sectionCollapsed: boolean;
@@ -55,11 +161,15 @@ type CurriculumSectionItemProps = {
 function CurriculumSectionItemImpl({
   expandedLessonId,
   onCreateLesson,
+  onDeleteLesson,
+  onDeleteSection,
   onMoveLessonToSection,
+  onUpdateSectionSchedule,
   onSaveLessonContent,
   onToggleExpandedLesson,
   onToggleSection,
   onUpdateLessonTitle,
+  onUpdateSectionTitle,
   savingLessonId,
   section,
   sectionCollapsed,
@@ -90,15 +200,39 @@ function CurriculumSectionItemImpl({
             </button>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{section.title}</p>
+              <Editable
+                className="min-w-0"
+                onSubmit={(value) => {
+                  const trimmedValue = value.trim();
+                  if (trimmedValue && trimmedValue !== section.title) {
+                    void onUpdateSectionTitle(section.id, trimmedValue);
+                  }
+                }}
+                value={section.title}
+              >
+                <EditableArea className="w-full">
+                  <EditablePreview className="truncate text-sm font-semibold hover:text-foreground" />
+                  <EditableInput className="h-8 w-full rounded-md border px-2 text-sm font-semibold" />
+                </EditableArea>
+              </Editable>
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span>
                   {section.lessons.length} lesson{section.lessons.length === 1 ? "" : "s"}
                 </span>
-                {section.openAt ? <span>Opens {section.openAt.toLocaleString()}</span> : null}
-                {section.dueAt ? <span>Due {section.dueAt.toLocaleString()}</span> : null}
               </div>
             </div>
+
+            <SectionDateTimeField
+              label="Open at"
+              onValueChange={(openAt) => void onUpdateSectionSchedule(section.id, { openAt })}
+              value={section.openAt}
+            />
+
+            <SectionDateTimeField
+              label="Due at"
+              onValueChange={(dueAt) => void onUpdateSectionSchedule(section.id, { dueAt })}
+              value={section.dueAt}
+            />
 
             <Button onClick={() => void onCreateLesson(section.id)} size="sm" variant="outline">
               <PlusIcon className="size-4" />
@@ -106,13 +240,12 @@ function CurriculumSectionItemImpl({
             </Button>
 
             <Button
-              aria-label="Delete section placeholder"
-              disabled
+              aria-label="Delete section"
+              onClick={() => void onDeleteSection(section.id)}
               size="sm"
-              title="Delete coming soon"
               variant="ghost"
             >
-              <Trash2Icon className="size-4 text-muted-foreground" />
+              <Trash2Icon className="size-4 text-destructive" />
             </Button>
           </div>
 
@@ -135,6 +268,7 @@ function CurriculumSectionItemImpl({
                         <CurriculumLessonItem
                           expanded={expandedLessonId === lesson.id}
                           lesson={lesson}
+                          onDeleteLesson={onDeleteLesson}
                           moveTargets={moveTargets}
                           onMoveToSection={onMoveLessonToSection}
                           onSaveContent={onSaveLessonContent}

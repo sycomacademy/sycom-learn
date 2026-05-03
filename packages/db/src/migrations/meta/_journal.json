@@ -71,6 +71,13 @@
       "when": 1777832672036,
       "tag": "0009_omniscient_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777841589206,
+      "tag": "0010_red_iron_monger",
+      "breakpoints": true
     }
   ]
 }

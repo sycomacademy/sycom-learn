@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 
 import type { Database } from "..";
-import { lesson, section } from "../schema/course";
+import { lesson, section, type LessonType } from "../schema/course";
 
 export type LessonRow = typeof lesson.$inferSelect;
 
@@ -12,7 +12,16 @@ export type LessonListItem = {
   sectionId: string;
   title: string;
   order: number;
-  type: string;
+  type: LessonType;
+  openAt: Date | null;
+  dueAt: Date | null;
+};
+
+export type LessonQuestionDefinition = {
+  questionId: string;
+  type: "single" | "multi";
+  optionIds: string[];
+  correctIds: string[];
 };
 
 /** Join lesson → section to verify course ownership (platform courses). */
@@ -46,6 +55,8 @@ export async function listLessonsForCourse(
       title: lesson.title,
       order: lesson.order,
       type: lesson.type,
+      openAt: lesson.openAt,
+      dueAt: lesson.dueAt,
     })
     .from(lesson)
     .innerJoin(section, eq(lesson.sectionId, section.id))
@@ -57,6 +68,70 @@ type JsonDoc = Record<string, unknown> | null | undefined;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function walkQuestionNodes(doc: unknown, callback: (node: Record<string, unknown>) => void) {
+  if (doc == null) return;
+  if (Array.isArray(doc)) {
+    for (const part of doc) {
+      walkQuestionNodes(part, callback);
+    }
+    return;
+  }
+  if (!isRecord(doc)) return;
+
+  const node = doc as Record<string, unknown>;
+  if (node.type === "question") {
+    callback(node);
+  }
+
+  if (Array.isArray(node.content)) {
+    for (const part of node.content) {
+      walkQuestionNodes(part, callback);
+    }
+  }
+}
+
+export function countQuestionBlocksInContent(doc: unknown): number {
+  let count = 0;
+  walkQuestionNodes(doc, () => {
+    count += 1;
+  });
+  return count;
+}
+
+export function getQuestionDefinitionsFromContent(doc: unknown): LessonQuestionDefinition[] {
+  const questions: LessonQuestionDefinition[] = [];
+
+  walkQuestionNodes(doc, (node) => {
+    if (!isRecord(node.attrs)) return;
+
+    const attrs = node.attrs as Record<string, unknown>;
+    const questionId = typeof attrs.questionId === "string" ? attrs.questionId : null;
+    const rawOptions = Array.isArray(attrs.options) ? attrs.options : [];
+    if (!questionId) return;
+
+    const optionIds = rawOptions
+      .map((option) => (isRecord(option) && typeof option.id === "string" ? option.id : null))
+      .filter((id): id is string => id !== null);
+    const correctIds = rawOptions
+      .map((option) =>
+        isRecord(option) && typeof option.id === "string" && option.isCorrect === true
+          ? option.id
+          : null,
+      )
+      .filter((id): id is string => id !== null)
+      .sort();
+
+    questions.push({
+      questionId,
+      type: attrs.type === "multi" ? "multi" : "single",
+      optionIds,
+      correctIds,
+    });
+  });
+
+  return questions;
 }
 
 /** Remove answer key metadata for non-author lesson views. */
@@ -182,13 +257,23 @@ export async function updateLessonContent(
 
 export async function updateLessonPatch(
   database: Database,
-  input: { lessonId: string; title?: string; content?: unknown },
+  input: {
+    lessonId: string;
+    title?: string;
+    content?: unknown;
+    type?: LessonType;
+    openAt?: Date | null;
+    dueAt?: Date | null;
+  },
 ): Promise<LessonRow | null> {
   const patch: Partial<typeof lesson.$inferInsert> = {
     updatedAt: new Date(),
   };
   if (input.title !== undefined) patch.title = input.title;
   if (input.content !== undefined) patch.content = input.content;
+  if (input.type !== undefined) patch.type = input.type;
+  if (input.openAt !== undefined) patch.openAt = input.openAt;
+  if (input.dueAt !== undefined) patch.dueAt = input.dueAt;
 
   const [updated] = await database
     .update(lesson)

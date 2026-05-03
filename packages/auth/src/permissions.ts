@@ -35,14 +35,14 @@ export const contentCreatorRole = platformAc.newRole({
   ...platformBuiltInUserAc.statements,
   feedback: ["submit"],
   report: ["submit"],
-  course: ["create", "read", "update", "delete"],
+  course: ["create", "list", "read", "update", "delete"],
 });
 
 export const publicStudentRole = platformAc.newRole({
   ...platformBuiltInUserAc.statements,
   feedback: ["submit"],
   report: ["submit"],
-  course: ["read"],
+  course: ["list", "read"],
 });
 
 export const platformRoles = {

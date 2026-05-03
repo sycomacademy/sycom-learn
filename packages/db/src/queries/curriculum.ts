@@ -24,6 +24,44 @@ export type CurriculumSection = {
   lessons: CurriculumLesson[];
 };
 
+export type CurriculumSectionOrderInput = {
+  sectionId: string;
+  lessonIds: string[];
+};
+
+export async function getSectionById(database: Database, input: { sectionId: string }) {
+  const [row] = await database
+    .select({
+      id: section.id,
+      courseId: section.courseId,
+      title: section.title,
+      description: section.description,
+      openAt: section.openAt,
+      dueAt: section.dueAt,
+      order: section.order,
+    })
+    .from(section)
+    .where(eq(section.id, input.sectionId))
+    .limit(1);
+
+  return row ?? null;
+}
+
+export async function getLessonCourseContext(database: Database, input: { lessonId: string }) {
+  const [row] = await database
+    .select({
+      lessonId: lesson.id,
+      sectionId: lesson.sectionId,
+      courseId: section.courseId,
+    })
+    .from(lesson)
+    .innerJoin(section, eq(lesson.sectionId, section.id))
+    .where(eq(lesson.id, input.lessonId))
+    .limit(1);
+
+  return row ?? null;
+}
+
 export async function getCourseCurriculum(
   database: Database,
   input: { courseId: string },
@@ -165,4 +203,130 @@ export async function createLesson(
     });
 
   return created ?? null;
+}
+
+export async function updateSectionPatch(
+  database: Database,
+  input: {
+    sectionId: string;
+    patch: {
+      title?: string;
+      description?: string | null;
+      openAt?: Date | null;
+      dueAt?: Date | null;
+    };
+  },
+): Promise<CurriculumSection | null> {
+  const [updated] = await database
+    .update(section)
+    .set({
+      ...input.patch,
+      updatedAt: new Date(),
+    })
+    .where(eq(section.id, input.sectionId))
+    .returning({
+      id: section.id,
+      courseId: section.courseId,
+      title: section.title,
+      description: section.description,
+      openAt: section.openAt,
+      dueAt: section.dueAt,
+      order: section.order,
+    });
+
+  if (!updated) {
+    return null;
+  }
+
+  return {
+    ...updated,
+    lessons: [],
+  };
+}
+
+export async function deleteSectionById(database: Database, input: { sectionId: string }) {
+  const [deleted] = await database
+    .delete(section)
+    .where(eq(section.id, input.sectionId))
+    .returning({ id: section.id, courseId: section.courseId });
+
+  return deleted ?? null;
+}
+
+export async function deleteLessonById(database: Database, input: { lessonId: string }) {
+  const [deleted] = await database
+    .delete(lesson)
+    .where(eq(lesson.id, input.lessonId))
+    .returning({ id: lesson.id, sectionId: lesson.sectionId });
+
+  return deleted ?? null;
+}
+
+export async function saveCurriculumOrder(
+  database: Database,
+  input: { courseId: string; sections: CurriculumSectionOrderInput[] },
+): Promise<void> {
+  const sectionRows = await database
+    .select({ id: section.id })
+    .from(section)
+    .where(eq(section.courseId, input.courseId))
+    .orderBy(asc(section.order), asc(section.createdAt));
+
+  const expectedSectionIds = sectionRows.map((row) => row.id).sort();
+  const providedSectionIds = input.sections.map((row) => row.sectionId).sort();
+
+  if (expectedSectionIds.length !== providedSectionIds.length) {
+    throw new Error("Curriculum sections do not match the course");
+  }
+
+  if (expectedSectionIds.some((id, index) => id !== providedSectionIds[index])) {
+    throw new Error("Curriculum sections do not match the course");
+  }
+
+  const lessonRows = await database
+    .select({
+      id: lesson.id,
+      sectionId: lesson.sectionId,
+    })
+    .from(lesson)
+    .innerJoin(section, eq(lesson.sectionId, section.id))
+    .where(eq(section.courseId, input.courseId));
+
+  const expectedLessonIds = lessonRows.map((row) => row.id).sort();
+  const providedLessonIds = input.sections.flatMap((row) => row.lessonIds).sort();
+
+  if (expectedLessonIds.length !== providedLessonIds.length) {
+    throw new Error("Curriculum lessons do not match the course");
+  }
+
+  if (expectedLessonIds.some((id, index) => id !== providedLessonIds[index])) {
+    throw new Error("Curriculum lessons do not match the course");
+  }
+
+  const lessonIdSet = new Set(expectedLessonIds);
+  for (const sectionInput of input.sections) {
+    for (const lessonId of sectionInput.lessonIds) {
+      if (!lessonIdSet.has(lessonId)) {
+        throw new Error("Curriculum lessons do not match the course");
+      }
+    }
+  }
+
+  for (const [sectionIndex, sectionInput] of input.sections.entries()) {
+    await database
+      .update(section)
+      .set({ order: sectionIndex, updatedAt: new Date() })
+      .where(eq(section.id, sectionInput.sectionId));
+
+    for (const [lessonIndex, lessonId] of sectionInput.lessonIds.entries()) {
+      await database
+        .update(lesson)
+        .set({
+          sectionId: sectionInput.sectionId,
+          order: lessonIndex,
+          updatedAt: new Date(),
+        })
+        .where(eq(lesson.id, lessonId));
+    }
+  }
 }

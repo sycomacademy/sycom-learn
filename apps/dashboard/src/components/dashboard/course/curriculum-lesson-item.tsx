@@ -80,6 +80,7 @@ type CurriculumLessonItemProps = {
   lesson: CurriculumLesson;
   expanded: boolean;
   moveTargets: CurriculumSection[];
+  onDeleteLesson: (lessonId: string) => Promise<void>;
   saving: boolean;
   onMoveToSection: (lessonId: string, sectionId: string) => void;
   onSaveContent: (lessonId: string, content: JSONContent | null) => Promise<void>;
@@ -91,6 +92,7 @@ function CurriculumLessonItemImpl({
   lesson,
   expanded,
   moveTargets,
+  onDeleteLesson,
   saving,
   onMoveToSection,
   onSaveContent,
@@ -170,13 +172,12 @@ function CurriculumLessonItemImpl({
           ) : null}
 
           <Button
-            aria-label="Delete lesson placeholder"
-            disabled
+            aria-label="Delete lesson"
+            onClick={() => void onDeleteLesson(lesson.id)}
             size="sm"
-            title="Delete coming soon"
             variant="ghost"
           >
-            <Trash2Icon className="size-4 text-muted-foreground" />
+            <Trash2Icon className="size-4 text-destructive" />
           </Button>
         </div>
 

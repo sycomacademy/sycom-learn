@@ -27,7 +27,7 @@ export type DifficultyLevel = (typeof DIFFICULTY_LEVELS)[number];
 export const INSTRUCTOR_ROLES = ["main", "secondary"] as const;
 export type InstructorRole = (typeof INSTRUCTOR_ROLES)[number];
 
-export const LESSON_TYPES = ["article", "test", "exam"] as const;
+export const LESSON_TYPES = ["article", "quiz", "exam"] as const;
 export type LessonType = (typeof LESSON_TYPES)[number];
 
 // ---------------------------------------------------------------------------
@@ -170,6 +170,8 @@ export const lesson = pgTable(
     title: text("title").notNull(),
     content: jsonb("content"),
     type: text("type", { enum: LESSON_TYPES }).default("article").notNull(),
+    openAt: timestamp("open_at"),
+    dueAt: timestamp("due_at"),
     order: integer("order").notNull().default(0),
     estimatedDuration: integer("estimated_duration"),
     createdAt,

@@ -26,6 +26,16 @@ import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 import { CurriculumSectionItem } from "./curriculum-section-item";
 import { cloneCurriculumSections, type CurriculumSection } from "./curriculum-schema";
 
+function buildCurriculumOrderInput(courseId: string, sections: CurriculumSection[]) {
+  return {
+    courseId,
+    sections: sections.map((section) => ({
+      sectionId: section.id,
+      lessonIds: section.lessons.map((lesson) => lesson.id),
+    })),
+  };
+}
+
 function moveLessonAcrossSections(
   sections: CurriculumSection[],
   lessonId: string,
@@ -104,6 +114,34 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+
+  const replaceCurriculum = (nextSections: CurriculumSection[]) => {
+    setSections(cloneCurriculumSections(nextSections));
+    queryClient.setQueryData<CurriculumSection[]>(queryKey, cloneCurriculumSections(nextSections));
+  };
+
+  const persistCurriculumOrder = async (
+    nextSections: CurriculumSection[],
+    previousSections: CurriculumSection[],
+  ) => {
+    replaceCurriculum(nextSections);
+
+    try {
+      await trpcClient.course.saveCurriculumOrder.mutate(
+        buildCurriculumOrderInput(courseId, nextSections),
+      );
+    } catch (error) {
+      replaceCurriculum(previousSections);
+      toastManager.add({
+        title: "Couldn't save curriculum order",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
 
   const handleCreateSection = async () => {
     try {
@@ -194,6 +232,53 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     }
   };
 
+  const handleUpdateSectionTitle = async (sectionId: string, title: string) => {
+    const previousSections = cloneCurriculumSections(sections);
+    setCurriculum((current) =>
+      current.map((section) => (section.id === sectionId ? { ...section, title } : section)),
+    );
+
+    try {
+      await trpcClient.course.updateSection.mutate({ sectionId, patch: { title } });
+      toastManager.add({ title: "Section updated", type: "success" });
+    } catch (error) {
+      replaceCurriculum(previousSections);
+      toastManager.add({
+        title: "Couldn't update section",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleUpdateSectionSchedule = async (
+    sectionId: string,
+    patch: { dueAt?: Date | null; openAt?: Date | null },
+  ) => {
+    const previousSections = cloneCurriculumSections(sections);
+    setCurriculum((current) =>
+      current.map((section) => (section.id === sectionId ? { ...section, ...patch } : section)),
+    );
+
+    try {
+      await trpcClient.course.updateSection.mutate({ sectionId, patch });
+      toastManager.add({ title: "Section schedule updated", type: "success" });
+    } catch (error) {
+      replaceCurriculum(previousSections);
+      toastManager.add({
+        title: "Couldn't update section schedule",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
   const handleSaveLessonContent = async (lessonId: string, content: JSONContent | null) => {
     const previousSections = cloneCurriculumSections(sections);
     setSavingLessonId(lessonId);
@@ -239,19 +324,61 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     });
   };
 
+  const handleDeleteSection = async (sectionId: string) => {
+    const previousSections = cloneCurriculumSections(sections);
+    const nextSections = previousSections.filter((section) => section.id !== sectionId);
+    replaceCurriculum(nextSections);
+
+    try {
+      await trpcClient.course.deleteSection.mutate({ sectionId });
+      toastManager.add({ title: "Section deleted", type: "success" });
+    } catch (error) {
+      replaceCurriculum(previousSections);
+      toastManager.add({
+        title: "Couldn't delete section",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    const previousSections = cloneCurriculumSections(sections);
+    const nextSections = previousSections.map((section) => ({
+      ...section,
+      lessons: section.lessons.filter((lesson) => lesson.id !== lessonId),
+    }));
+    replaceCurriculum(nextSections);
+    setExpandedLessonId((current) => (current === lessonId ? null : current));
+
+    try {
+      await trpcClient.lesson.delete.mutate({ lessonId });
+      toastManager.add({ title: "Lesson deleted", type: "success" });
+    } catch (error) {
+      replaceCurriculum(previousSections);
+      toastManager.add({
+        title: "Couldn't delete lesson",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
+
   const handleMoveLessonToSection = (lessonId: string, sectionId: string) => {
-    setCurriculum((current) => moveLessonAcrossSections(current, lessonId, sectionId));
+    const previousSections = cloneCurriculumSections(sections);
+    const nextSections = moveLessonAcrossSections(previousSections, lessonId, sectionId);
     setCollapsedSectionIds((current) => {
       const next = new Set(current);
       next.delete(sectionId);
       return next;
     });
-    toastManager.add({
-      title: "Local move only",
-      description:
-        "Cross-section moves are visible now, but persistence lands in the next server pass.",
-      type: "warning",
-    });
+    void persistCurriculumOrder(nextSections, previousSections);
   };
 
   const handleMoveLessonWithinBoard = (
@@ -259,20 +386,19 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     targetSectionId: string,
     overLessonId?: string,
   ) => {
-    setCurriculum((current) =>
-      moveLessonAcrossSections(current, lessonId, targetSectionId, overLessonId),
+    const previousSections = cloneCurriculumSections(sections);
+    const nextSections = moveLessonAcrossSections(
+      previousSections,
+      lessonId,
+      targetSectionId,
+      overLessonId,
     );
     setCollapsedSectionIds((current) => {
       const next = new Set(current);
       next.delete(targetSectionId);
       return next;
     });
-    toastManager.add({
-      title: "Local move only",
-      description:
-        "Cross-section moves are visible now, but persistence lands in the next server pass.",
-      type: "warning",
-    });
+    void persistCurriculumOrder(nextSections, previousSections);
   };
 
   const handleDragStart = (_event: DragStartEvent) => {};
@@ -288,18 +414,13 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     if (sectionIds.includes(activeId)) {
       if (!sectionIds.includes(overId) || activeId === overId) return;
 
-      setCurriculum((current) => {
-        const oldIndex = current.findIndex((section) => section.id === activeId);
-        const newIndex = current.findIndex((section) => section.id === overId);
-        if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return current;
-        return arrayMove(current, oldIndex, newIndex);
-      });
+      const previousSections = cloneCurriculumSections(sections);
+      const oldIndex = previousSections.findIndex((section) => section.id === activeId);
+      const newIndex = previousSections.findIndex((section) => section.id === overId);
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
 
-      toastManager.add({
-        title: "Local reorder only",
-        description: "Section order changes are currently local until reorder routes are added.",
-        type: "warning",
-      });
+      const nextSections = arrayMove(previousSections, oldIndex, newIndex);
+      void persistCurriculumOrder(nextSections, previousSections);
       return;
     }
 
@@ -326,21 +447,16 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
       if (!targetSection) return;
 
       if (targetSection.id === sourceSection.id) {
-        setCurriculum((current) =>
-          current.map((section) => {
-            if (section.id !== sourceSection.id) return section;
-            const oldIndex = section.lessons.findIndex((lesson) => lesson.id === activeId);
-            const newIndex = section.lessons.findIndex((lesson) => lesson.id === overId);
-            if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return section;
-            return { ...section, lessons: arrayMove(section.lessons, oldIndex, newIndex) };
-          }),
-        );
-
-        toastManager.add({
-          title: "Local reorder only",
-          description: "Lesson order changes are currently local until reorder routes are added.",
-          type: "warning",
+        const previousSections = cloneCurriculumSections(sections);
+        const nextSections = previousSections.map((section) => {
+          if (section.id !== sourceSection.id) return section;
+          const oldIndex = section.lessons.findIndex((lesson) => lesson.id === activeId);
+          const newIndex = section.lessons.findIndex((lesson) => lesson.id === overId);
+          if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return section;
+          return { ...section, lessons: arrayMove(section.lessons, oldIndex, newIndex) };
         });
+
+        void persistCurriculumOrder(nextSections, previousSections);
         return;
       }
 
@@ -373,6 +489,8 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
                   expandedLessonId={expandedLessonId}
                   key={section.id}
                   onCreateLesson={handleCreateLesson}
+                  onDeleteSection={handleDeleteSection}
+                  onDeleteLesson={handleDeleteLesson}
                   onMoveLessonToSection={handleMoveLessonToSection}
                   onSaveLessonContent={handleSaveLessonContent}
                   onToggleExpandedLesson={(lessonId) => {
@@ -382,6 +500,8 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
                   }}
                   onToggleSection={handleToggleSection}
                   onUpdateLessonTitle={handleUpdateLessonTitle}
+                  onUpdateSectionSchedule={handleUpdateSectionSchedule}
+                  onUpdateSectionTitle={handleUpdateSectionTitle}
                   savingLessonId={savingLessonId}
                   section={section}
                   sectionCollapsed={collapsedSectionIds.has(section.id)}

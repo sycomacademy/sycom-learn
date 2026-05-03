@@ -419,6 +419,11 @@ export const createLessonInputSchema = z.object({
 });
 export type CreateLessonInput = z.infer<typeof createLessonInputSchema>;
 
+export const deleteLessonInputSchema = z.object({
+  lessonId: z.string().min(1),
+});
+export type DeleteLessonInput = z.infer<typeof deleteLessonInputSchema>;
+
 export const updateLessonInputSchema = z.object({
   lessonId: z.string().min(1),
   patch: z
@@ -478,6 +483,35 @@ export const createSectionSchema = z.object({
   dueAt: z.coerce.date().nullable().optional(),
 });
 export type CreateSectionInput = z.infer<typeof createSectionSchema>;
+
+export const updateSectionSchema = z.object({
+  sectionId: z.string().min(1),
+  patch: z
+    .object({
+      title: z.string().trim().min(1).max(200).optional(),
+      description: z.string().trim().max(2000).nullable().optional(),
+      openAt: z.coerce.date().nullable().optional(),
+      dueAt: z.coerce.date().nullable().optional(),
+    })
+    .refine((patch) => Object.keys(patch).length > 0, "At least one field must change"),
+});
+export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
+
+export const deleteSectionSchema = z.object({
+  sectionId: z.string().min(1),
+});
+export type DeleteSectionInput = z.infer<typeof deleteSectionSchema>;
+
+export const saveCurriculumOrderSchema = z.object({
+  courseId: z.string().min(1),
+  sections: z.array(
+    z.object({
+      sectionId: z.string().min(1),
+      lessonIds: z.array(z.string().min(1)),
+    }),
+  ),
+});
+export type SaveCurriculumOrderInput = z.infer<typeof saveCurriculumOrderSchema>;
 
 export const createCourseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(160),

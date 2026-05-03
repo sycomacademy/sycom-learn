@@ -3,22 +3,32 @@ import {
   createSection,
   createCategory,
   createCourse,
+  deleteSectionById,
   deleteCategory,
   deleteCourse,
   getCourseCurriculum,
   getCourseById,
+  getSectionById,
   listCategories,
   listCourses,
   recordApplicationAuditEvent,
   removeCourseInstructor,
+  saveCurriculumOrder,
   seedCourseToOrganizations,
   setCourseCategories,
   updateCategory,
   updateCourse,
+  updateSectionPatch,
 } from "@sycom/db/queries/index";
+import type { UserRole } from "@sycom/db/schema/auth";
 import { TRPCError } from "@trpc/server";
 
 import { adminProcedure, protectedProcedure, router } from "../init";
+import {
+  assertCanDeletePublicCourse,
+  assertCanReadPublicCourse,
+  assertCanUpdatePublicCourse,
+} from "../lib/public-course-access";
 import { auditRequestMeta } from "../lib/request-audit";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 import {
@@ -26,6 +36,7 @@ import {
   createSectionSchema,
   createAdminCategorySchema,
   createCourseSchema,
+  deleteSectionSchema,
   deleteAdminCategorySchema,
   deleteCourseSchema,
   getCourseSchema,
@@ -33,10 +44,12 @@ import {
   listAdminCategoriesSchema,
   listCoursesSchema,
   removeCourseInstructorSchema,
+  saveCurriculumOrderSchema,
   seedAdminCourseSchema,
   setCourseCategoriesSchema,
   updateAdminCategorySchema,
   updateCourseSchema,
+  updateSectionSchema,
 } from "../schemas";
 import { isUniqueViolation } from "../utils/helpers";
 
@@ -46,7 +59,14 @@ export const courseRouter = router({
     .use(platformPermissionMiddleware({ course: ["list"] }))
     .input(listCoursesSchema)
     .query(async ({ ctx, input }) => {
-      return await listCourses(ctx.db, { ...input, scope: "platform" });
+      return await listCourses(ctx.db, {
+        ...input,
+        scope: "platform",
+        actor: {
+          userId: ctx.session.user.id,
+          role: (ctx.session.user.role ?? null) as UserRole | null,
+        },
+      });
     }),
 
   get: protectedProcedure
@@ -57,6 +77,7 @@ export const courseRouter = router({
       if (!detail || detail.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanReadPublicCourse(ctx.session, detail);
       return detail;
     }),
 
@@ -68,6 +89,7 @@ export const courseRouter = router({
       if (!detail || detail.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanReadPublicCourse(ctx.session, detail);
 
       return await getCourseCurriculum(ctx.db, input);
     }),
@@ -148,8 +170,69 @@ export const courseRouter = router({
       if (!detail || detail.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanUpdatePublicCourse(ctx.session, detail);
 
       return await createSection(ctx.db, input);
+    }),
+
+  updateSection: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(updateSectionSchema)
+    .mutation(async ({ ctx, input }) => {
+      const section = await getSectionById(ctx.db, { sectionId: input.sectionId });
+      if (!section) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Section not found" });
+      }
+
+      const detail = await getCourseById(ctx.db, { courseId: section.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      const updated = await updateSectionPatch(ctx.db, input);
+      if (!updated) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Section not found" });
+      }
+
+      return updated;
+    }),
+
+  deleteSection: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(deleteSectionSchema)
+    .mutation(async ({ ctx, input }) => {
+      const section = await getSectionById(ctx.db, { sectionId: input.sectionId });
+      if (!section) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Section not found" });
+      }
+
+      const detail = await getCourseById(ctx.db, { courseId: section.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      const deleted = await deleteSectionById(ctx.db, input);
+      if (!deleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Section not found" });
+      }
+
+      return { success: true };
+    }),
+
+  saveCurriculumOrder: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(saveCurriculumOrderSchema)
+    .mutation(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      await saveCurriculumOrder(ctx.db, input);
+      return { success: true };
     }),
 
   update: protectedProcedure
@@ -160,6 +243,7 @@ export const courseRouter = router({
       if (!existing || existing.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanUpdatePublicCourse(ctx.session, existing);
 
       try {
         await updateCourse(ctx.db, { courseId: input.courseId, patch: input.patch });
@@ -201,6 +285,7 @@ export const courseRouter = router({
       if (!existing || existing.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanDeletePublicCourse(ctx.session, existing);
 
       await deleteCourse(ctx.db, input);
 
@@ -284,6 +369,7 @@ export const courseRouter = router({
       if (!existing || existing.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanUpdatePublicCourse(ctx.session, existing);
 
       await addCourseInstructor(ctx.db, {
         courseId: input.courseId,
@@ -321,6 +407,7 @@ export const courseRouter = router({
       if (!existing || existing.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanUpdatePublicCourse(ctx.session, existing);
 
       await removeCourseInstructor(ctx.db, input);
 
@@ -352,6 +439,7 @@ export const courseRouter = router({
       if (!existing || existing.organizationId !== null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
+      assertCanUpdatePublicCourse(ctx.session, existing);
 
       await setCourseCategories(ctx.db, input);
       return { success: true };

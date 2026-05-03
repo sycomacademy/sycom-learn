@@ -1,4 +1,10 @@
-import { createMediaAsset, deleteMediaAssetByPublicId } from "@sycom/db/queries/index";
+import {
+  createMediaAsset,
+  deleteMediaAssetByPublicId,
+  findMediaAssetByPublicId,
+  getCourseById,
+  getLessonWithCourseId,
+} from "@sycom/db/queries/index";
 import {
   CLOUD_ROOT,
   buildAssetFolder,
@@ -9,6 +15,8 @@ import {
 import { TRPCError } from "@trpc/server";
 
 import { protectedProcedure, router } from "../init";
+import type { Context } from "../context";
+import { assertCanUpdatePublicCourse } from "../lib/public-course-access";
 import {
   deleteAssetInputSchema,
   saveAssetInputSchema,
@@ -20,9 +28,37 @@ import {
   type StorageSignedUrlInput,
 } from "../schemas";
 
+async function assertCanManageStorageEntity(
+  ctx: Context,
+  input: { entityType: string; entityId: string },
+) {
+  if (input.entityType === "course") {
+    const detail = await getCourseById(ctx.db, { courseId: input.entityId });
+    if (!detail || detail.organizationId !== null) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+    }
+    assertCanUpdatePublicCourse(ctx.session, detail);
+    return;
+  }
+
+  if (input.entityType === "lesson") {
+    const lesson = await getLessonWithCourseId(ctx.db, input.entityId);
+    if (!lesson) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
+    }
+    const detail = await getCourseById(ctx.db, { courseId: lesson.courseId });
+    if (!detail || detail.organizationId !== null) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+    }
+    assertCanUpdatePublicCourse(ctx.session, detail);
+  }
+}
+
 export const storageRouter = router({
-  signUpload: protectedProcedure.input(signUploadInputSchema).mutation(({ ctx, input }) => {
+  signUpload: protectedProcedure.input(signUploadInputSchema).mutation(async ({ ctx, input }) => {
     const mutationInput: StorageSignUploadInput = input;
+
+    await assertCanManageStorageEntity(ctx, mutationInput);
 
     return signUploadParams({
       folder: mutationInput.folder,
@@ -36,6 +72,8 @@ export const storageRouter = router({
   saveAsset: protectedProcedure.input(saveAssetInputSchema).mutation(async ({ ctx, input }) => {
     const mutationInput: StorageSaveAssetInput = input;
     const expectedPrefix = `${buildAssetFolder(mutationInput.folder, mutationInput.entityId)}/`;
+
+    await assertCanManageStorageEntity(ctx, mutationInput);
 
     if (!mutationInput.publicId.startsWith(expectedPrefix)) {
       throw new TRPCError({
@@ -82,6 +120,15 @@ export const storageRouter = router({
 
   delete: protectedProcedure.input(deleteAssetInputSchema).mutation(async ({ ctx, input }) => {
     const mutationInput: StorageDeleteAssetInput = input;
+    const asset = await findMediaAssetByPublicId(ctx.db, { publicId: mutationInput.publicId });
+    if (!asset) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Asset record not found",
+      });
+    }
+
+    await assertCanManageStorageEntity(ctx, asset);
 
     await removeAsset(mutationInput.publicId, {
       resourceType: mutationInput.resourceType,
@@ -93,10 +140,7 @@ export const storageRouter = router({
     });
 
     if (!deleted) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Asset record not found",
-      });
+      throw new TRPCError({ code: "NOT_FOUND", message: "Asset record not found" });
     }
 
     return deleted;
