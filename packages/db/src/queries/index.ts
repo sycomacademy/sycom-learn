@@ -4,6 +4,7 @@ export * from "./audit-log";
 export * from "./course";
 export * from "./feedback";
 export * from "./health";
+export * from "./lesson";
 export * from "./organization-invitations";
 export * from "./platform-invitations";
 export * from "./profile";

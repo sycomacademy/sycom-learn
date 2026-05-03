@@ -5,6 +5,7 @@ import { adminRouter } from "./admin";
 import { courseRouter } from "./course";
 import { feedbackRouter } from "./feedback";
 import { inviteRouter } from "./invite";
+import { lessonRouter } from "./lesson";
 import { profileRouter } from "./profile";
 import { storageRouter } from "./storage";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
@@ -15,6 +16,7 @@ export const appRouter = router({
   course: courseRouter,
   feedback: feedbackRouter,
   invite: inviteRouter,
+  lesson: lessonRouter,
   profile: profileRouter,
   storage: storageRouter,
 });

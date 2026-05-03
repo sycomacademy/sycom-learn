@@ -17,12 +17,13 @@ import {
 } from "@tiptap/react";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
-import { cn } from "@sycom/ui/lib/utils";
-
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
+import type { TiptapEditorUploadFn } from "@sycom/lib/tiptap-upload";
+import { cn } from "@sycom/ui/lib/utils";
 
 export interface FilePlaceholderOptions {
   HTMLAttributes: Record<string, unknown>;
+  onUpload?: TiptapEditorUploadFn;
 }
 
 declare module "@tiptap/core" {
@@ -39,6 +40,7 @@ export const FilePlaceholder = Node.create<FilePlaceholderOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
+      onUpload: undefined as TiptapEditorUploadFn | undefined,
     };
   },
 
@@ -82,19 +84,34 @@ function fileMeta(entry: FileWithPreview): { name: string; size: number; mime: s
 }
 
 function FilePlaceholderComponent(props: NodeViewProps) {
-  const { editor, selected, deleteNode, getPos } = props;
+  const { editor, selected, deleteNode, getPos, extension } = props;
+  const onUpload = extension.options.onUpload as TiptapEditorUploadFn | undefined;
   const uploadInputId = useId();
   const [pickedFile, setPickedFile] = useState<FileWithPreview | null>(null);
 
   const canEdit = useEditorEditable(editor);
 
-  const handleInsert = () => {
-    if (!pickedFile?.preview) return;
+  const handleInsert = async () => {
+    if (!pickedFile?.file) return;
+    const file = pickedFile.file instanceof File ? pickedFile.file : null;
+    if (!file) return;
+
     const { name, size, mime } = fileMeta(pickedFile);
     const pos = getPos();
     if (typeof pos !== "number") return;
+
+    let src: string;
+    if (onUpload) {
+      const result = await onUpload(file);
+      src = result.src;
+    } else if (pickedFile.preview) {
+      src = pickedFile.preview;
+    } else {
+      return;
+    }
+
     replaceNodeAtPosition(editor, pos, "fileAttachment", {
-      src: pickedFile.preview,
+      src,
       name,
       mimeType: mime,
       size,
@@ -147,8 +164,8 @@ function FilePlaceholderComponent(props: NodeViewProps) {
             type="button"
             className="w-full"
             size="sm"
-            disabled={!pickedFile?.preview || !canEdit}
-            onClick={handleInsert}
+            disabled={!pickedFile || (!onUpload && !pickedFile.preview) || !canEdit}
+            onClick={() => void handleInsert()}
           >
             Insert file
           </Button>

@@ -21,10 +21,12 @@ import {
 } from "@tiptap/react";
 import { Link, Play, Upload, X } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
+import type { TiptapEditorUploadFn } from "@sycom/lib/tiptap-upload";
 import { cn } from "@sycom/ui/lib/utils";
 
 export interface VideoPlaceholderOptions {
   HTMLAttributes: Record<string, unknown>;
+  onUpload?: TiptapEditorUploadFn;
 }
 
 declare module "@tiptap/core" {
@@ -41,6 +43,7 @@ export const VideoPlaceholder = Node.create<VideoPlaceholderOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
+      onUpload: undefined as TiptapEditorUploadFn | undefined,
     };
   },
 
@@ -117,7 +120,8 @@ function getYouTubeEmbedUrl(url: string) {
 }
 
 function VideoPlaceholderComponent(props: NodeViewProps) {
-  const { editor, selected, deleteNode, getPos } = props;
+  const { editor, selected, deleteNode, getPos, extension } = props;
+  const onUpload = extension.options.onUpload as TiptapEditorUploadFn | undefined;
   const uploadInputId = useId();
   const [activeTab, setActiveTab] = useState<"upload" | "url" | "youtube">("upload");
   const [url, setUrl] = useState("");
@@ -157,13 +161,27 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
     setCaption("");
   };
 
-  const handleInsertFromUpload = () => {
-    if (!pickedFile?.preview) return;
+  const handleInsertFromUpload = async (aspectRatio?: number | null) => {
+    if (!pickedFile?.file) return;
+    const file = pickedFile.file instanceof File ? pickedFile.file : null;
+    if (!file) return;
+
+    let src: string;
+    if (onUpload) {
+      const r = await onUpload(file);
+      src = r.src;
+    } else if (pickedFile.preview) {
+      src = pickedFile.preview;
+    } else {
+      return;
+    }
+
     insertVideo({
-      src: pickedFile.preview,
+      src,
       poster: posterUrl.trim() && isValidUrl(posterUrl.trim()) ? posterUrl.trim() : null,
       title: title.trim() || fileBaseName(pickedFile),
       caption: caption.trim(),
+      aspectRatio: aspectRatio ?? null,
     });
   };
 
@@ -279,8 +297,8 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
                 type="button"
                 className="w-full"
                 size="sm"
-                disabled={!pickedFile?.preview || !canEdit}
-                onClick={handleInsertFromUpload}
+                disabled={!pickedFile || (!onUpload && !pickedFile.preview) || !canEdit}
+                onClick={() => void handleInsertFromUpload()}
               >
                 Insert video
               </Button>

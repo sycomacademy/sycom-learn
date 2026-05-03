@@ -27,6 +27,7 @@ import { FileUploader } from "@sycom/components/ui/file-uploader";
 import { Input } from "@sycom/components/ui/input";
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
 import { isValidUrl } from "@sycom/lib/tiptap-utils";
+import { buildImageUrl, buildVideoUrl } from "@sycom/ui/image/cdn";
 import {
   VideoPlayer,
   VideoPlayerContent,
@@ -349,8 +350,12 @@ function TiptapVideo(props: NodeViewProps) {
         ) : (
           <VideoPlayer className="w-full">
             <VideoPlayerContent
-              src={src ?? undefined}
-              poster={node.attrs.poster ?? undefined}
+              src={src ? buildVideoUrl(src) : undefined}
+              poster={
+                (node.attrs.poster as string | null)
+                  ? buildImageUrl(node.attrs.poster as string)
+                  : undefined
+              }
               playsInline
               preload="metadata"
               onLoadedMetadata={(e) => {

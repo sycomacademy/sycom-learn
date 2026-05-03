@@ -21,6 +21,7 @@ import {
 import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button, buttonVariants } from "@sycom/components/ui/button";
 import { formatFileSize } from "@sycom/lib/tiptap-utils";
+import { buildRawFileUrl } from "@sycom/ui/image/cdn";
 import { cn } from "@sycom/ui/lib/utils";
 
 export type FileAttachmentAttrs = {
@@ -159,7 +160,7 @@ function TiptapFileAttachment(props: NodeViewProps) {
                 aria-label="Download file"
                 className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-7")}
                 download={name}
-                href={src}
+                href={src ? buildRawFileUrl(src) : "#"}
               >
                 <Download className="size-4" />
               </a>

@@ -22,7 +22,12 @@
     "noUncheckedSideEffectImports": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@sycom/ui/*": ["../../packages/ui/src/*"]
+      "@sycom/ui/*": ["../../packages/ui/src/*"],
+      "@sycom/components/*": ["../../packages/ui/src/components/*"],
+      "@sycom/components/ui/*": ["../../packages/ui/src/components/*"],
+      "@sycom/components/tiptap/*": ["../../packages/ui/src/components/tiptap/*"],
+      "@sycom/hooks/*": ["../../packages/ui/src/hooks/*"],
+      "@sycom/lib/*": ["../../packages/ui/src/lib/*"]
     }
   }
 }

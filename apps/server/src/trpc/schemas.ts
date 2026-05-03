@@ -401,6 +401,35 @@ export const deleteAssetInputSchema = z.object({
 });
 export type StorageDeleteAssetInput = z.infer<typeof deleteAssetInputSchema>;
 
+// lesson (platform course curriculum)
+export const getLessonInputSchema = z.object({
+  lessonId: z.string().min(1),
+});
+export type GetLessonInput = z.infer<typeof getLessonInputSchema>;
+
+export const listLessonsByCourseInputSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type ListLessonsByCourseInput = z.infer<typeof listLessonsByCourseInputSchema>;
+
+export const updateLessonInputSchema = z.object({
+  lessonId: z.string().min(1),
+  patch: z
+    .object({
+      title: z.string().trim().min(1).max(200).optional(),
+      content: z.unknown().optional(),
+    })
+    .refine((patch) => Object.keys(patch).length > 0, "At least one field must change"),
+});
+export type UpdateLessonInput = z.infer<typeof updateLessonInputSchema>;
+
+export const checkLessonAnswerInputSchema = z.object({
+  lessonId: z.string().min(1),
+  questionId: z.string().min(1),
+  selected: z.array(z.string().min(1)),
+});
+export type CheckLessonAnswerInput = z.infer<typeof checkLessonAnswerInputSchema>;
+
 // course (platform-owned courses UI + taxonomy)
 const courseSlugSchema = z
   .string()

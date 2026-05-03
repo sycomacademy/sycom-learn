@@ -5,6 +5,7 @@ import { FileUploader } from "@sycom/components/ui/file-uploader";
 import { Input } from "@sycom/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@sycom/components/ui/tabs";
 import { NODE_HANDLES_SELECTED_STYLE_CLASSNAME, isValidUrl } from "@sycom/lib/tiptap-utils";
+import type { TiptapEditorUploadFn } from "@sycom/lib/tiptap-upload";
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
 import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import {
@@ -21,8 +22,8 @@ import { cn } from "@sycom/ui/lib/utils";
 
 export interface ImagePlaceholderOptions {
   HTMLAttributes: Record<string, unknown>;
-  onUpload?: (url: string) => void;
-  onError?: (error: string) => void;
+  /** When set, file bytes are uploaded and `src` becomes the returned value (e.g. CDN public id). */
+  onUpload?: TiptapEditorUploadFn;
 }
 
 declare module "@tiptap/core" {
@@ -42,8 +43,7 @@ export const ImagePlaceholder = Node.create<ImagePlaceholderOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-      onUpload: () => {},
-      onError: () => {},
+      onUpload: undefined as TiptapEditorUploadFn | undefined,
     };
   },
 
@@ -80,7 +80,8 @@ function fileBaseName(entry: FileWithPreview): string {
 }
 
 function ImagePlaceholderComponent(props: NodeViewProps) {
-  const { editor, selected, deleteNode } = props;
+  const { editor, selected, deleteNode, extension } = props;
+  const onUpload = extension.options.onUpload as TiptapEditorUploadFn | undefined;
   const uploadInputId = useId();
   const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
   const [url, setUrl] = useState("");
@@ -90,16 +91,26 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
 
   const canEdit = useEditorEditable(editor);
 
-  const handleInsertFromUpload = () => {
-    if (!pickedFile?.preview) return;
-    editor
-      .chain()
-      .focus()
-      .setImage({
-        src: pickedFile.preview,
-        alt: altText || fileBaseName(pickedFile),
-      })
-      .run();
+  const handleInsertFromUpload = async () => {
+    if (!pickedFile?.file) return;
+    const file = pickedFile.file instanceof File ? pickedFile.file : null;
+    if (!file) return;
+
+    let src: string;
+    let alt = altText;
+
+    if (onUpload) {
+      const result = await onUpload(file);
+      src = result.src;
+      alt = result.alt ?? (altText || fileBaseName(pickedFile));
+    } else if (pickedFile.preview) {
+      src = pickedFile.preview;
+      alt = altText || fileBaseName(pickedFile);
+    } else {
+      return;
+    }
+
+    editor.chain().focus().setImage({ src, alt }).run();
     setPickedFile(null);
     setAltText("");
   };
@@ -176,8 +187,8 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                 type="button"
                 className="w-full"
                 size="sm"
-                disabled={!pickedFile?.preview || !canEdit}
-                onClick={handleInsertFromUpload}
+                disabled={!pickedFile || (!onUpload && !pickedFile.preview) || !canEdit}
+                onClick={() => void handleInsertFromUpload()}
               >
                 Insert image
               </Button>

@@ -1,0 +1,389 @@
+"use client";
+
+import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
+import { Button } from "@sycom/components/ui/button";
+import { Checkbox } from "@sycom/components/ui/checkbox";
+import { Input } from "@sycom/components/ui/input";
+import { FieldLabel } from "@sycom/components/ui/field";
+import {
+  useQuestionTracking,
+  type QuestionStatus,
+} from "@sycom/components/tiptap/extensions/question-tracking";
+import { cn } from "@sycom/ui/lib/utils";
+import {
+  type CommandProps,
+  Node,
+  type NodeViewProps,
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+  mergeAttributes,
+} from "@tiptap/react";
+import { CheckCircle2, CircleHelp, Plus, Trash2, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import type { FullPresetCheckAnswerFn } from "./editor-preset-types";
+
+export type QuestionOptionAttr = {
+  id: string;
+  text: string;
+  isCorrect?: boolean;
+};
+
+export type LessonQuestionAttrs = {
+  questionId: string;
+  prompt: string;
+  type: "single" | "multi";
+  options: QuestionOptionAttr[];
+  explanation?: string;
+};
+
+export interface LessonQuestionOptions {
+  onCheckAnswer?: FullPresetCheckAnswerFn;
+}
+
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    lessonQuestion: {
+      insertLessonQuestion: () => ReturnType;
+    };
+  }
+}
+
+function newOption(text: string, isCorrect = false): QuestionOptionAttr {
+  return { id: crypto.randomUUID(), text, isCorrect };
+}
+
+export const LessonQuestion = Node.create<LessonQuestionOptions>({
+  name: "question",
+  group: "block",
+  atom: true,
+  draggable: true,
+
+  addOptions() {
+    return {
+      onCheckAnswer: undefined,
+    };
+  },
+
+  addAttributes() {
+    return {
+      questionId: {
+        default: "",
+      },
+      prompt: {
+        default: "",
+      },
+      type: {
+        default: "single",
+      },
+      options: {
+        default: [],
+      },
+      explanation: {
+        default: "",
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: `div[data-type="${this.name}"]` }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ["div", mergeAttributes(HTMLAttributes, { "data-type": this.name })];
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(QuestionNodeView, {
+      className: "question-node-view-root",
+    });
+  },
+
+  addCommands() {
+    return {
+      insertLessonQuestion:
+        () =>
+        ({ commands }: CommandProps) => {
+          return commands.insertContent({
+            type: this.name,
+            attrs: {
+              questionId: crypto.randomUUID(),
+              prompt: "",
+              type: "single",
+              options: [newOption("Option 1", true), newOption("Option 2", false)],
+              explanation: "",
+            },
+          });
+        },
+    };
+  },
+});
+
+function statusBadge(status: QuestionStatus | undefined) {
+  if (status === "correct") {
+    return (
+      <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600">
+        <CheckCircle2 className="size-4" /> Correct
+      </span>
+    );
+  }
+  if (status === "incorrect") {
+    return (
+      <span className="inline-flex items-center gap-1 text-sm font-medium text-destructive">
+        <XCircle className="size-4" /> Try again
+      </span>
+    );
+  }
+  return null;
+}
+
+function QuestionNodeView(props: NodeViewProps) {
+  const { node, editor, updateAttributes, selected, extension } = props;
+  const canEdit = useEditorEditable(editor);
+  const tracking = useQuestionTracking();
+  const onCheckAnswer = extension.options.onCheckAnswer as FullPresetCheckAnswerFn | undefined;
+
+  const questionId = node.attrs.questionId as string;
+  const prompt = node.attrs.prompt as string;
+  const type = node.attrs.type as "single" | "multi";
+  const options = (node.attrs.options ?? []) as QuestionOptionAttr[];
+  const explanation = (node.attrs.explanation ?? "") as string;
+
+  const [singlePick, setSinglePick] = useState<string | null>(null);
+  const [multiPick, setMultiPick] = useState<Record<string, boolean>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (canEdit || !tracking || !questionId) return;
+    tracking.register(questionId);
+    return () => tracking.unregister(questionId);
+  }, [canEdit, tracking, questionId]);
+
+  const handleSetOptionText = (id: string, text: string) => {
+    updateAttributes({
+      options: options.map((o) => (o.id === id ? { ...o, text } : o)),
+    });
+  };
+
+  const handleToggleCorrect = (id: string) => {
+    if (type === "single") {
+      updateAttributes({
+        options: options.map((o) => ({ ...o, isCorrect: o.id === id })),
+      });
+    } else {
+      updateAttributes({
+        options: options.map((o) => (o.id === id ? { ...o, isCorrect: !o.isCorrect } : o)),
+      });
+    }
+  };
+
+  const addOption = () => {
+    updateAttributes({
+      options: [...options, newOption(`Option ${options.length + 1}`, false)],
+    });
+  };
+
+  const removeOption = (id: string) => {
+    if (options.length <= 2) return;
+    updateAttributes({
+      options: options.filter((o) => o.id !== id),
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!onCheckAnswer || !tracking) return;
+    const selectedIds =
+      type === "single"
+        ? singlePick
+          ? [singlePick]
+          : []
+        : Object.entries(multiPick)
+            .filter(([, v]) => v)
+            .map(([k]) => k);
+
+    if (selectedIds.length === 0) return;
+
+    setSubmitting(true);
+    try {
+      const { isCorrect } = await onCheckAnswer({
+        questionId,
+        selected: type === "single" ? selectedIds : selectedIds.sort(),
+      });
+      tracking.setResult(questionId, isCorrect);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const viewStatus = tracking?.statuses[questionId];
+
+  if (canEdit) {
+    return (
+      <NodeViewWrapper
+        className={cn(
+          "my-4 rounded-lg border bg-card p-4 shadow-xs/5",
+          selected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+        )}
+        data-drag-handle=""
+      >
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <CircleHelp className="size-4" />
+          Question block
+        </div>
+        <div className="space-y-3">
+          <div>
+            <FieldLabel className="text-xs">Prompt</FieldLabel>
+            <Input
+              value={prompt}
+              onChange={(e) => updateAttributes({ prompt: e.target.value })}
+              placeholder="Ask something…"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <FieldLabel className="text-xs">Type</FieldLabel>
+            <select
+              className="mt-1 flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs/5"
+              value={type}
+              onChange={(e) => {
+                const next = e.target.value === "multi" ? "multi" : "single";
+                updateAttributes({
+                  type: next,
+                  options:
+                    next === "single"
+                      ? options.map((o, i) => ({ ...o, isCorrect: i === 0 }))
+                      : options.map((o) => ({ ...o, isCorrect: !!o.isCorrect })),
+                });
+              }}
+            >
+              <option value="single">One correct answer</option>
+              <option value="multi">Multiple correct answers</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <FieldLabel className="text-xs">Options</FieldLabel>
+            {options.map((opt) => (
+              <div key={opt.id} className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={opt.text}
+                  onChange={(e) => handleSetOptionText(opt.id, e.target.value)}
+                  className="min-w-[12rem] flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={opt.isCorrect ? "default" : "outline"}
+                  onClick={() => handleToggleCorrect(opt.id)}
+                >
+                  {type === "single" ? "Correct" : "Correct?"}
+                </Button>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  disabled={options.length <= 2}
+                  aria-label="Remove option"
+                  onClick={() => removeOption(opt.id)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
+            <Button type="button" size="sm" variant="outline" onClick={addOption}>
+              <Plus className="mr-1 size-4" />
+              Add option
+            </Button>
+          </div>
+          <div>
+            <FieldLabel className="text-xs">Explanation (shown after submit)</FieldLabel>
+            <Input
+              value={explanation}
+              onChange={(e) => updateAttributes({ explanation: e.target.value })}
+              placeholder="Optional"
+              className="mt-1"
+            />
+          </div>
+        </div>
+      </NodeViewWrapper>
+    );
+  }
+
+  return (
+    <NodeViewWrapper
+      className={cn(
+        "my-4 rounded-lg border bg-muted/20 p-4",
+        selected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+      )}
+    >
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <CircleHelp className="size-4 text-muted-foreground" />
+          Question
+        </div>
+        {statusBadge(viewStatus)}
+      </div>
+      <p className="mb-3 text-base font-medium">{prompt || "Question"}</p>
+      <div className="space-y-2">
+        {type === "single" ? (
+          <div className="flex flex-col gap-2">
+            {options.map((opt) => (
+              <label
+                key={opt.id}
+                className="flex cursor-pointer items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+              >
+                <input
+                  type="radio"
+                  name={`q-${questionId}`}
+                  checked={singlePick === opt.id}
+                  onChange={() => setSinglePick(opt.id)}
+                  className="size-4 accent-primary"
+                />
+                <span>{opt.text}</span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {options.map((opt) => (
+              <label
+                key={opt.id}
+                className="flex cursor-pointer items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+              >
+                <Checkbox
+                  checked={!!multiPick[opt.id]}
+                  onCheckedChange={(checked) =>
+                    setMultiPick((prev) => ({ ...prev, [opt.id]: checked === true }))
+                  }
+                />
+                <span>{opt.text}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={
+            submitting ||
+            !onCheckAnswer ||
+            (type === "single" ? !singlePick : !Object.values(multiPick).some(Boolean))
+          }
+          loading={submitting}
+          onClick={() => void handleSubmit()}
+        >
+          Check answer
+        </Button>
+        {!onCheckAnswer ? (
+          <span className="text-xs text-muted-foreground">
+            Answer checking is not configured for this editor.
+          </span>
+        ) : null}
+      </div>
+      {explanation && viewStatus && viewStatus !== "unanswered" ? (
+        <p className="mt-3 text-sm text-muted-foreground">{explanation}</p>
+      ) : null}
+    </NodeViewWrapper>
+  );
+}

@@ -27,6 +27,7 @@ import { FileUploader } from "@sycom/components/ui/file-uploader";
 import { Input } from "@sycom/components/ui/input";
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
 import { isValidUrl } from "@sycom/lib/tiptap-utils";
+import { buildVideoUrl } from "@sycom/ui/image/cdn";
 import {
   AudioPlayer,
   AudioPlayerContent,
@@ -285,7 +286,7 @@ function TiptapAudio(props: NodeViewProps) {
           </div>
         ) : null}
         <AudioPlayer className="w-full">
-          <AudioPlayerContent src={src || undefined} preload="metadata" />
+          <AudioPlayerContent src={src ? buildVideoUrl(src) : undefined} preload="metadata" />
           <AudioPlayerControlBar className="flex flex-wrap items-center gap-0 bg-background/95">
             <AudioPlayerPlayButton />
             <AudioPlayerSeekBackwardButton />

@@ -31,6 +31,7 @@ import {
 import { Input } from "@sycom/components/ui/input";
 import { Separator } from "@sycom/components/ui/separator";
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
+import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { cn } from "@sycom/ui/lib/utils";
 
 function fileBaseName(entry: FileWithPreview): string {
@@ -240,7 +241,7 @@ function TiptapImage(props: NodeViewProps) {
         <figure className="relative m-0">
           <img
             ref={imageRef}
-            src={node.attrs.src}
+            src={node.attrs.src ? buildImageUrl(node.attrs.src) : undefined}
             alt={node.attrs.alt}
             title={node.attrs.title}
             className="rounded-lg transition-shadow duration-200 hover:shadow-lg"

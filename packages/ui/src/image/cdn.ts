@@ -1,4 +1,4 @@
-import { Cloudinary } from "@cloudinary/url-gen";
+import { Cloudinary, CloudinaryFile } from "@cloudinary/url-gen";
 
 function getViteCloudName(): string | undefined {
   try {
@@ -22,28 +22,52 @@ function getCloudName(): string {
   );
 }
 
-export function buildImageUrl(publicId: string): string {
+function passthroughDeliveryUrl(id: string): string | null {
   if (
-    publicId.startsWith("http://") ||
-    publicId.startsWith("https://") ||
-    publicId.startsWith("/") ||
-    publicId.startsWith("./") ||
-    publicId.startsWith("../") ||
-    publicId.startsWith("data:") ||
-    publicId.startsWith("blob:")
+    id.startsWith("http://") ||
+    id.startsWith("https://") ||
+    id.startsWith("/") ||
+    id.startsWith("./") ||
+    id.startsWith("../") ||
+    id.startsWith("data:") ||
+    id.startsWith("blob:")
   ) {
-    return publicId;
+    return id;
   }
+  return null;
+}
 
-  const id = publicId.replace(/^\/+/, "");
-  const cld = new Cloudinary({
+function createCld() {
+  return new Cloudinary({
     cloud: { cloudName: getCloudName() },
     url: { analytics: false, secure: true },
   });
-  const image = cld.image(id);
+}
 
+export function buildImageUrl(publicId: string): string {
+  const passthrough = passthroughDeliveryUrl(publicId);
+  if (passthrough) return passthrough;
+  const id = publicId.replace(/^\/+/, "");
+  const image = createCld().image(id);
   image.format("auto");
   image.quality("auto");
-
   return image.toURL();
+}
+
+/** Video (or audio-as-video) delivery URL from a Cloudinary public id. */
+export function buildVideoUrl(publicId: string): string {
+  const passthrough = passthroughDeliveryUrl(publicId);
+  if (passthrough) return passthrough;
+  const id = publicId.replace(/^\/+/, "");
+  return createCld().video(id).toURL();
+}
+
+/** Raw file delivery URL (pdf, zip, …) from a Cloudinary public id. */
+export function buildRawFileUrl(publicId: string): string {
+  const passthrough = passthroughDeliveryUrl(publicId);
+  if (passthrough) return passthrough;
+  const id = publicId.replace(/^\/+/, "");
+  const cloudConfig = { cloudName: getCloudName() };
+  const urlConfig = { analytics: false, secure: true };
+  return new CloudinaryFile(id, cloudConfig, urlConfig).setAssetType("raw").toURL();
 }

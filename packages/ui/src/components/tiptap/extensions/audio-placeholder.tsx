@@ -21,10 +21,12 @@ import {
 } from "@tiptap/react";
 import { Link, Upload, X } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
+import type { TiptapEditorUploadFn } from "@sycom/lib/tiptap-upload";
 import { cn } from "@sycom/ui/lib/utils";
 
 export interface AudioPlaceholderOptions {
   HTMLAttributes: Record<string, unknown>;
+  onUpload?: TiptapEditorUploadFn;
 }
 
 declare module "@tiptap/core" {
@@ -41,6 +43,7 @@ export const AudioPlaceholder = Node.create<AudioPlaceholderOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
+      onUpload: undefined as TiptapEditorUploadFn | undefined,
     };
   },
 
@@ -77,7 +80,8 @@ function fileBaseName(entry: FileWithPreview): string {
 }
 
 function AudioPlaceholderComponent(props: NodeViewProps) {
-  const { editor, selected, deleteNode, getPos } = props;
+  const { editor, selected, deleteNode, getPos, extension } = props;
+  const onUpload = extension.options.onUpload as TiptapEditorUploadFn | undefined;
   const uploadInputId = useId();
   const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
   const [url, setUrl] = useState("");
@@ -102,10 +106,23 @@ function AudioPlaceholderComponent(props: NodeViewProps) {
     setCaption("");
   };
 
-  const handleInsertFromUpload = () => {
-    if (!pickedFile?.preview) return;
+  const handleInsertFromUpload = async () => {
+    if (!pickedFile?.file) return;
+    const file = pickedFile.file instanceof File ? pickedFile.file : null;
+    if (!file) return;
+
+    let src: string;
+    if (onUpload) {
+      const r = await onUpload(file);
+      src = r.src;
+    } else if (pickedFile.preview) {
+      src = pickedFile.preview;
+    } else {
+      return;
+    }
+
     insertAudio({
-      src: pickedFile.preview,
+      src,
       title: title.trim() || fileBaseName(pickedFile),
       caption: caption.trim(),
     });
@@ -191,8 +208,8 @@ function AudioPlaceholderComponent(props: NodeViewProps) {
                 type="button"
                 className="w-full"
                 size="sm"
-                disabled={!pickedFile?.preview || !canEdit}
-                onClick={handleInsertFromUpload}
+                disabled={!pickedFile || (!onUpload && !pickedFile.preview) || !canEdit}
+                onClick={() => void handleInsertFromUpload()}
               >
                 Insert audio
               </Button>
