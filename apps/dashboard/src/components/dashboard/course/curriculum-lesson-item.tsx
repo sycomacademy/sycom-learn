@@ -303,11 +303,16 @@ function CurriculumLessonItemImpl({
           <div className="border-t py-3">
             <div className="flex flex-wrap items-center gap-2 border-b px-3 pb-3">
               <Select
-                onValueChange={(value) => setDraftType(value as CurriculumLesson["type"])}
+                items={LESSON_TYPE_OPTIONS}
+                onValueChange={(value) => {
+                  if (value) {
+                    setDraftType(value as CurriculumLesson["type"]);
+                  }
+                }}
                 value={draftType}
               >
                 <SelectTrigger className="w-36" size="sm">
-                  <SelectValue placeholder="Lesson type" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {LESSON_TYPE_OPTIONS.map((option) => (
