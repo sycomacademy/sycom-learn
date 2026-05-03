@@ -15,6 +15,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
+import { Markdown } from "@tiptap/markdown";
 import { EditorContent, type Extension, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { common, createLowlight } from "lowlight";
@@ -78,6 +79,9 @@ const extensions = [
   ImagePlaceholder,
   SearchAndReplace,
   Typography,
+  Markdown.configure({
+    markedOptions: { gfm: true },
+  }),
 ];
 
 export function RichTextEditorDemo({ className }: { className?: string }) {

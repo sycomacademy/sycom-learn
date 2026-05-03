@@ -21,6 +21,8 @@ import { ImagePlaceholderToolbar } from "./image-placeholder-toolbar";
 import { ColorHighlightToolbar } from "./color-and-highlight";
 import { SearchAndReplaceToolbar } from "./search-and-replace-toolbar";
 import { CodeBlockToolbar } from "./code-block";
+import { ExportToolbar } from "./export";
+import { ImportToolbar } from "./import";
 
 export const EditorToolbar = ({ editor }: { editor: Editor }) => {
   return (
@@ -69,6 +71,9 @@ export const EditorToolbar = ({ editor }: { editor: Editor }) => {
 
                 {/* Utility Group */}
                 <SearchAndReplaceToolbar />
+                <Separator orientation="vertical" className="mx-1 h-7" />
+                <ImportToolbar />
+                <ExportToolbar />
               </div>
             </div>
             <ScrollBar className="hidden" orientation="horizontal" />
