@@ -110,6 +110,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+[data-editor-mode="lightweight"] .ProseMirror {
+  padding: var(--editor-spacing-4);
+  max-width: none;
+  min-height: 8rem;
+}
+
 .ProseMirror:focus {
   outline: none;
   box-shadow: none;
@@ -148,6 +154,16 @@
 
   .ProseMirror > p {
     margin: var(--editor-spacing-6) 0;
+  }
+
+  [data-editor-mode="lightweight"] .ProseMirror p {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: var(--editor-spacing-2) 0;
+  }
+
+  [data-editor-mode="lightweight"] .ProseMirror > p {
+    margin: var(--editor-spacing-3) 0;
   }
 
   .ProseMirror h1,
@@ -522,6 +538,10 @@
 @media (max-width: 640px) {
   .ProseMirror {
     padding: var(--editor-spacing-8) var(--editor-spacing-4);
+  }
+
+  [data-editor-mode="lightweight"] .ProseMirror {
+    padding: var(--editor-spacing-3);
   }
 }
 

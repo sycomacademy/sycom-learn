@@ -478,7 +478,21 @@ export const updateCourseSchema = z.object({
       title: z.string().trim().min(1).max(160).optional(),
       slug: courseSlugSchema.optional(),
       description: z.string().trim().max(2000).nullable().optional(),
-      summary: z.string().trim().max(20_000).nullable().optional(),
+      summary: z
+        .unknown()
+        .nullable()
+        .optional()
+        .check(
+          z.refine((value) => {
+            if (value === undefined || value === null) return true;
+            if (typeof value === "string") return value.length <= 20_000;
+            try {
+              return JSON.stringify(value).length <= 20_000;
+            } catch {
+              return false;
+            }
+          }, "Summary must be at most 20,000 characters when serialized"),
+        ),
       imageUrl: z.string().trim().min(1).nullable().optional(),
       difficulty: z.enum(DIFFICULTY_LEVELS).optional(),
       estimatedDuration: z.number().int().positive().max(100_000).nullable().optional(),

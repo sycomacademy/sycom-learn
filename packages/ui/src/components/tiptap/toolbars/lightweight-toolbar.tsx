@@ -22,7 +22,7 @@ export function LightweightEditorToolbar({ editor }: { editor: Editor }) {
     <div className="sticky top-0 z-20 hidden w-full border-b border-border/80 bg-background/85 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-background/75 sm:block">
       <ToolbarProvider editor={editor}>
         <TooltipProvider>
-          <ScrollArea scrollbarGutter className="h-fit pt-2.5">
+          <ScrollArea className="h-fit">
             <div>
               <div className="flex items-center gap-1 px-2">
                 <UndoToolbar />

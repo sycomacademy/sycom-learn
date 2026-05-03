@@ -30,6 +30,8 @@ export type RichTextEditorProps = {
   onCheckAnswer?: FullPresetCheckAnswerFn;
   className?: string;
   contentClassName?: string;
+  /** Merged onto the `EditorContent` wrapper (default includes `min-h-[600px]`). */
+  editorContentClassName?: string;
   /** If true (default), full mode mounts slash menu + table bubble + floating toolbar. */
   showAdvancedChrome?: boolean;
 };
@@ -43,10 +45,12 @@ export function RichTextEditor({
   onCheckAnswer,
   className,
   contentClassName,
+  editorContentClassName,
   showAdvancedChrome = true,
 }: RichTextEditorProps) {
   const [viewOnly, setViewOnly] = useState(false);
   const editorEditable = editable && !viewOnly;
+  const isLightweight = mode === "lightweight";
 
   useEffect(() => {
     if (!editable) setViewOnly(false);
@@ -98,8 +102,11 @@ export function RichTextEditor({
 
   return (
     <div
+      data-editor-mode={mode}
       className={cn(
-        "relative max-h-[calc(100dvh-6rem)] w-full overflow-hidden overflow-y-scroll border bg-card pb-[60px] sm:pb-0",
+        isLightweight
+          ? "relative w-full overflow-hidden border bg-card"
+          : "relative max-h-[calc(100dvh-6rem)] w-full overflow-hidden overflow-y-scroll border bg-card pb-[60px] sm:pb-0",
         className,
       )}
     >
@@ -120,7 +127,12 @@ export function RichTextEditor({
       ) : null}
       <EditorContent
         editor={editor}
-        className="min-h-[600px] w-full min-w-full cursor-text sm:p-6"
+        className={cn(
+          isLightweight
+            ? "min-h-[140px] w-full min-w-full cursor-text"
+            : "min-h-[600px] w-full min-w-full cursor-text sm:p-6",
+          editorContentClassName,
+        )}
       />
     </div>
   );

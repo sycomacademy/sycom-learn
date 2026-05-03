@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { DIFFICULTY_LEVELS } from "@sycom/db/schema/course";
+import type { JSONContent } from "@tiptap/core";
 import { uploadFile } from "@sycom/storage/client";
 import { Button } from "@sycom/ui/components/button";
 import {
@@ -31,6 +32,7 @@ import {
 import { ImageZoom } from "@sycom/ui/components/kibo-ui/image-zoom";
 import { Switch } from "@sycom/ui/components/switch";
 import { Textarea } from "@sycom/ui/components/textarea";
+import { RichTextEditor } from "@sycom/ui/components/tiptap/rich-text-editor";
 import { toastManager } from "@sycom/ui/components/toast";
 import { Image } from "@sycom/ui/image";
 import { slugify } from "@sycom/ui/lib/string";
@@ -60,7 +62,17 @@ const editCourseSchema = z.object({
     z.refine((value) => !value.includes("--"), "No consecutive hyphens"),
   ),
   description: z.string().check(z.maxLength(2000)),
-  summary: z.string().check(z.maxLength(20_000)),
+  summary: z.any().check(
+    z.refine((value) => {
+      if (value === null) return true;
+      if (typeof value !== "object" || value === null) return false;
+      try {
+        return JSON.stringify(value).length <= 20_000;
+      } catch {
+        return false;
+      }
+    }, "Summary must be at most 20,000 characters when serialized"),
+  ),
   difficulty: z.enum(DIFFICULTY_LEVELS),
   status: z.enum(["draft", "published"]),
   categoryIds: z.array(z.string().min(1)),
@@ -72,15 +84,47 @@ type CategoryOption = AppRouterOutputs["course"]["listCategories"]["rows"][numbe
 type CourseDetail = AppRouterOutputs["course"]["get"];
 type UpdateCoursePatchInput = AppRouterInputs["course"]["update"]["patch"];
 
-function normalizeCourseSummary(summary: unknown): string {
-  if (typeof summary === "string") return summary;
-  if (summary == null) return "";
+function getPlainTextFromJsonContent(node: JSONContent | null | undefined): string {
+  if (!node) return "";
+  if (node.type === "text" && typeof node.text === "string") return node.text;
+  if (!node.content) return "";
+  return node.content.map((child) => getPlainTextFromJsonContent(child)).join("");
+}
 
-  try {
-    return JSON.stringify(summary, null, 2);
-  } catch {
-    return "";
+function isSummaryDocEmpty(doc: JSONContent | null): boolean {
+  return getPlainTextFromJsonContent(doc).trim() === "";
+}
+
+function courseSummaryToEditorContent(summary: unknown): JSONContent | null {
+  if (summary == null) return null;
+
+  if (typeof summary === "object" && summary !== null && "type" in summary) {
+    return summary as JSONContent;
   }
+
+  if (typeof summary === "string") {
+    const trimmed = summary.trim();
+    if (trimmed === "") return null;
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
+        return parsed as JSONContent;
+      }
+    } catch {
+      // Legacy plain-text summaries stored as a JSON string or plain text.
+    }
+    return {
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: summary }] }],
+    };
+  }
+
+  return null;
+}
+
+function normalizeSummaryForStorage(doc: JSONContent | null): JSONContent | null {
+  if (doc == null || isSummaryDocEmpty(doc)) return null;
+  return doc;
 }
 
 function areStringArraysEqual(left: string[], right: string[]): boolean {
@@ -97,7 +141,7 @@ function getDefaultValues(course: CourseDetail): EditCourseFormInput {
     title: course.title,
     slug: course.slug,
     description: course.description ?? "",
-    summary: normalizeCourseSummary(course.summary),
+    summary: courseSummaryToEditorContent(course.summary),
     difficulty: course.difficulty,
     status: course.status,
     categoryIds: course.categories.map((category) => category.id),
@@ -143,9 +187,9 @@ function CourseDetailsPage() {
   const selectedCoverImage = form.watch("coverImage") as File | undefined;
 
   const onSubmit = async (data: EditCourseFormInput) => {
-    const currentSummary = normalizeCourseSummary(course.summary);
     const trimmedDescription = data.description.trim();
-    const trimmedSummary = data.summary.trim();
+    const nextSummary = normalizeSummaryForStorage(data.summary);
+    const currentSummary = normalizeSummaryForStorage(courseSummaryToEditorContent(course.summary));
     const patch: UpdateCoursePatchInput = {};
 
     if (data.title.trim() !== course.title) patch.title = data.title.trim();
@@ -153,8 +197,8 @@ function CourseDetailsPage() {
     if (trimmedDescription !== (course.description ?? "")) {
       patch.description = trimmedDescription === "" ? null : trimmedDescription;
     }
-    if (trimmedSummary !== currentSummary) {
-      patch.summary = trimmedSummary === "" ? null : trimmedSummary;
+    if (JSON.stringify(nextSummary) !== JSON.stringify(currentSummary)) {
+      patch.summary = nextSummary;
     }
     if (data.difficulty !== course.difficulty) patch.difficulty = data.difficulty;
     if (data.status !== course.status) patch.status = data.status;
@@ -218,7 +262,7 @@ function CourseDetailsPage() {
         title: data.title.trim(),
         slug: data.slug.trim(),
         description: trimmedDescription,
-        summary: trimmedSummary,
+        summary: nextSummary,
         coverImage: undefined,
       };
 
@@ -380,15 +424,17 @@ function CourseDetailsPage() {
                 <Field>
                   <FieldLabel className="text-xs">Summary</FieldLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Write a more detailed course summary..."
-                      rows={10}
-                      {...field}
+                    <RichTextEditor
+                      key={courseId}
+                      content={field.value}
+                      contentClassName="font-sans"
+                      editorContentClassName="min-h-[120px]"
+                      editable={!form.formState.isSubmitting}
+                      mode="lightweight"
+                      onChange={field.onChange}
                     />
                   </FormControl>
-                  <FieldDescription>
-                    Detailed overview for this course. Plain text for now.
-                  </FieldDescription>
+                  <FieldDescription>Detailed overview</FieldDescription>
                   <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
                 </Field>
               </FormItem>
