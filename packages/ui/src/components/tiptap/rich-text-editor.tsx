@@ -5,6 +5,7 @@ import { cn } from "@sycom/ui/lib/utils";
 import { ImageExtension } from "@sycom/components/tiptap/extensions/image";
 import { ImagePlaceholder } from "@sycom/components/tiptap/extensions/image-placeholder";
 import SearchAndReplace from "@sycom/components/tiptap/extensions/search-and-replace";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
@@ -16,6 +17,7 @@ import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, type Extension, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { common, createLowlight } from "lowlight";
 import { TipTapFloatingMenu } from "@sycom/components/tiptap/extensions/floating-menu";
 import { FloatingToolbar } from "@sycom/components/tiptap/extensions/floating-toolbar";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -23,8 +25,11 @@ import { content } from "@sycom/lib/content";
 
 import { EditorToolbar } from "./toolbars/editor-toolbar";
 
+const lowlight = createLowlight(common);
+
 const extensions = [
   StarterKit.configure({
+    codeBlock: false,
     orderedList: {
       HTMLAttributes: {
         class: "list-decimal",
@@ -39,6 +44,7 @@ const extensions = [
       levels: [1, 2, 3, 4],
     },
   }),
+  CodeBlockLowlight.configure({ lowlight }),
   Placeholder.configure({
     emptyNodeClass: "is-editor-empty",
     placeholder: ({ node }) => {

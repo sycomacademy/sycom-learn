@@ -12,11 +12,11 @@ import {
   Trash,
   Edit,
   ImageIcon,
-  Loader2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@sycom/components/ui/button";
+import { FileUploader } from "@sycom/components/ui/file-uploader";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,8 +29,13 @@ import {
 } from "@sycom/components/ui/dropdown-menu";
 import { Input } from "@sycom/components/ui/input";
 import { Separator } from "@sycom/components/ui/separator";
+import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
 import { cn } from "@sycom/ui/lib/utils";
-import { useImageUpload } from "@sycom/hooks/use-image-upload";
+
+function fileBaseName(entry: FileWithPreview): string {
+  const f = entry.file;
+  return f instanceof File ? f.name : f.name;
+}
 
 export const ImageExtension = Image.extend({
   addAttributes() {
@@ -69,6 +74,7 @@ export const ImageExtension = Image.extend({
 
 function TiptapImage(props: NodeViewProps) {
   const { node, editor, selected, deleteNode, updateAttributes } = props;
+  const replaceUploadInputId = useId();
   const imageRef = useRef<HTMLImageElement | null>(null);
   const nodeRef = useRef<HTMLDivElement | null>(null);
   const [resizing, setResizing] = useState(false);
@@ -80,17 +86,21 @@ function TiptapImage(props: NodeViewProps) {
   const [openedMore, setOpenedMore] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [altText, setAltText] = useState(node.attrs.alt || "");
+  const [pickedReplaceFile, setPickedReplaceFile] = useState<FileWithPreview | null>(null);
+  const [replaceUploadKey, setReplaceUploadKey] = useState(0);
 
-  const { fileInputRef, handleFileChange, handleRemove, uploading, error } = useImageUpload({
-    onUpload: (imageUrl) => {
-      updateAttributes({
-        src: imageUrl,
-        alt: altText || fileInputRef.current?.files?.[0]?.name,
-      });
-      handleRemove();
-      setOpenedMore(false);
-    },
-  });
+  const canEdit = editor.isEditable;
+
+  const handleReplaceFromUpload = () => {
+    if (!pickedReplaceFile?.preview) return;
+    updateAttributes({
+      src: pickedReplaceFile.preview,
+      alt: altText || fileBaseName(pickedReplaceFile),
+    });
+    setPickedReplaceFile(null);
+    setReplaceUploadKey((k) => k + 1);
+    setOpenedMore(false);
+  };
 
   function handleResizingPosition({
     e,
@@ -194,6 +204,8 @@ function TiptapImage(props: NodeViewProps) {
       });
       setImageUrl("");
       setAltText("");
+      setPickedReplaceFile(null);
+      setReplaceUploadKey((k) => k + 1);
       setOpenedMore(false);
     }
   };
@@ -342,31 +354,25 @@ function TiptapImage(props: NodeViewProps) {
                     <div className="space-y-4">
                       <div>
                         <p className="mb-2 text-xs font-medium">Upload Image</p>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
+                        <FileUploader
+                          key={replaceUploadKey}
+                          className="text-xs"
                           accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                          id="replace-image-upload"
+                          maxFileCount={1}
+                          multiple={false}
+                          disabled={!canEdit}
+                          inputId={replaceUploadInputId}
+                          onFilesChange={(files) => setPickedReplaceFile(files[0] ?? null)}
                         />
-                        <label
-                          htmlFor="replace-image-upload"
-                          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed p-4 hover:bg-accent hover:text-accent-foreground"
+                        <Button
+                          type="button"
+                          className="mt-2 w-full"
+                          size="sm"
+                          disabled={!pickedReplaceFile?.preview || !canEdit}
+                          onClick={handleReplaceFromUpload}
                         >
-                          {uploading ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span>Uploading...</span>
-                            </>
-                          ) : (
-                            <>
-                              <ImageIcon className="h-4 w-4" />
-                              <span>Choose Image</span>
-                            </>
-                          )}
-                        </label>
-                        {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+                          Replace with upload
+                        </Button>
                       </div>
 
                       <div>

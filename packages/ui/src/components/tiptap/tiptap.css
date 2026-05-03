@@ -224,6 +224,88 @@
     color: var(--editor-text-default);
   }
 
+  /* lowlight / highlight.js token colors (scoped; uses editor semantic vars for light + .dark) */
+  .ProseMirror pre code .hljs-keyword,
+  .ProseMirror pre code .hljs-selector-tag,
+  .ProseMirror pre code .hljs-section,
+  .ProseMirror pre code .hljs-link {
+    color: var(--editor-text-purple);
+  }
+
+  .ProseMirror pre code .hljs-string,
+  .ProseMirror pre code .hljs-attr,
+  .ProseMirror pre code .hljs-symbol,
+  .ProseMirror pre code .hljs-bullet {
+    color: var(--editor-text-green);
+  }
+
+  .ProseMirror pre code .hljs-comment,
+  .ProseMirror pre code .hljs-quote {
+    color: var(--editor-text-gray);
+    font-style: italic;
+  }
+
+  .ProseMirror pre code .hljs-number,
+  .ProseMirror pre code .hljs-literal {
+    color: var(--editor-text-orange);
+  }
+
+  .ProseMirror pre code .hljs-built_in,
+  .ProseMirror pre code .hljs-name {
+    color: var(--editor-text-pink);
+  }
+
+  .ProseMirror pre code .hljs-title,
+  .ProseMirror pre code .hljs-function .hljs-title {
+    color: var(--editor-text-blue);
+  }
+
+  .ProseMirror pre code .hljs-variable,
+  .ProseMirror pre code .hljs-template-variable,
+  .ProseMirror pre code .hljs-subst {
+    color: var(--editor-text-default);
+  }
+
+  .ProseMirror pre code .hljs-meta,
+  .ProseMirror pre code .hljs-meta-keyword,
+  .ProseMirror pre code .hljs-doctag {
+    color: var(--editor-text-gray);
+  }
+
+  .ProseMirror pre code .hljs-type,
+  .ProseMirror pre code .hljs-class .hljs-title {
+    color: var(--editor-text-yellow);
+  }
+
+  .ProseMirror pre code .hljs-tag,
+  .ProseMirror pre code .hljs-tag .hljs-name {
+    color: var(--editor-text-red);
+  }
+
+  .ProseMirror pre code .hljs-regexp {
+    color: var(--editor-text-brown);
+  }
+
+  .ProseMirror pre code .hljs-attribute {
+    color: var(--editor-text-blue);
+  }
+
+  .ProseMirror pre code .hljs-addition {
+    color: var(--editor-text-green);
+  }
+
+  .ProseMirror pre code .hljs-deletion {
+    color: var(--editor-text-red);
+  }
+
+  .ProseMirror pre code .hljs-emphasis {
+    font-style: italic;
+  }
+
+  .ProseMirror pre code .hljs-strong {
+    font-weight: 600;
+  }
+
   .ProseMirror blockquote {
     margin: var(--editor-spacing-6) 0;
     padding: var(--editor-spacing-4) var(--editor-spacing-6);
