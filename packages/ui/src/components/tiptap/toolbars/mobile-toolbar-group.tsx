@@ -6,8 +6,9 @@ import { ChevronDown } from "lucide-react";
 import React, { useState } from "react";
 import {
   Drawer,
-  DrawerContent,
   DrawerHeader,
+  DrawerPanel,
+  DrawerPopup,
   DrawerTitle,
   DrawerTrigger,
 } from "@sycom/components/ui/drawer";
@@ -37,11 +38,11 @@ export const MobileToolbarGroup = ({ label, children, className }: MobileToolbar
         {label}
         <ChevronDown className="h-4 w-4" />
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerPopup>
         <DrawerHeader>
           <DrawerTitle className="text-start">{label}</DrawerTitle>
         </DrawerHeader>
-        <div className="flex flex-col p-4">
+        <DrawerPanel className="flex flex-col">
           {React.Children.map(children, (child) =>
             React.isValidElement(child)
               ? React.cloneElement(child, { closeDrawer } as {
@@ -49,8 +50,8 @@ export const MobileToolbarGroup = ({ label, children, className }: MobileToolbar
                 })
               : child,
           )}
-        </div>
-      </DrawerContent>
+        </DrawerPanel>
+      </DrawerPopup>
     </Drawer>
   );
 };

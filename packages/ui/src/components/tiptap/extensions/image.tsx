@@ -352,7 +352,7 @@ function TiptapImage(props: NodeViewProps) {
                         />
                         <label
                           htmlFor="replace-image-upload"
-                          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed p-4 hover:bg-accent"
+                          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed p-4 hover:bg-accent hover:text-accent-foreground"
                         >
                           {uploading ? (
                             <>

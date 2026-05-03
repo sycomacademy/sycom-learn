@@ -170,7 +170,7 @@ export const ColorHighlightToolbar = () => {
           <TooltipContent>Text Color & Highlight</TooltipContent>
         </Tooltip>
 
-        <PopoverContent align="start" className="dark:bg-gray-2 w-56 p-1">
+        <PopoverContent align="start" className="dark:bg-gray-2 w-56">
           <ScrollArea className="max-h-80 overflow-y-auto pr-2">
             <div className="text-gray-11 mt-2 mb-2.5 px-2 text-xs">Color</div>
             {TEXT_COLORS.map(({ name, color }) => (

@@ -27,7 +27,7 @@ export const EditorToolbar = ({ editor }: { editor: Editor }) => {
     <div className="sticky top-0 z-20 hidden w-full border-b bg-background sm:block">
       <ToolbarProvider editor={editor}>
         <TooltipProvider>
-          <ScrollArea className="h-fit py-0.5">
+          <ScrollArea scrollbarGutter className="h-fit pt-2.5">
             <div>
               <div className="flex items-center gap-1 px-2">
                 {/* History Group */}

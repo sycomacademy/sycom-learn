@@ -11,9 +11,12 @@ import { useToolbar, useToolbarEditorState } from "./toolbar-provider";
 const ImagePlaceholderToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, onClick, children, ...props }, ref) => {
     const { editor } = useToolbar();
-    const isActive = useToolbarEditorState((currentEditor) =>
-      currentEditor.isActive("image-placeholder"),
-    );
+    const { isActive, canInsert } = useToolbarEditorState((currentEditor) => ({
+      isActive: currentEditor.isActive("image-placeholder"),
+      canInsert:
+        currentEditor.isEditable &&
+        currentEditor.can().chain().focus().insertImagePlaceholder().run(),
+    }));
     return (
       <Tooltip>
         <TooltipTrigger
@@ -26,6 +29,7 @@ const ImagePlaceholderToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>
                 isActive && "bg-accent text-accent-foreground",
                 className,
               )}
+              disabled={!canInsert}
               onClick={(e) => {
                 e.preventDefault();
                 editor?.chain().focus().insertImagePlaceholder().run();

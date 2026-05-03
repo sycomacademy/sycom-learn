@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { AppRouter } from "server/trpc/routers/_app";
 import { AnchoredToastProvider, ToastProvider } from "@sycom/ui/components/toast";
 import type { QueryClient } from "@tanstack/react-query";
@@ -56,6 +57,12 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootComponent() {
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      void import("react-grab");
+    }
+  }, []);
+
   return (
     <RootDocument>
       <Outlet />

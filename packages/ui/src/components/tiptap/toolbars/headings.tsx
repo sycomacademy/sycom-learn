@@ -52,54 +52,58 @@ export const HeadingsToolbar = React.forwardRef<
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger render={<DropdownMenu />}>
-        <DropdownMenuTrigger
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger
           render={
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-8 w-max gap-1 px-3 font-normal",
-                headingState.isHeading && "bg-accent text-accent-foreground",
-                className,
-              )}
-              ref={ref}
-              {...props}
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-8 w-max gap-1 px-3 font-normal",
+                    headingState.isHeading && "bg-accent text-accent-foreground",
+                    className,
+                  )}
+                  ref={ref}
+                  {...props}
+                />
+              }
             />
           }
         >
           {activeLevel ? `H${activeLevel}` : "Normal"}
           <ChevronDown className="h-4 w-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
+        </TooltipTrigger>
+        <TooltipContent>
+          <span>Headings</span>
+        </TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="start">
+        <DropdownMenuItem
+          onClick={() => editor?.chain().focus().setParagraph().run()}
+          className={cn(
+            "flex h-fit items-center gap-2",
+            !headingState.isHeading && "bg-accent text-accent-foreground",
+          )}
+        >
+          Normal
+        </DropdownMenuItem>
+        {levels.map((level) => (
           <DropdownMenuItem
-            onClick={() => editor?.chain().focus().setParagraph().run()}
+            key={level}
+            onClick={() => editor?.chain().focus().toggleHeading({ level }).run()}
             className={cn(
-              "flex h-fit items-center gap-2",
-              !headingState.isHeading && "bg-accent text-accent-foreground",
+              "flex items-center gap-2",
+              activeLevel === level && "bg-accent text-accent-foreground",
             )}
           >
-            Normal
+            H{level}
           </DropdownMenuItem>
-          {levels.map((level) => (
-            <DropdownMenuItem
-              key={level}
-              onClick={() => editor?.chain().focus().toggleHeading({ level }).run()}
-              className={cn(
-                "flex items-center gap-2",
-                activeLevel === level && "bg-accent text-accent-foreground",
-              )}
-            >
-              H{level}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </TooltipTrigger>
-      <TooltipContent>
-        <span>Headings</span>
-      </TooltipContent>
-    </Tooltip>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 });
 
