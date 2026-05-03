@@ -116,6 +116,12 @@
   min-height: 8rem;
 }
 
+[data-editor-variant="embedded"] .ProseMirror {
+  padding: var(--editor-spacing-4);
+  max-width: none;
+  min-height: 12rem;
+}
+
 .ProseMirror:focus {
   outline: none;
   box-shadow: none;

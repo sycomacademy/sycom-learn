@@ -1,9 +1,11 @@
 import {
   addCourseInstructor,
+  createSection,
   createCategory,
   createCourse,
   deleteCategory,
   deleteCourse,
+  getCourseCurriculum,
   getCourseById,
   listCategories,
   listCourses,
@@ -21,11 +23,13 @@ import { auditRequestMeta } from "../lib/request-audit";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 import {
   addCourseInstructorSchema,
+  createSectionSchema,
   createAdminCategorySchema,
   createCourseSchema,
   deleteAdminCategorySchema,
   deleteCourseSchema,
   getCourseSchema,
+  getCourseCurriculumSchema,
   listAdminCategoriesSchema,
   listCoursesSchema,
   removeCourseInstructorSchema,
@@ -54,6 +58,18 @@ export const courseRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
       }
       return detail;
+    }),
+
+  getCurriculum: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["read"] }))
+    .input(getCourseCurriculumSchema)
+    .query(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+
+      return await getCourseCurriculum(ctx.db, input);
     }),
 
   create: protectedProcedure
@@ -122,6 +138,18 @@ export const courseRouter = router({
       });
 
       return { courseId: courseRow.id };
+    }),
+
+  createSection: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(createSectionSchema)
+    .mutation(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+
+      return await createSection(ctx.db, input);
     }),
 
   update: protectedProcedure

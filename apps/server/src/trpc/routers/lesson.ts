@@ -1,5 +1,6 @@
 import {
   checkLessonAnswer,
+  createLesson,
   getCourseById,
   getLessonWithCourseId,
   listLessonsForCourse,
@@ -10,6 +11,7 @@ import { TRPCError } from "@trpc/server";
 
 import {
   checkLessonAnswerInputSchema,
+  createLessonInputSchema,
   getLessonInputSchema,
   listLessonsByCourseInputSchema,
   updateLessonInputSchema,
@@ -34,6 +36,21 @@ export const lessonRouter = router({
       const detail = await getCourseById(ctx.db, { courseId: input.courseId });
       assertPlatformCourseOrThrow(detail);
       return await listLessonsForCourse(ctx.db, input.courseId);
+    }),
+
+  create: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(createLessonInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      assertPlatformCourseOrThrow(detail);
+
+      const created = await createLesson(ctx.db, input);
+      if (!created) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Section not found" });
+      }
+
+      return created;
     }),
 
   get: protectedProcedure

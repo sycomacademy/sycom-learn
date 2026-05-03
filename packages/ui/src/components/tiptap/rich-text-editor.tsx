@@ -22,6 +22,7 @@ import { LightweightEditorToolbar } from "./toolbars/lightweight-toolbar";
 
 export type RichTextEditorProps = {
   mode: "lightweight" | "full";
+  variant?: "default" | "embedded";
   /** Initial / controlled document (HTML string or JSON). */
   content?: Content | null;
   editable?: boolean;
@@ -38,6 +39,7 @@ export type RichTextEditorProps = {
 
 export function RichTextEditor({
   mode,
+  variant = "default",
   content = null,
   editable = true,
   onChange,
@@ -51,6 +53,7 @@ export function RichTextEditor({
   const [viewOnly, setViewOnly] = useState(false);
   const editorEditable = editable && !viewOnly;
   const isLightweight = mode === "lightweight";
+  const isEmbedded = variant === "embedded";
 
   useEffect(() => {
     if (!editable) setViewOnly(false);
@@ -103,10 +106,13 @@ export function RichTextEditor({
   return (
     <div
       data-editor-mode={mode}
+      data-editor-variant={variant}
       className={cn(
         isLightweight
           ? "relative w-full overflow-hidden border bg-card"
-          : "relative max-h-[calc(100dvh-6rem)] w-full overflow-hidden overflow-y-scroll border bg-card pb-[60px] sm:pb-0",
+          : isEmbedded
+            ? "relative w-full overflow-hidden border bg-card"
+            : "relative max-h-[calc(100dvh-6rem)] w-full overflow-hidden overflow-y-scroll border bg-card pb-[60px] sm:pb-0",
         className,
       )}
     >
@@ -130,7 +136,9 @@ export function RichTextEditor({
         className={cn(
           isLightweight
             ? "min-h-[140px] w-full min-w-full cursor-text"
-            : "min-h-[600px] w-full min-w-full cursor-text sm:p-6",
+            : isEmbedded
+              ? "min-h-[210px] w-full min-w-full cursor-text"
+              : "min-h-[600px] w-full min-w-full cursor-text sm:p-6",
           editorContentClassName,
         )}
       />

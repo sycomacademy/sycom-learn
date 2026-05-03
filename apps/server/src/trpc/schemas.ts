@@ -412,6 +412,13 @@ export const listLessonsByCourseInputSchema = z.object({
 });
 export type ListLessonsByCourseInput = z.infer<typeof listLessonsByCourseInputSchema>;
 
+export const createLessonInputSchema = z.object({
+  courseId: z.string().min(1),
+  sectionId: z.string().min(1),
+  title: z.string().trim().min(1, "Lesson title is required").max(200),
+});
+export type CreateLessonInput = z.infer<typeof createLessonInputSchema>;
+
 export const updateLessonInputSchema = z.object({
   lessonId: z.string().min(1),
   patch: z
@@ -457,6 +464,20 @@ export const getCourseSchema = z.object({
   courseId: z.string().min(1),
 });
 export type GetCourseInput = z.infer<typeof getCourseSchema>;
+
+export const getCourseCurriculumSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type GetCourseCurriculumInput = z.infer<typeof getCourseCurriculumSchema>;
+
+export const createSectionSchema = z.object({
+  courseId: z.string().min(1),
+  title: z.string().trim().min(1, "Section title is required").max(200),
+  description: z.string().trim().max(2000).nullable().optional(),
+  openAt: z.coerce.date().nullable().optional(),
+  dueAt: z.coerce.date().nullable().optional(),
+});
+export type CreateSectionInput = z.infer<typeof createSectionSchema>;
 
 export const createCourseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(160),
