@@ -19,7 +19,7 @@ import {
   ReactNodeViewRenderer,
   mergeAttributes,
 } from "@tiptap/react";
-import { Link, Upload, X } from "lucide-react";
+import { Link, Play, Upload, X } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { cn } from "@sycom/ui/lib/utils";
 
@@ -71,32 +71,89 @@ export const VideoPlaceholder = Node.create<VideoPlaceholderOptions>({
   },
 });
 
+function fileBaseName(entry: FileWithPreview): string {
+  const f = entry.file;
+  return f instanceof File ? f.name : f.name;
+}
+
+function getYouTubeEmbedUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.replace(/^www\./, "");
+
+    if (hostname === "youtu.be") {
+      const videoId = parsedUrl.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+    }
+
+    if (hostname === "youtube-nocookie.com") {
+      if (parsedUrl.pathname.startsWith("/embed/")) {
+        const videoId = parsedUrl.pathname.split("/")[2];
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+    }
+
+    if (hostname === "youtube.com" || hostname === "m.youtube.com") {
+      if (parsedUrl.pathname === "/watch") {
+        const videoId = parsedUrl.searchParams.get("v");
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+
+      if (parsedUrl.pathname.startsWith("/embed/")) {
+        const videoId = parsedUrl.pathname.split("/")[2];
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+
+      if (parsedUrl.pathname.startsWith("/shorts/")) {
+        const videoId = parsedUrl.pathname.split("/")[2];
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function VideoPlaceholderComponent(props: NodeViewProps) {
   const { editor, selected, deleteNode, getPos } = props;
   const uploadInputId = useId();
-  const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
+  const [activeTab, setActiveTab] = useState<"upload" | "url" | "youtube">("upload");
   const [url, setUrl] = useState("");
+  const [youtubeUrl, setYouTubeUrl] = useState("");
   const [posterUrl, setPosterUrl] = useState("");
+  const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
   const [urlError, setUrlError] = useState(false);
+  const [youtubeUrlError, setYouTubeUrlError] = useState(false);
   const [pickedFile, setPickedFile] = useState<FileWithPreview | null>(null);
 
   const canEdit = useEditorEditable(editor);
 
-  const insertVideo = (attrs: { src: string; poster: string | null; caption: string }) => {
+  const insertVideo = (attrs: {
+    src: string;
+    poster: string | null;
+    title: string;
+    caption: string;
+    aspectRatio?: number | null;
+  }) => {
     const pos = getPos();
     if (typeof pos !== "number") return;
     replaceNodeAtPosition(editor, pos, "video", {
       src: attrs.src,
       poster: attrs.poster,
+      title: attrs.title,
       caption: attrs.caption,
       width: "100%",
       align: "center",
-      aspectRatio: null,
+      aspectRatio: attrs.aspectRatio ?? null,
     });
     setPickedFile(null);
     setUrl("");
+    setYouTubeUrl("");
     setPosterUrl("");
+    setTitle("");
     setCaption("");
   };
 
@@ -105,6 +162,7 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
     insertVideo({
       src: pickedFile.preview,
       poster: posterUrl.trim() && isValidUrl(posterUrl.trim()) ? posterUrl.trim() : null,
+      title: title.trim() || fileBaseName(pickedFile),
       caption: caption.trim(),
     });
   };
@@ -120,9 +178,28 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
       insertVideo({
         src: url,
         poster: posterUrl.trim() && isValidUrl(posterUrl.trim()) ? posterUrl.trim() : null,
+        title: title.trim(),
         caption: caption.trim(),
       });
     }
+  };
+
+  const handleInsertFromYouTube = (e: FormEvent) => {
+    e.preventDefault();
+
+    const embedUrl = getYouTubeEmbedUrl(youtubeUrl);
+    if (!embedUrl) {
+      setYouTubeUrlError(true);
+      return;
+    }
+
+    insertVideo({
+      src: embedUrl,
+      poster: null,
+      title: title.trim(),
+      caption: caption.trim(),
+      aspectRatio: 16 / 9,
+    });
   };
 
   return (
@@ -142,10 +219,10 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
 
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v === "url" ? "url" : "upload")}
+          onValueChange={(v) => setActiveTab(v === "url" || v === "youtube" ? v : "upload")}
           className="w-full"
         >
-          <TabsList className="isolate grid w-full grid-cols-2">
+          <TabsList className="isolate grid w-full grid-cols-3">
             <TabsTrigger
               value="upload"
               className="relative z-10 bg-transparent data-active:bg-background data-active:shadow-sm/5 dark:data-active:bg-input"
@@ -159,6 +236,13 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
             >
               <Link className="mr-2 h-4 w-4" />
               URL
+            </TabsTrigger>
+            <TabsTrigger
+              value="youtube"
+              className="relative z-10 bg-transparent data-active:bg-background data-active:shadow-sm/5 dark:data-active:bg-input"
+            >
+              <Play className="mr-2 h-4 w-4" />
+              YouTube
             </TabsTrigger>
           </TabsList>
 
@@ -178,6 +262,12 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
                 size="sm"
                 onChange={(e) => setPosterUrl(e.target.value)}
                 placeholder="Poster URL (optional)"
+              />
+              <Input
+                value={title}
+                size="sm"
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title (optional)"
               />
               <Input
                 value={caption}
@@ -216,6 +306,11 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
                 placeholder="Poster URL (optional)"
               />
               <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title (optional)"
+              />
+              <Input
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Caption (optional)"
@@ -227,6 +322,42 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
                 disabled={!url || !canEdit}
               >
                 Insert video
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="youtube">
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Input
+                  value={youtubeUrl}
+                  onChange={(e) => {
+                    setYouTubeUrl(e.target.value);
+                    if (youtubeUrlError) setYouTubeUrlError(false);
+                  }}
+                  placeholder="YouTube URL (https://youtube.com/watch?... or youtu.be/...)"
+                />
+                {youtubeUrlError ? (
+                  <p className="text-xs text-destructive">Please enter a valid YouTube URL</p>
+                ) : null}
+              </div>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title (optional)"
+              />
+              <Input
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder="Caption (optional)"
+              />
+              <Button
+                type="button"
+                onClick={handleInsertFromYouTube}
+                className="w-full"
+                disabled={!youtubeUrl || !canEdit}
+              >
+                Insert YouTube video
               </Button>
             </div>
           </TabsContent>

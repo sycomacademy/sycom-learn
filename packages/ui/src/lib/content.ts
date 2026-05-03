@@ -50,6 +50,16 @@ export const content = `
   </p>
   <img src="https://res.cloudinary.com/sham007/image/upload/v1737910103/ProfileImages/724shots_so.jpg" alt="Example image"
       width="100%" align="center" caption="SAAS landing page template" aspectratio="1.640340218712029" />
+  <figure data-tiptap-video>
+      <video
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+          title="Product walkthrough"
+          controls
+          preload="metadata"
+          style="max-width:100%"
+      ></video>
+      <figcaption>Embedded demo video</figcaption>
+  </figure>
   <p>
       You can also add links like
       <a target="_blank" rel="noopener noreferrer nofollow" href="https://ehtisham.vercel.app">this one</a>

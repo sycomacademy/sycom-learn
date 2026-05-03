@@ -134,7 +134,21 @@ function TiptapAudio(props: NodeViewProps) {
       )}
     >
       <div className="group overflow-hidden rounded-lg border bg-card shadow-sm">
-        {title ? <p className="border-b px-3 py-2 text-sm font-medium">{title}</p> : null}
+        <div className="flex items-center justify-between p-2 px-4">
+          <p className="text-sm font-medium">{title ? title : "Audio"}</p>
+          {canEdit ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-8 text-destructive"
+              aria-label="Delete audio"
+              onClick={() => deleteNode()}
+            >
+              <Trash className="size-4" />
+            </Button>
+          ) : null}
+        </div>
         <AudioPlayer className="w-full">
           <AudioPlayerContent src={node.attrs.src ?? undefined} preload="metadata" />
           <AudioPlayerControlBar className="flex flex-wrap items-center gap-0 border-t bg-background/95">
@@ -178,21 +192,6 @@ function TiptapAudio(props: NodeViewProps) {
         ) : caption ? (
           <p className="border-t py-2 text-center text-sm text-muted-foreground">{caption}</p>
         ) : null}
-
-        {canEdit && (
-          <div className="flex justify-end border-t p-1">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-8 text-destructive"
-              aria-label="Delete audio"
-              onClick={() => deleteNode()}
-            >
-              <Trash className="size-4" />
-            </Button>
-          </div>
-        )}
       </div>
     </NodeViewWrapper>
   );

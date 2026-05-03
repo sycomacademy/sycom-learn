@@ -109,13 +109,12 @@ export function RichTextEditorDemo({ className }: { className?: string }) {
         class: "max-w-full focus:outline-none",
       },
     },
-    onUpdate: ({ editor }) => {
-      // do what you want to do with output
-      // Update stats
-      // saving as text/json/hmtml
-      // const text = editor.getHTML();
-      console.log(editor.getText());
-    },
+    // onUpdate: ({ editor }) => {
+    //   // do what you want to do with output
+    //   // Update stats
+    //   // saving as text/json/hmtml
+    //   const _text = editor.getHTML();
+    // },
   });
 
   if (!editor) return null;

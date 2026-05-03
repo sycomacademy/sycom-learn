@@ -28,6 +28,22 @@ const variables = {
   "--media-range-track-background": "var(--border)",
 } as CSSProperties;
 
+const controlButtonClassName =
+  "p-2.5 [--media-icon-color:var(--foreground)] hover:[--media-icon-color:var(--accent-foreground)]";
+
+const timeDisplayClassName =
+  "p-2.5 [--media-text-color:var(--foreground)] hover:[--media-text-color:var(--accent-foreground)]";
+
+const rangeClassName = cn(
+  "p-2.5",
+  "[--media-range-bar-color:var(--foreground)]",
+  "[--media-range-thumb-background:var(--foreground)]",
+  "[--media-range-track-background:var(--border)]",
+  "hover:[--media-range-bar-color:var(--accent-foreground)]",
+  "hover:[--media-range-thumb-background:var(--accent-foreground)]",
+  "hover:[--media-range-track-background:color-mix(in oklab,var(--accent-foreground)_20%,transparent)]",
+);
+
 export const AudioPlayer = ({ style, ...props }: AudioPlayerProps) => (
   <MediaController
     audio
@@ -48,25 +64,25 @@ export const AudioPlayerControlBar = (props: AudioPlayerControlBarProps) => (
 export type AudioPlayerTimeRangeProps = ComponentProps<typeof MediaTimeRange>;
 
 export const AudioPlayerTimeRange = ({ className, ...props }: AudioPlayerTimeRangeProps) => (
-  <MediaTimeRange className={cn("p-2.5", className)} {...props} />
+  <MediaTimeRange className={cn(rangeClassName, className)} {...props} />
 );
 
 export type AudioPlayerTimeDisplayProps = ComponentProps<typeof MediaTimeDisplay>;
 
 export const AudioPlayerTimeDisplay = ({ className, ...props }: AudioPlayerTimeDisplayProps) => (
-  <MediaTimeDisplay className={cn("p-2.5", className)} {...props} />
+  <MediaTimeDisplay className={cn(timeDisplayClassName, className)} {...props} />
 );
 
 export type AudioPlayerVolumeRangeProps = ComponentProps<typeof MediaVolumeRange>;
 
 export const AudioPlayerVolumeRange = ({ className, ...props }: AudioPlayerVolumeRangeProps) => (
-  <MediaVolumeRange className={cn("p-2.5", className)} {...props} />
+  <MediaVolumeRange className={cn(rangeClassName, className)} {...props} />
 );
 
 export type AudioPlayerPlayButtonProps = ComponentProps<typeof MediaPlayButton>;
 
 export const AudioPlayerPlayButton = ({ className, ...props }: AudioPlayerPlayButtonProps) => (
-  <MediaPlayButton className={cn("p-2.5", className)} {...props} />
+  <MediaPlayButton className={cn(controlButtonClassName, className)} {...props} />
 );
 
 export type AudioPlayerSeekBackwardButtonProps = ComponentProps<typeof MediaSeekBackwardButton>;
@@ -75,7 +91,7 @@ export const AudioPlayerSeekBackwardButton = ({
   className,
   ...props
 }: AudioPlayerSeekBackwardButtonProps) => (
-  <MediaSeekBackwardButton className={cn("p-2.5", className)} {...props} />
+  <MediaSeekBackwardButton className={cn(controlButtonClassName, className)} {...props} />
 );
 
 export type AudioPlayerSeekForwardButtonProps = ComponentProps<typeof MediaSeekForwardButton>;
@@ -84,13 +100,13 @@ export const AudioPlayerSeekForwardButton = ({
   className,
   ...props
 }: AudioPlayerSeekForwardButtonProps) => (
-  <MediaSeekForwardButton className={cn("p-2.5", className)} {...props} />
+  <MediaSeekForwardButton className={cn(controlButtonClassName, className)} {...props} />
 );
 
 export type AudioPlayerMuteButtonProps = ComponentProps<typeof MediaMuteButton>;
 
 export const AudioPlayerMuteButton = ({ className, ...props }: AudioPlayerMuteButtonProps) => (
-  <MediaMuteButton className={cn("p-2.5", className)} {...props} />
+  <MediaMuteButton className={cn(controlButtonClassName, className)} {...props} />
 );
 
 export type AudioPlayerContentProps = ComponentProps<"audio">;

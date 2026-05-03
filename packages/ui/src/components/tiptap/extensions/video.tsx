@@ -28,9 +28,52 @@ import {
 } from "@sycom/ui/components/kibo-ui/video-player";
 import { cn } from "@sycom/ui/lib/utils";
 
+function getYouTubeEmbedUrl(url: string | null | undefined) {
+  if (!url) return null;
+
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.replace(/^www\./, "");
+
+    if (hostname === "youtu.be") {
+      const videoId = parsedUrl.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+    }
+
+    if (hostname === "youtube-nocookie.com") {
+      if (parsedUrl.pathname.startsWith("/embed/")) {
+        const videoId = parsedUrl.pathname.split("/")[2];
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+    }
+
+    if (hostname === "youtube.com" || hostname === "m.youtube.com") {
+      if (parsedUrl.pathname === "/watch") {
+        const videoId = parsedUrl.searchParams.get("v");
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+
+      if (parsedUrl.pathname.startsWith("/embed/")) {
+        const videoId = parsedUrl.pathname.split("/")[2];
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+
+      if (parsedUrl.pathname.startsWith("/shorts/")) {
+        const videoId = parsedUrl.pathname.split("/")[2];
+        return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 export type VideoAttrs = {
   src: string | null;
   poster: string | null;
+  title: string;
   caption: string;
   width: string;
   align: "left" | "center" | "right";
@@ -55,6 +98,7 @@ export const VideoExtension = Node.create({
     return {
       src: { default: null },
       poster: { default: null },
+      title: { default: "" },
       caption: { default: "" },
       width: { default: "100%" },
       align: { default: "center" },
@@ -66,15 +110,65 @@ export const VideoExtension = Node.create({
     return [
       {
         tag: "figure[data-tiptap-video]",
+        getAttrs: (element) => {
+          if (typeof element === "string") return false;
+          const figure = element as HTMLElement;
+          const video = figure.querySelector("video");
+          const iframe = figure.querySelector("iframe");
+          const caption = figure.querySelector("figcaption")?.textContent?.trim() ?? "";
+
+          if (video) {
+            return {
+              src: video.getAttribute("src"),
+              poster: video.getAttribute("poster"),
+              title: video.getAttribute("title") ?? "",
+              caption,
+            };
+          }
+
+          if (iframe) {
+            return {
+              src: iframe.getAttribute("src"),
+              poster: null,
+              title: iframe.getAttribute("title") ?? "",
+              caption,
+              aspectRatio: 16 / 9,
+            };
+          }
+
+          return false;
+        },
       },
       {
         tag: "video[src]",
         getAttrs: (element) => {
           if (typeof element === "string") return false;
           const el = element as HTMLVideoElement;
+          const caption =
+            el.closest("figure")?.querySelector("figcaption")?.textContent?.trim() ?? "";
+
           return {
             src: el.getAttribute("src"),
             poster: el.getAttribute("poster"),
+            title: el.getAttribute("title") ?? "",
+            caption,
+          };
+        },
+      },
+      {
+        tag: "iframe[src*='youtube.com'], iframe[src*='youtube-nocookie.com']",
+        getAttrs: (element) => {
+          if (typeof element === "string") return false;
+          const el = element as HTMLIFrameElement;
+          const caption =
+            el.closest("figure")?.querySelector("figcaption")?.textContent?.trim() ?? "";
+
+          return {
+            src: el.getAttribute("src"),
+            poster: null,
+            title: el.getAttribute("title") ?? "",
+            caption,
+            aspectRatio: 16 / 9,
           };
         },
       },
@@ -83,16 +177,32 @@ export const VideoExtension = Node.create({
 
   renderHTML({ node, HTMLAttributes }) {
     const caption = ((node.attrs.caption as string) ?? "").trim();
-    const videoSpec = [
-      "video",
-      {
-        src: node.attrs.src ?? undefined,
-        poster: node.attrs.poster ?? undefined,
-        controls: true,
-        preload: "metadata",
-        style: `max-width:${node.attrs.width as string}`,
-      },
-    ] as const;
+    const title = ((node.attrs.title as string) ?? "").trim();
+    const embedUrl = getYouTubeEmbedUrl(node.attrs.src as string | null | undefined);
+    const videoSpec = embedUrl
+      ? ([
+          "iframe",
+          {
+            src: embedUrl,
+            title: title || "YouTube video",
+            allow:
+              "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+            allowfullscreen: "true",
+            referrerpolicy: "strict-origin-when-cross-origin",
+            style: `width:100%;aspect-ratio:${String(node.attrs.aspectRatio ?? 16 / 9)};`,
+          },
+        ] as const)
+      : ([
+          "video",
+          {
+            src: node.attrs.src ?? undefined,
+            poster: node.attrs.poster ?? undefined,
+            controls: true,
+            preload: "metadata",
+            style: `max-width:${node.attrs.width as string}`,
+            ...(title ? { title } : {}),
+          },
+        ] as const);
     if (caption) {
       return [
         "figure",
@@ -118,6 +228,7 @@ export const VideoExtension = Node.create({
             attrs: {
               src: attrs.src ?? null,
               poster: attrs.poster ?? null,
+              title: attrs.title ?? "",
               caption: attrs.caption ?? "",
               width: attrs.width ?? "100%",
               align: attrs.align ?? "center",
@@ -134,6 +245,10 @@ function TiptapVideo(props: NodeViewProps) {
   const [editingCaption, setEditingCaption] = useState(false);
   const [caption, setCaption] = useState((node.attrs.caption as string) || "");
   const canEdit = useEditorEditable(editor);
+  const title = (node.attrs.title as string) || "";
+  const src = node.attrs.src as string | null;
+  const embedUrl = getYouTubeEmbedUrl(src);
+  const aspectRatio = Number(node.attrs.aspectRatio) || 16 / 9;
 
   return (
     <NodeViewWrapper
@@ -147,31 +262,61 @@ function TiptapVideo(props: NodeViewProps) {
       style={{ width: node.attrs.width as string }}
     >
       <div className="group overflow-hidden rounded-lg border bg-card shadow-sm">
-        <VideoPlayer className="w-full">
-          <VideoPlayerContent
-            src={node.attrs.src ?? undefined}
-            poster={node.attrs.poster ?? undefined}
-            playsInline
-            preload="metadata"
-            onLoadedMetadata={(e) => {
-              const video = e.currentTarget;
-              if (video.videoWidth > 0 && video.videoHeight > 0) {
-                updateAttributes({
-                  aspectRatio: video.videoWidth / video.videoHeight,
-                });
-              }
-            }}
-          />
-          <VideoPlayerControlBar className="flex flex-wrap items-center gap-0 border-t bg-background/95">
-            <VideoPlayerPlayButton />
-            <VideoPlayerSeekBackwardButton />
-            <VideoPlayerSeekForwardButton />
-            <VideoPlayerTimeRange className="min-w-[120px] flex-1" />
-            <VideoPlayerTimeDisplay showDuration />
-            <VideoPlayerMuteButton />
-            <VideoPlayerVolumeRange />
-          </VideoPlayerControlBar>
-        </VideoPlayer>
+        <div className="flex items-center justify-between p-2 px-4">
+          <p className="text-sm font-medium">{title ? title : "Video"}</p>
+          {canEdit ? (
+            <Button
+              aria-label="Delete video"
+              className="h-8 text-destructive"
+              onClick={() => deleteNode()}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <Trash className="size-4" />
+            </Button>
+          ) : null}
+        </div>
+        {embedUrl ? (
+          <div className="border-t bg-black">
+            <iframe
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              aria-label={title || "YouTube video"}
+              className="w-full"
+              referrerPolicy="strict-origin-when-cross-origin"
+              src={embedUrl}
+              style={{ aspectRatio: String(aspectRatio) }}
+              title="YouTube video player"
+            />
+          </div>
+        ) : (
+          <VideoPlayer className="w-full">
+            <VideoPlayerContent
+              src={src ?? undefined}
+              poster={node.attrs.poster ?? undefined}
+              playsInline
+              preload="metadata"
+              onLoadedMetadata={(e) => {
+                const video = e.currentTarget;
+                if (video.videoWidth > 0 && video.videoHeight > 0) {
+                  updateAttributes({
+                    aspectRatio: video.videoWidth / video.videoHeight,
+                  });
+                }
+              }}
+            />
+            <VideoPlayerControlBar className="flex flex-wrap items-center gap-0 border-t bg-background/95">
+              <VideoPlayerPlayButton />
+              <VideoPlayerSeekBackwardButton />
+              <VideoPlayerSeekForwardButton />
+              <VideoPlayerTimeRange className="min-w-[120px] flex-1" />
+              <VideoPlayerTimeDisplay showDuration />
+              <VideoPlayerMuteButton />
+              <VideoPlayerVolumeRange />
+            </VideoPlayerControlBar>
+          </VideoPlayer>
+        )}
 
         {canEdit ? (
           editingCaption ? (
@@ -203,21 +348,6 @@ function TiptapVideo(props: NodeViewProps) {
         ) : caption ? (
           <p className="border-t py-2 text-center text-sm text-muted-foreground">{caption}</p>
         ) : null}
-
-        {canEdit && (
-          <div className="flex justify-end border-t p-1">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-8 text-destructive"
-              aria-label="Delete video"
-              onClick={() => deleteNode()}
-            >
-              <Trash className="size-4" />
-            </Button>
-          </div>
-        )}
       </div>
     </NodeViewWrapper>
   );
