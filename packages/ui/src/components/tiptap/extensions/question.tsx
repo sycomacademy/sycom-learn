@@ -4,7 +4,7 @@ import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable"
 import { Button } from "@sycom/components/ui/button";
 import { Checkbox } from "@sycom/components/ui/checkbox";
 import { Input } from "@sycom/components/ui/input";
-import { FieldLabel } from "@sycom/components/ui/field";
+import { Field, FieldLabel } from "@sycom/components/ui/field";
 import {
   useQuestionTracking,
   type QuestionStatus,
@@ -231,19 +231,18 @@ function QuestionNodeView(props: NodeViewProps) {
           Question block
         </div>
         <div className="space-y-3">
-          <div>
+          <Field className="w-full gap-1">
             <FieldLabel className="text-xs">Prompt</FieldLabel>
             <Input
               value={prompt}
               onChange={(e) => updateAttributes({ prompt: e.target.value })}
               placeholder="Ask something…"
-              className="mt-1"
             />
-          </div>
-          <div>
+          </Field>
+          <Field className="w-full gap-1">
             <FieldLabel className="text-xs">Type</FieldLabel>
             <select
-              className="mt-1 flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs/5"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs/5"
               value={type}
               onChange={(e) => {
                 const next = e.target.value === "multi" ? "multi" : "single";
@@ -259,50 +258,51 @@ function QuestionNodeView(props: NodeViewProps) {
               <option value="single">One correct answer</option>
               <option value="multi">Multiple correct answers</option>
             </select>
-          </div>
-          <div className="space-y-2">
+          </Field>
+          <Field className="w-full gap-1">
             <FieldLabel className="text-xs">Options</FieldLabel>
-            {options.map((opt) => (
-              <div key={opt.id} className="flex flex-wrap items-center gap-2">
-                <Input
-                  value={opt.text}
-                  onChange={(e) => handleSetOptionText(opt.id, e.target.value)}
-                  className="min-w-[12rem] flex-1"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={opt.isCorrect ? "default" : "outline"}
-                  onClick={() => handleToggleCorrect(opt.id)}
-                >
-                  {type === "single" ? "Correct" : "Correct?"}
-                </Button>
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  disabled={options.length <= 2}
-                  aria-label="Remove option"
-                  onClick={() => removeOption(opt.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))}
-            <Button type="button" size="sm" variant="outline" onClick={addOption}>
-              <Plus className="mr-1 size-4" />
-              Add option
-            </Button>
-          </div>
-          <div>
+            <div className="w-full space-y-2">
+              {options.map((opt) => (
+                <div key={opt.id} className="flex flex-wrap items-center gap-2">
+                  <Input
+                    value={opt.text}
+                    onChange={(e) => handleSetOptionText(opt.id, e.target.value)}
+                    className="min-w-48 flex-1"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={opt.isCorrect ? "default" : "outline"}
+                    onClick={() => handleToggleCorrect(opt.id)}
+                  >
+                    {type === "single" ? "Correct" : "Correct?"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    disabled={options.length <= 2}
+                    aria-label="Remove option"
+                    onClick={() => removeOption(opt.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" size="sm" variant="outline" onClick={addOption}>
+                <Plus className="mr-1 size-4" />
+                Add option
+              </Button>
+            </div>
+          </Field>
+          <Field className="w-full gap-1">
             <FieldLabel className="text-xs">Explanation (shown after submit)</FieldLabel>
             <Input
               value={explanation}
               onChange={(e) => updateAttributes({ explanation: e.target.value })}
               placeholder="Optional"
-              className="mt-1"
             />
-          </div>
+          </Field>
         </div>
       </NodeViewWrapper>
     );

@@ -15,7 +15,7 @@ import { content as demoHtmlContent } from "@sycom/lib/content";
 import type { FullPresetCheckAnswerFn } from "@sycom/components/tiptap/extensions/editor-preset-types";
 import type { Content, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { EditorToolbar } from "./toolbars/editor-toolbar";
 import { LightweightEditorToolbar } from "./toolbars/lightweight-toolbar";
@@ -45,6 +45,13 @@ export function RichTextEditor({
   contentClassName,
   showAdvancedChrome = true,
 }: RichTextEditorProps) {
+  const [viewOnly, setViewOnly] = useState(false);
+  const editorEditable = editable && !viewOnly;
+
+  useEffect(() => {
+    if (!editable) setViewOnly(false);
+  }, [editable]);
+
   const extensions = useMemo(() => {
     if (mode === "lightweight") {
       return getLightweightExtensions();
@@ -59,7 +66,7 @@ export function RichTextEditor({
     immediatelyRender: false,
     extensions,
     content: content === null ? "" : (content ?? undefined),
-    editable,
+    editable: editorEditable,
     editorProps: {
       attributes: {
         class: cn("max-w-full focus:outline-none", contentClassName),
@@ -72,8 +79,8 @@ export function RichTextEditor({
 
   useEffect(() => {
     if (!editor) return;
-    editor.setEditable(editable);
-  }, [editor, editable]);
+    editor.setEditable(editorEditable);
+  }, [editor, editorEditable]);
 
   useEffect(() => {
     if (!editor || content === undefined) return;
@@ -99,7 +106,10 @@ export function RichTextEditor({
       {mode === "lightweight" ? (
         <LightweightEditorToolbar editor={editor} />
       ) : (
-        <EditorToolbar editor={editor} />
+        <EditorToolbar
+          editor={editor}
+          viewOnlyToggle={editable ? { viewOnly, onViewOnlyChange: setViewOnly } : undefined}
+        />
       )}
       {mode === "full" && showAdvancedChrome ? (
         <>

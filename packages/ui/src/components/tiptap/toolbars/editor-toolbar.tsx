@@ -18,14 +18,22 @@ import { OrderedListToolbar } from "./ordered-list";
 import { HorizontalRuleToolbar } from "./horizontal-rule";
 import { AlignmentTooolbar } from "./alignment";
 import { MediaToolbar } from "./media";
+import { QuestionToolbar } from "./question";
 import { TableToolbar } from "./table";
 import { ColorHighlightToolbar } from "./color-and-highlight";
 import { SearchAndReplaceToolbar } from "./search-and-replace-toolbar";
 import { CodeBlockToolbar } from "./code-block";
 import { ExportToolbar } from "./export";
 import { ImportToolbar } from "./import";
+import { ViewOnlyToolbar } from "./view-only-toolbar";
 
-export const EditorToolbar = ({ editor }: { editor: Editor }) => {
+export type EditorToolbarProps = {
+  editor: Editor;
+  /** When set, shows a trailing “View only” toggle that does not replace the consumer’s `editable` prop — combine in the parent. */
+  viewOnlyToggle?: { viewOnly: boolean; onViewOnlyChange: (viewOnly: boolean) => void };
+};
+
+export const EditorToolbar = ({ editor, viewOnlyToggle }: EditorToolbarProps) => {
   return (
     <div className="sticky top-0 z-20 hidden w-full border-b border-border/80 bg-background/85 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-background/75 sm:block">
       <ToolbarProvider editor={editor}>
@@ -65,6 +73,7 @@ export const EditorToolbar = ({ editor }: { editor: Editor }) => {
 
                 {/* Media & Styling Group */}
                 <MediaToolbar />
+                <QuestionToolbar />
                 <TableToolbar />
                 <ColorHighlightToolbar />
                 <Separator orientation="vertical" className="mx-1 h-7" />
@@ -76,6 +85,15 @@ export const EditorToolbar = ({ editor }: { editor: Editor }) => {
                 <Separator orientation="vertical" className="mx-1 h-7" />
                 <ImportToolbar />
                 <ExportToolbar />
+                {viewOnlyToggle ? (
+                  <>
+                    <Separator orientation="vertical" className="mx-1 h-7" />
+                    <ViewOnlyToolbar
+                      onViewOnlyChange={viewOnlyToggle.onViewOnlyChange}
+                      viewOnly={viewOnlyToggle.viewOnly}
+                    />
+                  </>
+                ) : null}
               </div>
             </div>
             <ScrollBar className="hidden" orientation="horizontal" />
