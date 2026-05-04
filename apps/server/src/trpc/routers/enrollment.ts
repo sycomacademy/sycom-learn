@@ -1,21 +1,30 @@
 import {
   createEnrollment,
   getCourseById,
+  getCourseEnrollmentDetail,
   getEnrollmentProgressSummary,
   getLessonWithCourseId,
+  listCourseEnrollments,
   markLessonCompleted,
   markLessonStarted,
+  removeEnrollment,
   submitLessonAttempt,
 } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 
 import { protectedProcedure, router } from "../init";
-import { assertCanReadPublicCourse } from "../lib/public-course-access";
+import {
+  assertCanReadPublicCourse,
+  assertCanUpdatePublicCourse,
+} from "../lib/public-course-access";
 import {
   enrollInCourseInputSchema,
+  getCourseEnrollmentDetailSchema,
   getMyCourseProgressInputSchema,
+  listCourseEnrollmentsSchema,
   markLessonCompletedInputSchema,
   markLessonStartedInputSchema,
+  removeCourseEnrollmentSchema,
   submitLessonAttemptInputSchema,
 } from "../schemas";
 import { platformPermissionMiddleware } from "../middleware/permissions";
@@ -32,6 +41,55 @@ function assertReadableCourseOrThrow(
 }
 
 export const enrollmentRouter = router({
+  listByCourse: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(listCourseEnrollmentsSchema)
+    .query(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      return await listCourseEnrollments(ctx.db, input);
+    }),
+
+  getEnrollmentDetail: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(getCourseEnrollmentDetailSchema)
+    .query(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      const row = await getCourseEnrollmentDetail(ctx.db, input);
+      if (!row) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Enrollment not found" });
+      }
+
+      return row;
+    }),
+
+  removeEnrollment: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(removeCourseEnrollmentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      const deleted = await removeEnrollment(ctx.db, { enrollmentId: input.enrollmentId });
+      if (!deleted || deleted.courseId !== input.courseId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Enrollment not found" });
+      }
+
+      return { success: true };
+    }),
+
   enroll: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["read"] }))
     .input(enrollInCourseInputSchema)

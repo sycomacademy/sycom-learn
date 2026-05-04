@@ -1,5 +1,6 @@
 import {
   addCourseInstructor,
+  countCourseCoInstructors,
   createSection,
   createCategory,
   createCourse,
@@ -9,7 +10,10 @@ import {
   getCourseCurriculum,
   getCourseById,
   getSectionById,
+  listAvailableCourseCoInstructors,
   listCategories,
+  listCourseCoInstructors,
+  listSeededCourseOrganizations,
   listCourses,
   recordApplicationAuditEvent,
   removeCourseInstructor,
@@ -33,6 +37,7 @@ import { auditRequestMeta } from "../lib/request-audit";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 import {
   addCourseInstructorSchema,
+  addCourseCoInstructorSchema,
   createSectionSchema,
   createAdminCategorySchema,
   createCourseSchema,
@@ -41,8 +46,12 @@ import {
   deleteCourseSchema,
   getCourseSchema,
   getCourseCurriculumSchema,
+  listAvailableCourseCoInstructorsSchema,
   listAdminCategoriesSchema,
+  listCourseCoInstructorsSchema,
+  listSeededCourseOrganizationsSchema,
   listCoursesSchema,
+  removeCourseCoInstructorSchema,
   removeCourseInstructorSchema,
   saveCurriculumOrderSchema,
   seedAdminCourseSchema,
@@ -361,6 +370,99 @@ export const courseRouter = router({
     }),
 
   // ---- Instructors ----
+  listCoInstructors: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(listCourseCoInstructorsSchema)
+    .query(async ({ ctx, input }) => {
+      const existing = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!existing || existing.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, existing);
+
+      return await listCourseCoInstructors(ctx.db, input);
+    }),
+
+  addCoInstructor: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(addCourseCoInstructorSchema)
+    .mutation(async ({ ctx, input }) => {
+      const existing = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!existing || existing.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, existing);
+
+      if (existing.createdBy === input.userId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "The main instructor is already assigned",
+        });
+      }
+
+      const coInstructorCount = await countCourseCoInstructors(ctx.db, {
+        courseId: input.courseId,
+      });
+      if (coInstructorCount >= 3) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A course can have at most 3 co-instructors",
+        });
+      }
+
+      await addCourseInstructor(ctx.db, {
+        courseId: input.courseId,
+        userId: input.userId,
+        role: "secondary",
+        addedBy: ctx.session.user.id,
+      });
+
+      return { success: true };
+    }),
+
+  removeCoInstructor: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(removeCourseCoInstructorSchema)
+    .mutation(async ({ ctx, input }) => {
+      const existing = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!existing || existing.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, existing);
+
+      await removeCourseInstructor(ctx.db, input);
+      return { success: true };
+    }),
+
+  listAvailableCoInstructors: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(listAvailableCourseCoInstructorsSchema)
+    .query(async ({ ctx, input }) => {
+      const existing = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!existing || existing.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, existing);
+
+      return await listAvailableCourseCoInstructors(ctx.db, {
+        ...input,
+        roles: ["platform_admin", "content_creator"],
+      });
+    }),
+
+  listSeededOrganizations: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(listSeededCourseOrganizationsSchema)
+    .query(async ({ ctx, input }) => {
+      const existing = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!existing || existing.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, existing);
+
+      return await listSeededCourseOrganizations(ctx.db, input);
+    }),
+
   addInstructor: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["update"] }))
     .input(addCourseInstructorSchema)

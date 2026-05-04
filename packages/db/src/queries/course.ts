@@ -63,6 +63,43 @@ export type ListCoursesResult = {
   totalCount: number;
 };
 
+export type CourseInstructorMemberRow = {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: InstructorRole;
+  addedAt: Date;
+};
+
+export type AvailableCoInstructorRow = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: UserRole | null;
+};
+
+export type ListAvailableCoInstructorsResult = {
+  rows: AvailableCoInstructorRow[];
+  totalCount: number;
+};
+
+export type SeededOrganizationUsageRow = {
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  organizationLogo: string | null;
+  seededCourseId: string;
+  seededCourseTitle: string;
+  seededAt: Date;
+};
+
+export type ListSeededOrganizationUsageResult = {
+  rows: SeededOrganizationUsageRow[];
+  totalCount: number;
+};
+
 export type CourseSectionPreview = {
   id: string;
   title: string;
@@ -620,6 +657,155 @@ export async function removeCourseInstructor(
     .where(
       and(eq(courseInstructor.courseId, input.courseId), eq(courseInstructor.userId, input.userId)),
     );
+}
+
+export async function listCourseCoInstructors(
+  database: Database,
+  input: { courseId: string },
+): Promise<CourseInstructorMemberRow[]> {
+  const [creatorRows, coInstructorRows] = await Promise.all([
+    database
+      .select({
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: sql<InstructorRole>`'main'`,
+        addedAt: course.createdAt,
+      })
+      .from(course)
+      .innerJoin(user, eq(user.id, course.createdBy))
+      .where(eq(course.id, input.courseId))
+      .limit(1),
+    database
+      .select({
+        userId: courseInstructor.userId,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: courseInstructor.role,
+        addedAt: courseInstructor.createdAt,
+      })
+      .from(courseInstructor)
+      .innerJoin(user, eq(user.id, courseInstructor.userId))
+      .where(eq(courseInstructor.courseId, input.courseId))
+      .orderBy(asc(courseInstructor.createdAt), asc(user.name)),
+  ]);
+
+  return [...creatorRows, ...coInstructorRows];
+}
+
+export async function countCourseCoInstructors(
+  database: Database,
+  input: { courseId: string },
+): Promise<number> {
+  const [row] = await database
+    .select({ value: count() })
+    .from(courseInstructor)
+    .where(eq(courseInstructor.courseId, input.courseId));
+
+  return row?.value ?? 0;
+}
+
+export async function listAvailableCourseCoInstructors(
+  database: Database,
+  input: { courseId: string; search?: string; limit: number; offset: number; roles: UserRole[] },
+): Promise<ListAvailableCoInstructorsResult> {
+  const filters: SQL[] = [inArray(user.role, input.roles)];
+
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(user.name, pattern), ilike(user.email, pattern));
+    if (expr) filters.push(expr);
+  }
+
+  filters.push(
+    sql`not exists (
+      select 1
+      from ${courseInstructor}
+      where ${courseInstructor.courseId} = ${input.courseId}
+        and ${courseInstructor.userId} = ${user.id}
+    )`,
+  );
+  filters.push(
+    sql`not exists (
+      select 1
+      from ${course}
+      where ${course.id} = ${input.courseId}
+        and ${course.createdBy} = ${user.id}
+    )`,
+  );
+
+  const where = and(...filters);
+
+  const [rows, totalRow] = await Promise.all([
+    database
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: user.role,
+      })
+      .from(user)
+      .where(where)
+      .orderBy(asc(user.name), asc(user.email))
+      .limit(input.limit)
+      .offset(input.offset),
+    database.select({ value: count() }).from(user).where(where),
+  ]);
+
+  return {
+    rows,
+    totalCount: totalRow[0]?.value ?? 0,
+  };
+}
+
+export async function listSeededCourseOrganizations(
+  database: Database,
+  input: { courseId: string; search?: string; limit: number; offset: number },
+): Promise<ListSeededOrganizationUsageResult> {
+  const filters: SQL[] = [
+    eq(course.sourceCourseId, input.courseId),
+    eq(course.organizationId, organization.id),
+  ];
+
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(organization.name, pattern), ilike(organization.slug, pattern));
+    if (expr) filters.push(expr);
+  }
+
+  const where = and(...filters);
+
+  const [rows, totalRow] = await Promise.all([
+    database
+      .select({
+        organizationId: organization.id,
+        organizationName: organization.name,
+        organizationSlug: organization.slug,
+        organizationLogo: organization.logo,
+        seededCourseId: course.id,
+        seededCourseTitle: course.title,
+        seededAt: course.createdAt,
+      })
+      .from(course)
+      .innerJoin(organization, eq(course.organizationId, organization.id))
+      .where(where)
+      .orderBy(desc(course.createdAt), asc(organization.name))
+      .limit(input.limit)
+      .offset(input.offset),
+    database
+      .select({ value: count() })
+      .from(course)
+      .innerJoin(organization, eq(course.organizationId, organization.id))
+      .where(where),
+  ]);
+
+  return {
+    rows,
+    totalCount: totalRow[0]?.value ?? 0,
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -488,6 +488,26 @@ export const submitLessonAttemptInputSchema = z.object({
 });
 export type SubmitLessonAttemptInput = z.infer<typeof submitLessonAttemptInputSchema>;
 
+export const listCourseEnrollmentsSchema = z.object({
+  courseId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+});
+export type ListCourseEnrollmentsInput = z.infer<typeof listCourseEnrollmentsSchema>;
+
+export const getCourseEnrollmentDetailSchema = z.object({
+  courseId: z.string().min(1),
+  enrollmentId: z.string().min(1),
+});
+export type GetCourseEnrollmentDetailInput = z.infer<typeof getCourseEnrollmentDetailSchema>;
+
+export const removeCourseEnrollmentSchema = z.object({
+  courseId: z.string().min(1),
+  enrollmentId: z.string().min(1),
+});
+export type RemoveCourseEnrollmentInput = z.infer<typeof removeCourseEnrollmentSchema>;
+
 // course (platform-owned courses UI + taxonomy)
 const courseSlugSchema = z
   .string()
@@ -520,6 +540,43 @@ export const getCourseCurriculumSchema = z.object({
   courseId: z.string().min(1),
 });
 export type GetCourseCurriculumInput = z.infer<typeof getCourseCurriculumSchema>;
+
+export const listCourseCoInstructorsSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type ListCourseCoInstructorsInput = z.infer<typeof listCourseCoInstructorsSchema>;
+
+export const addCourseCoInstructorSchema = z.object({
+  courseId: z.string().min(1),
+  userId: z.string().min(1),
+});
+export type AddCourseCoInstructorInput = z.infer<typeof addCourseCoInstructorSchema>;
+
+export const removeCourseCoInstructorSchema = z.object({
+  courseId: z.string().min(1),
+  userId: z.string().min(1),
+});
+export type RemoveCourseCoInstructorInput = z.infer<typeof removeCourseCoInstructorSchema>;
+
+export const listAvailableCourseCoInstructorsSchema = z.object({
+  courseId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+});
+export type ListAvailableCourseCoInstructorsInput = z.infer<
+  typeof listAvailableCourseCoInstructorsSchema
+>;
+
+export const listSeededCourseOrganizationsSchema = z.object({
+  courseId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+});
+export type ListSeededCourseOrganizationsInput = z.infer<
+  typeof listSeededCourseOrganizationsSchema
+>;
 
 export const createSectionSchema = z.object({
   courseId: z.string().min(1),

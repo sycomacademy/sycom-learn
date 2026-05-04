@@ -15,7 +15,7 @@ import { content as demoHtmlContent } from "@sycom/lib/content";
 import type { FullPresetCheckAnswerFn } from "@sycom/components/tiptap/extensions/editor-preset-types";
 import type { Content, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { EditorToolbar } from "./toolbars/editor-toolbar";
 import { LightweightEditorToolbar } from "./toolbars/lightweight-toolbar";
@@ -59,15 +59,39 @@ export function RichTextEditor({
     if (!editable) setViewOnly(false);
   }, [editable]);
 
+  const onUploadRef = useRef(onUpload);
+  const onCheckAnswerRef = useRef(onCheckAnswer);
+  onUploadRef.current = onUpload;
+  onCheckAnswerRef.current = onCheckAnswer;
+
+  const hasUploadCallback = Boolean(onUpload);
+  const hasCheckAnswerCallback = Boolean(onCheckAnswer);
+
   const extensions = useMemo(() => {
     if (mode === "lightweight") {
       return getLightweightExtensions();
     }
     const opts: GetFullExtensionsOptions = {};
-    if (onUpload) opts.onUpload = onUpload;
-    if (onCheckAnswer) opts.onCheckAnswer = onCheckAnswer;
+    if (hasUploadCallback) {
+      opts.onUpload = async (file) => {
+        const fn = onUploadRef.current;
+        if (!fn) {
+          throw new Error("RichTextEditor: upload handler was removed unexpectedly");
+        }
+        return fn(file);
+      };
+    }
+    if (hasCheckAnswerCallback) {
+      opts.onCheckAnswer = async (args) => {
+        const fn = onCheckAnswerRef.current;
+        if (!fn) {
+          return { isCorrect: false };
+        }
+        return fn(args);
+      };
+    }
     return getFullExtensions(opts);
-  }, [mode, onUpload, onCheckAnswer]);
+  }, [mode, hasUploadCallback, hasCheckAnswerCallback]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -116,15 +140,19 @@ export function RichTextEditor({
         className,
       )}
     >
-      {mode === "lightweight" ? (
-        <LightweightEditorToolbar editor={editor} />
-      ) : (
-        <EditorToolbar
-          editor={editor}
-          viewOnlyToggle={editable ? { viewOnly, onViewOnlyChange: setViewOnly } : undefined}
-        />
+      {editable && (
+        <>
+          {mode === "lightweight" ? (
+            <LightweightEditorToolbar editor={editor} />
+          ) : (
+            <EditorToolbar
+              editor={editor}
+              viewOnlyToggle={{ viewOnly, onViewOnlyChange: setViewOnly }}
+            />
+          )}
+        </>
       )}
-      {mode === "full" && showAdvancedChrome ? (
+      {mode === "full" && editable && showAdvancedChrome ? (
         <>
           <FloatingToolbar editor={editor} />
           <TableBubbleMenu editor={editor} />

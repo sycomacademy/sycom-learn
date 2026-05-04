@@ -39,12 +39,13 @@ function getActiveCourseTab(pathname: string, courseId: string): CourseDetailTab
   if (normalized === `${base}/members`) {
     return "/dashboard/course/$courseId/members";
   }
-  if (normalized === `${base}/announcements`) {
-    return "/dashboard/course/$courseId/announcements";
-  }
   if (normalized === `${base}/analytics`) {
     return "/dashboard/course/$courseId/analytics";
   }
+  if (normalized === `${base}/announcements`) {
+    return "/dashboard/course/$courseId/announcements";
+  }
+
   if (normalized === `${base}/certificates`) {
     return "/dashboard/course/$courseId/certificates";
   }
@@ -131,17 +132,17 @@ function CourseDetailLayout() {
           </TabsTab>
           <TabsTab
             nativeButton={false}
-            render={<Link params={{ courseId }} to="/dashboard/course/$courseId/announcements" />}
-            value="/dashboard/course/$courseId/announcements"
-          >
-            Announcements
-          </TabsTab>
-          <TabsTab
-            nativeButton={false}
             render={<Link params={{ courseId }} to="/dashboard/course/$courseId/analytics" />}
             value="/dashboard/course/$courseId/analytics"
           >
             Analytics
+          </TabsTab>
+          <TabsTab
+            nativeButton={false}
+            render={<Link params={{ courseId }} to="/dashboard/course/$courseId/announcements" />}
+            value="/dashboard/course/$courseId/announcements"
+          >
+            Announcements
           </TabsTab>
           <TabsTab
             nativeButton={false}

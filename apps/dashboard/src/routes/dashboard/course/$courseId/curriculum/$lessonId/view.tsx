@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
 import { Button } from "@sycom/ui/components/button";
-import { Card, CardPanel, CardDescription, CardHeader, CardTitle } from "@sycom/ui/components/card";
+import { Card, CardPanel, CardHeader, CardTitle } from "@sycom/ui/components/card";
 import {
   QuestionTrackingProvider,
   RichTextEditor,
@@ -64,9 +64,6 @@ function LessonViewPage() {
       <Card>
         <CardHeader>
           <CardTitle>{lesson.title}</CardTitle>
-          <CardDescription>
-            Learner preview. Question blocks require correct answers to continue.
-          </CardDescription>
         </CardHeader>
         <CardPanel className="space-y-4 p-0">
           <QuestionTrackingProvider>

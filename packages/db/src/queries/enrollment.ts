@@ -1,4 +1,4 @@
-import { and, asc, count, eq, max } from "drizzle-orm";
+import { and, asc, count, eq, ilike, max, or, sql, type SQL } from "drizzle-orm";
 
 import type { Database } from "..";
 import {
@@ -9,6 +9,8 @@ import {
   type LessonProgressStatus,
 } from "../schema/enrollment";
 import { lesson, section, type LessonType } from "../schema/course";
+import { user } from "../schema/auth";
+import { profile } from "../schema/profile";
 import { getQuestionDefinitionsFromContent } from "./lesson";
 
 type EnrollmentLessonProgress = {
@@ -33,6 +35,43 @@ export type EnrollmentProgressSummary = {
   status: string;
   completedAt: Date | null;
   certificateId: string | null;
+  lessons: EnrollmentLessonProgress[];
+};
+
+export type CourseEnrollmentRow = {
+  enrollmentId: string;
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  bio: string | null;
+  status: string;
+  completedLessonCount: number;
+  totalLessonCount: number;
+  lastActivityAt: Date | null;
+  certificateIssued: boolean;
+};
+
+export type ListCourseEnrollmentsResult = {
+  rows: CourseEnrollmentRow[];
+  totalCount: number;
+};
+
+export type CourseEnrollmentDetail = {
+  enrollmentId: string;
+  courseId: string;
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: string | null;
+  bio: string | null;
+  onboardedAt: Date | null;
+  status: string;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  lastActivityAt: Date | null;
+  certificateIssued: boolean;
   lessons: EnrollmentLessonProgress[];
 };
 
@@ -404,4 +443,156 @@ export async function countCourseEnrollments(database: Database, input: { course
     .where(eq(enrollment.courseId, input.courseId));
 
   return row?.value ?? 0;
+}
+
+export async function listCourseEnrollments(
+  database: Database,
+  input: { courseId: string; search?: string; limit: number; offset: number },
+): Promise<ListCourseEnrollmentsResult> {
+  const filters: SQL[] = [eq(enrollment.courseId, input.courseId)];
+
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(user.name, pattern), ilike(user.email, pattern));
+    if (expr) filters.push(expr);
+  }
+
+  const where = and(...filters);
+
+  const [rows, totalRow] = await Promise.all([
+    database
+      .select({
+        enrollmentId: enrollment.id,
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        bio: profile.bio,
+        status: enrollment.status,
+        completedLessonCount: sql<number>`(
+          select count(*)::int
+          from ${lessonProgress}
+          where ${lessonProgress.enrollmentId} = ${enrollment.id}
+            and ${lessonProgress.status} = 'completed'
+        )`,
+        totalLessonCount: sql<number>`(
+          select count(*)::int
+          from ${lesson}
+          inner join ${section} on ${lesson.sectionId} = ${section.id}
+          where ${section.courseId} = ${enrollment.courseId}
+        )`,
+        lastActivityAt: enrollment.lastActivityAt,
+        certificateIssued: sql<boolean>`exists(
+          select 1 from ${certificate} where ${certificate.enrollmentId} = ${enrollment.id}
+        )`,
+      })
+      .from(enrollment)
+      .innerJoin(user, eq(user.id, enrollment.userId))
+      .leftJoin(profile, eq(profile.userId, user.id))
+      .where(where)
+      .orderBy(asc(user.name), asc(user.email))
+      .limit(input.limit)
+      .offset(input.offset),
+    database
+      .select({ value: count() })
+      .from(enrollment)
+      .innerJoin(user, eq(user.id, enrollment.userId))
+      .where(where),
+  ]);
+
+  return {
+    rows,
+    totalCount: totalRow[0]?.value ?? 0,
+  };
+}
+
+export async function getCourseEnrollmentDetail(
+  database: Database,
+  input: { courseId: string; enrollmentId: string },
+): Promise<CourseEnrollmentDetail | null> {
+  const [enrollmentRow, lessonRows, certificateRow] = await Promise.all([
+    database
+      .select({
+        enrollmentId: enrollment.id,
+        courseId: enrollment.courseId,
+        userId: enrollment.userId,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: user.role,
+        bio: profile.bio,
+        onboardedAt: profile.onboardedAt,
+        status: enrollment.status,
+        startedAt: enrollment.startedAt,
+        completedAt: enrollment.completedAt,
+        lastActivityAt: enrollment.lastActivityAt,
+      })
+      .from(enrollment)
+      .innerJoin(user, eq(user.id, enrollment.userId))
+      .leftJoin(profile, eq(profile.userId, user.id))
+      .where(and(eq(enrollment.id, input.enrollmentId), eq(enrollment.courseId, input.courseId)))
+      .limit(1),
+    database
+      .select({
+        lessonId: lesson.id,
+        sectionId: lesson.sectionId,
+        lessonTitle: lesson.title,
+        lessonType: lesson.type,
+        openAt: lesson.openAt,
+        dueAt: lesson.dueAt,
+        order: lesson.order,
+        sectionOrder: section.order,
+        status: lessonProgress.status,
+        bestScore: lessonProgress.bestScore,
+        latestScore: lessonProgress.latestScore,
+        attemptCount: lessonProgress.attemptCount,
+      })
+      .from(lesson)
+      .innerJoin(section, eq(lesson.sectionId, section.id))
+      .leftJoin(
+        lessonProgress,
+        and(
+          eq(lessonProgress.lessonId, lesson.id),
+          eq(lessonProgress.enrollmentId, input.enrollmentId),
+        ),
+      )
+      .where(eq(section.courseId, input.courseId))
+      .orderBy(
+        asc(section.order),
+        asc(section.createdAt),
+        asc(lesson.order),
+        asc(lesson.createdAt),
+      ),
+    database
+      .select({ id: certificate.id })
+      .from(certificate)
+      .where(eq(certificate.enrollmentId, input.enrollmentId))
+      .limit(1),
+  ]);
+
+  const row = enrollmentRow[0];
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    certificateIssued: Boolean(certificateRow[0]),
+    lessons: lessonRows.map((lessonRow) => ({
+      ...lessonRow,
+      status: lessonRow.status ?? "not_started",
+      bestScore: lessonRow.bestScore ?? null,
+      latestScore: lessonRow.latestScore ?? null,
+      attemptCount: lessonRow.attemptCount ?? 0,
+    })),
+  };
+}
+
+export async function removeEnrollment(database: Database, input: { enrollmentId: string }) {
+  const [deleted] = await database
+    .delete(enrollment)
+    .where(eq(enrollment.id, input.enrollmentId))
+    .returning({ id: enrollment.id, courseId: enrollment.courseId, userId: enrollment.userId });
+
+  return deleted ?? null;
 }

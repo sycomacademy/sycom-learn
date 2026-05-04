@@ -8,6 +8,8 @@ import StarterKit from "@tiptap/starter-kit";
 export function getLightweightExtensions(): AnyExtension[] {
   return [
     StarterKit.configure({
+      link: false,
+      underline: false,
       orderedList: {
         HTMLAttributes: {
           class: "list-decimal",

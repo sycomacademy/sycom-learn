@@ -40,6 +40,8 @@ export function getFullExtensions(options: GetFullExtensionsOptions = {}): AnyEx
   return [
     StarterKit.configure({
       codeBlock: false,
+      link: false,
+      underline: false,
       orderedList: {
         HTMLAttributes: {
           class: "list-decimal",
