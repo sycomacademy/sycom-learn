@@ -86,8 +86,33 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StudentDetailContent({ student }: { student: CourseAnalyticsStudentDetail }) {
+export function CourseScoresPanel({ student }: { student: CourseAnalyticsStudentDetail }) {
   const completedArticles = student.articles.filter((lesson) => lesson.status === "completed");
+  return (
+    <SheetPanel className="space-y-6">
+      <div className="space-y-2">
+        <SectionHeading>
+          Completed lessons ({completedArticles.length}/{student.articles.length})
+        </SectionHeading>
+        <LessonList
+          emptyMessage="No lessons completed yet."
+          items={completedArticles}
+          showScore={false}
+        />
+      </div>
+      <div className="space-y-2">
+        <SectionHeading>Quizzes ({student.quizzes.length})</SectionHeading>
+        <LessonList emptyMessage="This course has no quizzes." items={student.quizzes} showScore />
+      </div>
+      <div className="space-y-2">
+        <SectionHeading>Exams ({student.exams.length})</SectionHeading>
+        <LessonList emptyMessage="This course has no exams." items={student.exams} showScore />
+      </div>
+    </SheetPanel>
+  );
+}
+
+function StudentDetailContent({ student }: { student: CourseAnalyticsStudentDetail }) {
   return (
     <>
       <SheetHeader>
@@ -110,30 +135,35 @@ function StudentDetailContent({ student }: { student: CourseAnalyticsStudentDeta
         </div>
       </SheetHeader>
 
-      <SheetPanel className="space-y-6">
-        <div className="space-y-2">
-          <SectionHeading>
-            Completed lessons ({completedArticles.length}/{student.articles.length})
-          </SectionHeading>
-          <LessonList
-            emptyMessage="No lessons completed yet."
-            items={completedArticles}
-            showScore={false}
-          />
+      <CourseScoresPanel student={student} />
+
+      <SheetFooter variant="bare">
+        <SheetClose render={<Button variant="outline" />}>Close</SheetClose>
+      </SheetFooter>
+    </>
+  );
+}
+
+export function SelfCourseScoresSheetContent({
+  courseTitle,
+  student,
+}: {
+  courseTitle: string;
+  student: CourseAnalyticsStudentDetail;
+}) {
+  return (
+    <>
+      <SheetHeader>
+        <div className="space-y-2 pe-8">
+          <SheetTitle>{courseTitle}</SheetTitle>
+          <SheetDescription>
+            Completed lessons, quizzes, and exam scores for this course.
+          </SheetDescription>
+          <Badge variant="outline">{student.enrollmentStatus}</Badge>
         </div>
-        <div className="space-y-2">
-          <SectionHeading>Quizzes ({student.quizzes.length})</SectionHeading>
-          <LessonList
-            emptyMessage="This course has no quizzes."
-            items={student.quizzes}
-            showScore
-          />
-        </div>
-        <div className="space-y-2">
-          <SectionHeading>Exams ({student.exams.length})</SectionHeading>
-          <LessonList emptyMessage="This course has no exams." items={student.exams} showScore />
-        </div>
-      </SheetPanel>
+      </SheetHeader>
+
+      <CourseScoresPanel student={student} />
 
       <SheetFooter variant="bare">
         <SheetClose render={<Button variant="outline" />}>Close</SheetClose>

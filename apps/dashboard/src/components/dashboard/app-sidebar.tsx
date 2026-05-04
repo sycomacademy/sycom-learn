@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { BlocksIcon } from "@sycom/ui/components/animated/icons/blocks";
 import { BuildingIcon } from "@sycom/ui/components/animated/icons/building";
 import { CompassIcon } from "@sycom/ui/components/animated/icons/compass";
 import { ChartLineIcon } from "@sycom/ui/components/animated/icons/chart-line";
@@ -88,7 +89,13 @@ const PUBLIC_STUDENT_NAV_GROUPS: NavGroup[] = [
     label: "Main",
     items: [{ icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" }],
   },
-  { label: "Courses", items: [{ icon: CompassIcon, label: "Catalog", to: "/dashboard/catalog" }] },
+  {
+    label: "Courses",
+    items: [
+      { icon: CompassIcon, label: "Catalog", to: "/dashboard/catalog" },
+      { icon: BlocksIcon, label: "My library", to: "/dashboard/library" },
+    ],
+  },
 ];
 
 const menuButtonStableClass = cn(

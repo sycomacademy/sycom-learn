@@ -281,6 +281,7 @@ export const studentDashboardContinueLearningSchema = z.object({
   completedLessonCount: z.number().int(),
   totalLessonCount: z.number().int(),
   certificateIssued: z.boolean(),
+  nextLessonId: z.string().nullable(),
 });
 export type StudentDashboardContinueLearningOutput = z.infer<
   typeof studentDashboardContinueLearningSchema
@@ -292,6 +293,58 @@ export const studentDashboardOverviewOutputSchema = z.object({
   totals: studentDashboardTotalsSchema,
 });
 export type StudentDashboardOverviewOutput = z.infer<typeof studentDashboardOverviewOutputSchema>;
+
+export const studentLibrarySectionSchema = z.object({
+  sectionId: z.string(),
+  title: z.string(),
+  order: z.number().int(),
+  totalLessonCount: z.number().int(),
+  completedLessonCount: z.number().int(),
+});
+export type StudentLibrarySectionOutput = z.infer<typeof studentLibrarySectionSchema>;
+
+export const studentLibraryCourseSchema = z.object({
+  courseId: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  description: z.string().nullable(),
+  imageUrl: z.string().nullable(),
+  difficulty: z.string(),
+  enrollmentStatus: z.string(),
+  startedAt: z.date().nullable(),
+  lastActivityAt: z.date().nullable(),
+  completedLessonCount: z.number().int(),
+  totalLessonCount: z.number().int(),
+  certificateIssued: z.boolean(),
+  nextLessonId: z.string().nullable(),
+  sections: z.array(studentLibrarySectionSchema),
+});
+export type StudentLibraryCourseOutput = z.infer<typeof studentLibraryCourseSchema>;
+
+export const studentLibraryCertificateSchema = z.object({
+  certificateId: z.string(),
+  courseId: z.string(),
+  courseTitle: z.string(),
+  courseSlug: z.string(),
+  certificateNumber: z.string(),
+  issuedAt: z.date(),
+});
+export type StudentLibraryCertificateOutput = z.infer<typeof studentLibraryCertificateSchema>;
+
+export const studentLibraryInputSchema = z.object({}).default({});
+export type StudentLibraryInput = z.infer<typeof studentLibraryInputSchema>;
+
+export const studentCourseScoresInputSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type StudentCourseScoresInput = z.infer<typeof studentCourseScoresInputSchema>;
+
+export const studentLibraryOutputSchema = z.object({
+  totals: studentDashboardTotalsSchema,
+  courses: z.array(studentLibraryCourseSchema),
+  certificates: z.array(studentLibraryCertificateSchema),
+});
+export type StudentLibraryOutput = z.infer<typeof studentLibraryOutputSchema>;
 
 export const auditActorTypeSchema = z.enum(["user", "system"]);
 export type AuditActorTypeInput = z.infer<typeof auditActorTypeSchema>;

@@ -16,7 +16,7 @@ export function CatalogCourseHeader({ course }: CatalogCourseHeaderProps) {
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="shrink-0 lg:w-72">
+      <div className="w-40 shrink-0 sm:w-56 lg:w-72">
         <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border bg-muted">
           {course.imageUrl ? (
             <Image

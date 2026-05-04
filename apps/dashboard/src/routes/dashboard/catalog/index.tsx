@@ -12,6 +12,7 @@ import { useMemo } from "react";
 import { CatalogCardGrid } from "@/components/dashboard/catalog/catalog-card-grid";
 import { CATALOG_COLUMNS } from "@/components/dashboard/catalog/catalog-columns";
 import { CatalogFilters } from "@/components/dashboard/catalog/catalog-filters";
+import { FadeIn } from "@/components/layout/motion-fade";
 import {
   getCatalogListQueryInput,
   listCatalogSearchSchema,
@@ -133,7 +134,7 @@ function CatalogListPage() {
   const pageSize = tableState.pagination.pageSize;
 
   return (
-    <div className="flex flex-col gap-4 px-6 py-6">
+    <FadeIn className="flex flex-col gap-4 px-6 py-6" motionKey="catalog-list">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Course catalog</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -197,6 +198,6 @@ function CatalogListPage() {
           table={table}
         />
       )}
-    </div>
+    </FadeIn>
   );
 }
