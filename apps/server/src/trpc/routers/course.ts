@@ -7,8 +7,10 @@ import {
   deleteSectionById,
   deleteCategory,
   deleteCourse,
-  getCourseAnalytics,
+  getCourseAnalyticsOverview,
+  getCourseAnalyticsStudentDetail,
   getCourseCurriculum,
+  listCourseAnalyticsStudents,
   getCourseById,
   getSectionById,
   listAvailableCourseCoInstructors,
@@ -45,9 +47,11 @@ import {
   deleteSectionSchema,
   deleteAdminCategorySchema,
   deleteCourseSchema,
-  getCourseAnalyticsSchema,
+  getCourseAnalyticsOverviewSchema,
+  getCourseAnalyticsStudentSchema,
   getCourseSchema,
   getCourseCurriculumSchema,
+  listCourseAnalyticsStudentsSchema,
   listAvailableCourseCoInstructorsSchema,
   listAdminCategoriesSchema,
   listCourseCoInstructorsSchema,
@@ -105,9 +109,9 @@ export const courseRouter = router({
       return await getCourseCurriculum(ctx.db, input);
     }),
 
-  getAnalytics: protectedProcedure
+  analyticsOverview: protectedProcedure
     .use(platformPermissionMiddleware({ course: ["read"] }))
-    .input(getCourseAnalyticsSchema)
+    .input(getCourseAnalyticsOverviewSchema)
     .query(async ({ ctx, input }) => {
       const detail = await getCourseById(ctx.db, { courseId: input.courseId });
       if (!detail || detail.organizationId !== null) {
@@ -115,7 +119,37 @@ export const courseRouter = router({
       }
       assertCanUpdatePublicCourse(ctx.session, detail);
 
-      return await getCourseAnalytics(ctx.db, input);
+      return await getCourseAnalyticsOverview(ctx.db, input);
+    }),
+
+  listAnalyticsStudents: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["read"] }))
+    .input(listCourseAnalyticsStudentsSchema)
+    .query(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      return await listCourseAnalyticsStudents(ctx.db, input);
+    }),
+
+  getAnalyticsStudent: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["read"] }))
+    .input(getCourseAnalyticsStudentSchema)
+    .query(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      const student = await getCourseAnalyticsStudentDetail(ctx.db, input);
+      if (!student) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Student not found" });
+      }
+      return student;
     }),
 
   create: protectedProcedure

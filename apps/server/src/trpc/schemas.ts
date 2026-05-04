@@ -578,10 +578,26 @@ export type ListSeededCourseOrganizationsInput = z.infer<
   typeof listSeededCourseOrganizationsSchema
 >;
 
-export const getCourseAnalyticsSchema = z.object({
+export const getCourseAnalyticsOverviewSchema = z.object({
   courseId: z.string().min(1),
 });
-export type GetCourseAnalyticsInput = z.infer<typeof getCourseAnalyticsSchema>;
+export type GetCourseAnalyticsOverviewInput = z.infer<typeof getCourseAnalyticsOverviewSchema>;
+
+export const listCourseAnalyticsStudentsSchema = z.object({
+  courseId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  sortBy: z.enum(["name"]).default("name"),
+  sortDirection: z.enum(["asc", "desc"]).default("asc"),
+});
+export type ListCourseAnalyticsStudentsInput = z.infer<typeof listCourseAnalyticsStudentsSchema>;
+
+export const getCourseAnalyticsStudentSchema = z.object({
+  courseId: z.string().min(1),
+  enrollmentId: z.string().min(1),
+});
+export type GetCourseAnalyticsStudentInput = z.infer<typeof getCourseAnalyticsStudentSchema>;
 
 export const createSectionSchema = z.object({
   courseId: z.string().min(1),

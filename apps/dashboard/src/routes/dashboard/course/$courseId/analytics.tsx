@@ -1,160 +1,151 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useIsFetching, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  getCoreRowModel,
+  useReactTable,
+  type ColumnFiltersState,
+  type PaginationState,
+  type SortingState,
+} from "@tanstack/react-table";
+import { GraduationCap, ScrollText, Users } from "lucide-react";
+import { useMemo } from "react";
 
+import { OverviewStatCard } from "@/components/dashboard/admin/overview/overview-primitives";
+import { buildAnalyticsColumns } from "@/components/dashboard/course/course-analytics-columns";
+import {
+  courseAnalyticsSearchSchema,
+  getAnalyticsListInput,
+  type CourseAnalyticsSearchInput,
+  type CourseAnalyticsSortBy,
+  type CourseAnalyticsStudentRow,
+} from "@/components/dashboard/course/course-analytics-schema";
+import { CourseAnalyticsToolbar } from "@/components/dashboard/course/course-analytics-toolbar";
+import { DataTable } from "@/components/dashboard/data-table";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { useTRPC } from "@/lib/trpc/client";
-import { Badge } from "@sycom/ui/components/badge";
-import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "@sycom/ui/components/card";
-
-function MetricCard({
-  description,
-  title,
-  value,
-}: {
-  description: string;
-  title: string;
-  value: string;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardDescription>{description}</CardDescription>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardPanel>
-        <p className="text-3xl font-semibold tracking-tight">{value}</p>
-      </CardPanel>
-    </Card>
-  );
-}
 
 export const Route = createFileRoute("/dashboard/course/$courseId/analytics")({
-  loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(
-      context.trpc.course.getAnalytics.queryOptions({ courseId: params.courseId }),
-    );
+  validateSearch: courseAnalyticsSearchSchema,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ context, deps, params }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(
+        context.trpc.course.analyticsOverview.queryOptions({ courseId: params.courseId }),
+      ),
+      context.queryClient.ensureQueryData(
+        context.trpc.course.listAnalyticsStudents.queryOptions(
+          getAnalyticsListInput(deps, params.courseId),
+        ),
+      ),
+    ]);
   },
   component: CourseAnalyticsPage,
 });
 
+function formatScore(value: number | null) {
+  return value == null ? "—" : `${value}%`;
+}
+
 function CourseAnalyticsPage() {
   const { courseId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.course.getAnalytics.queryOptions({ courseId }));
+
+  const overviewQuery = useSuspenseQuery(trpc.course.analyticsOverview.queryOptions({ courseId }));
+  const listQuery = useSuspenseQuery(
+    trpc.course.listAnalyticsStudents.queryOptions(getAnalyticsListInput(search, courseId)),
+  );
+  const isFetching = useIsFetching({ queryKey: trpc.course.listAnalyticsStudents.queryKey() }) > 0;
+
+  const { searchInput, setSearchInput } = useDebouncedSearch({
+    committedValue: search.search,
+    delayMs: 400,
+    onDebouncedCommit: (next) =>
+      navigate({
+        replace: true,
+        search: (prev: CourseAnalyticsSearchInput) => ({ ...prev, search: next, offset: 0 }),
+      }),
+  });
+
+  const tableState = useMemo(
+    () => ({
+      sorting: [{ id: search.sortBy, desc: search.sortDirection === "desc" }] as SortingState,
+      pagination: {
+        pageIndex: Math.floor(search.offset / search.limit),
+        pageSize: search.limit,
+      } as PaginationState,
+      columnFilters: [] as ColumnFiltersState,
+    }),
+    [search],
+  );
+
+  const columns = useMemo(() => buildAnalyticsColumns(courseId), [courseId]);
+
+  const table = useReactTable<CourseAnalyticsStudentRow>({
+    data: listQuery.data.rows,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    state: tableState,
+    manualSorting: true,
+    manualPagination: true,
+    manualFiltering: true,
+    rowCount: listQuery.data.totalCount,
+    onSortingChange: (updater) => {
+      const next = typeof updater === "function" ? updater(tableState.sorting) : updater;
+      const first = next[0];
+      navigate({
+        search: (prev: CourseAnalyticsSearchInput) => ({
+          ...prev,
+          sortBy: first ? (first.id as CourseAnalyticsSortBy) : "name",
+          sortDirection: first ? (first.desc ? "desc" : "asc") : "asc",
+          offset: 0,
+        }),
+      });
+    },
+    onPaginationChange: (updater) => {
+      const next = typeof updater === "function" ? updater(tableState.pagination) : updater;
+      navigate({
+        search: (prev: CourseAnalyticsSearchInput) => ({
+          ...prev,
+          offset: next.pageIndex * next.pageSize,
+          limit: next.pageSize,
+        }),
+      });
+    },
+  });
+
+  const overview = overviewQuery.data;
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          description="Learners currently enrolled"
-          title="Enrollments"
-          value={String(data.overview.enrollmentCount)}
-        />
-        <MetricCard
-          description="Learners who completed the full course"
-          title="Completions"
-          value={`${data.overview.completedEnrollments} (${data.overview.completionRate}%)`}
-        />
-        <MetricCard
-          description="Certificates issued on full completion"
-          title="Certificates"
-          value={String(data.overview.certificateCount)}
-        />
-        <MetricCard
-          description="Average scored assessment result"
-          title="Avg assessment score"
-          value={
-            data.overview.averageAssessmentScore == null
-              ? "-"
-              : `${data.overview.averageAssessmentScore}%`
-          }
-        />
-      </div>
-
+    <div className="flex flex-col gap-6 px-6 py-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <MetricCard
-          description="Quiz and exam attempts that passed"
-          title="Passed assessments"
-          value={String(data.overview.passedAssessmentCount)}
+        <OverviewStatCard
+          description="Learners currently enrolled in this course."
+          icon={Users}
+          title="Enrolled students"
+          value={overview.enrollmentCount.toLocaleString()}
         />
-        <MetricCard
-          description="Quiz and exam attempts that failed"
-          title="Failed assessments"
-          value={String(data.overview.failedAssessmentCount)}
+        <OverviewStatCard
+          description="Average best score across every quiz attempt by every learner."
+          icon={ScrollText}
+          title="Average quiz score"
+          value={formatScore(overview.averageQuizScore)}
         />
-        <MetricCard
-          description="Exam learners who missed the window"
-          title="Missed exams"
-          value={String(data.overview.examMissedCount)}
+        <OverviewStatCard
+          description="Average best score across every exam attempt by every learner."
+          icon={GraduationCap}
+          title="Average exam score"
+          value={formatScore(overview.averageExamScore)}
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lesson progress</CardTitle>
-          <CardDescription>Completion and assessment outcomes by lesson.</CardDescription>
-        </CardHeader>
-        <CardPanel className="space-y-3">
-          {data.lessons.map((lesson) => (
-            <div
-              className="flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
-              key={lesson.lessonId}
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-medium">{lesson.title}</p>
-                  <Badge variant="outline">{lesson.type}</Badge>
-                  {lesson.questionCount > 0 ? (
-                    <Badge variant="secondary">{lesson.questionCount} questions</Badge>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{lesson.sectionTitle}</p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="secondary">
-                  {lesson.completedCount}/{lesson.totalLearners} completed
-                </Badge>
-                <Badge variant="outline">{lesson.completionRate}% complete</Badge>
-                {lesson.averageScore != null ? (
-                  <Badge variant="outline">Avg score {lesson.averageScore}%</Badge>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </CardPanel>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Most missed questions</CardTitle>
-          <CardDescription>Only quiz and exam attempts are counted here.</CardDescription>
-        </CardHeader>
-        <CardPanel className="space-y-3">
-          {data.failedQuestions.length === 0 ? (
-            <div className="rounded-lg border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-              No failed quiz or exam questions yet.
-            </div>
-          ) : (
-            data.failedQuestions.map((question) => (
-              <div
-                className="space-y-2 border px-4 py-3"
-                key={`${question.lessonId}:${question.questionId}`}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium">{question.prompt}</p>
-                  <Badge variant="outline">{question.type}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">{question.lessonTitle}</p>
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <Badge variant="secondary">{question.incorrectCount} wrong submissions</Badge>
-                  <Badge variant="outline">{question.totalAttempts} attempts</Badge>
-                  <Badge variant="outline">{question.incorrectRate}% incorrect</Badge>
-                </div>
-              </div>
-            ))
-          )}
-        </CardPanel>
-      </Card>
+      <CourseAnalyticsToolbar
+        isFetching={isFetching}
+        onSearchChange={setSearchInput}
+        search={searchInput}
+      />
+      <DataTable<CourseAnalyticsStudentRow> table={table} />
     </div>
   );
 }
