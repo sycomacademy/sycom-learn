@@ -57,7 +57,7 @@ function LessonViewPage() {
   const { data: lesson } = useSuspenseQuery(trpc.lesson.get.queryOptions({ lessonId }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
+    <div className="space-y-4">
       <Button render={<Link params={{ courseId }} to="/dashboard/course/$courseId/curriculum/" />}>
         Back to curriculum
       </Button>

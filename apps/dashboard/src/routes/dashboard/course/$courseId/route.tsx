@@ -16,6 +16,16 @@ type CourseDetailTabRoute =
   | "/dashboard/course/$courseId/analytics"
   | "/dashboard/course/$courseId/certificates";
 
+/** Lesson editor is full-width; skip course title + tab bar (see `course/route.tsx` for list-level SecondaryMenu). */
+function isLessonEditPath(pathname: string, courseId: string): boolean {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  const prefix = `/dashboard/course/${courseId}/curriculum/`;
+  return (
+    (normalized.startsWith(prefix) && normalized.endsWith("/edit")) ||
+    (normalized.startsWith(prefix) && normalized.endsWith("/view"))
+  );
+}
+
 function getActiveCourseTab(pathname: string, courseId: string): CourseDetailTabRoute {
   const normalized = pathname.replace(/\/+$/, "");
   const base = `/dashboard/course/${courseId}`;
@@ -60,6 +70,15 @@ function CourseDetailLayout() {
   const { data: course } = useSuspenseQuery(trpc.course.get.queryOptions({ courseId }));
 
   const activeTab = getActiveCourseTab(pathname, courseId);
+  const hideCourseDetailChrome = isLessonEditPath(pathname, courseId);
+
+  if (hideCourseDetailChrome) {
+    return (
+      <FadeIn className="flex flex-col" motionKey={courseId}>
+        <Outlet />
+      </FadeIn>
+    );
+  }
 
   return (
     <FadeIn className="flex flex-col gap-6 px-6 py-6" motionKey={courseId}>

@@ -287,6 +287,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
       openAt: Date | null;
       type: CurriculumSection["lessons"][number]["type"];
     },
+    options?: { silent?: boolean },
   ) => {
     const previousSections = cloneCurriculumSections(sections);
     setSavingLessonId(lessonId);
@@ -301,7 +302,9 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
 
     try {
       await trpcClient.lesson.update.mutate({ lessonId, patch });
-      toastManager.add({ title: "Lesson saved", type: "success" });
+      if (!options?.silent) {
+        toastManager.add({ title: "Lesson saved", type: "success" });
+      }
     } catch (error) {
       setSections(previousSections);
       queryClient.setQueryData(queryKey, previousSections);
@@ -313,6 +316,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
             : "Couldn't reach server. Check your connection and try again.",
         type: "error",
       });
+      throw error;
     } finally {
       setSavingLessonId((current) => (current === lessonId ? null : current));
     }

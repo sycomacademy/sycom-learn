@@ -148,6 +148,7 @@ type CurriculumSectionItemProps = {
       openAt: Date | null;
       type: CurriculumSection["lessons"][number]["type"];
     },
+    options?: { silent?: boolean },
   ) => Promise<void>;
   onUpdateSectionSchedule: (
     sectionId: string,

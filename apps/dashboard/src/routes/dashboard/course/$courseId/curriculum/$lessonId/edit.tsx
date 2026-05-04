@@ -4,10 +4,12 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { uploadFile } from "@sycom/storage/client";
 import type { JSONContent } from "@tiptap/core";
 import { Button } from "@sycom/ui/components/button";
-import { Card, CardPanel, CardDescription, CardHeader, CardTitle } from "@sycom/ui/components/card";
+import { Card, CardPanel, CardHeader, CardTitle } from "@sycom/ui/components/card";
 import { RichTextEditor } from "@sycom/ui/components/tiptap/rich-text-editor";
 import { toastManager } from "@sycom/ui/components/toast";
 
+import { AutoSaveStatus } from "@/components/dashboard/course/auto-save-status";
+import { useAutoSave } from "@/hooks/use-auto-save";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/course/$courseId/curriculum/$lessonId/edit")({
@@ -69,46 +71,62 @@ function LessonEditPage() {
 
   const updateMutation = useMutation(trpc.lesson.update.mutationOptions());
 
-  const handleSave = async () => {
-    try {
-      await updateMutation.mutateAsync({
-        lessonId,
-        patch: { content },
-      });
-      await queryClient.invalidateQueries({ queryKey: trpc.lesson.get.queryKey({ lessonId }) });
-      toastManager.add({
-        type: "success",
-        title: "Lesson saved",
-        description: "Content has been updated.",
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Couldn't save lesson. Try again.";
-      toastManager.add({
-        type: "error",
-        title: "Save failed",
-        description: message,
-      });
-    }
-  };
+  const saveContent = useCallback(
+    async ({ silent }: { silent: boolean }) => {
+      try {
+        await updateMutation.mutateAsync({
+          lessonId,
+          patch: { content },
+        });
+        await queryClient.invalidateQueries({ queryKey: trpc.lesson.get.queryKey({ lessonId }) });
+        if (!silent) {
+          toastManager.add({
+            type: "success",
+            title: "Lesson saved",
+            description: "Content has been updated.",
+          });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Couldn't save lesson. Try again.";
+        toastManager.add({
+          type: "error",
+          title: "Save failed",
+          description: message,
+        });
+        throw error;
+      }
+    },
+    [content, lessonId, queryClient, trpc, updateMutation],
+  );
+
+  const autoSave = useAutoSave({
+    baselineResetKey: lessonId,
+    data: content,
+    onSave: saveContent,
+  });
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button
           render={<Link params={{ courseId }} to="/dashboard/course/$courseId/curriculum/" />}
         >
           Back to curriculum
         </Button>
-        <Button loading={updateMutation.isPending} onClick={() => void handleSave()} type="button">
-          Save lesson
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <AutoSaveStatus lastSavedAt={autoSave.lastSavedAt} status={autoSave.status} />
+          <Button
+            loading={updateMutation.isPending}
+            onClick={() => void autoSave.save()}
+            type="button"
+          >
+            Save lesson
+          </Button>
+        </div>
       </div>
       <Card>
         <CardHeader>
           <CardTitle>{lesson.title}</CardTitle>
-          <CardDescription>
-            Author lesson content. Media uploads go to lesson artifacts.
-          </CardDescription>
         </CardHeader>
         <CardPanel className="p-0">
           <RichTextEditor

@@ -26,17 +26,23 @@ import {
   SelectValue,
 } from "@sycom/ui/components/select";
 import { Spinner } from "@sycom/ui/components/spinner";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@sycom/ui/components/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
 import {
   CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  EyeIcon,
   GripVerticalIcon,
+  FullscreenIcon,
   MoveRightIcon,
   Trash2Icon,
 } from "lucide-react";
-import { lazy, memo, Suspense, useCallback, useEffect, useState } from "react";
+import type React from "react";
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
+import { AutoSaveStatus } from "@/components/dashboard/course/auto-save-status";
+import { useAutoSave } from "@/hooks/use-auto-save";
 import { useTRPCClient } from "@/lib/trpc/client";
 
 import {
@@ -45,6 +51,7 @@ import {
   type CurriculumLesson,
   type CurriculumSection,
 } from "./curriculum-schema";
+import { Link } from "@tanstack/react-router";
 
 const LESSON_TYPE_OPTIONS = [
   { label: "Article", value: "article" },
@@ -192,6 +199,7 @@ type CurriculumLessonItemProps = {
       openAt: Date | null;
       type: CurriculumLesson["type"];
     },
+    options?: { silent?: boolean },
   ) => Promise<void>;
   onToggleExpanded: (lessonId: string) => void;
   onUpdateTitle: (lessonId: string, title: string) => Promise<void>;
@@ -227,6 +235,33 @@ function CurriculumLessonItemImpl({
     setDraftOpenAt(lesson.openAt);
     setDraftDueAt(lesson.dueAt);
   }, [lesson.type, lesson.openAt, lesson.dueAt]);
+
+  const autoSaveData = useMemo(
+    () => ({
+      content: content ?? createEmptyLessonDocument(),
+      draftDueAt,
+      draftOpenAt,
+      draftType,
+    }),
+    [content, draftDueAt, draftOpenAt, draftType],
+  );
+
+  const lessonAutoSave = useAutoSave({
+    data: autoSaveData,
+    enabled: expanded && content !== null,
+    onSave: async ({ silent }) => {
+      await onSaveLesson(
+        lesson.id,
+        {
+          content: autoSaveData.content,
+          dueAt: draftDueAt,
+          openAt: draftOpenAt,
+          type: draftType,
+        },
+        { silent },
+      );
+    },
+  });
 
   return (
     <Collapsible open={expanded}>
@@ -269,13 +304,26 @@ function CurriculumLessonItemImpl({
 
           {moveTargets.length > 0 ? (
             <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button aria-label="Move lesson to another section" size="sm" variant="ghost">
-                    <MoveRightIcon className="size-4" />
-                  </Button>
-                }
-              />
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    (
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            aria-label="Move lesson to another section"
+                            size="sm"
+                            variant="ghost"
+                          />
+                        }
+                      />
+                    ) as React.ReactElement<Record<string, unknown>>
+                  }
+                >
+                  <MoveRightIcon className="size-4" />
+                </TooltipTrigger>
+                <TooltipPopup>Move to another section</TooltipPopup>
+              </Tooltip>
               <DropdownMenuContent align="end" className="w-56">
                 {moveTargets.map((section) => (
                   <DropdownMenuItem
@@ -288,15 +336,67 @@ function CurriculumLessonItemImpl({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
-
-          <Button
-            aria-label="Delete lesson"
-            onClick={() => void onDeleteLesson(lesson.id)}
-            size="sm"
-            variant="ghost"
-          >
-            <Trash2Icon className="size-4 text-destructive" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                (
+                  <Button
+                    aria-label="Edit in fullscreen"
+                    render={
+                      <Link
+                        params={{ lessonId: lesson.id }}
+                        to="/dashboard/course/$courseId/curriculum/$lessonId/edit"
+                      />
+                    }
+                    size="sm"
+                    variant="ghost"
+                  />
+                ) as React.ReactElement<Record<string, unknown>>
+              }
+            >
+              <FullscreenIcon className="size-4" />
+            </TooltipTrigger>
+            <TooltipPopup>Edit in fullscreen</TooltipPopup>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                (
+                  <Button
+                    aria-label="Preview lesson"
+                    render={
+                      <Link
+                        params={{ lessonId: lesson.id }}
+                        to="/dashboard/course/$courseId/curriculum/$lessonId/view"
+                      />
+                    }
+                    size="sm"
+                    variant="ghost"
+                  />
+                ) as React.ReactElement<Record<string, unknown>>
+              }
+            >
+              <EyeIcon className="size-4" />
+            </TooltipTrigger>
+            <TooltipPopup>Preview lesson</TooltipPopup>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                (
+                  <Button
+                    aria-label="Delete lesson"
+                    onClick={() => void onDeleteLesson(lesson.id)}
+                    size="sm"
+                    variant="ghost"
+                  />
+                ) as React.ReactElement<Record<string, unknown>>
+              }
+            >
+              <Trash2Icon className="size-4 text-destructive" />
+            </TooltipTrigger>
+            <TooltipPopup>Delete lesson</TooltipPopup>
+          </Tooltip>
         </div>
 
         <CollapsibleContent>
@@ -354,19 +454,12 @@ function CurriculumLessonItemImpl({
                 variant="embedded"
               />
             </Suspense>
-            <div className="flex justify-end border-t p-3">
-              <Button
-                loading={saving}
-                onClick={() =>
-                  void onSaveLesson(lesson.id, {
-                    content: content ?? createEmptyLessonDocument(),
-                    dueAt: draftDueAt,
-                    openAt: draftOpenAt,
-                    type: draftType,
-                  })
-                }
-                size="sm"
-              >
+            <div className="flex items-center justify-end gap-3 border-t p-3">
+              <AutoSaveStatus
+                lastSavedAt={lessonAutoSave.lastSavedAt}
+                status={lessonAutoSave.status}
+              />
+              <Button loading={saving} onClick={() => void lessonAutoSave.save()} size="sm">
                 Save lesson
               </Button>
             </div>
