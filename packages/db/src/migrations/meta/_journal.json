@@ -78,6 +78,13 @@
       "when": 1777841589206,
       "tag": "0010_red_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777896419733,
+      "tag": "0011_majestic_echo",
+      "breakpoints": true
     }
   ]
 }
