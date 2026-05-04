@@ -1,8 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { MoreHorizontalIcon, PencilIcon, ShareIcon, Trash2Icon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
+import { sessionQueryOptions } from "@/lib/auth/session";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   AlertDialog,
@@ -26,10 +27,18 @@ import { toastManager } from "@sycom/ui/components/toast";
 import type { CourseRow } from "./courses-schema";
 import { SeedCourseDialog } from "./seed-course-dialog";
 
+function canContentCreatorDeleteCourse(course: CourseRow, userId: string) {
+  if (course.createdBy === userId) {
+    return true;
+  }
+  return course.instructors.some((i) => i.userId === userId && i.role === "main");
+}
+
 export function CourseActions({ course }: { course: CourseRow }): ReactNode {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { data: auth } = useSuspenseQuery(sessionQueryOptions());
   const [seedOpen, setSeedOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -54,6 +63,16 @@ export function CourseActions({ course }: { course: CourseRow }): ReactNode {
     }),
   });
 
+  if (!auth) {
+    return null;
+  }
+
+  const canDelete =
+    auth.user.role === "platform_admin" ||
+    (auth.user.role === "content_creator" && canContentCreatorDeleteCourse(course, auth.user.id));
+
+  const canSeed = auth.user.role === "platform_admin";
+
   return (
     <>
       <DropdownMenu>
@@ -76,46 +95,56 @@ export function CourseActions({ course }: { course: CourseRow }): ReactNode {
             <PencilIcon />
             Edit course
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setSeedOpen(true)}>
-            <ShareIcon />
-            Seed to organization…
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setDeleteOpen(true)} variant="destructive">
-            <Trash2Icon />
-            Delete course
-          </DropdownMenuItem>
+          {canSeed ? (
+            <DropdownMenuItem onClick={() => setSeedOpen(true)}>
+              <ShareIcon />
+              Seed to organization…
+            </DropdownMenuItem>
+          ) : null}
+          {canDelete ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setDeleteOpen(true)} variant="destructive">
+                <Trash2Icon />
+                Delete course
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SeedCourseDialog
-        courseId={course.id}
-        courseTitle={course.title}
-        onOpenChange={setSeedOpen}
-        open={seedOpen}
-      />
+      {canSeed ? (
+        <SeedCourseDialog
+          courseId={course.id}
+          courseTitle={course.title}
+          onOpenChange={setSeedOpen}
+          open={seedOpen}
+        />
+      ) : null}
 
-      <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete course</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently deletes <strong>{course.title}</strong> and all of its sections and
-              lessons. Organizations already seeded with this course are not affected.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
-            <Button
-              loading={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate({ courseId: course.id })}
-              variant="destructive"
-            >
-              Delete course
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {canDelete ? (
+        <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete course</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently deletes <strong>{course.title}</strong> and all of its sections and
+                lessons. Organizations already seeded with this course are not affected.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
+              <Button
+                loading={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate({ courseId: course.id })}
+                variant="destructive"
+              >
+                Delete course
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
     </>
   );
 }

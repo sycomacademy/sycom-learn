@@ -389,6 +389,7 @@ export const courseRouter = router({
       return { success: true };
     }),
 
+  /** Platform admins only (`adminProcedure`); forks a public course into org libraries. */
   seed: adminProcedure
     .use(platformPermissionMiddleware({ course: ["seed"] }))
     .input(seedAdminCourseSchema)

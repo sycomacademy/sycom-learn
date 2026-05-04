@@ -74,13 +74,32 @@ describe("public course access", () => {
     const session = makeSession("content_creator", "creator-user");
     expect(canReadPublicCourse(session, detail)).toBe(true);
     expect(canUpdatePublicCourse(session, detail)).toBe(true);
-    expect(canDeletePublicCourse(session, detail)).toBe(false);
+    expect(canDeletePublicCourse(session, detail)).toBe(true);
   });
 
   test("content_creator can access co-instructed courses", () => {
     const session = makeSession("content_creator", "co-instructor");
     expect(canReadPublicCourse(session, detail)).toBe(true);
     expect(canUpdatePublicCourse(session, detail)).toBe(true);
+    expect(canDeletePublicCourse(session, detail)).toBe(false);
+  });
+
+  test("content_creator main instructor can delete when not the recorded creator", () => {
+    const mainInstructorDetail = {
+      organizationId: null,
+      createdBy: "original-creator",
+      instructors: [
+        {
+          userId: "main-instructor",
+          name: "Main",
+          image: null,
+          role: "main" as const,
+          addedAt: new Date(),
+        },
+      ],
+    };
+    const session = makeSession("content_creator", "main-instructor");
+    expect(canDeletePublicCourse(session, mainInstructorDetail)).toBe(true);
   });
 
   test("content_creator cannot access unrelated public course", () => {

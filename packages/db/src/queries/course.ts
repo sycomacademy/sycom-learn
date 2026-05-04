@@ -37,6 +37,7 @@ export type CourseRow = {
   estimatedDuration: number | null;
   organizationId: string | null;
   organizationName: string | null;
+  createdBy: string | null;
   createdAt: Date;
   updatedAt: Date;
   instructors: CourseInstructorPreview[];
@@ -332,6 +333,7 @@ export async function listCourses(
         estimatedDuration: course.estimatedDuration,
         organizationId: course.organizationId,
         organizationName: organization.name,
+        createdBy: course.createdBy,
         createdAt: course.createdAt,
         updatedAt: course.updatedAt,
       })

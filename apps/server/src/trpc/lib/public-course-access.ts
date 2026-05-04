@@ -65,10 +65,26 @@ export function canUpdatePublicCourse(
 
 export function canDeletePublicCourse(
   session: Context["session"],
-  detail: Pick<CourseDetail, "organizationId">,
+  detail: Pick<CourseDetail, "organizationId" | "createdBy" | "instructors">,
 ) {
   const currentSession = requireSession(session);
-  return detail.organizationId === null && currentSession.user.role === "platform_admin";
+  if (detail.organizationId !== null) {
+    return false;
+  }
+
+  switch (currentSession.user.role) {
+    case "platform_admin":
+      return true;
+    case "content_creator": {
+      const userId = currentSession.user.id;
+      if (detail.createdBy === userId) {
+        return true;
+      }
+      return detail.instructors.some((i) => i.userId === userId && i.role === "main");
+    }
+    default:
+      return false;
+  }
 }
 
 export function assertCanReadPublicCourse(
@@ -97,7 +113,7 @@ export function assertCanUpdatePublicCourse(
 
 export function assertCanDeletePublicCourse(
   session: Context["session"],
-  detail: Pick<CourseDetail, "organizationId">,
+  detail: Pick<CourseDetail, "organizationId" | "createdBy" | "instructors">,
 ) {
   if (!canDeletePublicCourse(session, detail)) {
     throw new TRPCError({
