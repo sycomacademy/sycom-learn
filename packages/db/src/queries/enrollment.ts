@@ -375,16 +375,25 @@ export async function submitLessonAttempt(
     input.answers.map((answer) => [answer.questionId, [...answer.selected].sort()]),
   );
   let score = 0;
-
-  for (const question of questions) {
+  const evaluatedAnswers = questions.map((question) => {
     const selected = answerMap.get(question.questionId) ?? [];
-    if (
+    const isCorrect =
       selected.length === question.correctIds.length &&
-      question.correctIds.every((correctId, index) => selected[index] === correctId)
-    ) {
+      question.correctIds.every((correctId, index) => selected[index] === correctId);
+
+    if (isCorrect) {
       score += 1;
     }
-  }
+
+    return {
+      correctIds: question.correctIds,
+      isCorrect,
+      prompt: question.prompt,
+      questionId: question.questionId,
+      selected,
+      type: question.type,
+    };
+  });
 
   const passed = maxScore > 0 && score === maxScore;
 
@@ -405,7 +414,7 @@ export async function submitLessonAttempt(
     score,
     maxScore,
     passed,
-    answers: input.answers,
+    answers: evaluatedAnswers,
     submittedAt: now(),
   });
 

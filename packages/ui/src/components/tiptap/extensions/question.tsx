@@ -150,6 +150,7 @@ function QuestionNodeView(props: NodeViewProps) {
   const type = node.attrs.type as "single" | "multi";
   const options = (node.attrs.options ?? []) as QuestionOptionAttr[];
   const explanation = (node.attrs.explanation ?? "") as string;
+  const fieldIdPrefix = `question-${questionId}`;
 
   const [singlePick, setSinglePick] = useState<string | null>(null);
   const [multiPick, setMultiPick] = useState<Record<string, boolean>>({});
@@ -238,18 +239,23 @@ function QuestionNodeView(props: NodeViewProps) {
         </div>
         <div className="space-y-3">
           <Field className="w-full gap-1">
-            <FieldLabel className="text-xs">Prompt</FieldLabel>
+            <FieldLabel className="text-xs" htmlFor={`${fieldIdPrefix}-prompt`}>
+              Prompt
+            </FieldLabel>
             <Input
-              value={prompt}
+              id={`${fieldIdPrefix}-prompt`}
               onChange={(e) => updateAttributes({ prompt: e.target.value })}
               placeholder="Ask something…"
+              value={prompt}
             />
           </Field>
           <Field className="w-full gap-1">
-            <FieldLabel className="text-xs">Type</FieldLabel>
+            <FieldLabel className="text-xs" htmlFor={`${fieldIdPrefix}-type`}>
+              Type
+            </FieldLabel>
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs/5"
-              value={type}
+              id={`${fieldIdPrefix}-type`}
               onChange={(e) => {
                 const next = e.target.value === "multi" ? "multi" : "single";
                 updateAttributes({
@@ -260,6 +266,7 @@ function QuestionNodeView(props: NodeViewProps) {
                       : options.map((o) => ({ ...o, isCorrect: !!o.isCorrect })),
                 });
               }}
+              value={type}
             >
               <option value="single">One correct answer</option>
               <option value="multi">Multiple correct answers</option>
@@ -271,9 +278,10 @@ function QuestionNodeView(props: NodeViewProps) {
               {options.map((opt) => (
                 <div key={opt.id} className="flex flex-wrap items-center gap-2">
                   <Input
-                    value={opt.text}
+                    id={`${fieldIdPrefix}-option-${opt.id}`}
                     onChange={(e) => handleSetOptionText(opt.id, e.target.value)}
                     className="min-w-48 flex-1"
+                    value={opt.text}
                   />
                   <Button
                     type="button"
@@ -302,11 +310,14 @@ function QuestionNodeView(props: NodeViewProps) {
             </div>
           </Field>
           <Field className="w-full gap-1">
-            <FieldLabel className="text-xs">Explanation (shown after submit)</FieldLabel>
+            <FieldLabel className="text-xs" htmlFor={`${fieldIdPrefix}-explanation`}>
+              Explanation (shown after submit)
+            </FieldLabel>
             <Input
-              value={explanation}
+              id={`${fieldIdPrefix}-explanation`}
               onChange={(e) => updateAttributes({ explanation: e.target.value })}
               placeholder="Optional"
+              value={explanation}
             />
           </Field>
         </div>
@@ -334,10 +345,12 @@ function QuestionNodeView(props: NodeViewProps) {
           <div className="flex flex-col gap-2">
             {options.map((opt) => (
               <label
+                htmlFor={`${fieldIdPrefix}-answer-${opt.id}`}
                 key={opt.id}
                 className="flex cursor-pointer items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
               >
                 <input
+                  id={`${fieldIdPrefix}-answer-${opt.id}`}
                   type="radio"
                   name={`q-${questionId}`}
                   checked={singlePick === opt.id}
@@ -352,10 +365,12 @@ function QuestionNodeView(props: NodeViewProps) {
           <div className="flex flex-col gap-2">
             {options.map((opt) => (
               <label
+                htmlFor={`${fieldIdPrefix}-answer-${opt.id}`}
                 key={opt.id}
                 className="flex cursor-pointer items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
               >
                 <Checkbox
+                  id={`${fieldIdPrefix}-answer-${opt.id}`}
                   checked={!!multiPick[opt.id]}
                   onCheckedChange={(checked) =>
                     setMultiPick((prev) => ({ ...prev, [opt.id]: checked === true }))

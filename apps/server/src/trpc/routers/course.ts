@@ -7,6 +7,7 @@ import {
   deleteSectionById,
   deleteCategory,
   deleteCourse,
+  getCourseAnalytics,
   getCourseCurriculum,
   getCourseById,
   getSectionById,
@@ -44,6 +45,7 @@ import {
   deleteSectionSchema,
   deleteAdminCategorySchema,
   deleteCourseSchema,
+  getCourseAnalyticsSchema,
   getCourseSchema,
   getCourseCurriculumSchema,
   listAvailableCourseCoInstructorsSchema,
@@ -101,6 +103,19 @@ export const courseRouter = router({
       assertCanReadPublicCourse(ctx.session, detail);
 
       return await getCourseCurriculum(ctx.db, input);
+    }),
+
+  getAnalytics: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["read"] }))
+    .input(getCourseAnalyticsSchema)
+    .query(async ({ ctx, input }) => {
+      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!detail || detail.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, detail);
+
+      return await getCourseAnalytics(ctx.db, input);
     }),
 
   create: protectedProcedure

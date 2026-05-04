@@ -578,6 +578,11 @@ export type ListSeededCourseOrganizationsInput = z.infer<
   typeof listSeededCourseOrganizationsSchema
 >;
 
+export const getCourseAnalyticsSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type GetCourseAnalyticsInput = z.infer<typeof getCourseAnalyticsSchema>;
+
 export const createSectionSchema = z.object({
   courseId: z.string().min(1),
   title: z.string().trim().min(1, "Section title is required").max(200),

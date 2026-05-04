@@ -19,6 +19,7 @@ export type LessonListItem = {
 
 export type LessonQuestionDefinition = {
   questionId: string;
+  prompt: string;
   type: "single" | "multi";
   optionIds: string[];
   correctIds: string[];
@@ -108,6 +109,7 @@ export function getQuestionDefinitionsFromContent(doc: unknown): LessonQuestionD
 
     const attrs = node.attrs as Record<string, unknown>;
     const questionId = typeof attrs.questionId === "string" ? attrs.questionId : null;
+    const prompt = typeof attrs.prompt === "string" ? attrs.prompt : "Untitled question";
     const rawOptions = Array.isArray(attrs.options) ? attrs.options : [];
     if (!questionId) return;
 
@@ -125,6 +127,7 @@ export function getQuestionDefinitionsFromContent(doc: unknown): LessonQuestionD
 
     questions.push({
       questionId,
+      prompt,
       type: attrs.type === "multi" ? "multi" : "single",
       optionIds,
       correctIds,

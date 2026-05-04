@@ -274,6 +274,12 @@ function SortableItemDraggableBranch({
   disabled,
   ...props
 }: SortableItemProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useLayoutEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     setNodeRef,
     transform,
@@ -292,6 +298,13 @@ function SortableItemDraggableBranch({
     transform: CSS.Transform.toString(transform),
   } as CSSProperties;
 
+  const draggableAttributes = mounted
+    ? attributes
+    : {
+        ...attributes,
+        "aria-describedby": undefined,
+      };
+
   const defaultProps = {
     "data-slot": "sortable-item",
     "data-value": value,
@@ -299,7 +312,7 @@ function SortableItemDraggableBranch({
     "data-disabled": disabled,
     ref: setNodeRef,
     style,
-    ...attributes,
+    ...draggableAttributes,
     className: cn(isSortableDragging && "z-50 opacity-50", disabled && "opacity-50", className),
     children: props.children,
   };
