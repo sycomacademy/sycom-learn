@@ -208,6 +208,45 @@ export const adminDashboardOverviewOutputSchema = z.object({
 });
 export type AdminDashboardOverviewOutput = z.infer<typeof adminDashboardOverviewOutputSchema>;
 
+export const creatorDashboardOverviewInputSchema = z.object({
+  enrollmentDays: z.number().int().min(1).max(90).default(7),
+  recentCourseLimit: z.number().int().min(1).max(50).default(5),
+});
+export type CreatorDashboardOverviewInput = z.infer<typeof creatorDashboardOverviewInputSchema>;
+
+export const creatorDashboardTotalsSchema = z.object({
+  assignedCourses: z.number().int(),
+  draftCourses: z.number().int(),
+  publishedCourses: z.number().int(),
+  totalEnrollments: z.number().int(),
+});
+export type CreatorDashboardTotalsOutput = z.infer<typeof creatorDashboardTotalsSchema>;
+
+export const creatorDashboardEnrollmentDaySchema = z.object({
+  date: z.string(),
+  total: z.number().int(),
+});
+export type CreatorDashboardEnrollmentDayOutput = z.infer<
+  typeof creatorDashboardEnrollmentDaySchema
+>;
+
+export const creatorDashboardRecentCourseSchema = z.object({
+  enrollmentCount: z.number().int(),
+  id: z.string(),
+  slug: z.string(),
+  status: z.enum(["draft", "published"]),
+  title: z.string(),
+  updatedAt: z.date(),
+});
+export type CreatorDashboardRecentCourseOutput = z.infer<typeof creatorDashboardRecentCourseSchema>;
+
+export const creatorDashboardOverviewOutputSchema = z.object({
+  enrollmentsByDay: z.array(creatorDashboardEnrollmentDaySchema),
+  recentCourses: z.array(creatorDashboardRecentCourseSchema),
+  totals: creatorDashboardTotalsSchema,
+});
+export type CreatorDashboardOverviewOutput = z.infer<typeof creatorDashboardOverviewOutputSchema>;
+
 export const auditActorTypeSchema = z.enum(["user", "system"]);
 export type AuditActorTypeInput = z.infer<typeof auditActorTypeSchema>;
 

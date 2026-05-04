@@ -1,0 +1,28 @@
+{
+  "name": "@sycom/certificates",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./templates/*": {
+      "default": "./src/templates/*.tsx"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.3.2",
+    "@sycom/ui": "workspace:*",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@sycom/config": "workspace:*",
+    "@types/react": "catalog:",
+    "typescript": "^6.0.3"
+  }
+}

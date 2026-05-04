@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { AdminOverview } from "@/components/dashboard/admin/overview/admin-overview";
+import { ContentCreatorOverview } from "@/components/dashboard/creator/overview/content-creator-overview";
 import { JsonViewer } from "@sycom/ui/components/elements/json-viewer";
 import { useUser, type ProfileOutput } from "@/hooks/use-user";
 import type { UserRole } from "@sycom/db/schema/auth";
@@ -15,6 +16,11 @@ export const Route = createFileRoute("/dashboard/")({
         context.trpc.admin.getDashboardOverview.queryOptions({}),
       );
     }
+    if (profileData.user.role === "content_creator") {
+      await context.queryClient.ensureQueryData(
+        context.trpc.creator.getDashboardOverview.queryOptions({}),
+      );
+    }
   },
   component: RouteComponent,
 });
@@ -26,7 +32,7 @@ function RouteComponent() {
     case "platform_admin":
       return <AdminOverview />;
     case "content_creator":
-      return <DashboardContent data={data} />;
+      return <ContentCreatorOverview />;
     case "public_student":
       return <DashboardContent data={data} />;
     default:

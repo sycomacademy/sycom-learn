@@ -3,6 +3,7 @@ export * from "./admin-overview";
 export * from "./audit-log";
 export * from "./course";
 export * from "./course-analytics";
+export * from "./content-creator-overview";
 export * from "./curriculum";
 export * from "./enrollment";
 export * from "./feedback";
