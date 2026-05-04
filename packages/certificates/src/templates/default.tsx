@@ -51,11 +51,19 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     lineHeight: 1.35,
   },
-  footer: {
+  footerWrapper: {
     position: "absolute",
     bottom: 56,
     left: 56,
     right: 56,
+  },
+  footnote: {
+    fontSize: 9,
+    color: certificateColors.muted,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     borderTopWidth: 1,
@@ -87,34 +95,48 @@ function formatIssuedDate(date: Date) {
   }).format(date);
 }
 
+const DEFAULT_AWARD_HEADLINE = "Certificate of completion";
+const DEFAULT_CERTIFY_PHRASE = "This is to certify that";
+
 export function DefaultCertificate({
   recipientName,
   courseTitle,
   certificateNumber,
   issuedAt,
   issuerLine,
+  awardHeadline,
+  certifyPhrase,
+  footnoteLine,
 }: CertificatePdfPayload) {
+  const headline = awardHeadline?.trim() || DEFAULT_AWARD_HEADLINE;
+  const certify = certifyPhrase?.trim() || DEFAULT_CERTIFY_PHRASE;
+
   return (
     <Document title={`Certificate — ${courseTitle}`} subject="Course completion" language="en">
       <Page orientation="landscape" size="A4" style={styles.page}>
         <View style={styles.frame}>
-          <BrandMark />
-          <Text style={styles.kicker}>Certificate of completion</Text>
-          <Text style={styles.title}>This is to certify that</Text>
+          <BrandMark align="center" />
+          <Text style={styles.kicker}>{headline}</Text>
+          <Text style={styles.title}>{certify}</Text>
           <Text style={styles.label}>Recipient</Text>
           <Text style={styles.recipient}>{recipientName}</Text>
           <Text style={styles.label}>has successfully completed</Text>
           <Text style={styles.course}>{courseTitle}</Text>
-          {issuerLine ? <Text style={styles.issuer}>{issuerLine}</Text> : null}
+          {issuerLine?.trim() ? (
+            <Text style={styles.issuer}>Issued by: {issuerLine.trim()}</Text>
+          ) : null}
         </View>
-        <View fixed style={styles.footer}>
-          <View>
-            <Text style={styles.footerMuted}>Certificate no.</Text>
-            <Text style={styles.footerStrong}>{certificateNumber}</Text>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={styles.footerMuted}>Issued on</Text>
-            <Text style={styles.footerStrong}>{formatIssuedDate(issuedAt)}</Text>
+        <View fixed style={styles.footerWrapper}>
+          {footnoteLine?.trim() ? <Text style={styles.footnote}>{footnoteLine.trim()}</Text> : null}
+          <View style={styles.footer}>
+            <View>
+              <Text style={styles.footerMuted}>Certificate no.</Text>
+              <Text style={styles.footerStrong}>{certificateNumber}</Text>
+            </View>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text style={styles.footerMuted}>Issued on</Text>
+              <Text style={styles.footerStrong}>{formatIssuedDate(issuedAt)}</Text>
+            </View>
           </View>
         </View>
       </Page>

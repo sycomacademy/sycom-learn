@@ -8,7 +8,7 @@ import {
   lessonProgress,
   type LessonProgressStatus,
 } from "../schema/enrollment";
-import { lesson, section, type LessonType } from "../schema/course";
+import { course, lesson, section, type LessonType } from "../schema/course";
 import { user } from "../schema/auth";
 import { profile } from "../schema/profile";
 import { getQuestionDefinitionsFromContent } from "./lesson";
@@ -181,12 +181,22 @@ async function maybeIssueCertificate(
     .limit(1);
 
   if (!existingCertificate) {
+    const [courseRow] = await database
+      .select({ certificateSettings: course.certificateSettings })
+      .from(course)
+      .where(eq(course.id, input.courseId))
+      .limit(1);
+
     await database.insert(certificate).values({
       enrollmentId: input.enrollmentId,
       courseId: input.courseId,
       userId: input.userId,
       certificateNumber: buildCertificateNumber(),
       issuedAt: now(),
+      metadata:
+        courseRow?.certificateSettings != null
+          ? { courseCertificateSettings: courseRow.certificateSettings }
+          : null,
     });
   }
 

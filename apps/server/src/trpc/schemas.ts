@@ -5,6 +5,7 @@ import {
   INSTRUCTOR_ROLES,
   LESSON_TYPES,
 } from "@sycom/db/schema/course";
+import { CERTIFICATE_TEMPLATE_IDS } from "@sycom/certificates/meta";
 import {
   storageEntityTypeEnum,
   storageFolderEnum,
@@ -675,6 +676,34 @@ export const saveCurriculumOrderSchema = z.object({
   ),
 });
 export type SaveCurriculumOrderInput = z.infer<typeof saveCurriculumOrderSchema>;
+
+const courseCertificateTemplateIdSchema = z.enum(
+  CERTIFICATE_TEMPLATE_IDS as unknown as [(typeof CERTIFICATE_TEMPLATE_IDS)[number], ...string[]],
+);
+
+export const courseCertificateKeywordsSchema = z.object({
+  awardHeadline: z.string().trim().max(320).optional(),
+  certifyPhrase: z.string().trim().max(320).optional(),
+  issuerLine: z.string().trim().max(320).optional(),
+  footnoteLine: z.string().trim().max(500).optional(),
+});
+export type CourseCertificateKeywordsInput = z.infer<typeof courseCertificateKeywordsSchema>;
+
+export const courseCertificateSettingsStoredSchema = z.object({
+  templateId: courseCertificateTemplateIdSchema,
+  keywords: courseCertificateKeywordsSchema.optional(),
+});
+export type CourseCertificateSettingsStoredInput = z.infer<
+  typeof courseCertificateSettingsStoredSchema
+>;
+
+export const updateCourseCertificateSettingsSchema = z.object({
+  courseId: z.string().min(1),
+  certificateSettings: courseCertificateSettingsStoredSchema,
+});
+export type UpdateCourseCertificateSettingsInput = z.infer<
+  typeof updateCourseCertificateSettingsSchema
+>;
 
 export const createCourseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(160),

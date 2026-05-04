@@ -59,6 +59,8 @@ export const course = pgTable(
     difficulty: text("difficulty", { enum: DIFFICULTY_LEVELS }).default("beginner").notNull(),
     estimatedDuration: integer("estimated_duration"),
     status: text("status", { enum: COURSE_STATUSES }).default("draft").notNull(),
+    /** Per-course PDF template + copy (keywords). Nullable: UI applies package defaults until set. */
+    certificateSettings: jsonb("certificate_settings"),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt,
     updatedAt,

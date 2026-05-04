@@ -25,6 +25,7 @@ import {
   setCourseCategories,
   updateCategory,
   updateCourse,
+  updateCourseCertificateSettings,
   updateSectionPatch,
 } from "@sycom/db/queries/index";
 import type { UserRole } from "@sycom/db/schema/auth";
@@ -64,6 +65,7 @@ import {
   setCourseCategoriesSchema,
   updateAdminCategorySchema,
   updateCourseSchema,
+  updateCourseCertificateSettingsSchema,
   updateSectionSchema,
 } from "../schemas";
 import { isUniqueViolation } from "../utils/helpers";
@@ -290,6 +292,24 @@ export const courseRouter = router({
       assertCanUpdatePublicCourse(ctx.session, detail);
 
       await saveCurriculumOrder(ctx.db, input);
+      return { success: true };
+    }),
+
+  updateCertificateSettings: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["update"] }))
+    .input(updateCourseCertificateSettingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const existing = await getCourseById(ctx.db, { courseId: input.courseId });
+      if (!existing || existing.organizationId !== null) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+      assertCanUpdatePublicCourse(ctx.session, existing);
+
+      await updateCourseCertificateSettings(ctx.db, {
+        courseId: input.courseId,
+        certificateSettings: input.certificateSettings,
+      });
+
       return { success: true };
     }),
 

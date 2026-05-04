@@ -6,6 +6,12 @@ export {
   isCertificateTemplateId,
 } from "./meta";
 export { certificateTemplates } from "./registry";
+export type {
+  CertificateIssueFacts,
+  CourseCertificateKeywords,
+  CourseCertificateSettings,
+} from "./course-settings";
+export { mergeCertificatePdfPayload, parseCourseCertificateSettings } from "./course-settings";
 export type { CertificatePdfPayload } from "./types";
 export { renderCertificatePdf } from "./render-certificate-pdf";
 export { MinimalCertificate } from "./templates/minimal";

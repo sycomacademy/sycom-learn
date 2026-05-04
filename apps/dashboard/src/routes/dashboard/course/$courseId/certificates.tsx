@@ -1,4 +1,9 @@
-import { useIsFetching, useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import {
+  useIsFetching,
+  useMutation,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   CERTIFICATE_TEMPLATE_IDS,
@@ -6,8 +11,19 @@ import {
   certificateTemplateLabels,
   type CertificateTemplateId,
 } from "@sycom/certificates/meta";
+import type { CertificatePdfPayload } from "@sycom/certificates";
+import { parseCourseCertificateSettings } from "@sycom/certificates/course-settings";
 import { CheckCircle2Icon, Search } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   courseCertificatesSearchSchema,
@@ -30,11 +46,65 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/componen
 import { Radio, RadioGroup } from "@sycom/ui/components/radio-group";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@sycom/ui/components/tabs";
+import { toastManager } from "@sycom/ui/components/toast";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { getInitials } from "@sycom/ui/lib/string";
-import type { AppRouterOutputs } from "server/trpc/routers/_app";
+import type { AppRouterInputs, AppRouterOutputs } from "server/trpc/routers/_app";
 
 type EnrollmentListResult = AppRouterOutputs["enrollment"]["listByCourse"];
+
+type PersistedCertificateDesign =
+  AppRouterInputs["course"]["updateCertificateSettings"]["certificateSettings"];
+
+const CERT_DEFAULT_HEADLINE = "Certificate of completion";
+const CERT_DEFAULT_CERTIFY_PHRASE = "This is to certify that";
+const CERT_DEFAULT_ISSUER = "Sycom Solutions";
+
+const PERSIST_DEBOUNCE_MS = 550;
+
+function buildPersistableCertificateSettings(
+  templateId: CertificateTemplateId,
+  awardHeadline: string,
+  certifyPhrase: string,
+  issuerLine: string,
+  footnoteLine: string,
+): PersistedCertificateDesign {
+  const keywords: NonNullable<PersistedCertificateDesign["keywords"]> = {};
+  if (awardHeadline.trim()) {
+    keywords.awardHeadline = awardHeadline.trim();
+  }
+  if (certifyPhrase.trim()) {
+    keywords.certifyPhrase = certifyPhrase.trim();
+  }
+  if (issuerLine.trim()) {
+    keywords.issuerLine = issuerLine.trim();
+  }
+  if (footnoteLine.trim()) {
+    keywords.footnoteLine = footnoteLine.trim();
+  }
+  return Object.keys(keywords).length > 0 ? { templateId, keywords } : { templateId };
+}
+
+const PREVIEW_DEBOUNCE_MS = 280;
+
+const CertificatePreviewLazy = lazy(() =>
+  import("@sycom/certificates/preview").then((m) => ({ default: m.CertificatePreview })),
+);
+
+function toDateInputValue(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseDateInputValue(s: string): Date {
+  const [y, mo, d] = s.split("-").map(Number);
+  if (!y || !mo || !d) {
+    return new Date();
+  }
+  return new Date(y, mo - 1, d, 12, 0, 0, 0);
+}
 
 function getEnrollmentInfiniteQueryOptions(
   trpc: Pick<ReturnType<typeof useTRPC>, "enrollment">,
@@ -74,32 +144,37 @@ export const Route = createFileRoute("/dashboard/course/$courseId/certificates")
   validateSearch: courseCertificatesSearchSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps, params }) => {
-    await context.queryClient.ensureInfiniteQueryData({
-      initialPageParam: 0,
-      queryKey: [
-        ...context.trpc.enrollment.listByCourse.queryKey({ courseId: params.courseId }),
-        deps.search ?? "",
-      ],
-      queryFn: async (contextArg): Promise<EnrollmentListResult> => {
-        const pageParam = contextArg.pageParam as number;
-        const queryOptions = context.trpc.enrollment.listByCourse.queryOptions(
-          getCourseMembersListInput({ search: deps.search }, pageParam, params.courseId),
-        );
-        const queryFn = queryOptions.queryFn;
-        if (!queryFn) {
-          throw new Error("Missing query function for enrollment.listByCourse.");
-        }
+    await Promise.all([
+      context.queryClient.ensureQueryData(
+        context.trpc.course.get.queryOptions({ courseId: params.courseId }),
+      ),
+      context.queryClient.ensureInfiniteQueryData({
+        initialPageParam: 0,
+        queryKey: [
+          ...context.trpc.enrollment.listByCourse.queryKey({ courseId: params.courseId }),
+          deps.search ?? "",
+        ],
+        queryFn: async (contextArg): Promise<EnrollmentListResult> => {
+          const pageParam = contextArg.pageParam as number;
+          const queryOptions = context.trpc.enrollment.listByCourse.queryOptions(
+            getCourseMembersListInput({ search: deps.search }, pageParam, params.courseId),
+          );
+          const queryFn = queryOptions.queryFn;
+          if (!queryFn) {
+            throw new Error("Missing query function for enrollment.listByCourse.");
+          }
 
-        return await queryFn({ ...contextArg, queryKey: queryOptions.queryKey });
-      },
-      getNextPageParam: (lastPage: EnrollmentListResult, allPages: EnrollmentListResult[]) => {
-        const loaded = allPages.reduce((sum, page) => sum + page.rows.length, 0);
-        if (loaded >= lastPage.totalCount || lastPage.rows.length < courseMembersPageSize) {
-          return undefined;
-        }
-        return loaded;
-      },
-    });
+          return await queryFn({ ...contextArg, queryKey: queryOptions.queryKey });
+        },
+        getNextPageParam: (lastPage: EnrollmentListResult, allPages: EnrollmentListResult[]) => {
+          const loaded = allPages.reduce((sum, page) => sum + page.rows.length, 0);
+          if (loaded >= lastPage.totalCount || lastPage.rows.length < courseMembersPageSize) {
+            return undefined;
+          }
+          return loaded;
+        },
+      }),
+    ]);
   },
   component: CourseCertificatesPage,
 });
@@ -150,16 +225,34 @@ function CourseCertificatesPage() {
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
 
+  const { data: course } = useSuspenseQuery(trpc.course.get.queryOptions({ courseId }));
+
   const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplateId>(
     CERTIFICATE_TEMPLATE_IDS[0],
   );
-  const [awardHeadline, setAwardHeadline] = useState("Certificate of completion");
-  const [certifyPhrase, setCertifyPhrase] = useState("This is to certify that");
-  const [issuerLine, setIssuerLine] = useState("");
+  const [awardHeadline, setAwardHeadline] = useState(CERT_DEFAULT_HEADLINE);
+  const [certifyPhrase, setCertifyPhrase] = useState(CERT_DEFAULT_CERTIFY_PHRASE);
+  const [issuerLine, setIssuerLine] = useState(CERT_DEFAULT_ISSUER);
   const [footnoteLine, setFootnoteLine] = useState("");
+  const [previewRecipientName, setPreviewRecipientName] = useState("Sample Learner");
+  const [previewCourseTitle, setPreviewCourseTitle] = useState(() => course.title);
+  const [previewCertificateNumber, setPreviewCertificateNumber] = useState("CERT-PREVIEW");
+  const [previewIssuedDate, setPreviewIssuedDate] = useState(() => toDateInputValue(new Date()));
+  const [previewMounted, setPreviewMounted] = useState(false);
 
+  const [displayPreview, setDisplayPreview] = useState<{
+    templateId: CertificateTemplateId;
+    payload: CertificatePdfPayload;
+  } | null>(null);
+  const [appliedPreviewSignature, setAppliedPreviewSignature] = useState<string | null>(null);
+
+  const persistedDesignBaselineRef = useRef<string>("");
   const scrollHostRef = useRef<HTMLElement | null>(null);
   const detachScrollRef = useRef<(() => void) | null>(null);
+
+  const saveCertificateDesign = useMutation(
+    trpc.course.updateCertificateSettings.mutationOptions(),
+  );
 
   const { searchInput, setSearchInput } = useDebouncedSearch({
     committedValue: search.search,
@@ -185,6 +278,144 @@ function CourseCertificatesPage() {
     () => enrollmentsQuery.data.pages.flatMap((page) => page.rows),
     [enrollmentsQuery.data],
   );
+
+  useEffect(() => {
+    setPreviewMounted(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    const parsed = parseCourseCertificateSettings(course.certificateSettings);
+    const templateId = parsed?.templateId ?? CERTIFICATE_TEMPLATE_IDS[0];
+    setSelectedTemplate(templateId);
+    setAwardHeadline(parsed?.keywords?.awardHeadline ?? CERT_DEFAULT_HEADLINE);
+    setCertifyPhrase(parsed?.keywords?.certifyPhrase ?? CERT_DEFAULT_CERTIFY_PHRASE);
+    setIssuerLine(parsed?.keywords?.issuerLine ?? CERT_DEFAULT_ISSUER);
+    setFootnoteLine(parsed?.keywords?.footnoteLine ?? "");
+    setPreviewCourseTitle(course.title);
+    persistedDesignBaselineRef.current = JSON.stringify(
+      buildPersistableCertificateSettings(
+        templateId,
+        parsed?.keywords?.awardHeadline ?? CERT_DEFAULT_HEADLINE,
+        parsed?.keywords?.certifyPhrase ?? CERT_DEFAULT_CERTIFY_PHRASE,
+        parsed?.keywords?.issuerLine ?? CERT_DEFAULT_ISSUER,
+        parsed?.keywords?.footnoteLine ?? "",
+      ),
+    );
+  }, [course.certificateSettings, course.title, courseId]);
+
+  useEffect(() => {
+    const persistable = buildPersistableCertificateSettings(
+      selectedTemplate,
+      awardHeadline,
+      certifyPhrase,
+      issuerLine,
+      footnoteLine,
+    );
+    const sig = JSON.stringify(persistable);
+    if (sig === persistedDesignBaselineRef.current) {
+      return;
+    }
+
+    const id = window.setTimeout(() => {
+      saveCertificateDesign.mutate(
+        { courseId, certificateSettings: persistable },
+        {
+          onSuccess: () => {
+            persistedDesignBaselineRef.current = sig;
+          },
+          onError: (error) => {
+            toastManager.add({
+              title:
+                typeof error.message === "string"
+                  ? error.message
+                  : "Couldn't save certificate settings",
+              type: "error",
+            });
+          },
+        },
+      );
+    }, PERSIST_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(id);
+  }, [
+    awardHeadline,
+    certifyPhrase,
+    courseId,
+    footnoteLine,
+    issuerLine,
+    saveCertificateDesign,
+    selectedTemplate,
+  ]);
+
+  const previewSignature = useMemo(() => {
+    return JSON.stringify({
+      templateId: selectedTemplate,
+      awardHeadline,
+      certifyPhrase,
+      issuerLine,
+      footnoteLine,
+      recipientName: previewRecipientName,
+      courseTitle: previewCourseTitle,
+      certificateNumber: previewCertificateNumber,
+      issuedDate: previewIssuedDate,
+    });
+  }, [
+    selectedTemplate,
+    awardHeadline,
+    certifyPhrase,
+    issuerLine,
+    footnoteLine,
+    previewRecipientName,
+    previewCourseTitle,
+    previewCertificateNumber,
+    previewIssuedDate,
+  ]);
+
+  const getLivePreviewSnapshot = useCallback(() => {
+    const payload: CertificatePdfPayload = {
+      recipientName: previewRecipientName.trim() || "Sample Learner",
+      courseTitle: previewCourseTitle.trim() || "Sample course title",
+      certificateNumber: previewCertificateNumber.trim() || "CERT-PREVIEW",
+      issuedAt: parseDateInputValue(previewIssuedDate),
+      awardHeadline: awardHeadline.trim() ? awardHeadline : undefined,
+      certifyPhrase: certifyPhrase.trim() ? certifyPhrase : undefined,
+      issuerLine: issuerLine.trim() ? issuerLine : undefined,
+      footnoteLine: footnoteLine.trim() ? footnoteLine : undefined,
+    };
+    return { templateId: selectedTemplate, payload };
+  }, [
+    selectedTemplate,
+    awardHeadline,
+    certifyPhrase,
+    footnoteLine,
+    issuerLine,
+    previewRecipientName,
+    previewCourseTitle,
+    previewCertificateNumber,
+    previewIssuedDate,
+  ]);
+
+  useEffect(() => {
+    if (!previewMounted) return;
+
+    if (appliedPreviewSignature === previewSignature) {
+      return;
+    }
+
+    const delayMs = appliedPreviewSignature === null ? 0 : PREVIEW_DEBOUNCE_MS;
+    const id = window.setTimeout(() => {
+      setDisplayPreview(getLivePreviewSnapshot());
+      setAppliedPreviewSignature(previewSignature);
+    }, delayMs);
+
+    return () => window.clearTimeout(id);
+  }, [previewMounted, previewSignature, appliedPreviewSignature, getLivePreviewSnapshot]);
+
+  const canShowPdf =
+    previewMounted &&
+    displayPreview !== null &&
+    appliedPreviewSignature !== null &&
+    previewSignature === appliedPreviewSignature;
 
   const handleScrollLoadMore = useCallback(() => {
     const scrollHost = scrollHostRef.current;
@@ -313,14 +544,14 @@ function CourseCertificatesPage() {
                   </Field>
                   <Field className="gap-2">
                     <FieldLabel className="text-xs" htmlFor={`cert-issuer-${courseId}`}>
-                      Issuer line{" "}
+                      Issued by{" "}
                       <span className="font-normal text-muted-foreground">(optional)</span>
                     </FieldLabel>
                     <Input
                       id={`cert-issuer-${courseId}`}
                       autoComplete="organization"
                       onChange={(e) => setIssuerLine(e.target.value)}
-                      placeholder="Shown below the course title"
+                      placeholder="Organization or signatory"
                       value={issuerLine}
                     />
                   </Field>
@@ -333,14 +564,68 @@ function CourseCertificatesPage() {
                       id={`cert-foot-${courseId}`}
                       autoComplete="off"
                       onChange={(e) => setFootnoteLine(e.target.value)}
-                      placeholder="Additional text on the certificate"
+                      placeholder="Additional information"
                       value={footnoteLine}
                     />
                   </Field>
                 </div>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-sm font-medium">Sample learner &amp; course (preview)</h3>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <Field className="gap-2">
+                    <FieldLabel className="text-xs" htmlFor={`cert-preview-learn-${courseId}`}>
+                      Learner name
+                    </FieldLabel>
+                    <Input
+                      id={`cert-preview-learn-${courseId}`}
+                      autoComplete="off"
+                      onChange={(e) => setPreviewRecipientName(e.target.value)}
+                      placeholder="Sample Learner"
+                      value={previewRecipientName}
+                    />
+                  </Field>
+                  <Field className="gap-2">
+                    <FieldLabel className="text-xs" htmlFor={`cert-preview-course-${courseId}`}>
+                      Course title
+                    </FieldLabel>
+                    <Input
+                      id={`cert-preview-course-${courseId}`}
+                      autoComplete="off"
+                      onChange={(e) => setPreviewCourseTitle(e.target.value)}
+                      placeholder="Sample course title"
+                      value={previewCourseTitle}
+                    />
+                  </Field>
+                  <Field className="gap-2">
+                    <FieldLabel className="text-xs" htmlFor={`cert-preview-num-${courseId}`}>
+                      Certificate number
+                    </FieldLabel>
+                    <Input
+                      id={`cert-preview-num-${courseId}`}
+                      autoComplete="off"
+                      onChange={(e) => setPreviewCertificateNumber(e.target.value)}
+                      placeholder="CERT-PREVIEW"
+                      value={previewCertificateNumber}
+                    />
+                  </Field>
+                  <Field className="gap-2">
+                    <FieldLabel className="text-xs" htmlFor={`cert-preview-date-${courseId}`}>
+                      Issued on
+                    </FieldLabel>
+                    <Input
+                      id={`cert-preview-date-${courseId}`}
+                      autoComplete="off"
+                      onChange={(e) => setPreviewIssuedDate(e.target.value)}
+                      type="date"
+                      value={previewIssuedDate}
+                    />
+                  </Field>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Learner name, course title, certificate number and date are filled automatically
-                  when issued.
+                  These placeholders only shape the preview. Real certificates use enrollment and
+                  issuance data.
                 </p>
               </section>
 
@@ -354,28 +639,36 @@ function CourseCertificatesPage() {
                 >
                   Preview
                 </h3>
-                <dl className="mt-4 space-y-3 text-sm">
-                  <div>
-                    <dt className="text-muted-foreground">Template</dt>
-                    <dd className="font-medium">{certificateTemplateLabels[selectedTemplate]}</dd>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Updates pause briefly—showing progress—while the PDF refreshes.
+                </p>
+                <div className="relative mt-4 aspect-842/595 w-full overflow-hidden rounded-lg border bg-card">
+                  <div className="absolute inset-0">
+                    {canShowPdf ? (
+                      <Suspense
+                        fallback={
+                          <div className="flex h-full items-center justify-center bg-muted/40">
+                            <Spinner className="size-6" />
+                          </div>
+                        }
+                      >
+                        <CertificatePreviewLazy
+                          key={appliedPreviewSignature}
+                          payload={displayPreview.payload}
+                          templateId={displayPreview.templateId}
+                        />
+                      </Suspense>
+                    ) : (
+                      <div
+                        aria-busy
+                        className="flex h-full flex-col items-center justify-center gap-2 bg-muted/40"
+                      >
+                        <Spinner className="size-6" />
+                        <span className="sr-only">Updating certificate preview</span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <dt className="text-muted-foreground">Headline</dt>
-                    <dd className="font-medium">{awardHeadline || "—"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Certification</dt>
-                    <dd className="font-medium">{certifyPhrase || "—"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Issuer</dt>
-                    <dd className="font-medium">{issuerLine || "(none)"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Footer</dt>
-                    <dd className="font-medium">{footnoteLine || "(none)"}</dd>
-                  </div>
-                </dl>
+                </div>
               </section>
             </CardPanel>
           </Card>
@@ -386,7 +679,7 @@ function CourseCertificatesPage() {
             <div className="min-w-0 space-y-1">
               <h2 className="text-base font-semibold">Members</h2>
               <p className="text-sm text-muted-foreground">
-                Learners enrolled in this course—send certificates when ready.
+                Learners enrolled and have finished the course—send certificates when ready.
               </p>
             </div>
 

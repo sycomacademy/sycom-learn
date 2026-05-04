@@ -17,6 +17,7 @@
   "dependencies": {
     "@hono/trpc-server": "^0.4.2",
     "@sycom/auth": "workspace:*",
+    "@sycom/certificates": "workspace:*",
     "@sycom/db": "workspace:*",
     "@sycom/env": "workspace:*",
     "@sycom/logger": "workspace:*",

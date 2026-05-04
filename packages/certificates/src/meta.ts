@@ -9,10 +9,9 @@ export const certificateTemplateLabels: Record<CertificateTemplateId, string> = 
 };
 
 export const certificateTemplateDescriptions: Record<CertificateTemplateId, string> = {
-  minimal:
-    "Bordered landscape layout with branding, learner name, course title, certificate number and date.",
+  minimal: "Borderless landscape layout: left-aligned type, divider, compact single-line footer.",
   default:
-    "Standard certificate layout with branding, learner name, course title, certificate number and date.",
+    "Centered bordered frame with branding, learner name, course title, certificate number and date.",
 };
 
 export function isCertificateTemplateId(id: string): id is CertificateTemplateId {

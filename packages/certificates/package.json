@@ -5,6 +5,12 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./preview": {
+      "default": "./src/preview.tsx"
+    },
+    "./course-settings": {
+      "default": "./src/course-settings.ts"
+    },
     "./meta": {
       "default": "./src/meta.ts"
     },

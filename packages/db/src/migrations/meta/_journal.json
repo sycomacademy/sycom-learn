@@ -85,6 +85,13 @@
       "when": 1777896419733,
       "tag": "0011_majestic_echo",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777902172569,
+      "tag": "0012_old_whiplash",
+      "breakpoints": true
     }
   ]
 }

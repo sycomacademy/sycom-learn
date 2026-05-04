@@ -123,6 +123,8 @@ export type CourseDetail = {
   organizationId: string | null;
   organizationName: string | null;
   sourceCourseId: string | null;
+  /** PDF template id + keywords; null until persisted from dashboard. */
+  certificateSettings: unknown | null;
   createdBy: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -378,6 +380,7 @@ export async function getCourseById(
       organizationId: course.organizationId,
       organizationName: organization.name,
       sourceCourseId: course.sourceCourseId,
+      certificateSettings: course.certificateSettings,
       createdBy: course.createdBy,
       createdAt: course.createdAt,
       updatedAt: course.updatedAt,
@@ -468,6 +471,16 @@ export async function updateCourse(
   await database.update(course).set(patch).where(eq(course.id, courseId));
 }
 
+export async function updateCourseCertificateSettings(
+  database: Database,
+  input: { courseId: string; certificateSettings: unknown },
+): Promise<void> {
+  await database
+    .update(course)
+    .set({ certificateSettings: input.certificateSettings })
+    .where(eq(course.id, input.courseId));
+}
+
 export async function deleteCourse(database: Database, input: { courseId: string }): Promise<void> {
   await database.delete(course).where(eq(course.id, input.courseId));
 }
@@ -498,6 +511,7 @@ export async function seedCourseToOrganizations(
       estimatedDuration: course.estimatedDuration,
       status: course.status,
       organizationId: course.organizationId,
+      certificateSettings: course.certificateSettings,
     })
     .from(course)
     .where(eq(course.id, sourceCourseId))
@@ -564,6 +578,7 @@ export async function seedCourseToOrganizations(
         difficulty: src.difficulty,
         estimatedDuration: src.estimatedDuration,
         status: "draft",
+        certificateSettings: src.certificateSettings,
         createdBy: seededByUserId,
       })
       .returning({ id: course.id });
