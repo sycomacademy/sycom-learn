@@ -71,16 +71,16 @@ const PLATFORM_ADMIN_NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-// const CONTENT_CREATOR_NAV_GROUPS: NavGroup[] = [
-//   {
-//     label: "Main",
-//     items: [{ icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" }],
-//   },
-//   {
-//     label: "Courses",
-//     items: [{ icon: LayersIcon, label: "Courses", to: "/dashboard/course" }],
-//   },
-// ];
+const CONTENT_CREATOR_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Main",
+    items: [{ icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" }],
+  },
+  {
+    label: "Courses",
+    items: [{ icon: LayersIcon, label: "Courses", to: "/dashboard/course" }],
+  },
+];
 
 // const PUBLIC_STUDENT_NAV_GROUPS: NavGroup[] = [
 //   {
@@ -175,6 +175,9 @@ function getNavGroups(role: UserRole | null): NavGroup[] {
 
   if (role === "platform_admin") {
     navGroups.push(...PLATFORM_ADMIN_NAV_GROUPS);
+  }
+  if (role === "content_creator") {
+    navGroups.push(...CONTENT_CREATOR_NAV_GROUPS);
   }
   navGroups.push(...COMMON_NAV_GROUPS);
 

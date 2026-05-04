@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BookOpenCheck, Layers, PenLine, Users } from "lucide-react";
+import { BookOpenCheck, Layers, Users } from "lucide-react";
 
 import { DashboardGreeting } from "@/components/dashboard/admin/overview/dashboard-greeting";
 import {
@@ -68,7 +68,7 @@ function CreatorStatsSection({ data }: { data: CreatorOverviewData }): React.Rea
   const { totals } = data;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <OverviewStatCard
         description="Courses where you appear as main or secondary instructor."
         icon={Layers}
@@ -80,12 +80,6 @@ function CreatorStatsSection({ data }: { data: CreatorOverviewData }): React.Rea
         icon={BookOpenCheck}
         title="Published courses"
         value={totals.publishedCourses.toLocaleString()}
-      />
-      <OverviewStatCard
-        description="Courses still in draft while you finalize content."
-        icon={PenLine}
-        title="Draft courses"
-        value={totals.draftCourses.toLocaleString()}
       />
       <OverviewStatCard
         description="Enrollment records across every course you instruct."

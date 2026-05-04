@@ -1,13 +1,15 @@
+import {
+  CERTIFICATE_TEMPLATE_IDS,
+  type CertificateTemplateId,
+  isCertificateTemplateId,
+} from "./meta";
 import type { CertificateTemplateComponent } from "./templates/types";
 import { MinimalCertificate } from "./templates/minimal";
-
-export const CERTIFICATE_TEMPLATE_IDS = ["minimal"] as const;
-export type CertificateTemplateId = (typeof CERTIFICATE_TEMPLATE_IDS)[number];
+import { DefaultCertificate } from "./templates/default";
 
 export const certificateTemplates: Record<CertificateTemplateId, CertificateTemplateComponent> = {
   minimal: MinimalCertificate,
+  default: DefaultCertificate,
 };
 
-export function isCertificateTemplateId(id: string): id is CertificateTemplateId {
-  return (CERTIFICATE_TEMPLATE_IDS as readonly string[]).includes(id);
-}
+export { CERTIFICATE_TEMPLATE_IDS, type CertificateTemplateId, isCertificateTemplateId };

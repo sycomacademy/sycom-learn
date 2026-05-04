@@ -5,6 +5,9 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./meta": {
+      "default": "./src/meta.ts"
+    },
     "./templates/*": {
       "default": "./src/templates/*.tsx"
     },
