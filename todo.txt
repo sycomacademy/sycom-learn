@@ -19,7 +19,6 @@
 - cool features
     - 404 page stuff
     - tours
-    - date range for tables
 
 - database
     - optimize sql queries

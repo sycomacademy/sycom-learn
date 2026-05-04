@@ -17,6 +17,7 @@ import { formatDateTime } from "@sycom/ui/lib/date";
 import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { getInitials } from "@sycom/ui/lib/string";
 import { timeAgo, type AuditLogRow } from "./audit-log-schema";
+import { JsonViewer } from "@sycom/ui/components/elements/json-viewer";
 
 export type AuditLogDetailRow = AuditLogRow;
 
@@ -100,9 +101,7 @@ function AuditLogSheetContent({ row }: { row: AuditLogDetailRow }): ReactNode {
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Event Data
             </p>
-            <pre className="overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs leading-relaxed text-foreground">
-              {JSON.stringify(row.metadata, null, 2)}
-            </pre>
+            <JsonViewer data={JSON.parse(JSON.stringify(row.metadata))} className="border p-2" />
           </div>
         ) : null}
       </SheetPanel>
