@@ -23,6 +23,7 @@ export type CourseScope = "platform" | "organization";
 export type CourseInstructorPreview = {
   userId: string;
   name: string;
+  email: string;
   image: string | null;
   role: InstructorRole;
 };
@@ -211,23 +212,50 @@ export async function loadInstructorsForCourses(
 ): Promise<Map<string, CourseInstructorPreview[]>> {
   if (courseIds.length === 0) return new Map();
 
-  const rows = await database
-    .select({
-      courseId: courseInstructor.courseId,
-      userId: courseInstructor.userId,
-      role: courseInstructor.role,
-      name: user.name,
-      image: user.image,
-    })
-    .from(courseInstructor)
-    .innerJoin(user, eq(user.id, courseInstructor.userId))
-    .where(inArray(courseInstructor.courseId, courseIds))
-    .orderBy(asc(courseInstructor.role), asc(user.name));
+  const [creatorRows, coInstructorRows] = await Promise.all([
+    database
+      .select({
+        courseId: course.id,
+        userId: user.id,
+        role: sql<InstructorRole>`'main'`,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      })
+      .from(course)
+      .innerJoin(user, eq(user.id, course.createdBy))
+      .where(inArray(course.id, courseIds)),
+    database
+      .select({
+        courseId: courseInstructor.courseId,
+        userId: courseInstructor.userId,
+        role: courseInstructor.role,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      })
+      .from(courseInstructor)
+      .innerJoin(user, eq(user.id, courseInstructor.userId))
+      .where(inArray(courseInstructor.courseId, courseIds))
+      .orderBy(asc(courseInstructor.role), asc(user.name)),
+  ]);
 
   const byCourse = new Map<string, CourseInstructorPreview[]>();
-  for (const row of rows) {
+  const seenByCourse = new Map<string, Set<string>>();
+  for (const row of [...creatorRows, ...coInstructorRows]) {
+    const seen = seenByCourse.get(row.courseId) ?? new Set<string>();
+    if (seen.has(row.userId)) continue;
+    seen.add(row.userId);
+    seenByCourse.set(row.courseId, seen);
+
     const list = byCourse.get(row.courseId) ?? [];
-    list.push({ userId: row.userId, name: row.name, image: row.image, role: row.role });
+    list.push({
+      userId: row.userId,
+      name: row.name,
+      email: row.email,
+      image: row.image,
+      role: row.role,
+    });
     byCourse.set(row.courseId, list);
   }
   return byCourse;
@@ -395,6 +423,7 @@ export async function getCourseById(
         role: courseInstructor.role,
         addedAt: courseInstructor.createdAt,
         name: user.name,
+        email: user.email,
         image: user.image,
       })
       .from(courseInstructor)

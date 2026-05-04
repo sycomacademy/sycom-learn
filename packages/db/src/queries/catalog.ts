@@ -23,6 +23,7 @@ import {
   lesson,
   section,
   type DifficultyLevel,
+  type InstructorRole,
   type LessonType,
 } from "../schema/course";
 import { certificate, enrollment } from "../schema/enrollment";
@@ -245,64 +246,87 @@ export async function getCatalogCourseDetail(
 
   if (!courseRow) return null;
 
-  const [instructorRows, categoryRows, sectionRows, lessonRows, enrollmentRow] = await Promise.all([
-    database
-      .select({
-        userId: courseInstructor.userId,
-        role: courseInstructor.role,
-        addedAt: courseInstructor.createdAt,
-        name: user.name,
-        image: user.image,
-      })
-      .from(courseInstructor)
-      .innerJoin(user, eq(user.id, courseInstructor.userId))
-      .where(eq(courseInstructor.courseId, courseId))
-      .orderBy(asc(courseInstructor.role), asc(user.name)),
-    database
-      .select({ id: category.id, name: category.name, slug: category.slug })
-      .from(courseCategory)
-      .innerJoin(category, eq(category.id, courseCategory.categoryId))
-      .where(eq(courseCategory.courseId, courseId))
-      .orderBy(asc(category.name)),
-    database
-      .select({
-        id: section.id,
-        title: section.title,
-        description: section.description,
-        openAt: section.openAt,
-        dueAt: section.dueAt,
-        order: section.order,
-      })
-      .from(section)
-      .where(eq(section.courseId, courseId))
-      .orderBy(asc(section.order), asc(section.createdAt)),
-    database
-      .select({
-        id: lesson.id,
-        sectionId: lesson.sectionId,
-        title: lesson.title,
-        type: lesson.type,
-        order: lesson.order,
-        content: lesson.content,
-      })
-      .from(lesson)
-      .innerJoin(section, eq(lesson.sectionId, section.id))
-      .where(eq(section.courseId, courseId))
-      .orderBy(
-        asc(section.order),
-        asc(section.createdAt),
-        asc(lesson.order),
-        asc(lesson.createdAt),
-      ),
-    database
-      .select({
-        id: enrollment.id,
-        status: enrollment.status,
-      })
-      .from(enrollment)
-      .where(and(eq(enrollment.courseId, courseId), eq(enrollment.userId, userId)))
-      .limit(1),
-  ]);
+  const [creatorRows, coInstructorRows, categoryRows, sectionRows, lessonRows, enrollmentRow] =
+    await Promise.all([
+      database
+        .select({
+          userId: user.id,
+          role: sql<InstructorRole>`'main'`,
+          addedAt: course.createdAt,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        })
+        .from(course)
+        .innerJoin(user, eq(user.id, course.createdBy))
+        .where(eq(course.id, courseId))
+        .limit(1),
+      database
+        .select({
+          userId: courseInstructor.userId,
+          role: courseInstructor.role,
+          addedAt: courseInstructor.createdAt,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        })
+        .from(courseInstructor)
+        .innerJoin(user, eq(user.id, courseInstructor.userId))
+        .where(eq(courseInstructor.courseId, courseId))
+        .orderBy(asc(courseInstructor.role), asc(user.name)),
+      database
+        .select({ id: category.id, name: category.name, slug: category.slug })
+        .from(courseCategory)
+        .innerJoin(category, eq(category.id, courseCategory.categoryId))
+        .where(eq(courseCategory.courseId, courseId))
+        .orderBy(asc(category.name)),
+      database
+        .select({
+          id: section.id,
+          title: section.title,
+          description: section.description,
+          openAt: section.openAt,
+          dueAt: section.dueAt,
+          order: section.order,
+        })
+        .from(section)
+        .where(eq(section.courseId, courseId))
+        .orderBy(asc(section.order), asc(section.createdAt)),
+      database
+        .select({
+          id: lesson.id,
+          sectionId: lesson.sectionId,
+          title: lesson.title,
+          type: lesson.type,
+          order: lesson.order,
+          content: lesson.content,
+        })
+        .from(lesson)
+        .innerJoin(section, eq(lesson.sectionId, section.id))
+        .where(eq(section.courseId, courseId))
+        .orderBy(
+          asc(section.order),
+          asc(section.createdAt),
+          asc(lesson.order),
+          asc(lesson.createdAt),
+        ),
+      database
+        .select({
+          id: enrollment.id,
+          status: enrollment.status,
+        })
+        .from(enrollment)
+        .where(and(eq(enrollment.courseId, courseId), eq(enrollment.userId, userId)))
+        .limit(1),
+    ]);
+
+  const seenInstructorIds = new Set<string>();
+  const instructorRows: Array<CourseInstructorPreview & { addedAt: Date }> = [];
+  for (const row of [...creatorRows, ...coInstructorRows]) {
+    if (seenInstructorIds.has(row.userId)) continue;
+    seenInstructorIds.add(row.userId);
+    instructorRows.push(row);
+  }
 
   const lessonsBySection = new Map<string, CatalogLessonRow[]>();
   for (const lr of lessonRows) {
