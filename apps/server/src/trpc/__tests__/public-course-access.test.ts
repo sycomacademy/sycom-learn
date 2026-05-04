@@ -48,6 +48,7 @@ const detail = {
     {
       userId: "co-instructor",
       name: "Co Instructor",
+      email: "co@example.com",
       image: null,
       role: "secondary" as const,
       addedAt: new Date(),
@@ -92,6 +93,7 @@ describe("public course access", () => {
         {
           userId: "main-instructor",
           name: "Main",
+          email: "main@example.com",
           image: null,
           role: "main" as const,
           addedAt: new Date(),

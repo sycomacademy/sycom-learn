@@ -11,6 +11,7 @@ import { inviteRouter } from "./invite";
 import { lessonRouter } from "./lesson";
 import { profileRouter } from "./profile";
 import { storageRouter } from "./storage";
+import { studentRouter } from "./student";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 
 export const appRouter = router({
@@ -25,6 +26,7 @@ export const appRouter = router({
   lesson: lessonRouter,
   profile: profileRouter,
   storage: storageRouter,
+  student: studentRouter,
 });
 export type AppRouter = typeof appRouter;
 export type AppRouterOutputs = inferRouterOutputs<AppRouter>;

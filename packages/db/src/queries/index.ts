@@ -14,3 +14,4 @@ export * from "./organization-invitations";
 export * from "./platform-invitations";
 export * from "./profile";
 export * from "./storage";
+export * from "./student-overview";

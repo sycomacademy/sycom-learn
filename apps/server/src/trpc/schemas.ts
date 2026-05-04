@@ -248,6 +248,51 @@ export const creatorDashboardOverviewOutputSchema = z.object({
 });
 export type CreatorDashboardOverviewOutput = z.infer<typeof creatorDashboardOverviewOutputSchema>;
 
+// student
+export const studentDashboardOverviewInputSchema = z.object({
+  enrollmentDays: z.number().int().min(1).max(90).default(7),
+  continueLearningLimit: z.number().int().min(1).max(50).default(5),
+});
+export type StudentDashboardOverviewInput = z.infer<typeof studentDashboardOverviewInputSchema>;
+
+export const studentDashboardTotalsSchema = z.object({
+  enrolledCourses: z.number().int(),
+  completedCourses: z.number().int(),
+  inProgressCourses: z.number().int(),
+  certificatesEarned: z.number().int(),
+});
+export type StudentDashboardTotalsOutput = z.infer<typeof studentDashboardTotalsSchema>;
+
+export const studentDashboardEnrollmentDaySchema = z.object({
+  date: z.string(),
+  total: z.number().int(),
+});
+export type StudentDashboardEnrollmentDayOutput = z.infer<
+  typeof studentDashboardEnrollmentDaySchema
+>;
+
+export const studentDashboardContinueLearningSchema = z.object({
+  courseId: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  imageUrl: z.string().nullable(),
+  enrollmentStatus: z.string(),
+  lastActivityAt: z.date().nullable(),
+  completedLessonCount: z.number().int(),
+  totalLessonCount: z.number().int(),
+  certificateIssued: z.boolean(),
+});
+export type StudentDashboardContinueLearningOutput = z.infer<
+  typeof studentDashboardContinueLearningSchema
+>;
+
+export const studentDashboardOverviewOutputSchema = z.object({
+  enrollmentsByDay: z.array(studentDashboardEnrollmentDaySchema),
+  continueLearning: z.array(studentDashboardContinueLearningSchema),
+  totals: studentDashboardTotalsSchema,
+});
+export type StudentDashboardOverviewOutput = z.infer<typeof studentDashboardOverviewOutputSchema>;
+
 export const auditActorTypeSchema = z.enum(["user", "system"]);
 export type AuditActorTypeInput = z.infer<typeof auditActorTypeSchema>;
 
