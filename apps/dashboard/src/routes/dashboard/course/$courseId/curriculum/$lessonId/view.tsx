@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import type { JSONContent } from "@tiptap/core";
+import type { Editor, JSONContent } from "@tiptap/core";
+import { useEffect, useState } from "react";
 import { Button } from "@sycom/ui/components/button";
 import { Card, CardPanel, CardHeader, CardTitle } from "@sycom/ui/components/card";
 import {
@@ -20,10 +21,18 @@ export const Route = createFileRoute("/dashboard/course/$courseId/curriculum/$le
   component: LessonViewPage,
 });
 
-function ContinueBar({ courseId, lessonId }: { courseId: string; lessonId: string }) {
+function ContinueBar({
+  courseId,
+  editor,
+  lessonId,
+}: {
+  courseId: string;
+  editor: Editor | null;
+  lessonId: string;
+}) {
   const trpc = useTRPC();
   const { data: lessons } = useSuspenseQuery(trpc.lesson.listByCourse.queryOptions({ courseId }));
-  const { allCorrect, questionCount } = useQuestionGate();
+  const { allCorrect, questionCount } = useQuestionGate(editor);
 
   const idx = lessons.findIndex((l) => l.id === lessonId);
   const next = idx >= 0 ? lessons[idx + 1] : undefined;
@@ -55,6 +64,11 @@ function LessonViewPage() {
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const { data: lesson } = useSuspenseQuery(trpc.lesson.get.queryOptions({ lessonId }));
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  useEffect(() => {
+    setEditor(null);
+  }, [lessonId]);
 
   return (
     <div className="space-y-4">
@@ -68,6 +82,7 @@ function LessonViewPage() {
         <CardPanel className="space-y-4 p-0">
           <QuestionTrackingProvider>
             <RichTextEditor
+              key={lessonId}
               className="border-0"
               content={(lesson.content ?? null) as JSONContent | null}
               editable={false}
@@ -80,10 +95,11 @@ function LessonViewPage() {
                 });
                 return { isCorrect: result.isCorrect };
               }}
+              onEditorReady={setEditor}
               showAdvancedChrome={false}
             />
             <div className="flex justify-end border-t px-4 py-3">
-              <ContinueBar courseId={courseId} lessonId={lessonId} />
+              <ContinueBar courseId={courseId} editor={editor} lessonId={lessonId} />
             </div>
           </QuestionTrackingProvider>
         </CardPanel>

@@ -1,8 +1,20 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import type { Editor } from "@tiptap/core";
+import { getLessonQuestionGateSnapshot } from "@sycom/components/tiptap/extensions/lesson-question-feedback";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
-export type QuestionStatus = "unanswered" | "correct" | "incorrect";
+import type { QuestionStatus } from "@sycom/components/tiptap/extensions/question-status";
+
+export type { QuestionStatus };
 
 type QuestionTrackingContextValue = {
   register: (id: string) => void;
@@ -47,8 +59,34 @@ export function useQuestionTracking() {
   return useContext(QuestionTrackingContext);
 }
 
-export function useQuestionGate() {
+export function useQuestionGate(editor?: Editor | null) {
   const ctx = useQuestionTracking();
+  const gateFromEditor = editor !== undefined;
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!gateFromEditor || !editor) return;
+    const bump = () => setTick((n) => n + 1);
+    editor.on("transaction", bump);
+    return () => {
+      editor.off("transaction", bump);
+    };
+  }, [editor, gateFromEditor]);
+
+  void tick;
+
+  if (gateFromEditor) {
+    if (!editor) {
+      return {
+        allCorrect: true,
+        allAttempted: true,
+        statuses: {} as Record<string, QuestionStatus>,
+        questionCount: 0,
+      };
+    }
+    return getLessonQuestionGateSnapshot(editor);
+  }
+
   if (!ctx) {
     return {
       allCorrect: true,
@@ -57,6 +95,7 @@ export function useQuestionGate() {
       questionCount: 0,
     };
   }
+
   const ids = Object.keys(ctx.statuses);
   const questionCount = ids.length;
   return {

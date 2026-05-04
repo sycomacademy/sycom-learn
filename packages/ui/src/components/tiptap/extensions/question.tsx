@@ -17,10 +17,12 @@ import {
   NodeViewWrapper,
   ReactNodeViewRenderer,
   mergeAttributes,
+  useEditorState,
 } from "@tiptap/react";
 import { CheckCircle2, CircleHelp, Plus, Trash2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { lessonQuestionFeedbackKey } from "@sycom/components/tiptap/extensions/lesson-question-feedback";
 import type { FullPresetCheckAnswerFn } from "./editor-preset-types";
 
 export type QuestionOptionAttr = {
@@ -119,7 +121,7 @@ export const LessonQuestion = Node.create<LessonQuestionOptions>({
   },
 });
 
-function statusBadge(status: QuestionStatus | undefined) {
+function statusBadge(status: QuestionStatus | undefined, teacherPreview: boolean) {
   if (status === "correct") {
     return (
       <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600">
@@ -130,7 +132,7 @@ function statusBadge(status: QuestionStatus | undefined) {
   if (status === "incorrect") {
     return (
       <span className="inline-flex items-center gap-1 text-sm font-medium text-destructive">
-        <XCircle className="size-4" /> Try again
+        <XCircle className="size-4" /> {teacherPreview ? "Incorrect" : "Try again"}
       </span>
     );
   }
@@ -191,7 +193,7 @@ function QuestionNodeView(props: NodeViewProps) {
   };
 
   const handleSubmit = async () => {
-    if (!onCheckAnswer || !tracking) return;
+    if (!onCheckAnswer) return;
     const selectedIds =
       type === "single"
         ? singlePick
@@ -209,13 +211,17 @@ function QuestionNodeView(props: NodeViewProps) {
         questionId,
         selected: type === "single" ? selectedIds : selectedIds.sort(),
       });
-      tracking.setResult(questionId, isCorrect);
+      editor.chain().setLessonQuestionResult({ questionId, isCorrect }).run();
+      tracking?.setResult(questionId, isCorrect);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const viewStatus = tracking?.statuses[questionId];
+  const viewStatus = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => lessonQuestionFeedbackKey.getState(ed.state)?.[questionId],
+  }) as QuestionStatus | undefined;
 
   if (canEdit) {
     return (
@@ -320,7 +326,7 @@ function QuestionNodeView(props: NodeViewProps) {
           <CircleHelp className="size-4 text-muted-foreground" />
           Question
         </div>
-        {statusBadge(viewStatus)}
+        {statusBadge(viewStatus, true)}
       </div>
       <p className="mb-3 text-base font-medium">{prompt || "Question"}</p>
       <div className="space-y-2">
@@ -381,9 +387,6 @@ function QuestionNodeView(props: NodeViewProps) {
           </span>
         ) : null}
       </div>
-      {explanation && viewStatus && viewStatus !== "unanswered" ? (
-        <p className="mt-3 text-sm text-muted-foreground">{explanation}</p>
-      ) : null}
     </NodeViewWrapper>
   );
 }

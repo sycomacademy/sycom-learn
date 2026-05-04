@@ -5,6 +5,7 @@ import { FilePlaceholder } from "@sycom/components/tiptap/extensions/file-placeh
 import { ImageExtension } from "@sycom/components/tiptap/extensions/image";
 import { ImagePlaceholder } from "@sycom/components/tiptap/extensions/image-placeholder";
 import type { FullPresetCheckAnswerFn } from "@sycom/components/tiptap/extensions/editor-preset-types";
+import { LessonQuestionFeedback } from "@sycom/components/tiptap/extensions/lesson-question-feedback";
 import { LessonQuestion } from "@sycom/components/tiptap/extensions/question";
 import SearchAndReplace from "@sycom/components/tiptap/extensions/search-and-replace";
 import { TableExtension } from "@sycom/components/tiptap/extensions/table";
@@ -96,6 +97,7 @@ export function getFullExtensions(options: GetFullExtensionsOptions = {}): AnyEx
     TableExtension,
     SearchAndReplace,
     Typography,
+    LessonQuestionFeedback,
     LessonQuestion.configure(onCheckAnswer ? { onCheckAnswer } : {}),
     Markdown.configure({
       markedOptions: { gfm: true },

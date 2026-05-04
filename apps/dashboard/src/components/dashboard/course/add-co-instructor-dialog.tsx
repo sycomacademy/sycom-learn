@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
+import { ROLE_LABELS } from "@/components/dashboard/admin/users/users-schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
 import { Button } from "@sycom/ui/components/button";
@@ -148,7 +149,9 @@ export function AddCoInstructorDialog({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{candidate.role ?? "No role"}</Badge>
+                      <Badge variant="outline">
+                        {candidate.role ? ROLE_LABELS[candidate.role] : "No role"}
+                      </Badge>
                       <Button
                         onClick={() => void handleAdd(candidate.id)}
                         size="sm"

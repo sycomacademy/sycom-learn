@@ -13,7 +13,7 @@ import type { TiptapEditorUploadFn } from "@sycom/lib/tiptap-upload";
 import { cn } from "@sycom/ui/lib/utils";
 import { content as demoHtmlContent } from "@sycom/lib/content";
 import type { FullPresetCheckAnswerFn } from "@sycom/components/tiptap/extensions/editor-preset-types";
-import type { Content, JSONContent } from "@tiptap/core";
+import type { Content, Editor, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -35,6 +35,8 @@ export type RichTextEditorProps = {
   editorContentClassName?: string;
   /** If true (default), full mode mounts slash menu + table bubble + floating toolbar. */
   showAdvancedChrome?: boolean;
+  /** Called once when the TipTap editor instance is ready (stable for the lifetime of the component). */
+  onEditorReady?: (editor: Editor) => void;
 };
 
 export function RichTextEditor({
@@ -49,6 +51,7 @@ export function RichTextEditor({
   contentClassName,
   editorContentClassName,
   showAdvancedChrome = true,
+  onEditorReady,
 }: RichTextEditorProps) {
   const [viewOnly, setViewOnly] = useState(false);
   const editorEditable = editable && !viewOnly;
@@ -124,6 +127,12 @@ export function RichTextEditor({
     if (JSON.stringify(current) === JSON.stringify(content)) return;
     editor.commands.setContent(content ?? "", { emitUpdate: false });
   }, [editor, content]);
+
+  useEffect(() => {
+    if (editor) {
+      onEditorReady?.(editor);
+    }
+  }, [editor, onEditorReady]);
 
   if (!editor) return null;
 

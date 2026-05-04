@@ -319,6 +319,8 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
       throw error;
     } finally {
       setSavingLessonId((current) => (current === lessonId ? null : current));
+      queryClient.invalidateQueries({ queryKey: trpc.lesson.get.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.course.getCurriculum.queryKey({ courseId }) });
     }
   };
 
