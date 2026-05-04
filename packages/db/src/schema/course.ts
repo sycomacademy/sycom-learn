@@ -57,7 +57,6 @@ export const course = pgTable(
     slug: text("slug").notNull(),
     imageUrl: text("image_url"),
     difficulty: text("difficulty", { enum: DIFFICULTY_LEVELS }).default("beginner").notNull(),
-    estimatedDuration: integer("estimated_duration"),
     status: text("status", { enum: COURSE_STATUSES }).default("draft").notNull(),
     /** Per-course PDF template + copy (keywords). Nullable: UI applies package defaults until set. */
     certificateSettings: jsonb("certificate_settings"),
@@ -175,7 +174,6 @@ export const lesson = pgTable(
     openAt: timestamp("open_at", { withTimezone: true }),
     dueAt: timestamp("due_at", { withTimezone: true }),
     order: integer("order").notNull().default(0),
-    estimatedDuration: integer("estimated_duration"),
     createdAt,
     updatedAt,
   },

@@ -167,7 +167,6 @@ export const courseRouter = router({
           description: input.description,
           imageUrl: input.imageUrl,
           difficulty: input.difficulty,
-          estimatedDuration: input.estimatedDuration,
           status: input.status,
           createdBy: ctx.session.user.id,
         });

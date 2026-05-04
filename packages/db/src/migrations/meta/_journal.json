@@ -92,6 +92,13 @@
       "when": 1777902172569,
       "tag": "0012_old_whiplash",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1777906323894,
+      "tag": "0013_quiet_bishop",
+      "breakpoints": true
     }
   ]
 }

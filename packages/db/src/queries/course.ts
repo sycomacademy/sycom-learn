@@ -34,7 +34,6 @@ export type CourseRow = {
   imageUrl: string | null;
   status: CourseStatus;
   difficulty: DifficultyLevel;
-  estimatedDuration: number | null;
   organizationId: string | null;
   organizationName: string | null;
   createdBy: string | null;
@@ -119,7 +118,6 @@ export type CourseDetail = {
   summary: unknown;
   imageUrl: string | null;
   difficulty: DifficultyLevel;
-  estimatedDuration: number | null;
   status: CourseStatus;
   organizationId: string | null;
   organizationName: string | null;
@@ -143,7 +141,6 @@ export type CreateCourseInput = {
   summary?: unknown;
   imageUrl?: string;
   difficulty: DifficultyLevel;
-  estimatedDuration?: number;
   status: CourseStatus;
   createdBy: string;
 };
@@ -155,7 +152,6 @@ export type UpdateCoursePatch = {
   summary?: unknown;
   imageUrl?: string | null;
   difficulty?: DifficultyLevel;
-  estimatedDuration?: number | null;
   status?: CourseStatus;
 };
 
@@ -209,7 +205,7 @@ function buildPlatformCourseVisibilityCondition(actor?: {
   return sql`false`;
 }
 
-async function loadInstructorsForCourses(
+export async function loadInstructorsForCourses(
   database: Database,
   courseIds: string[],
 ): Promise<Map<string, CourseInstructorPreview[]>> {
@@ -237,7 +233,7 @@ async function loadInstructorsForCourses(
   return byCourse;
 }
 
-async function loadCategoriesForCourses(
+export async function loadCategoriesForCourses(
   database: Database,
   courseIds: string[],
 ): Promise<Map<string, Array<{ id: string; name: string }>>> {
@@ -330,7 +326,6 @@ export async function listCourses(
         imageUrl: course.imageUrl,
         status: course.status,
         difficulty: course.difficulty,
-        estimatedDuration: course.estimatedDuration,
         organizationId: course.organizationId,
         organizationName: organization.name,
         createdBy: course.createdBy,
@@ -377,7 +372,6 @@ export async function getCourseById(
       summary: course.summary,
       imageUrl: course.imageUrl,
       difficulty: course.difficulty,
-      estimatedDuration: course.estimatedDuration,
       status: course.status,
       organizationId: course.organizationId,
       organizationName: organization.name,
@@ -454,7 +448,6 @@ export async function createCourse(
       summary: input.summary ?? null,
       imageUrl: input.imageUrl ?? null,
       difficulty: input.difficulty,
-      estimatedDuration: input.estimatedDuration ?? null,
       status: input.status,
       createdBy: input.createdBy,
     })
@@ -510,7 +503,6 @@ export async function seedCourseToOrganizations(
       summary: course.summary,
       imageUrl: course.imageUrl,
       difficulty: course.difficulty,
-      estimatedDuration: course.estimatedDuration,
       status: course.status,
       organizationId: course.organizationId,
       certificateSettings: course.certificateSettings,
@@ -548,7 +540,6 @@ export async function seedCourseToOrganizations(
             openAt: lesson.openAt,
             dueAt: lesson.dueAt,
             order: lesson.order,
-            estimatedDuration: lesson.estimatedDuration,
           })
           .from(lesson)
           .where(
@@ -578,7 +569,6 @@ export async function seedCourseToOrganizations(
         summary: src.summary,
         imageUrl: src.imageUrl,
         difficulty: src.difficulty,
-        estimatedDuration: src.estimatedDuration,
         status: "draft",
         certificateSettings: src.certificateSettings,
         createdBy: seededByUserId,
@@ -617,7 +607,6 @@ export async function seedCourseToOrganizations(
             openAt: l.openAt,
             dueAt: l.dueAt,
             order: l.order,
-            estimatedDuration: l.estimatedDuration,
           };
         })
         .filter((l): l is NonNullable<typeof l> => l !== null);

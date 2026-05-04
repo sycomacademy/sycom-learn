@@ -548,6 +548,29 @@ export const removeCourseEnrollmentSchema = z.object({
 });
 export type RemoveCourseEnrollmentInput = z.infer<typeof removeCourseEnrollmentSchema>;
 
+// catalog (student course catalog + enroll)
+export const listCatalogCoursesSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  difficulties: z.array(z.enum(DIFFICULTY_LEVELS)).optional(),
+  categoryIds: z.array(z.string().min(1)).optional(),
+  enrolledOnly: z.boolean().optional(),
+  sortBy: z.enum(["title", "updatedAt", "difficulty"]).default("updatedAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListCatalogCoursesInput = z.infer<typeof listCatalogCoursesSchema>;
+
+export const getCatalogCourseSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type GetCatalogCourseInput = z.infer<typeof getCatalogCourseSchema>;
+
+export const enrollInCatalogCourseSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type EnrollInCatalogCourseInput = z.infer<typeof enrollInCatalogCourseSchema>;
+
 // course (platform-owned courses UI + taxonomy)
 const courseSlugSchema = z
   .string()
@@ -711,7 +734,6 @@ export const createCourseSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   imageUrl: z.string().trim().min(1).optional(),
   difficulty: z.enum(DIFFICULTY_LEVELS).default("beginner"),
-  estimatedDuration: z.number().int().positive().max(100_000).optional(),
   status: z.enum(COURSE_STATUSES).default("draft"),
   instructorIds: z.array(z.string().min(1)).default([]),
   categoryIds: z.array(z.string().min(1)).default([]),
@@ -742,7 +764,6 @@ export const updateCourseSchema = z.object({
         ),
       imageUrl: z.string().trim().min(1).nullable().optional(),
       difficulty: z.enum(DIFFICULTY_LEVELS).optional(),
-      estimatedDuration: z.number().int().positive().max(100_000).nullable().optional(),
       status: z.enum(COURSE_STATUSES).optional(),
     })
     .refine((patch) => Object.keys(patch).length > 0, "At least one field must change"),

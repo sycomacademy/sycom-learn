@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { BuildingIcon } from "@sycom/ui/components/animated/icons/building";
+import { CompassIcon } from "@sycom/ui/components/animated/icons/compass";
 import { ChartLineIcon } from "@sycom/ui/components/animated/icons/chart-line";
 import { LayersIcon } from "@sycom/ui/components/animated/icons/layers";
 import { LayoutDashboardIcon } from "@sycom/ui/components/animated/icons/layout-dashboard";
@@ -82,12 +83,13 @@ const CONTENT_CREATOR_NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-// const PUBLIC_STUDENT_NAV_GROUPS: NavGroup[] = [
-//   {
-//     label: "Main",
-//     items: [{ icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" }],
-//   },
-// ];
+const PUBLIC_STUDENT_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Main",
+    items: [{ icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard" }],
+  },
+  { label: "Courses", items: [{ icon: CompassIcon, label: "Catalog", to: "/dashboard/catalog" }] },
+];
 
 const menuButtonStableClass = cn(
   "transition-[width,height,padding,margin] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
@@ -178,6 +180,9 @@ function getNavGroups(role: UserRole | null): NavGroup[] {
   }
   if (role === "content_creator") {
     navGroups.push(...CONTENT_CREATOR_NAV_GROUPS);
+  }
+  if (role === "public_student") {
+    navGroups.push(...PUBLIC_STUDENT_NAV_GROUPS);
   }
   navGroups.push(...COMMON_NAV_GROUPS);
 

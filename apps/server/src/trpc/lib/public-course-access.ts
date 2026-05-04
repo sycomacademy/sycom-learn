@@ -43,6 +43,29 @@ export function canReadPublicCourse(
   }
 }
 
+/** Published courses: platform visibility via {@link canReadPublicCourse}, or org match on active org. */
+export function canReadCatalogCourse(
+  session: Context["session"],
+  detail: Pick<CourseDetail, "organizationId" | "createdBy" | "instructors">,
+) {
+  const currentSession = requireSession(session);
+
+  if (detail.organizationId === null) {
+    return canReadPublicCourse(session, detail);
+  }
+
+  if (currentSession.user.role === "platform_admin") {
+    return true;
+  }
+
+  const activeOrgId = currentSession.session.activeOrganizationId;
+  if (activeOrgId != null && activeOrgId === detail.organizationId) {
+    return true;
+  }
+
+  return false;
+}
+
 export function canUpdatePublicCourse(
   session: Context["session"],
   detail: Pick<CourseDetail, "createdBy" | "instructors" | "organizationId">,
@@ -92,6 +115,18 @@ export function assertCanReadPublicCourse(
   detail: Pick<CourseDetail, "createdBy" | "instructors" | "organizationId">,
 ) {
   if (!canReadPublicCourse(session, detail)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not authorized to access this course",
+    });
+  }
+}
+
+export function assertCanReadCatalogCourse(
+  session: Context["session"],
+  detail: Pick<CourseDetail, "organizationId" | "createdBy" | "instructors">,
+) {
+  if (!canReadCatalogCourse(session, detail)) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You are not authorized to access this course",

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from "./routes/__root";
 import { Route as AcceptInviteRouteImport } from "./routes/accept-invite";
 import { Route as AuthRouteImport } from "./routes/_auth";
 import { Route as SplatRouteImport } from "./routes/$";
+import { Route as LearnRouteRouteImport } from "./routes/learn/route";
 import { Route as DashboardRouteRouteImport } from "./routes/dashboard/route";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
@@ -26,11 +27,14 @@ import { Route as AuthCheckEmailRouteImport } from "./routes/_auth/check-email";
 import { Route as DashboardSupportRouteRouteImport } from "./routes/dashboard/support/route";
 import { Route as DashboardSettingsRouteRouteImport } from "./routes/dashboard/settings/route";
 import { Route as DashboardCourseRouteRouteImport } from "./routes/dashboard/course/route";
+import { Route as DashboardCatalogRouteRouteImport } from "./routes/dashboard/catalog/route";
 import { Route as DashboardAdminRouteRouteImport } from "./routes/dashboard/admin/route";
 import { Route as DashboardSupportIndexRouteImport } from "./routes/dashboard/support/index";
 import { Route as DashboardSettingsIndexRouteImport } from "./routes/dashboard/settings/index";
 import { Route as DashboardCourseIndexRouteImport } from "./routes/dashboard/course/index";
+import { Route as DashboardCatalogIndexRouteImport } from "./routes/dashboard/catalog/index";
 import { Route as DashboardAdminIndexRouteImport } from "./routes/dashboard/admin/index";
+import { Route as LearnCourseCourseIdRouteImport } from "./routes/learn/course/$courseId";
 import { Route as DashboardSupportReportIssueRouteImport } from "./routes/dashboard/support/report-issue";
 import { Route as DashboardSupportFaqsRouteImport } from "./routes/dashboard/support/faqs";
 import { Route as DashboardSupportContactRouteImport } from "./routes/dashboard/support/contact";
@@ -39,6 +43,7 @@ import { Route as DashboardSettingsPreferencesRouteImport } from "./routes/dashb
 import { Route as DashboardSettingsGeneralRouteImport } from "./routes/dashboard/settings/general";
 import { Route as DashboardOnboardingOrganizationRouteImport } from "./routes/dashboard/onboarding/organization";
 import { Route as DashboardCourseCategoriesRouteImport } from "./routes/dashboard/course/categories";
+import { Route as DashboardCatalogCourseIdRouteImport } from "./routes/dashboard/catalog/$courseId";
 import { Route as DashboardCourseCourseIdRouteRouteImport } from "./routes/dashboard/course/$courseId/route";
 import { Route as DashboardAdminUsersRouteRouteImport } from "./routes/dashboard/admin/users/route";
 import { Route as DashboardAdminOrganizationsRouteRouteImport } from "./routes/dashboard/admin/organizations/route";
@@ -71,6 +76,11 @@ const AuthRoute = AuthRouteImport.update({
 const SplatRoute = SplatRouteImport.update({
   id: "/$",
   path: "/$",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const LearnRouteRoute = LearnRouteRouteImport.update({
+  id: "/learn",
+  path: "/learn",
   getParentRoute: () => rootRouteImport,
 } as any);
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
@@ -143,6 +153,11 @@ const DashboardCourseRouteRoute = DashboardCourseRouteRouteImport.update({
   path: "/course",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardCatalogRouteRoute = DashboardCatalogRouteRouteImport.update({
+  id: "/catalog",
+  path: "/catalog",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
 const DashboardAdminRouteRoute = DashboardAdminRouteRouteImport.update({
   id: "/admin",
   path: "/admin",
@@ -163,10 +178,20 @@ const DashboardCourseIndexRoute = DashboardCourseIndexRouteImport.update({
   path: "/",
   getParentRoute: () => DashboardCourseRouteRoute,
 } as any);
+const DashboardCatalogIndexRoute = DashboardCatalogIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => DashboardCatalogRouteRoute,
+} as any);
 const DashboardAdminIndexRoute = DashboardAdminIndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => DashboardAdminRouteRoute,
+} as any);
+const LearnCourseCourseIdRoute = LearnCourseCourseIdRouteImport.update({
+  id: "/course/$courseId",
+  path: "/course/$courseId",
+  getParentRoute: () => LearnRouteRoute,
 } as any);
 const DashboardSupportReportIssueRoute = DashboardSupportReportIssueRouteImport.update({
   id: "/report-issue",
@@ -207,6 +232,11 @@ const DashboardCourseCategoriesRoute = DashboardCourseCategoriesRouteImport.upda
   id: "/categories",
   path: "/categories",
   getParentRoute: () => DashboardCourseRouteRoute,
+} as any);
+const DashboardCatalogCourseIdRoute = DashboardCatalogCourseIdRouteImport.update({
+  id: "/$courseId",
+  path: "/$courseId",
+  getParentRoute: () => DashboardCatalogRouteRoute,
 } as any);
 const DashboardCourseCourseIdRouteRoute = DashboardCourseCourseIdRouteRouteImport.update({
   id: "/$courseId",
@@ -315,9 +345,11 @@ const DashboardCourseCourseIdCurriculumLessonIdEditRoute =
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/learn": typeof LearnRouteRouteWithChildren;
   "/$": typeof SplatRoute;
   "/accept-invite": typeof AcceptInviteRoute;
   "/dashboard/admin": typeof DashboardAdminRouteRouteWithChildren;
+  "/dashboard/catalog": typeof DashboardCatalogRouteRouteWithChildren;
   "/dashboard/course": typeof DashboardCourseRouteRouteWithChildren;
   "/dashboard/settings": typeof DashboardSettingsRouteRouteWithChildren;
   "/dashboard/support": typeof DashboardSupportRouteRouteWithChildren;
@@ -334,6 +366,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
   "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
   "/dashboard/course/$courseId": typeof DashboardCourseCourseIdRouteRouteWithChildren;
+  "/dashboard/catalog/$courseId": typeof DashboardCatalogCourseIdRoute;
   "/dashboard/course/categories": typeof DashboardCourseCategoriesRoute;
   "/dashboard/onboarding/organization": typeof DashboardOnboardingOrganizationRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
@@ -342,7 +375,9 @@ export interface FileRoutesByFullPath {
   "/dashboard/support/contact": typeof DashboardSupportContactRoute;
   "/dashboard/support/faqs": typeof DashboardSupportFaqsRoute;
   "/dashboard/support/report-issue": typeof DashboardSupportReportIssueRoute;
+  "/learn/course/$courseId": typeof LearnCourseCourseIdRoute;
   "/dashboard/admin/": typeof DashboardAdminIndexRoute;
+  "/dashboard/catalog/": typeof DashboardCatalogIndexRoute;
   "/dashboard/course/": typeof DashboardCourseIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/support/": typeof DashboardSupportIndexRoute;
@@ -364,6 +399,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/learn": typeof LearnRouteRouteWithChildren;
   "/$": typeof SplatRoute;
   "/accept-invite": typeof AcceptInviteRoute;
   "/check-email": typeof AuthCheckEmailRoute;
@@ -375,6 +411,7 @@ export interface FileRoutesByTo {
   "/verify-email": typeof AuthVerifyEmailRoute;
   "/dashboard/$": typeof DashboardSplatRoute;
   "/dashboard": typeof DashboardIndexRoute;
+  "/dashboard/catalog/$courseId": typeof DashboardCatalogCourseIdRoute;
   "/dashboard/course/categories": typeof DashboardCourseCategoriesRoute;
   "/dashboard/onboarding/organization": typeof DashboardOnboardingOrganizationRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
@@ -383,7 +420,9 @@ export interface FileRoutesByTo {
   "/dashboard/support/contact": typeof DashboardSupportContactRoute;
   "/dashboard/support/faqs": typeof DashboardSupportFaqsRoute;
   "/dashboard/support/report-issue": typeof DashboardSupportReportIssueRoute;
+  "/learn/course/$courseId": typeof LearnCourseCourseIdRoute;
   "/dashboard/admin": typeof DashboardAdminIndexRoute;
+  "/dashboard/catalog": typeof DashboardCatalogIndexRoute;
   "/dashboard/course": typeof DashboardCourseIndexRoute;
   "/dashboard/settings": typeof DashboardSettingsIndexRoute;
   "/dashboard/support": typeof DashboardSupportIndexRoute;
@@ -407,10 +446,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/dashboard": typeof DashboardRouteRouteWithChildren;
+  "/learn": typeof LearnRouteRouteWithChildren;
   "/$": typeof SplatRoute;
   "/_auth": typeof AuthRouteWithChildren;
   "/accept-invite": typeof AcceptInviteRoute;
   "/dashboard/admin": typeof DashboardAdminRouteRouteWithChildren;
+  "/dashboard/catalog": typeof DashboardCatalogRouteRouteWithChildren;
   "/dashboard/course": typeof DashboardCourseRouteRouteWithChildren;
   "/dashboard/settings": typeof DashboardSettingsRouteRouteWithChildren;
   "/dashboard/support": typeof DashboardSupportRouteRouteWithChildren;
@@ -427,6 +468,7 @@ export interface FileRoutesById {
   "/dashboard/admin/organizations": typeof DashboardAdminOrganizationsRouteRouteWithChildren;
   "/dashboard/admin/users": typeof DashboardAdminUsersRouteRouteWithChildren;
   "/dashboard/course/$courseId": typeof DashboardCourseCourseIdRouteRouteWithChildren;
+  "/dashboard/catalog/$courseId": typeof DashboardCatalogCourseIdRoute;
   "/dashboard/course/categories": typeof DashboardCourseCategoriesRoute;
   "/dashboard/onboarding/organization": typeof DashboardOnboardingOrganizationRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
@@ -435,7 +477,9 @@ export interface FileRoutesById {
   "/dashboard/support/contact": typeof DashboardSupportContactRoute;
   "/dashboard/support/faqs": typeof DashboardSupportFaqsRoute;
   "/dashboard/support/report-issue": typeof DashboardSupportReportIssueRoute;
+  "/learn/course/$courseId": typeof LearnCourseCourseIdRoute;
   "/dashboard/admin/": typeof DashboardAdminIndexRoute;
+  "/dashboard/catalog/": typeof DashboardCatalogIndexRoute;
   "/dashboard/course/": typeof DashboardCourseIndexRoute;
   "/dashboard/settings/": typeof DashboardSettingsIndexRoute;
   "/dashboard/support/": typeof DashboardSupportIndexRoute;
@@ -460,9 +504,11 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/dashboard"
+    | "/learn"
     | "/$"
     | "/accept-invite"
     | "/dashboard/admin"
+    | "/dashboard/catalog"
     | "/dashboard/course"
     | "/dashboard/settings"
     | "/dashboard/support"
@@ -479,6 +525,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/organizations"
     | "/dashboard/admin/users"
     | "/dashboard/course/$courseId"
+    | "/dashboard/catalog/$courseId"
     | "/dashboard/course/categories"
     | "/dashboard/onboarding/organization"
     | "/dashboard/settings/general"
@@ -487,7 +534,9 @@ export interface FileRouteTypes {
     | "/dashboard/support/contact"
     | "/dashboard/support/faqs"
     | "/dashboard/support/report-issue"
+    | "/learn/course/$courseId"
     | "/dashboard/admin/"
+    | "/dashboard/catalog/"
     | "/dashboard/course/"
     | "/dashboard/settings/"
     | "/dashboard/support/"
@@ -509,6 +558,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/learn"
     | "/$"
     | "/accept-invite"
     | "/check-email"
@@ -520,6 +570,7 @@ export interface FileRouteTypes {
     | "/verify-email"
     | "/dashboard/$"
     | "/dashboard"
+    | "/dashboard/catalog/$courseId"
     | "/dashboard/course/categories"
     | "/dashboard/onboarding/organization"
     | "/dashboard/settings/general"
@@ -528,7 +579,9 @@ export interface FileRouteTypes {
     | "/dashboard/support/contact"
     | "/dashboard/support/faqs"
     | "/dashboard/support/report-issue"
+    | "/learn/course/$courseId"
     | "/dashboard/admin"
+    | "/dashboard/catalog"
     | "/dashboard/course"
     | "/dashboard/settings"
     | "/dashboard/support"
@@ -551,10 +604,12 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/dashboard"
+    | "/learn"
     | "/$"
     | "/_auth"
     | "/accept-invite"
     | "/dashboard/admin"
+    | "/dashboard/catalog"
     | "/dashboard/course"
     | "/dashboard/settings"
     | "/dashboard/support"
@@ -571,6 +626,7 @@ export interface FileRouteTypes {
     | "/dashboard/admin/organizations"
     | "/dashboard/admin/users"
     | "/dashboard/course/$courseId"
+    | "/dashboard/catalog/$courseId"
     | "/dashboard/course/categories"
     | "/dashboard/onboarding/organization"
     | "/dashboard/settings/general"
@@ -579,7 +635,9 @@ export interface FileRouteTypes {
     | "/dashboard/support/contact"
     | "/dashboard/support/faqs"
     | "/dashboard/support/report-issue"
+    | "/learn/course/$courseId"
     | "/dashboard/admin/"
+    | "/dashboard/catalog/"
     | "/dashboard/course/"
     | "/dashboard/settings/"
     | "/dashboard/support/"
@@ -603,6 +661,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
+  LearnRouteRoute: typeof LearnRouteRouteWithChildren;
   SplatRoute: typeof SplatRoute;
   AuthRoute: typeof AuthRouteWithChildren;
   AcceptInviteRoute: typeof AcceptInviteRoute;
@@ -629,6 +688,13 @@ declare module "@tanstack/react-router" {
       path: "/$";
       fullPath: "/$";
       preLoaderRoute: typeof SplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/learn": {
+      id: "/learn";
+      path: "/learn";
+      fullPath: "/learn";
+      preLoaderRoute: typeof LearnRouteRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/dashboard": {
@@ -729,6 +795,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardCourseRouteRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
+    "/dashboard/catalog": {
+      id: "/dashboard/catalog";
+      path: "/catalog";
+      fullPath: "/dashboard/catalog";
+      preLoaderRoute: typeof DashboardCatalogRouteRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
     "/dashboard/admin": {
       id: "/dashboard/admin";
       path: "/admin";
@@ -757,12 +830,26 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardCourseIndexRouteImport;
       parentRoute: typeof DashboardCourseRouteRoute;
     };
+    "/dashboard/catalog/": {
+      id: "/dashboard/catalog/";
+      path: "/";
+      fullPath: "/dashboard/catalog/";
+      preLoaderRoute: typeof DashboardCatalogIndexRouteImport;
+      parentRoute: typeof DashboardCatalogRouteRoute;
+    };
     "/dashboard/admin/": {
       id: "/dashboard/admin/";
       path: "/";
       fullPath: "/dashboard/admin/";
       preLoaderRoute: typeof DashboardAdminIndexRouteImport;
       parentRoute: typeof DashboardAdminRouteRoute;
+    };
+    "/learn/course/$courseId": {
+      id: "/learn/course/$courseId";
+      path: "/course/$courseId";
+      fullPath: "/learn/course/$courseId";
+      preLoaderRoute: typeof LearnCourseCourseIdRouteImport;
+      parentRoute: typeof LearnRouteRoute;
     };
     "/dashboard/support/report-issue": {
       id: "/dashboard/support/report-issue";
@@ -819,6 +906,13 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard/course/categories";
       preLoaderRoute: typeof DashboardCourseCategoriesRouteImport;
       parentRoute: typeof DashboardCourseRouteRoute;
+    };
+    "/dashboard/catalog/$courseId": {
+      id: "/dashboard/catalog/$courseId";
+      path: "/$courseId";
+      fullPath: "/dashboard/catalog/$courseId";
+      preLoaderRoute: typeof DashboardCatalogCourseIdRouteImport;
+      parentRoute: typeof DashboardCatalogRouteRoute;
     };
     "/dashboard/course/$courseId": {
       id: "/dashboard/course/$courseId";
@@ -1022,6 +1116,20 @@ const DashboardAdminRouteRouteWithChildren = DashboardAdminRouteRoute._addFileCh
   DashboardAdminRouteRouteChildren,
 );
 
+interface DashboardCatalogRouteRouteChildren {
+  DashboardCatalogCourseIdRoute: typeof DashboardCatalogCourseIdRoute;
+  DashboardCatalogIndexRoute: typeof DashboardCatalogIndexRoute;
+}
+
+const DashboardCatalogRouteRouteChildren: DashboardCatalogRouteRouteChildren = {
+  DashboardCatalogCourseIdRoute: DashboardCatalogCourseIdRoute,
+  DashboardCatalogIndexRoute: DashboardCatalogIndexRoute,
+};
+
+const DashboardCatalogRouteRouteWithChildren = DashboardCatalogRouteRoute._addFileChildren(
+  DashboardCatalogRouteRouteChildren,
+);
+
 interface DashboardCourseCourseIdRouteRouteChildren {
   DashboardCourseCourseIdAnalyticsRoute: typeof DashboardCourseCourseIdAnalyticsRoute;
   DashboardCourseCourseIdAnnouncementsRoute: typeof DashboardCourseCourseIdAnnouncementsRoute;
@@ -1103,6 +1211,7 @@ const DashboardSupportRouteRouteWithChildren = DashboardSupportRouteRoute._addFi
 
 interface DashboardRouteRouteChildren {
   DashboardAdminRouteRoute: typeof DashboardAdminRouteRouteWithChildren;
+  DashboardCatalogRouteRoute: typeof DashboardCatalogRouteRouteWithChildren;
   DashboardCourseRouteRoute: typeof DashboardCourseRouteRouteWithChildren;
   DashboardSettingsRouteRoute: typeof DashboardSettingsRouteRouteWithChildren;
   DashboardSupportRouteRoute: typeof DashboardSupportRouteRouteWithChildren;
@@ -1113,6 +1222,7 @@ interface DashboardRouteRouteChildren {
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardAdminRouteRoute: DashboardAdminRouteRouteWithChildren,
+  DashboardCatalogRouteRoute: DashboardCatalogRouteRouteWithChildren,
   DashboardCourseRouteRoute: DashboardCourseRouteRouteWithChildren,
   DashboardSettingsRouteRoute: DashboardSettingsRouteRouteWithChildren,
   DashboardSupportRouteRoute: DashboardSupportRouteRouteWithChildren,
@@ -1124,6 +1234,16 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
   DashboardRouteRouteChildren,
 );
+
+interface LearnRouteRouteChildren {
+  LearnCourseCourseIdRoute: typeof LearnCourseCourseIdRoute;
+}
+
+const LearnRouteRouteChildren: LearnRouteRouteChildren = {
+  LearnCourseCourseIdRoute: LearnCourseCourseIdRoute,
+};
+
+const LearnRouteRouteWithChildren = LearnRouteRoute._addFileChildren(LearnRouteRouteChildren);
 
 interface AuthRouteChildren {
   AuthCheckEmailRoute: typeof AuthCheckEmailRoute;
@@ -1150,6 +1270,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
+  LearnRouteRoute: LearnRouteRouteWithChildren,
   SplatRoute: SplatRoute,
   AuthRoute: AuthRouteWithChildren,
   AcceptInviteRoute: AcceptInviteRoute,

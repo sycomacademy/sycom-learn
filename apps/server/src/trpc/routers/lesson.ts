@@ -110,7 +110,6 @@ export const lessonRouter = router({
         openAt: row.openAt,
         dueAt: row.dueAt,
         order: row.order,
-        estimatedDuration: row.estimatedDuration,
         content,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
