@@ -4,13 +4,19 @@ import { Image } from "@sycom/ui/image";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { getInitials } from "@sycom/ui/lib/string";
 import { createColumnHelper } from "@tanstack/react-table";
-import { BookOpenIcon } from "lucide-react";
 
+import { BookOpenIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { COURSE_DIFFICULTY_LABELS, formatMinutes, type CatalogRow } from "./catalog-schema";
 
 function CourseCell({ course }: { course: CatalogRow }) {
   return (
-    <div className="flex max-w-72 min-w-0 items-center gap-3">
+    <Link
+      params={{ courseId: course.id }}
+      preload="intent"
+      to="/dashboard/catalog/$courseId"
+      className="flex max-w-72 min-w-0 items-center gap-3"
+    >
       <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
         {course.imageUrl ? (
           <Image
@@ -28,7 +34,7 @@ function CourseCell({ course }: { course: CatalogRow }) {
         <p className="truncate font-medium text-foreground">{course.title}</p>
         <p className="truncate text-xs text-muted-foreground">{course.slug}</p>
       </div>
-    </div>
+    </Link>
   );
 }
 

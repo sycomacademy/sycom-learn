@@ -4,6 +4,10 @@ import { ArrowLeftIcon } from "lucide-react";
 
 import { CatalogCertificatePreview } from "@/components/dashboard/catalog/catalog-certificate-preview";
 import { CatalogCourseHeader } from "@/components/dashboard/catalog/catalog-course-header";
+import {
+  CatalogCourseInstructors,
+  CatalogCourseSummary,
+} from "@/components/dashboard/catalog/catalog-course-summary-instructors";
 import { CatalogCurriculum } from "@/components/dashboard/catalog/catalog-curriculum";
 import { CatalogEnrollCtaCard } from "@/components/dashboard/catalog/catalog-enroll-cta-card";
 import { useTRPC } from "@/lib/trpc/client";
@@ -45,6 +49,8 @@ function CatalogCourseDetailPage() {
         </div>
         <CatalogEnrollCtaCard courseId={courseId} detail={course} />
       </div>
+      <CatalogCourseSummary summary={course.summary} />
+      <CatalogCourseInstructors instructors={course.instructors} />
 
       <CatalogCurriculum sections={course.sections} />
 

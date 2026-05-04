@@ -6,9 +6,9 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@sycom/ui/components/card";
 import {
   Pagination,
@@ -37,61 +37,58 @@ type CatalogCardProps = {
 function CatalogCard({ course }: CatalogCardProps) {
   return (
     <Card className="group overflow-hidden">
-      <Button
-        className="h-auto w-full justify-start rounded-none p-0 text-left text-inherit group-hover:border-border hover:bg-inherit"
-        render={
-          <Link
-            params={{ courseId: course.id }}
-            preload="intent"
-            to="/dashboard/catalog/$courseId"
-          />
-        }
-        variant="ghost"
-      >
-        <div className="w-full">
-          <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden bg-muted">
-            {course.imageUrl ? (
-              <Image
-                alt={course.title}
-                className="size-full object-cover"
-                height={360}
-                src={course.imageUrl}
-                width={640}
-              />
-            ) : (
-              <BookOpenIcon className="size-7 text-muted-foreground" />
-            )}
-            {course.enrolled ? (
-              <div className="absolute top-3 right-3 z-10">
-                <Badge size="sm" variant="default">
-                  Enrolled
-                </Badge>
-              </div>
-            ) : null}
-          </div>
-
-          <CardHeader className="pb-3">
-            <CardTitle className="line-clamp-2 text-base leading-snug">{course.title}</CardTitle>
-            <CardDescription className="truncate">{course.slug}</CardDescription>
-          </CardHeader>
-
-          <CardContent className="pt-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge size="sm" variant="outline">
-                {COURSE_DIFFICULTY_LABELS[course.difficulty]}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {course.lessonCount} lesson{course.lessonCount === 1 ? "" : "s"} ·{" "}
-                {formatMinutes(course.totalMinutes)}
-              </span>
+      <div className="relative">
+        <Button
+          className="h-auto w-full justify-start rounded-none p-0 text-left text-inherit group-hover:border-border hover:bg-inherit"
+          render={
+            <Link
+              params={{ courseId: course.id }}
+              preload="intent"
+              to="/dashboard/catalog/$courseId"
+            />
+          }
+          variant="ghost"
+        >
+          <div className="w-full">
+            <div className="flex aspect-video w-full items-center justify-center overflow-hidden bg-muted">
+              {course.imageUrl ? (
+                <Image
+                  alt={course.title}
+                  className="size-full object-cover"
+                  height={360}
+                  src={course.imageUrl}
+                  width={640}
+                />
+              ) : (
+                <BookOpenIcon className="size-5 text-muted-foreground" />
+              )}
+              {course.enrolled ? (
+                <div className="absolute top-3 right-3 z-10">
+                  <Badge size="sm" variant="default">
+                    Enrolled
+                  </Badge>
+                </div>
+              ) : null}
             </div>
-          </CardContent>
 
-          <CardFooter className="pt-3 text-sm text-muted-foreground">
-            Open to view details and enroll
-          </CardFooter>
-        </div>
-      </Button>
+            <CardHeader className="pb-3">
+              <CardTitle className="line-clamp-2 text-base leading-snug">{course.title}</CardTitle>
+              <CardDescription className="truncate">{course.slug}</CardDescription>
+            </CardHeader>
+
+            <CardContent className="pt-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{COURSE_DIFFICULTY_LABELS[course.difficulty]}</Badge>
+              </div>
+            </CardContent>
+
+            <CardFooter className="pt-3 text-sm text-muted-foreground">
+              {course.lessonCount} lesson{course.lessonCount === 1 ? "" : "s"} ·{" "}
+              {formatMinutes(course.totalMinutes)}
+            </CardFooter>
+          </div>
+        </Button>
+      </div>
     </Card>
   );
 }
