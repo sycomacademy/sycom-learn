@@ -1,4 +1,10 @@
+import type { QueryClient } from "@tanstack/react-query";
 import type { AnyRouter } from "@tanstack/react-router";
+import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
+
+import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
+import { applyPendingOwnerInviteActiveOrganization } from "@/lib/auth/pending-owner-invite-org";
+import type { AppRouter } from "server/trpc/routers/_app";
 
 const FALLBACK = "/dashboard";
 
@@ -17,4 +23,30 @@ export function resolvePostAuthRedirect(router: AnyRouter, redirect: string | un
 
   if (!foundRoute || foundRoute.id === "/$") return FALLBACK;
   return safe;
+}
+
+export async function resolveAuthenticatedEntryHref(
+  queryClient: QueryClient,
+  trpc: TRPCOptionsProxy<AppRouter>,
+  router: AnyRouter,
+  redirectSearchParam: string | undefined,
+): Promise<string> {
+  await applyPendingOwnerInviteActiveOrganization(queryClient);
+
+  const onboarding = await queryClient.fetchQuery(trpc.onboarding.status.queryOptions());
+
+  if (onboarding.defaultNextPath) {
+    return onboarding.defaultNextPath;
+  }
+
+  const explicit = safeRedirectPath(redirectSearchParam);
+  if (explicit) {
+    return resolvePostAuthRedirect(router, redirectSearchParam);
+  }
+
+  if (onboarding.activeOrganizationId) {
+    return dashboardHomeRoute(onboarding.activeOrganizationId);
+  }
+
+  return FALLBACK;
 }

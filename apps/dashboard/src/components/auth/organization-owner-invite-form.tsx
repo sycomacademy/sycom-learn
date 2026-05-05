@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
+import { storePendingOwnerInviteOrganization } from "@/lib/auth/pending-owner-invite-org";
 import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@sycom/ui/components/button";
 import { buttonVariants } from "@sycom/ui/components/button-variants";
@@ -63,14 +64,18 @@ export function OrganizationOwnerInviteForm({ token }: { token: string }) {
 
   const acceptMutation = useMutation({
     ...trpc.invite.acceptOrganizationInvite.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (data) => {
+        storePendingOwnerInviteOrganization({
+          organizationId: data.organizationId,
+          organizationSlug: data.organizationSlug,
+        });
         toastManager.add({
           title: "Account ready",
           description: "Sign in to finish organization setup.",
           type: "success",
         });
         await router.navigate({
-          href: `/sign-in?redirect=${encodeURIComponent("/dashboard/onboarding/organization")}`,
+          href: `/sign-in?redirect=${encodeURIComponent("/onboarding/organization?fromInvite=1")}`,
           replace: true,
         });
       },

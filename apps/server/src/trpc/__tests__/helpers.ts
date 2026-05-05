@@ -39,6 +39,7 @@ type SessionUser = {
 
 type MakeCallerOptions = {
   user?: SessionUser | null;
+  activeOrganizationId?: string | null;
 };
 
 // Construct a tRPC caller with a hand-built context. The shapes below match
@@ -46,7 +47,7 @@ type MakeCallerOptions = {
 // session to the expected type because Better Auth's session objects carry a
 // lot of derived fields that aren't relevant to the middleware guard.
 export const makeCaller = (opts: MakeCallerOptions = {}): Caller => {
-  const { user = null } = opts;
+  const { user = null, activeOrganizationId = null } = opts;
 
   const now = new Date();
   const session = user
@@ -58,7 +59,7 @@ export const makeCaller = (opts: MakeCallerOptions = {}): Caller => {
           expiresAt: new Date(now.getTime() + 60 * 60 * 1000),
           ipAddress: null,
           userAgent: null,
-          activeOrganizationId: null,
+          activeOrganizationId,
           createdAt: now,
           updatedAt: now,
         },

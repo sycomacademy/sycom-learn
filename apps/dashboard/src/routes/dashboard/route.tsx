@@ -14,10 +14,18 @@ export const Route = createFileRoute("/dashboard")({
         search: { redirect: location.href },
       });
     }
+
+    const onboarding = await context.queryClient.ensureQueryData(
+      context.trpc.onboarding.status.queryOptions(),
+    );
+    if (onboarding.defaultNextPath) {
+      throw redirect({ href: onboarding.defaultNextPath });
+    }
   },
   loader: async ({ context }) => {
-    const [, sidebarOpen] = await Promise.all([
+    const [, , sidebarOpen] = await Promise.all([
       context.queryClient.ensureQueryData(context.trpc.profile.get.queryOptions()),
+      context.queryClient.ensureQueryData(context.trpc.organization.memberships.queryOptions()),
       getSidebarState(),
     ]);
     return { sidebarOpen: sidebarOpen ?? true };

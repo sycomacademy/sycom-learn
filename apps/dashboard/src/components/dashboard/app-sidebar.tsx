@@ -24,6 +24,8 @@ import {
   SidebarMenuItem,
 } from "@sycom/ui/components/sidebar";
 import { Link } from "@/components/layout/foresight-link";
+import { OrganizationSwitcher } from "@/components/dashboard/organization-switcher";
+import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
 import { useUser } from "@/hooks/use-user";
 import type { TRoutes } from "@/router";
 import { cn } from "@sycom/ui/lib/utils";
@@ -110,12 +112,20 @@ const groupLabelStableClass = cn(
   "group-data-[collapsible=icon]:pointer-events-none",
 );
 
+function rewriteOverviewTargets(groups: NavGroup[], homePath: TRoutes): NavGroup[] {
+  return groups.map((group) => ({
+    ...group,
+    items: group.items.map((item) => (item.to === "/dashboard" ? { ...item, to: homePath } : item)),
+  }));
+}
+
 export function AppSidebar(): React.ReactElement {
   const {
-    data: { user },
+    data: { user, session },
   } = useUser();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const navGroups = getNavGroups(normalizeUserRole(user.role));
+  const homePath = dashboardHomeRoute(session.activeOrganizationId);
+  const navGroups = rewriteOverviewTargets(getNavGroups(normalizeUserRole(user.role)), homePath);
 
   let activeTo: TRoutes | undefined;
   let bestLength = -1;
@@ -134,7 +144,7 @@ export function AppSidebar(): React.ReactElement {
       <SidebarHeader>
         <Link
           className="flex w-fit items-center gap-2 text-sm font-semibold text-sidebar-foreground"
-          to="/dashboard"
+          to={homePath}
         >
           <Image
             alt="Sycom Solutions logo"
@@ -175,6 +185,7 @@ export function AppSidebar(): React.ReactElement {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <OrganizationSwitcher />
     </Sidebar>
   );
 }

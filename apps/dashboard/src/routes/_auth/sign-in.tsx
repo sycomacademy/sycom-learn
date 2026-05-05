@@ -24,8 +24,9 @@ import * as z from "zod/mini";
 import { AuthMethods } from "@/components/auth/auth-methods";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
-import { resolvePostAuthRedirect } from "@/lib/auth/auth-redirect";
+import { resolveAuthenticatedEntryHref } from "@/lib/auth/auth-redirect";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { useTRPC } from "@/lib/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 
 const signInSchema = z.object({
@@ -56,6 +57,7 @@ export const Route = createFileRoute("/_auth/sign-in")({
 function SignInPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const trpc = useTRPC();
   const { redirect: redirectParam } = useSearch({ from: "/_auth" });
   const [lastUsedMethod, setLastUsedMethod] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -72,7 +74,7 @@ function SignInPage() {
 
   const finishSignIn = async () => {
     await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
-    const target = resolvePostAuthRedirect(router, redirectParam);
+    const target = await resolveAuthenticatedEntryHref(queryClient, trpc, router, redirectParam);
     await router.navigate({ href: target, replace: true });
   };
 

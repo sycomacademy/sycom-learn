@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
 import { sessionQueryOptions } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/dashboard/admin")({
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/dashboard/admin")({
       });
     }
     if (session.user.role !== "platform_admin") {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: dashboardHomeRoute(session.session.activeOrganizationId) });
     }
   },
 });

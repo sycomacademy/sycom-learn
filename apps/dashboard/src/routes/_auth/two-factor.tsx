@@ -16,8 +16,9 @@ import * as z from "zod/mini";
 
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
-import { resolvePostAuthRedirect } from "@/lib/auth/auth-redirect";
+import { resolveAuthenticatedEntryHref } from "@/lib/auth/auth-redirect";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { useTRPC } from "@/lib/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 const totpSchema = z.object({
   code: z.string().check(z.minLength(6, "Enter the 6-digit code from your authenticator app")),
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/_auth/two-factor")({
 function TwoFactorPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const trpc = useTRPC();
   const { redirect: redirectParam } = useSearch({ from: "/_auth" });
   const [activeMethod, setActiveMethod] = useState("totp");
 
@@ -62,7 +64,7 @@ function TwoFactorPage() {
 
   const finishSignIn = async () => {
     await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
-    const target = resolvePostAuthRedirect(router, redirectParam);
+    const target = await resolveAuthenticatedEntryHref(queryClient, trpc, router, redirectParam);
     await router.navigate({ href: target, replace: true });
   };
 

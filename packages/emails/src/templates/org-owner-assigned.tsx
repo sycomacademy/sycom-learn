@@ -18,7 +18,7 @@ export function OrgOwnerAssignedEmail({
   organizationName = "Example Academy",
   inviterName = "Jane Admin",
   inviteeName = "Alex Owner",
-  ctaUrl = "https://example.com/dashboard/onboarding/organization",
+  ctaUrl = "https://example.com/onboarding/organization?fromInvite=1",
   scenario = "existing_account",
 }: OrgOwnerAssignedEmailProps) {
   const isNewAccount = scenario === "new_account";
@@ -99,6 +99,6 @@ OrgOwnerAssignedEmail.PreviewProps = {
   organizationName: "Example Academy",
   inviterName: "Jane Admin",
   inviteeName: "Alex Owner",
-  ctaUrl: "https://example.com/dashboard/onboarding/organization",
+  ctaUrl: "https://example.com/onboarding/organization?fromInvite=1",
   scenario: "existing_account",
 } satisfies OrgOwnerAssignedEmailProps;

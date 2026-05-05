@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."organization" ADD COLUMN "onboarded_at" timestamp;

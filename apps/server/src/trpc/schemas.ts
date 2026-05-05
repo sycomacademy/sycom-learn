@@ -485,7 +485,6 @@ export type UpdateAvatarInput = z.infer<typeof updateAvatarSchema>;
 
 export const updateProfileSchema = profileSelectSchema
   .pick({
-    onboardedAt: true,
     bio: true,
     settings: true,
   })
@@ -506,6 +505,49 @@ export const revokeSessionSchema = z.object({
   token: z.string().min(1),
 });
 export type RevokeSessionInput = z.infer<typeof revokeSessionSchema>;
+
+// organization
+export const organizationMembershipSummarySchema = z.object({
+  organizationId: z.string(),
+  name: z.string(),
+  slug: z.string(),
+});
+export type OrganizationMembershipSummary = z.infer<typeof organizationMembershipSummarySchema>;
+
+export const organizationMembershipsOutputSchema = z.array(organizationMembershipSummarySchema);
+export type OrganizationMembershipsOutput = z.infer<typeof organizationMembershipsOutputSchema>;
+
+// onboarding
+export const onboardingDefaultNextPathSchema = z
+  .union([z.literal("/onboarding"), z.literal("/onboarding/organization")])
+  .nullable();
+export type OnboardingDefaultNextPath = z.infer<typeof onboardingDefaultNextPathSchema>;
+
+export const onboardingStatusSchema = z.object({
+  profileOnboarded: z.boolean(),
+  needsProfileStep: z.boolean(),
+  needsOrgOwnerStep: z.boolean(),
+  activeOrganizationId: z.string().nullable(),
+  defaultNextPath: onboardingDefaultNextPathSchema,
+});
+export type OnboardingStatus = z.infer<typeof onboardingStatusSchema>;
+
+export const accentHexSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a #RRGGBB color");
+
+export const completeProfileOnboardingSchema = z.object({
+  bio: z.string().max(500).optional(),
+  skip: z.boolean().optional(),
+});
+export type CompleteProfileOnboardingInput = z.infer<typeof completeProfileOnboardingSchema>;
+
+export const completeOrganizationOnboardingSchema = z.object({
+  skipRemaining: z.boolean().optional(),
+  logoPublicId: z.string().min(1).optional(),
+  accentHex: accentHexSchema.optional(),
+});
+export type CompleteOrganizationOnboardingInput = z.infer<
+  typeof completeOrganizationOnboardingSchema
+>;
 
 // storage
 export const signUploadInputSchema = z.object({

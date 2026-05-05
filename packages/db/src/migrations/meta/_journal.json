@@ -113,6 +113,13 @@
       "when": 1777985641357,
       "tag": "0015_tearful_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1777990851168,
+      "tag": "0016_lowly_zaladane",
+      "breakpoints": true
     }
   ]
 }

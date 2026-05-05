@@ -436,7 +436,7 @@ export const adminRouter = router({
             organizationName: input.name,
             inviterName,
             inviteeName: inviteeDisplayName,
-            ctaUrl: `${dashboardOrigin.replace(/\/$/, "")}/dashboard/onboarding/organization`,
+            ctaUrl: `${dashboardOrigin.replace(/\/$/, "")}/onboarding/organization?fromInvite=1`,
             scenario: "existing_account",
           });
         } else {

@@ -4,6 +4,7 @@ import {
   findMediaAssetByPublicId,
   getCourseById,
   getLessonWithCourseId,
+  getMemberRole,
 } from "@sycom/db/queries/index";
 import {
   CLOUD_ROOT,
@@ -30,7 +31,7 @@ import {
 
 async function assertCanManageStorageEntity(
   ctx: Context,
-  input: { entityType: string; entityId: string },
+  input: { entityType: string; entityId: string; folder?: string },
 ) {
   if (input.entityType === "course") {
     const detail = await getCourseById(ctx.db, { courseId: input.entityId });
@@ -51,6 +52,42 @@ async function assertCanManageStorageEntity(
       throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
     }
     assertCanUpdatePublicCourse(ctx.session, detail);
+    return;
+  }
+
+  if (input.entityType === "organization") {
+    if (input.folder !== "organization_logos") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Organization uploads must use the organization_logos folder",
+      });
+    }
+
+    const session = ctx.session;
+    if (!session) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Authentication required" });
+    }
+
+    const activeOrganizationId = session.session.activeOrganizationId;
+    if (!activeOrganizationId || activeOrganizationId !== input.entityId) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Select this organization before uploading its logo",
+      });
+    }
+
+    const role = await getMemberRole(ctx.db, {
+      organizationId: input.entityId,
+      userId: session.user.id,
+    });
+
+    if (role !== "owner") {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Only an organization owner can upload its logo",
+      });
+    }
+    return;
   }
 }
 
@@ -128,7 +165,11 @@ export const storageRouter = router({
       });
     }
 
-    await assertCanManageStorageEntity(ctx, asset);
+    await assertCanManageStorageEntity(ctx, {
+      entityType: asset.entityType,
+      entityId: asset.entityId,
+      folder: asset.folder,
+    });
 
     await removeAsset(mutationInput.publicId, {
       resourceType: mutationInput.resourceType,

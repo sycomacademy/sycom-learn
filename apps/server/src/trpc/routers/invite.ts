@@ -301,7 +301,11 @@ export const inviteRouter = router({
         });
       }
 
-      return { success: true };
+      return {
+        success: true as const,
+        organizationId: invitation.organizationId,
+        organizationSlug: invitation.organizationSlug,
+      };
     }),
 
   rejectOrganizationInvite: publicProcedure

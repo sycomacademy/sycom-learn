@@ -115,6 +115,7 @@ export const organization = auth.table(
     slug: text("slug").notNull().unique(),
     logo: text("logo"),
     createdAt,
+    onboardedAt: timestamp("onboarded_at"),
     metadata: text("metadata"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
