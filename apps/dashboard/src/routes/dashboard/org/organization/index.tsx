@@ -1,19 +1,32 @@
+"use client";
+
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+
+import { OrgOrganizationGeneralSettings } from "@/components/dashboard/org/org-organization-general-settings";
+import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/org/organization/")({
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(
+      context.trpc.organization.workspaceContext.queryOptions(),
+    );
+  },
   head: () => ({
     meta: [{ title: "Organization | Sycom LMS" }],
   }),
-  component: OrgOrganizationProfilePage,
+  component: OrgOrganizationGeneralPage,
 });
 
-function OrgOrganizationProfilePage() {
-  return (
-    <div className="mx-auto w-full max-w-5xl px-6 pt-4">
-      <h1 className="text-xl font-semibold tracking-tight">Organization</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Organization profile will live here—separate from your personal account settings.
-      </p>
-    </div>
-  );
+function OrgOrganizationGeneralPage() {
+  const trpc = useTRPC();
+  const { data } = useQuery(trpc.organization.workspaceContext.queryOptions());
+
+  if (!data) {
+    return (
+      <div className="px-6 pt-4 text-sm text-muted-foreground">Loading organization settings…</div>
+    );
+  }
+
+  return <OrgOrganizationGeneralSettings workspace={data} />;
 }

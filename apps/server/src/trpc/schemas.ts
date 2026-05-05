@@ -531,6 +531,16 @@ export type OrganizationWorkspaceContextOutput = z.infer<
   typeof organizationWorkspaceContextOutputSchema
 >;
 
+export const updateOrganizationBrandingSchema = z
+  .object({
+    accentHex: accentHexSchema.optional(),
+    logoPublicId: z.string().min(1).optional(),
+  })
+  .refine((value) => value.accentHex !== undefined || value.logoPublicId !== undefined, {
+    message: "Provide accentHex and/or logoPublicId",
+  });
+export type UpdateOrganizationBrandingInput = z.infer<typeof updateOrganizationBrandingSchema>;
+
 // onboarding
 export const onboardingDefaultNextPathSchema = z
   .union([z.literal("/onboarding"), z.literal("/onboarding/organization")])

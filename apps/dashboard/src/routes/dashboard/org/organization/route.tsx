@@ -24,8 +24,9 @@ export const Route = createFileRoute("/dashboard/org/organization")({
 const organizationSectionPaths = {
   base: "/dashboard/org/organization" satisfies TRoutes,
   items: [
-    { path: "/dashboard/org/organization", label: "Profile" },
-    { path: "/dashboard/org/organization/branding", label: "Branding" },
+    { path: "/dashboard/org/organization", label: "General" },
+    { path: "/dashboard/org/organization/rules", label: "Rules" },
+    { path: "/dashboard/org/organization/integrations", label: "Integrations" },
   ],
 } satisfies { base: TRoutes; items: SecondaryMenuItem[] };
 

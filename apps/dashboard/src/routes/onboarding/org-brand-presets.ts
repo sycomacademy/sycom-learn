@@ -1,7 +1,7 @@
 export type OrgAccentPreset = { hex: string; label: string };
 
 /** Kept aligned with `@sycom/ui` primary hue; extras are saturated alternatives. */
-export const ORG_BRAND_PRIMARY_HEX = "#4f46e5" as const;
+export const ORG_BRAND_PRIMARY_HEX = "#001a57" as const;
 
 export const ORG_ACCENT_PRESETS: readonly OrgAccentPreset[] = [
   { hex: ORG_BRAND_PRIMARY_HEX, label: "Sycom" },

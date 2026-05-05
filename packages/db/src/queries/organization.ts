@@ -187,3 +187,37 @@ export async function finalizeOrganizationOnboarding(
     .set(setPayload)
     .where(eq(organization.id, input.organizationId));
 }
+
+/** Owner-only org branding updates after onboarding (logo column + metadata.accentHex). */
+export async function updateOrganizationBranding(
+  database: Database,
+  input: {
+    organizationId: string;
+    accentHex?: string;
+    logoPublicId?: string;
+  },
+): Promise<boolean> {
+  const row = await database.query.organization.findFirst({
+    columns: { metadata: true },
+    where: eq(organization.id, input.organizationId),
+  });
+  if (!row) return false;
+
+  const meta = parseOrganizationMetadata(row.metadata);
+  if (input.accentHex !== undefined) {
+    meta.accentHex = input.accentHex;
+  }
+
+  const setPayload: { metadata: string; logo?: string | null } = {
+    metadata: JSON.stringify(meta),
+  };
+  if (input.logoPublicId !== undefined) {
+    setPayload.logo = input.logoPublicId;
+  }
+
+  await database
+    .update(organization)
+    .set(setPayload)
+    .where(eq(organization.id, input.organizationId));
+  return true;
+}
