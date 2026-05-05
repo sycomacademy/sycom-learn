@@ -27,12 +27,18 @@ import {
 import { Link } from "@/components/layout/foresight-link";
 import { OrganizationSwitcher } from "@/components/dashboard/organization-switcher";
 import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
+import {
+  type OrgWorkspacePrimarySlug,
+  getOrgWorkspacePrimarySlugs,
+  orgWorkspaceSlugToLabel,
+  orgWorkspaceSlugToPath,
+} from "@/lib/org-workspace-nav";
 import { useTRPC } from "@/lib/trpc/client";
 import { useUser } from "@/hooks/use-user";
 import type { TRoutes } from "@/router";
 import { cn } from "@sycom/ui/lib/utils";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
-import type { UserRole } from "@sycom/db/schema/auth";
+import type { OrganizationRole, UserRole } from "@sycom/db/schema/auth";
 
 const ORG_WORKSPACE_PREFIX = "/dashboard/org";
 
@@ -118,16 +124,27 @@ const PUBLIC_STUDENT_NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-const ORG_WORKSPACE_NAV_GROUPS: NavGroup[] = [
-  {
-    label: "Organization",
-    items: [
-      { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard/org" },
-      { icon: UsersIcon, label: "Members", to: "/dashboard/org/members" },
-      { icon: LayersIcon, label: "Courses", to: "/dashboard/org/courses" },
-    ],
-  },
-];
+const ORG_NAV_ICON_BY_SLUG: Record<OrgWorkspacePrimarySlug, NavIcon> = {
+  overview: LayoutDashboardIcon,
+  users: UsersIcon,
+  cohorts: BlocksIcon,
+  organization: BuildingIcon,
+  courses: LayersIcon,
+};
+
+function buildOrgWorkspaceNavGroups(role: OrganizationRole | undefined): NavGroup[] {
+  const slugs: OrgWorkspacePrimarySlug[] = role ? getOrgWorkspacePrimarySlugs(role) : ["overview"];
+  return [
+    {
+      label: "Organization",
+      items: slugs.map((slug) => ({
+        icon: ORG_NAV_ICON_BY_SLUG[slug],
+        label: orgWorkspaceSlugToLabel(slug),
+        to: orgWorkspaceSlugToPath(slug),
+      })),
+    },
+  ];
+}
 
 const menuButtonStableClass = cn(
   "transition-[width,height,padding,margin] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
@@ -163,7 +180,10 @@ export function AppSidebar(): React.ReactElement {
   });
 
   const navGroups = isOrgWorkspace
-    ? [...ORG_WORKSPACE_NAV_GROUPS, ...ORG_GENERAL_NAV_GROUPS]
+    ? [
+        ...buildOrgWorkspaceNavGroups(workspaceContextQuery.data?.memberRole),
+        ...ORG_GENERAL_NAV_GROUPS,
+      ]
     : [
         ...rewriteOverviewTargets(getPlatformRoleNavGroups(normalizeUserRole(user.role)), homePath),
         ...COMMON_NAV_GROUPS,
@@ -212,7 +232,7 @@ export function AppSidebar(): React.ReactElement {
               <SidebarMenu>
                 {group.items.map(({ to, label, icon: Icon }) => {
                   return (
-                    <SidebarMenuItem key={label}>
+                    <SidebarMenuItem key={to}>
                       <AnimateIcon animateOnHover>
                         <SidebarMenuButton
                           className={cn(menuButtonStableClass, menuButtonLabelFadeClass)}
