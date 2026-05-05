@@ -12,6 +12,7 @@ export * from "./health";
 export * from "./lesson";
 export * from "./organization";
 export * from "./organization-invitations";
+export * from "./organization-members";
 export * from "./platform-invitations";
 export * from "./profile";
 export * from "./storage";

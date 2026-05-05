@@ -171,6 +171,41 @@ export type ListAdminOrganizationInvitationsInput = z.infer<
   typeof listAdminOrganizationInvitationsSchema
 >;
 
+// org members (active organization, scoped to admin/owner)
+export const orgMemberStatusSchema = z.enum(["verified", "banned", "unverified"]);
+export type OrgMemberStatusInput = z.infer<typeof orgMemberStatusSchema>;
+
+export const listOrgMembersSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  roles: z.array(z.enum(organizationRoleEnum.enumValues)).optional(),
+  statuses: z.array(orgMemberStatusSchema).optional(),
+  sortBy: z.enum(["name", "email", "joinedAt"]).default("joinedAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListOrgMembersInput = z.infer<typeof listOrgMembersSchema>;
+
+export const getOrgMemberSchema = z.object({
+  memberId: z.string().min(1),
+});
+export type GetOrgMemberInput = z.infer<typeof getOrgMemberSchema>;
+
+export const removeOrgMemberSchema = z.object({
+  memberId: z.string().min(1),
+});
+export type RemoveOrgMemberInput = z.infer<typeof removeOrgMemberSchema>;
+
+export const listActiveOrgInvitationsSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  statuses: z.array(organizationInvitationFilterStatusSchema).optional(),
+  sortBy: z.enum(["email", "createdAt"]).default("createdAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+export type ListActiveOrgInvitationsInput = z.infer<typeof listActiveOrgInvitationsSchema>;
+
 export const adminLogsAnalyticsOverviewSchema = z.object({});
 export type AdminLogsAnalyticsOverviewInput = z.infer<typeof adminLogsAnalyticsOverviewSchema>;
 

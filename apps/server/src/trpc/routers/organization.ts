@@ -1,8 +1,12 @@
+import { auth } from "@sycom/auth";
 import {
   deleteOrganization,
   getMemberRole,
   getOrganizationById,
+  getOrganizationMemberById,
   getOrganizationWorkspaceContextForMember,
+  listOrganizationInvitations,
+  listOrganizationMembers,
   listOrganizationMembershipsForUser,
   recordApplicationAuditEvent,
   updateOrganizationBranding,
@@ -12,10 +16,14 @@ import { TRPCError } from "@trpc/server";
 
 import { DEFAULT_ORG_ACCENT_HEX } from "../constants/onboarding-brand";
 import { auditRequestMeta } from "../lib/request-audit";
-import { protectedProcedure, router } from "../init";
+import { orgAdminProcedure, protectedProcedure, router } from "../init";
 import {
+  getOrgMemberSchema,
+  listActiveOrgInvitationsSchema,
+  listOrgMembersSchema,
   organizationMembershipsOutputSchema,
   organizationWorkspaceContextOutputSchema,
+  removeOrgMemberSchema,
   updateOrganizationBrandingSchema,
 } from "../schemas";
 
@@ -82,6 +90,70 @@ export const organizationRouter = router({
       }
 
       return { ok: true as const };
+    }),
+
+  listMembers: orgAdminProcedure.input(listOrgMembersSchema).query(async ({ ctx, input }) => {
+    return await listOrganizationMembers(ctx.db, {
+      ...input,
+      organizationId: ctx.organizationId,
+    });
+  }),
+
+  getMember: orgAdminProcedure.input(getOrgMemberSchema).query(async ({ ctx, input }) => {
+    const row = await getOrganizationMemberById(ctx.db, {
+      organizationId: ctx.organizationId,
+      memberId: input.memberId,
+    });
+    if (!row) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+    }
+    return row;
+  }),
+
+  removeMember: orgAdminProcedure.input(removeOrgMemberSchema).mutation(async ({ ctx, input }) => {
+    const target = await getOrganizationMemberById(ctx.db, {
+      organizationId: ctx.organizationId,
+      memberId: input.memberId,
+    });
+    if (!target) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+    }
+    if (target.userId === ctx.session.user.id) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "You can't remove yourself from the organization",
+      });
+    }
+    if (target.role === "owner" && ctx.memberRole !== "owner") {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Only an owner can remove another owner",
+      });
+    }
+
+    await auth.api.removeMember({
+      body: {
+        organizationId: ctx.organizationId,
+        memberIdOrEmail: target.memberId,
+      },
+      headers: ctx.headers,
+    });
+
+    return { success: true as const };
+  }),
+
+  listInvitations: orgAdminProcedure
+    .input(listActiveOrgInvitationsSchema)
+    .query(async ({ ctx, input }) => {
+      return await listOrganizationInvitations(ctx.db, {
+        limit: input.limit,
+        offset: input.offset,
+        organizationId: ctx.organizationId,
+        search: input.search,
+        statuses: input.statuses,
+        sortBy: input.sortBy,
+        sortDirection: input.sortDirection,
+      });
     }),
 
   deleteActiveOrganization: protectedProcedure.mutation(async ({ ctx }) => {
