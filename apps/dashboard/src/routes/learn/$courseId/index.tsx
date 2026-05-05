@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { toastManager } from "@sycom/ui/components/toast";
 import { useTRPC } from "@/lib/trpc/client";
-import { findLessonMetaInSections } from "@/lib/learn-player";
+import { findLessonMetaInSections, formatLearnLessonLockMessage } from "@/lib/learn-player";
 
 const learnCourseIndexSearchSchema = z.object({
   lockedLesson: z.string().optional(),
@@ -44,8 +44,8 @@ function LearnCourseIndexFallback() {
     const meta = findLessonMetaInSections(player.sections, blockedId);
     toastManager.add({
       title: "Lesson locked",
-      description: meta?.lockReason
-        ? `Lesson ${blockedId}: ${meta.lockReason}`
+      description: meta?.lock
+        ? `Lesson ${blockedId}: ${formatLearnLessonLockMessage(meta.lock)}`
         : `You can't open lesson ${blockedId} yet.`,
       type: "warning",
     });

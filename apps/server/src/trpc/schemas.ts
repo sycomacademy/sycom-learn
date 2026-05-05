@@ -690,6 +690,29 @@ export const learnCheckAnswerSchema = z.object({
 });
 export type LearnCheckAnswerInput = z.infer<typeof learnCheckAnswerSchema>;
 
+export const learnLessonLockSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("scheduled_section"),
+    opensAt: z.date(),
+  }),
+  z.object({
+    kind: z.literal("scheduled_lesson"),
+    opensAt: z.date(),
+  }),
+  z.object({
+    kind: z.literal("deadline_section"),
+    dueAt: z.date(),
+  }),
+  z.object({
+    kind: z.literal("deadline_lesson"),
+    dueAt: z.date(),
+  }),
+  z.object({
+    kind: z.literal("progression"),
+  }),
+]);
+export type LearnLessonLock = z.infer<typeof learnLessonLockSchema>;
+
 const learnLessonOutlineSchema = z.object({
   id: z.string(),
   sectionId: z.string(),
@@ -700,7 +723,7 @@ const learnLessonOutlineSchema = z.object({
   order: z.number(),
   progressStatus: z.enum(LESSON_PROGRESS_STATUSES),
   locked: z.boolean(),
-  lockReason: z.string().optional(),
+  lock: learnLessonLockSchema.optional(),
 });
 
 const learnSectionOutlineSchema = z.object({

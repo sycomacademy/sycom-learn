@@ -71,7 +71,15 @@ function mergeOutlineWithProgress(
   }));
 }
 
-type LessonWithLocks = LessonWithProgress & { locked: boolean; lockReason?: string };
+type LessonWithLocks = LessonWithProgress & {
+  locked: boolean;
+  lock?:
+    | { kind: "scheduled_section"; opensAt: Date }
+    | { kind: "scheduled_lesson"; opensAt: Date }
+    | { kind: "deadline_section"; dueAt: Date }
+    | { kind: "deadline_lesson"; dueAt: Date }
+    | { kind: "progression" };
+};
 
 type SectionWithLocks = Omit<SectionWithProgress, "lessons"> & { lessons: LessonWithLocks[] };
 
@@ -80,6 +88,8 @@ function applyLessonLocks(sections: SectionWithProgress[], now: Date): SectionWi
     lessonId: string;
     sectionOpenAt: Date | null;
     lessonOpenAt: Date | null;
+    sectionDueAt: Date | null;
+    lessonDueAt: Date | null;
     progressStatus: LessonWithProgress["progressStatus"];
   };
 
@@ -90,34 +100,49 @@ function applyLessonLocks(sections: SectionWithProgress[], now: Date): SectionWi
         lessonId: l.id,
         sectionOpenAt: sec.openAt,
         lessonOpenAt: l.openAt,
+        sectionDueAt: sec.dueAt,
+        lessonDueAt: l.dueAt,
         progressStatus: l.progressStatus,
       });
     }
   }
 
-  const lockById = new Map<string, { locked: boolean; lockReason?: string }>();
+  const lockById = new Map<string, { locked: boolean; lock?: LessonWithLocks["lock"] }>();
 
   for (let i = 0; i < order.length; i++) {
     const row = order[i];
     if (row === undefined) continue;
     let locked = false;
-    let lockReason: string | undefined;
+    let lock: LessonWithLocks["lock"];
 
     if (row.sectionOpenAt && now < row.sectionOpenAt) {
       locked = true;
-      lockReason = `This module opens on ${row.sectionOpenAt.toLocaleString()}.`;
+      lock = { kind: "scheduled_section", opensAt: row.sectionOpenAt };
     } else if (row.lessonOpenAt && now < row.lessonOpenAt) {
       locked = true;
-      lockReason = `This lesson opens on ${row.lessonOpenAt.toLocaleString()}.`;
+      lock = { kind: "scheduled_lesson", opensAt: row.lessonOpenAt };
     } else if (i > 0) {
       const prev = order[i - 1];
       if (prev !== undefined && prev.progressStatus !== "completed") {
         locked = true;
-        lockReason = "Finish earlier lessons before continuing.";
+        lock = { kind: "progression" };
       }
     }
 
-    lockById.set(row.lessonId, { locked, lockReason });
+    if (!locked && row.progressStatus !== "completed" && row.lessonDueAt && now > row.lessonDueAt) {
+      locked = true;
+      lock = { kind: "deadline_lesson", dueAt: row.lessonDueAt };
+    } else if (
+      !locked &&
+      row.progressStatus !== "completed" &&
+      row.sectionDueAt &&
+      now > row.sectionDueAt
+    ) {
+      locked = true;
+      lock = { kind: "deadline_section", dueAt: row.sectionDueAt };
+    }
+
+    lockById.set(row.lessonId, { locked, lock });
   }
 
   return sections.map((sec) => ({
@@ -127,7 +152,7 @@ function applyLessonLocks(sections: SectionWithProgress[], now: Date): SectionWi
       return {
         ...les,
         locked: meta.locked,
-        ...(meta.lockReason ? { lockReason: meta.lockReason } : {}),
+        ...(meta.lock ? { lock: meta.lock } : {}),
       };
     }),
   }));
@@ -172,9 +197,21 @@ async function assertLearnLessonUnlocked(
     for (const les of sec.lessons) {
       if (les.id === input.lessonId) {
         if (les.locked) {
+          const message =
+            les.lock?.kind === "scheduled_section"
+              ? "This module is not open yet."
+              : les.lock?.kind === "scheduled_lesson"
+                ? "This lesson is not open yet."
+                : les.lock?.kind === "deadline_section"
+                  ? "This module is closed."
+                  : les.lock?.kind === "deadline_lesson"
+                    ? "This lesson is closed."
+                    : les.lock?.kind === "progression"
+                      ? "Finish earlier lessons before continuing."
+                      : "This lesson is locked.";
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: les.lockReason ?? "This lesson is locked.",
+            message,
           });
         }
         return;

@@ -6,13 +6,22 @@ import type { EditorState } from "@tiptap/pm/state";
 
 import type { QuestionStatus } from "@sycom/components/tiptap/extensions/question-status";
 
-export const lessonQuestionFeedbackKey = new PluginKey<Record<string, QuestionStatus>>(
+/** Per-question learner attempt after "Check answer" (selection + outcome). */
+export type LessonQuestionAttempt = {
+  status: "correct" | "incorrect";
+  selected: string[];
+};
+
+export type LessonQuestionFeedbackState = Record<string, LessonQuestionAttempt>;
+
+export const lessonQuestionFeedbackKey = new PluginKey<LessonQuestionFeedbackState>(
   "lessonQuestionFeedback",
 );
 
 export type LessonQuestionResultMeta = {
   questionId: string;
   isCorrect: boolean;
+  selected: string[];
 };
 
 export function collectQuestionIds(state: EditorState): string[] {
@@ -26,8 +35,20 @@ export function collectQuestionIds(state: EditorState): string[] {
   return ids;
 }
 
-export function getLessonQuestionFeedbackMap(state: EditorState): Record<string, QuestionStatus> {
+export function getLessonQuestionAttemptsMap(state: EditorState): LessonQuestionFeedbackState {
   return lessonQuestionFeedbackKey.getState(state) ?? {};
+}
+
+export function feedbackAttemptsToStatuses(
+  attempts: LessonQuestionFeedbackState,
+  questionIds: string[],
+): Record<string, QuestionStatus> {
+  const statuses: Record<string, QuestionStatus> = {};
+  for (const id of questionIds) {
+    const a = attempts[id];
+    statuses[id] = a ? a.status : "unanswered";
+  }
+  return statuses;
 }
 
 export function getLessonQuestionGateSnapshot(editor: Editor): {
@@ -36,17 +57,30 @@ export function getLessonQuestionGateSnapshot(editor: Editor): {
   allCorrect: boolean;
   allAttempted: boolean;
 } {
-  const statuses = getLessonQuestionFeedbackMap(editor.state);
+  const attempts = getLessonQuestionAttemptsMap(editor.state);
   const ids = collectQuestionIds(editor.state);
+  const statuses = feedbackAttemptsToStatuses(attempts, ids);
   const questionCount = ids.length;
-  const allCorrect = questionCount === 0 || ids.every((id) => statuses[id] === "correct");
+  const allCorrect = questionCount === 0 || ids.every((id) => attempts[id]?.status === "correct");
   const allAttempted =
     questionCount === 0 ||
     ids.every((id) => {
-      const s = statuses[id];
-      return s === "correct" || s === "incorrect";
+      const a = attempts[id];
+      return a?.status === "correct" || a?.status === "incorrect";
     });
   return { statuses, questionCount, allCorrect, allAttempted };
+}
+
+/** Build payload for scored lesson submission (quiz / exam). */
+export function collectLessonQuestionAnswersForSubmit(state: EditorState): Array<{
+  questionId: string;
+  selected: string[];
+}> {
+  const attempts = getLessonQuestionAttemptsMap(state);
+  return collectQuestionIds(state).map((questionId) => ({
+    questionId,
+    selected: attempts[questionId]?.selected ?? [],
+  }));
 }
 
 export const LessonQuestionFeedback = Extension.create({
@@ -55,10 +89,10 @@ export const LessonQuestionFeedback = Extension.create({
   addCommands() {
     return {
       setLessonQuestionResult:
-        ({ questionId, isCorrect }: LessonQuestionResultMeta) =>
+        ({ questionId, isCorrect, selected }: LessonQuestionResultMeta) =>
         ({ tr, dispatch }) => {
           if (dispatch) {
-            tr.setMeta(lessonQuestionFeedbackKey, { questionId, isCorrect });
+            tr.setMeta(lessonQuestionFeedbackKey, { questionId, isCorrect, selected });
             dispatch(tr);
           }
           return true;
@@ -68,7 +102,7 @@ export const LessonQuestionFeedback = Extension.create({
 
   addProseMirrorPlugins() {
     return [
-      new Plugin<Record<string, QuestionStatus>>({
+      new Plugin<LessonQuestionFeedbackState>({
         key: lessonQuestionFeedbackKey,
         state: {
           init: () => ({}),
@@ -76,10 +110,17 @@ export const LessonQuestionFeedback = Extension.create({
             const meta = tr.getMeta(lessonQuestionFeedbackKey) as
               | LessonQuestionResultMeta
               | undefined;
-            if (meta?.questionId != null && typeof meta.isCorrect === "boolean") {
+            if (
+              meta?.questionId != null &&
+              typeof meta.isCorrect === "boolean" &&
+              Array.isArray(meta.selected)
+            ) {
               return {
                 ...value,
-                [meta.questionId]: meta.isCorrect ? "correct" : "incorrect",
+                [meta.questionId]: {
+                  status: meta.isCorrect ? "correct" : "incorrect",
+                  selected: meta.selected,
+                },
               };
             }
             return value;

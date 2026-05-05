@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import type { JSONContent } from "@tiptap/core";
+import type { Editor, JSONContent } from "@tiptap/core";
 import { ChevronLeftIcon, ChevronRightIcon, HomeIcon } from "lucide-react";
 import {
   useCallback,
@@ -15,8 +15,10 @@ import { z } from "zod";
 
 import { Button } from "@sycom/ui/components/button";
 import {
+  collectLessonQuestionAnswersForSubmit,
   QuestionTrackingProvider,
   RichTextEditor,
+  useQuestionGate,
 } from "@sycom/ui/components/tiptap/rich-text-editor";
 import { toastManager } from "@sycom/ui/components/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@sycom/ui/components/tooltip";
@@ -24,6 +26,7 @@ import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 import {
   findLessonMetaInSections,
   flattenLearnLessons,
+  formatLearnLessonLockMessage,
   lastAccessibleLessonId,
 } from "@/lib/learn-player";
 
@@ -93,8 +96,8 @@ function LearnLessonPage() {
     const meta = findLessonMetaInSections(player.sections, blockedId);
     toastManager.add({
       title: "Lesson locked",
-      description: meta?.lockReason
-        ? `Lesson ${blockedId}: ${meta.lockReason}`
+      description: meta?.lock
+        ? `Lesson ${blockedId}: ${formatLearnLessonLockMessage(meta.lock)}`
         : `You can't open lesson ${blockedId} yet.`,
       type: "warning",
     });
@@ -159,6 +162,45 @@ function LearnLessonPage() {
   };
 
   const showMarkComplete = lesson.type === "article";
+
+  const submitAssessment = useMutation(trpc.enrollment.submitAttempt.mutationOptions());
+
+  const [learnEditor, setLearnEditor] = useState<Editor | null>(null);
+  useEffect(() => {
+    setLearnEditor(null);
+  }, [lessonId]);
+
+  const gate = useQuestionGate(learnEditor);
+
+  const currentLessonProgress = useMemo(() => {
+    if (player.status !== "ok") return undefined;
+    for (const sec of player.sections) {
+      const row = sec.lessons.find((les) => les.id === lessonId);
+      if (row) return row.progressStatus;
+    }
+    return undefined;
+  }, [player, lessonId]);
+
+  const assessmentCompleted = currentLessonProgress === "completed";
+
+  const onSubmitAssessment = async () => {
+    if (!learnEditor || !gate.allCorrect || gate.questionCount === 0 || assessmentCompleted) return;
+    try {
+      await submitAssessment.mutateAsync({
+        courseId,
+        lessonId,
+        answers: collectLessonQuestionAnswersForSubmit(learnEditor.state),
+      });
+      await invalidateLearn();
+      toastManager.add({ title: "Lesson completed", type: "success" });
+    } catch {
+      toastManager.add({
+        title: "Couldn't submit assessment",
+        description: "Check your connection and try again.",
+        type: "error",
+      });
+    }
+  };
 
   const [editorKey, setEditorKey] = useState(0);
   useEffect(() => {
@@ -235,6 +277,7 @@ function LearnLessonPage() {
               });
               return { isCorrect: result.isCorrect };
             }}
+            onEditorReady={setLearnEditor}
             showAdvancedChrome={false}
             variant="learn"
           />
@@ -307,6 +350,65 @@ function LearnLessonPage() {
               disabled={!scrolledToBottom || markComplete.isPending}
               loading={markComplete.isPending}
               onClick={() => void onMarkComplete()}
+              size="sm"
+              variant="default"
+            >
+              Mark complete
+            </Button>
+          )
+        ) : lesson.type === "quiz" || lesson.type === "exam" ? (
+          assessmentCompleted ? (
+            <Button disabled size="sm" variant="default">
+              Completed
+            </Button>
+          ) : !learnEditor ? (
+            <Button
+              className="max-w-[min(100%,22rem)] text-center"
+              disabled
+              size="sm"
+              variant="default"
+            >
+              Answer all questions before marking complete
+            </Button>
+          ) : gate.questionCount === 0 ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  (
+                    <span className="inline-flex max-w-[min(100%,22rem)] cursor-not-allowed">
+                      <Button className="text-center" disabled size="sm" variant="outline">
+                        No questions in this lesson
+                      </Button>
+                    </span>
+                  ) as ReactElement<Record<string, unknown>>
+                }
+              />
+              <TooltipPopup side="top">
+                Add question blocks to this lesson to enable completion.
+              </TooltipPopup>
+            </Tooltip>
+          ) : !gate.allCorrect ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  (
+                    <span className="inline-flex max-w-[min(100%,22rem)] cursor-not-allowed">
+                      <Button className="text-center" disabled size="sm" variant="default">
+                        Marke complete
+                      </Button>
+                    </span>
+                  ) as ReactElement<Record<string, unknown>>
+                }
+              />
+              <TooltipPopup side="top">
+                Mark this lesson complete when you have answered all questions correctly.
+              </TooltipPopup>
+            </Tooltip>
+          ) : (
+            <Button
+              disabled={submitAssessment.isPending}
+              loading={submitAssessment.isPending}
+              onClick={() => void onSubmitAssessment()}
               size="sm"
               variant="default"
             >

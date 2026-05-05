@@ -193,6 +193,7 @@ export function RichTextEditorDemo({ className }: { className?: string }) {
 }
 
 export type { FullPresetCheckAnswerFn } from "@sycom/components/tiptap/extensions/editor-preset-types";
+export { collectLessonQuestionAnswersForSubmit } from "@sycom/components/tiptap/extensions/lesson-question-feedback";
 export {
   QuestionTrackingProvider,
   useQuestionGate,

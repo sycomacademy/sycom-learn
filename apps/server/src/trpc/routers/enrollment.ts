@@ -4,6 +4,7 @@ import {
   getCourseEnrollmentDetail,
   getEnrollmentProgressSummary,
   getLessonWithCourseId,
+  getSectionById,
   listCourseEnrollments,
   markLessonCompleted,
   markLessonStarted,
@@ -196,6 +197,10 @@ export const enrollmentRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "This assessment is not open yet" });
       }
       if (row.dueAt && now > row.dueAt) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This assessment is closed" });
+      }
+      const sectionRow = await getSectionById(ctx.db, { sectionId: row.sectionId });
+      if (sectionRow?.dueAt && now > sectionRow.dueAt) {
         throw new TRPCError({ code: "FORBIDDEN", message: "This assessment is closed" });
       }
 

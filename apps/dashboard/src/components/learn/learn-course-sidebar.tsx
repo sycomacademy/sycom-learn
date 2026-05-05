@@ -10,6 +10,8 @@ import {
 } from "@sycom/ui/components/collapsible";
 import { Progress } from "@sycom/ui/components/progress";
 import { cn } from "@sycom/ui/lib/utils";
+import { useLearnLessonLockDisplayMessage, type LearnLessonLock } from "@/lib/learn-player";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/ui/components/tooltip";
 
 type OkContext = Extract<AppRouterOutputs["learn"]["getPlayerContext"], { status: "ok" }>;
 
@@ -62,6 +64,39 @@ export function LearnCourseSidebar({ courseId, data }: { courseId: string; data:
   );
 }
 
+function LockedLessonRow({
+  lesson,
+  lock,
+  isActive,
+}: {
+  lesson: OkContext["sections"][number]["lessons"][number];
+  lock: LearnLessonLock;
+  isActive: boolean;
+}) {
+  const title = useLearnLessonLockDisplayMessage(lock);
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <div
+            aria-disabled="true"
+            className={cn(
+              "flex cursor-not-allowed items-start gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground opacity-80",
+              isActive ? "bg-muted/50" : "",
+            )}
+          >
+            <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+              <LockIcon aria-hidden className="size-3.5" />
+            </span>
+            <span className="min-w-0 flex-1 leading-snug">{lesson.title}</span>
+          </div>
+        }
+      />
+      <TooltipContent>{title}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function SectionBlock({
   section,
   courseId,
@@ -91,19 +126,28 @@ function SectionBlock({
             return (
               <li key={lesson.id}>
                 {locked ? (
-                  <div
-                    aria-disabled="true"
-                    className={cn(
-                      "flex cursor-not-allowed items-start gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground opacity-80",
-                      isActive ? "bg-muted/50" : "",
-                    )}
-                    title={lesson.lockReason}
-                  >
-                    <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
-                      <LockIcon aria-hidden className="size-3.5" />
-                    </span>
-                    <span className="min-w-0 flex-1 leading-snug">{lesson.title}</span>
-                  </div>
+                  lesson.lock ? (
+                    <LockedLessonRow
+                      key={lesson.id}
+                      isActive={isActive}
+                      lesson={lesson}
+                      lock={lesson.lock}
+                    />
+                  ) : (
+                    <div
+                      aria-disabled="true"
+                      className={cn(
+                        "flex cursor-not-allowed items-start gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground opacity-80",
+                        isActive ? "bg-muted/50" : "",
+                      )}
+                      title="This lesson is locked."
+                    >
+                      <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+                        <LockIcon aria-hidden className="size-3.5" />
+                      </span>
+                      <span className="min-w-0 flex-1 leading-snug">{lesson.title}</span>
+                    </div>
+                  )
                 ) : (
                   <Link
                     className={cn(

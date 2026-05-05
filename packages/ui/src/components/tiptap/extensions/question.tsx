@@ -22,7 +22,10 @@ import {
 import { CheckCircle2, CircleHelp, Plus, Trash2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { lessonQuestionFeedbackKey } from "@sycom/components/tiptap/extensions/lesson-question-feedback";
+import {
+  lessonQuestionFeedbackKey,
+  type LessonQuestionAttempt,
+} from "@sycom/components/tiptap/extensions/lesson-question-feedback";
 import type { FullPresetCheckAnswerFn } from "./editor-preset-types";
 
 export type QuestionOptionAttr = {
@@ -121,7 +124,11 @@ export const LessonQuestion = Node.create<LessonQuestionOptions>({
   },
 });
 
-function statusBadge(status: QuestionStatus | undefined, teacherPreview: boolean) {
+function statusBadge(
+  status: QuestionStatus | undefined,
+  variant: "teacher" | "learn",
+  attemptLocked: boolean,
+) {
   if (status === "correct") {
     return (
       <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600">
@@ -130,9 +137,10 @@ function statusBadge(status: QuestionStatus | undefined, teacherPreview: boolean
     );
   }
   if (status === "incorrect") {
+    const label = variant === "teacher" ? "Incorrect" : attemptLocked ? "Incorrect" : "Try again";
     return (
       <span className="inline-flex items-center gap-1 text-sm font-medium text-destructive">
-        <XCircle className="size-4" /> {teacherPreview ? "Incorrect" : "Try again"}
+        <XCircle className="size-4" /> {label}
       </span>
     );
   }
@@ -206,23 +214,44 @@ function QuestionNodeView(props: NodeViewProps) {
 
     if (selectedIds.length === 0) return;
 
+    const normalizedSelected = type === "single" ? selectedIds : [...selectedIds].sort();
+
     setSubmitting(true);
     try {
       const { isCorrect } = await onCheckAnswer({
         questionId,
-        selected: type === "single" ? selectedIds : selectedIds.sort(),
+        selected: normalizedSelected,
       });
-      editor.chain().setLessonQuestionResult({ questionId, isCorrect }).run();
+      editor
+        .chain()
+        .setLessonQuestionResult({
+          questionId,
+          isCorrect,
+          selected: normalizedSelected,
+        })
+        .run();
       tracking?.setResult(questionId, isCorrect);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const viewStatus = useEditorState({
+  const attempt = useEditorState({
     editor,
-    selector: ({ editor: ed }) => lessonQuestionFeedbackKey.getState(ed.state)?.[questionId],
-  }) as QuestionStatus | undefined;
+    selector: ({ editor: ed }) =>
+      lessonQuestionFeedbackKey.getState(ed.state)?.[questionId] as
+        | LessonQuestionAttempt
+        | undefined,
+  });
+
+  const viewStatus = attempt?.status;
+  const answered = Boolean(attempt);
+
+  const optionSingleChecked = (optId: string) =>
+    answered && attempt ? attempt.selected[0] === optId : singlePick === optId;
+
+  const optionMultiChecked = (optId: string) =>
+    answered && attempt ? attempt.selected.includes(optId) : !!multiPick[optId];
 
   if (canEdit) {
     return (
@@ -337,7 +366,7 @@ function QuestionNodeView(props: NodeViewProps) {
           <CircleHelp className="size-4 text-muted-foreground" />
           Question
         </div>
-        {statusBadge(viewStatus, true)}
+        {statusBadge(viewStatus, "learn", answered)}
       </div>
       <p className="mb-3 text-base font-medium">{prompt || "Question"}</p>
       <div className="space-y-2">
@@ -347,15 +376,19 @@ function QuestionNodeView(props: NodeViewProps) {
               <label
                 htmlFor={`${fieldIdPrefix}-answer-${opt.id}`}
                 key={opt.id}
-                className="flex cursor-pointer items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+                className={cn(
+                  "flex items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm",
+                  answered ? "cursor-not-allowed opacity-90" : "cursor-pointer",
+                )}
               >
                 <input
                   id={`${fieldIdPrefix}-answer-${opt.id}`}
                   type="radio"
                   name={`q-${questionId}`}
-                  checked={singlePick === opt.id}
+                  checked={optionSingleChecked(opt.id)}
+                  disabled={answered}
                   onChange={() => setSinglePick(opt.id)}
-                  className="size-4 accent-primary"
+                  className="size-4 accent-primary disabled:cursor-not-allowed"
                 />
                 <span>{opt.text}</span>
               </label>
@@ -367,11 +400,15 @@ function QuestionNodeView(props: NodeViewProps) {
               <label
                 htmlFor={`${fieldIdPrefix}-answer-${opt.id}`}
                 key={opt.id}
-                className="flex cursor-pointer items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+                className={cn(
+                  "flex items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm",
+                  answered ? "cursor-not-allowed opacity-90" : "cursor-pointer",
+                )}
               >
                 <Checkbox
                   id={`${fieldIdPrefix}-answer-${opt.id}`}
-                  checked={!!multiPick[opt.id]}
+                  checked={optionMultiChecked(opt.id)}
+                  disabled={answered}
                   onCheckedChange={(checked) =>
                     setMultiPick((prev) => ({ ...prev, [opt.id]: checked === true }))
                   }
@@ -387,6 +424,7 @@ function QuestionNodeView(props: NodeViewProps) {
           type="button"
           size="sm"
           disabled={
+            answered ||
             submitting ||
             !onCheckAnswer ||
             (type === "single" ? !singlePick : !Object.values(multiPick).some(Boolean))
