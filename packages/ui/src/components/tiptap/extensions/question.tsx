@@ -447,6 +447,11 @@ function QuestionNodeView(props: NodeViewProps) {
           </span>
         ) : null}
       </div>
+      {attempt && explanation.trim() ? (
+        <p className="mt-3 rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          {explanation.trim()}
+        </p>
+      ) : null}
     </NodeViewWrapper>
   );
 }

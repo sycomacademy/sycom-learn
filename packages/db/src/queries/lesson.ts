@@ -160,7 +160,6 @@ export function stripQuestionAnswersFromContent(doc: unknown): unknown {
         return opt;
       });
     }
-    delete attrs.explanation;
     next.attrs = attrs;
   }
 

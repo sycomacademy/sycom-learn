@@ -13,7 +13,7 @@ import {
 } from "@sycom/certificates/meta";
 import type { CertificatePdfPayload } from "@sycom/certificates";
 import { parseCourseCertificateSettings } from "@sycom/certificates/course-settings";
-import { CheckCircle2Icon, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   lazy,
   Suspense,
@@ -204,16 +204,9 @@ function CertificateMemberRow({ enrollment }: { enrollment: CourseEnrollmentRow 
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {enrollment.certificateIssued ? (
-          <CheckCircle2Icon
-            aria-label="Certificate issued"
-            className="size-9 text-green-600 dark:text-green-500"
-          />
-        ) : (
-          <Button onClick={() => undefined} size="sm" type="button" variant="outline">
-            Send certificate
-          </Button>
-        )}
+        <Button onClick={() => alert("Not implemented")} size="sm" type="button" variant="outline">
+          Send certificate
+        </Button>
       </div>
     </div>
   );

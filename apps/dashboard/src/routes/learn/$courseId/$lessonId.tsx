@@ -12,6 +12,7 @@ import {
   useHydrateLessonAnswers,
   useQuestionGate,
 } from "@sycom/ui/components/tiptap/rich-text-editor";
+import { fireCelebrationConfetti } from "@sycom/ui/components/elements/confetti";
 import { toastManager } from "@sycom/ui/components/toast";
 
 import { LearnFooter } from "@/components/learn/learn-footer";
@@ -179,13 +180,25 @@ function LearnLessonBody({
     setExamSessionStarted(true);
   }, [courseId, lessonId, recordIntegrity]);
 
-  const refreshLearnData = () =>
-    Promise.all([
+  const refreshLearnData = async (): Promise<PlayerContext | undefined> => {
+    await Promise.all([
       queryClient.refetchQueries({ queryKey: trpc.learn.getPlayerContext.queryKey({ courseId }) }),
       queryClient.refetchQueries({
         queryKey: trpc.learn.getLesson.queryKey({ courseId, lessonId }),
       }),
     ]);
+    return queryClient.getQueryData(trpc.learn.getPlayerContext.queryKey({ courseId }));
+  };
+
+  const maybeCelebrateCourseComplete = (nextPlayer: PlayerContext | undefined) => {
+    if (
+      nextPlayer?.status === "ok" &&
+      nextPlayer.totalLessonCount > 0 &&
+      nextPlayer.completedLessonCount === nextPlayer.totalLessonCount
+    ) {
+      fireCelebrationConfetti();
+    }
+  };
 
   const [editor, setEditor] = useState<Editor | null>(null);
   const gate = useQuestionGate(editor);
@@ -194,7 +207,8 @@ function LearnLessonBody({
   const onMarkComplete = async () => {
     try {
       await markComplete.mutateAsync({ courseId, lessonId });
-      await refreshLearnData();
+      const nextPlayer = await refreshLearnData();
+      maybeCelebrateCourseComplete(nextPlayer);
     } catch {
       toastManager.add({
         title: "Couldn't mark complete",
@@ -212,7 +226,8 @@ function LearnLessonBody({
         lessonId,
         answers: collectLessonQuestionAnswersForSubmit(editor.state),
       });
-      await refreshLearnData();
+      const nextPlayer = await refreshLearnData();
+      maybeCelebrateCourseComplete(nextPlayer);
       toastManager.add({
         title: "Lesson completed",
         description:
@@ -264,7 +279,7 @@ function LearnLessonBody({
         className={`relative min-h-0 flex-1 ${examIntegrityEnabled && !examSessionStarted ? "overflow-hidden" : ""}`}
       >
         <div
-          className={`h-full min-h-0 overflow-y-auto px-3 py-4 md:px-5 ${examIntegrityEnabled && !examSessionStarted ? "pointer-events-none opacity-40 select-none" : ""}`}
+          className={`h-full min-h-0 overflow-y-auto px-3 py-4 md:px-5 ${examIntegrityEnabled && !examSessionStarted ? "pointer-events-none select-none" : ""}`}
           ref={scrollRef}
         >
           {lesson.sectionTitle ? (
@@ -312,8 +327,11 @@ function LearnLessonBody({
           </QuestionTrackingProvider>
         </div>
         {examIntegrityEnabled && !examSessionStarted ? (
-          <div className="pointer-events-none absolute inset-0 flex items-start justify-center px-4 pt-16">
-            <p className="max-w-sm rounded-md border bg-background/95 px-4 py-3 text-center text-sm shadow-md">
+          <div
+            aria-hidden
+            className="pointer-events-auto absolute inset-0 z-10 flex cursor-default items-start justify-center bg-background/25 px-4 pt-16 backdrop-blur-md supports-backdrop-filter:bg-background/15 md:backdrop-blur-lg"
+          >
+            <p className="pointer-events-none max-w-sm rounded-md border border-border/80 bg-background/95 px-4 py-3 text-center text-sm shadow-lg">
               Tap <span className="font-medium">Begin exam</span> above to enter fullscreen and
               unlock the questions.
             </p>
