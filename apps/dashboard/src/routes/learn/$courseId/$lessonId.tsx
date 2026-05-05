@@ -1,18 +1,69 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import type { JSONContent } from "@tiptap/core";
 import { ChevronLeftIcon, ChevronRightIcon, HomeIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
+import { z } from "zod";
 
 import { Button } from "@sycom/ui/components/button";
 import {
   QuestionTrackingProvider,
   RichTextEditor,
 } from "@sycom/ui/components/tiptap/rich-text-editor";
+import { toastManager } from "@sycom/ui/components/toast";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@sycom/ui/components/tooltip";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
+import {
+  findLessonMetaInSections,
+  flattenLearnLessons,
+  lastAccessibleLessonId,
+} from "@/lib/learn-player";
+
+const learnLessonSearchSchema = z.object({
+  lockedLesson: z.string().optional(),
+});
+
+type LearnLessonSearch = z.infer<typeof learnLessonSearchSchema>;
 
 export const Route = createFileRoute("/learn/$courseId/$lessonId")({
+  validateSearch: (search) => learnLessonSearchSchema.parse(search),
   loader: async ({ context, params }) => {
+    const player = await context.queryClient.ensureQueryData(
+      context.trpc.learn.getPlayerContext.queryOptions({ courseId: params.courseId }),
+    );
+    if (player.status === "ok") {
+      const flat = flattenLearnLessons(player.sections);
+      const idx = flat.findIndex((l) => l.id === params.lessonId);
+      if (idx === -1) {
+        throw redirect({
+          to: "/learn/$courseId",
+          params: { courseId: params.courseId },
+        });
+      }
+      if (flat[idx].locked) {
+        const fallback = lastAccessibleLessonId(flat, idx);
+        if (fallback) {
+          throw redirect({
+            to: "/learn/$courseId/$lessonId",
+            params: { courseId: params.courseId, lessonId: fallback },
+            search: { lockedLesson: params.lessonId },
+          });
+        }
+        throw redirect({
+          to: "/learn/$courseId",
+          params: { courseId: params.courseId },
+          search: { lockedLesson: params.lessonId },
+        });
+      }
+    }
     await context.queryClient.ensureQueryData(
       context.trpc.learn.getLesson.queryOptions({
         courseId: params.courseId,
@@ -25,6 +76,8 @@ export const Route = createFileRoute("/learn/$courseId/$lessonId")({
 
 function LearnLessonPage() {
   const { courseId, lessonId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
@@ -34,21 +87,49 @@ function LearnLessonPage() {
     trpc.learn.getLesson.queryOptions({ courseId, lessonId }),
   );
 
+  useEffect(() => {
+    const blockedId = search.lockedLesson;
+    if (!blockedId || player.status !== "ok") return;
+    const meta = findLessonMetaInSections(player.sections, blockedId);
+    toastManager.add({
+      title: "Lesson locked",
+      description: meta?.lockReason
+        ? `Lesson ${blockedId}: ${meta.lockReason}`
+        : `You can't open lesson ${blockedId} yet.`,
+      type: "warning",
+    });
+    void navigate({
+      search: (prev: LearnLessonSearch) => ({ ...prev, lockedLesson: undefined }),
+      replace: true,
+    });
+  }, [search.lockedLesson, player, navigate]);
+
   const ordered = useMemo(() => {
     if (player.status !== "ok") return [];
-    const flat: Array<{ lessonId: string }> = [];
+    const flat: Array<{ lessonId: string; locked: boolean }> = [];
     for (const sec of player.sections) {
       for (const l of sec.lessons) {
-        flat.push({ lessonId: l.id });
+        flat.push({ lessonId: l.id, locked: l.locked });
       }
     }
     return flat;
   }, [player]);
 
   const idx = ordered.findIndex((l) => l.lessonId === lessonId);
-  const prevLessonId = idx > 0 ? ordered[idx - 1]?.lessonId : undefined;
-  const nextLessonId =
-    idx >= 0 && idx < ordered.length - 1 ? ordered[idx + 1]?.lessonId : undefined;
+  const prevLessonId = useMemo(() => {
+    if (idx < 0) return undefined;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (!ordered[i].locked) return ordered[i].lessonId;
+    }
+    return undefined;
+  }, [idx, ordered]);
+  const nextLessonId = useMemo(() => {
+    if (idx < 0) return undefined;
+    for (let i = idx + 1; i < ordered.length; i++) {
+      if (!ordered[i].locked) return ordered[i].lessonId;
+    }
+    return undefined;
+  }, [idx, ordered]);
 
   const { mutate: fireMarkStarted } = useMutation(
     trpc.enrollment.markLessonStarted.mutationOptions(),
@@ -84,6 +165,39 @@ function LearnLessonPage() {
     setEditorKey((k) => k + 1);
   }, [lessonId]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 48;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+    setScrolledToBottom(atBottom);
+  }, []);
+
+  useLayoutEffect(() => {
+    scrollRef.current?.scrollTo(0, 0);
+    setScrolledToBottom(false);
+  }, [lessonId]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    const onScroll = () => checkScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    const ro = new ResizeObserver(() => checkScroll());
+    ro.observe(el);
+    const mo = new MutationObserver(() => checkScroll());
+    mo.observe(el, { childList: true, subtree: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [lessonId, checkScroll, editorKey]);
+
   if (player.status !== "ok") {
     return null;
   }
@@ -103,7 +217,7 @@ function LearnLessonPage() {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 md:px-5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 md:px-5" ref={scrollRef}>
         <h1 className="mb-4 text-2xl font-semibold tracking-tight md:text-3xl">{lesson.title}</h1>
         <QuestionTrackingProvider>
           <RichTextEditor
@@ -171,15 +285,34 @@ function LearnLessonPage() {
           )}
         </div>
         {showMarkComplete ? (
-          <Button
-            disabled={markComplete.isPending}
-            loading={markComplete.isPending}
-            onClick={() => void onMarkComplete()}
-            size="sm"
-            variant="default"
-          >
-            Mark complete
-          </Button>
+          !scrolledToBottom && !markComplete.isPending ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  (
+                    <span className="inline-flex cursor-not-allowed">
+                      <Button disabled size="sm" variant="default">
+                        Mark complete
+                      </Button>
+                    </span>
+                  ) as ReactElement<Record<string, unknown>>
+                }
+              />
+              <TooltipPopup side="top">
+                Scroll to the bottom of this lesson before marking it complete.
+              </TooltipPopup>
+            </Tooltip>
+          ) : (
+            <Button
+              disabled={!scrolledToBottom || markComplete.isPending}
+              loading={markComplete.isPending}
+              onClick={() => void onMarkComplete()}
+              size="sm"
+              variant="default"
+            >
+              Mark complete
+            </Button>
+          )
         ) : (
           <p className="text-xs text-muted-foreground">
             Complete assessments from the lesson when available.

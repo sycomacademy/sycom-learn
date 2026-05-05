@@ -699,6 +699,8 @@ const learnLessonOutlineSchema = z.object({
   dueAt: z.date().nullable(),
   order: z.number(),
   progressStatus: z.enum(LESSON_PROGRESS_STATUSES),
+  locked: z.boolean(),
+  lockReason: z.string().optional(),
 });
 
 const learnSectionOutlineSchema = z.object({

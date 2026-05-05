@@ -1,7 +1,22 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { z } from "zod";
+
+import { toastManager } from "@sycom/ui/components/toast";
+import { useTRPC } from "@/lib/trpc/client";
+import { findLessonMetaInSections } from "@/lib/learn-player";
+
+const learnCourseIndexSearchSchema = z.object({
+  lockedLesson: z.string().optional(),
+});
+
+type LearnCourseIndexSearch = z.infer<typeof learnCourseIndexSearchSchema>;
 
 export const Route = createFileRoute("/learn/$courseId/")({
-  loader: async ({ context, params }) => {
+  validateSearch: (search) => learnCourseIndexSearchSchema.parse(search),
+  loaderDeps: ({ search }) => ({ lockedLesson: search.lockedLesson }),
+  loader: async ({ context, params, deps }) => {
     const data = await context.queryClient.ensureQueryData(
       context.trpc.learn.getPlayerContext.queryOptions({ courseId: params.courseId }),
     );
@@ -9,6 +24,7 @@ export const Route = createFileRoute("/learn/$courseId/")({
       throw redirect({
         to: "/learn/$courseId/$lessonId",
         params: { courseId: params.courseId, lessonId: data.nextLessonId },
+        search: deps.lockedLesson ? { lockedLesson: deps.lockedLesson } : {},
       });
     }
   },
@@ -17,6 +33,27 @@ export const Route = createFileRoute("/learn/$courseId/")({
 
 function LearnCourseIndexFallback() {
   const { courseId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const trpc = useTRPC();
+  const { data: player } = useSuspenseQuery(trpc.learn.getPlayerContext.queryOptions({ courseId }));
+
+  useEffect(() => {
+    const blockedId = search.lockedLesson;
+    if (!blockedId || player.status !== "ok") return;
+    const meta = findLessonMetaInSections(player.sections, blockedId);
+    toastManager.add({
+      title: "Lesson locked",
+      description: meta?.lockReason
+        ? `Lesson ${blockedId}: ${meta.lockReason}`
+        : `You can't open lesson ${blockedId} yet.`,
+      type: "warning",
+    });
+    void navigate({
+      search: (prev: LearnCourseIndexSearch) => ({ ...prev, lockedLesson: undefined }),
+      replace: true,
+    });
+  }, [search.lockedLesson, player, navigate]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 overflow-y-auto p-8 text-center">

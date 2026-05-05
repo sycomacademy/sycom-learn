@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, LockIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
@@ -87,25 +87,42 @@ function SectionBlock({
           {section.lessons.map((lesson) => {
             const isActive = lesson.id === activeLessonId;
             const done = lesson.progressStatus === "completed";
+            const locked = lesson.locked;
             return (
               <li key={lesson.id}>
-                <Link
-                  className={cn(
-                    "flex items-start gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
-                    isActive ? "bg-muted font-medium" : "hover:bg-muted/60",
-                  )}
-                  params={{ courseId, lessonId: lesson.id }}
-                  to="/learn/$courseId/$lessonId"
-                >
-                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
-                    {done ? (
-                      <CheckIcon aria-hidden className="size-3.5 text-emerald-600" />
-                    ) : (
-                      <span className="size-3.5 rounded-full border border-muted-foreground/30" />
+                {locked ? (
+                  <div
+                    aria-disabled="true"
+                    className={cn(
+                      "flex cursor-not-allowed items-start gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground opacity-80",
+                      isActive ? "bg-muted/50" : "",
                     )}
-                  </span>
-                  <span className="min-w-0 flex-1 leading-snug">{lesson.title}</span>
-                </Link>
+                    title={lesson.lockReason}
+                  >
+                    <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+                      <LockIcon aria-hidden className="size-3.5" />
+                    </span>
+                    <span className="min-w-0 flex-1 leading-snug">{lesson.title}</span>
+                  </div>
+                ) : (
+                  <Link
+                    className={cn(
+                      "flex items-start gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                      isActive ? "bg-muted font-medium" : "hover:bg-muted/60",
+                    )}
+                    params={{ courseId, lessonId: lesson.id }}
+                    to="/learn/$courseId/$lessonId"
+                  >
+                    <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+                      {done ? (
+                        <CheckIcon aria-hidden className="size-3.5 text-emerald-600" />
+                      ) : (
+                        <span className="size-3.5 rounded-full border border-muted-foreground/30" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 leading-snug">{lesson.title}</span>
+                  </Link>
+                )}
               </li>
             );
           })}
