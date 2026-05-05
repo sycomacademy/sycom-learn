@@ -3,14 +3,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardContent } from "@/components/dashboard/dashboard-home";
 import { useUser } from "@/hooks/use-user";
 
-export const Route = createFileRoute("/dashboard/org/courses")({
+export const Route = createFileRoute("/dashboard/org/courses/")({
   head: () => ({
     meta: [{ title: "Courses | Organization | Sycom LMS" }],
   }),
-  component: OrgCoursesPlaceholderPage,
+  component: OrgCoursesCatalogPage,
 });
 
-function OrgCoursesPlaceholderPage() {
+function OrgCoursesCatalogPage() {
   const { data } = useUser();
   return (
     <>

@@ -13,7 +13,7 @@ const ORGANIZATION_SETTINGS_ROLES = new Set<OrganizationRole>(["owner"]);
  */
 export function redirectIfForbiddenOrgRoles(input: {
   memberRole: OrganizationRole | undefined;
-  segment: "members" | "cohorts" | "organization";
+  segment: "users" | "cohorts" | "organization";
 }): void {
   const { memberRole, segment } = input;
   if (!memberRole) {
@@ -21,7 +21,7 @@ export function redirectIfForbiddenOrgRoles(input: {
   }
 
   let allowed = false;
-  if (segment === "members") {
+  if (segment === "users") {
     allowed = USERS_ROLES.has(memberRole);
   } else if (segment === "cohorts") {
     allowed = COHORTS_ROLES.has(memberRole);

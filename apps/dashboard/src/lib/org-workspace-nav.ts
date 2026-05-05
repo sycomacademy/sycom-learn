@@ -6,7 +6,7 @@ export type OrgWorkspacePrimarySlug = "overview" | "users" | "cohorts" | "organi
 /** Canonical URLs for primary org chrome navigation. */
 export const ORG_PRIMARY_PATHS = {
   overview: "/dashboard/org",
-  users: "/dashboard/org/members",
+  users: "/dashboard/org/users",
   cohorts: "/dashboard/org/cohorts",
   organization: "/dashboard/org/organization",
   courses: "/dashboard/org/courses",
