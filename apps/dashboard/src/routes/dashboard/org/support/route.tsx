@@ -21,7 +21,7 @@ const orgSupportPaths = {
 
 function OrgSupportLayout() {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mb-10 max-w-3xl md:ml-10">
       <SecondaryMenu label="Support" base={orgSupportPaths.base} items={orgSupportPaths.items} />
       <section className="mt-6">
         <Outlet />

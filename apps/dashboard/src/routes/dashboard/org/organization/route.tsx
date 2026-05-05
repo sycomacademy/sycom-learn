@@ -6,7 +6,6 @@ import { SecondaryMenu } from "@/components/dashboard/secondary-menu";
 import type { SecondaryMenuItem } from "@/components/dashboard/secondary-menu";
 import { redirectIfForbiddenOrgRoles } from "@/lib/auth/org-route-role-access";
 import type { TRoutes } from "@/router";
-import { cn } from "@sycom/ui/lib/utils";
 
 export const Route = createFileRoute("/dashboard/org/organization")({
   beforeLoad: async ({ context }) => {
@@ -32,7 +31,7 @@ const organizationSectionPaths = {
 
 function OrgOrganizationSectionLayout() {
   return (
-    <div className={cn("mx-auto w-full max-w-6xl")}>
+    <div className="mb-10 max-w-3xl md:ml-10">
       <SecondaryMenu
         base={organizationSectionPaths.base}
         items={organizationSectionPaths.items}

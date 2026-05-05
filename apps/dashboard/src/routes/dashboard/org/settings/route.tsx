@@ -21,7 +21,7 @@ const orgSettingsPaths = {
 
 function OrgSettingsLayout() {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mb-10 max-w-3xl md:ml-10">
       <SecondaryMenu label="Settings" base={orgSettingsPaths.base} items={orgSettingsPaths.items} />
       <section className="mt-6">
         <Outlet />

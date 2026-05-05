@@ -19,9 +19,5 @@ export const Route = createFileRoute("/dashboard/org")({
 });
 
 function OrgWorkspaceRootLayout() {
-  return (
-    <div className="mb-10 md:ml-10">
-      <Outlet />
-    </div>
-  );
+  return <Outlet />;
 }
