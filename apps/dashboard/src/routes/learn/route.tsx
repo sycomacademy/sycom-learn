@@ -17,7 +17,7 @@ export const Route = createFileRoute("/learn")({
 
 function LearnLayout() {
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-background">
       <Outlet />
     </div>
   );

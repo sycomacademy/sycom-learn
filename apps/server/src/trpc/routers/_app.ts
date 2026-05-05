@@ -8,6 +8,7 @@ import { catalogRouter } from "./catalog";
 import { enrollmentRouter } from "./enrollment";
 import { feedbackRouter } from "./feedback";
 import { inviteRouter } from "./invite";
+import { learnRouter } from "./learn";
 import { lessonRouter } from "./lesson";
 import { profileRouter } from "./profile";
 import { storageRouter } from "./storage";
@@ -24,6 +25,7 @@ export const appRouter = router({
   feedback: feedbackRouter,
   invite: inviteRouter,
   lesson: lessonRouter,
+  learn: learnRouter,
   profile: profileRouter,
   storage: storageRouter,
   student: studentRouter,

@@ -69,10 +69,7 @@ export function CatalogEnrollCtaCard({ courseId, detail }: CatalogEnrollCtaCardP
       </CardHeader>
       <CardContent className="pb-4">
         {detail.enrolled ? (
-          <Button
-            className="w-full"
-            render={<Link params={{ courseId }} to="/learn/course/$courseId" />}
-          >
+          <Button className="w-full" render={<Link params={{ courseId }} to="/learn/$courseId" />}>
             Start learning
           </Button>
         ) : (

@@ -165,7 +165,7 @@ function FeaturedCourseCard({ course }: { course: ContinueLearningRow }): React.
             <Link
               className={cn(buttonVariants({ variant: "default", size: "sm" }))}
               params={{ courseId: course.courseId, lessonId: course.nextLessonId }}
-              to="/learn/course/$courseId/$lessonId"
+              to="/learn/$courseId/$lessonId"
             >
               Resume
               <ArrowRight className="ml-1 size-3.5" />
@@ -174,7 +174,7 @@ function FeaturedCourseCard({ course }: { course: ContinueLearningRow }): React.
             <Link
               className={cn(buttonVariants({ variant: "default", size: "sm" }))}
               params={{ courseId: course.courseId }}
-              to="/learn/course/$courseId"
+              to="/learn/$courseId"
             >
               Resume
               <ArrowRight className="ml-1 size-3.5" />
@@ -217,11 +217,7 @@ function RecentCourseActivitySection({ data }: { data: StudentOverviewData }): R
                       ? { courseId: row.courseId, lessonId: row.nextLessonId }
                       : { courseId: row.courseId }
                   }
-                  to={
-                    row.nextLessonId
-                      ? "/learn/course/$courseId/$lessonId"
-                      : "/learn/course/$courseId"
-                  }
+                  to={row.nextLessonId ? "/learn/$courseId/$lessonId" : "/learn/$courseId"}
                 >
                   <div className="min-w-0 space-y-1">
                     <p className="truncate text-sm font-medium">{row.title}</p>

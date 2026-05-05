@@ -26,6 +26,27 @@ export type CurriculumSection = {
   lessons: CurriculumLesson[];
 };
 
+export type CurriculumLessonOutline = {
+  id: string;
+  sectionId: string;
+  title: string;
+  type: LessonType;
+  openAt: Date | null;
+  dueAt: Date | null;
+  order: number;
+};
+
+export type CurriculumSectionOutline = {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string | null;
+  openAt: Date | null;
+  dueAt: Date | null;
+  order: number;
+  lessons: CurriculumLessonOutline[];
+};
+
 export type CurriculumSectionOrderInput = {
   sectionId: string;
   lessonIds: string[];
@@ -106,6 +127,59 @@ export async function getCourseCurriculum(
   ]);
 
   const lessonsBySection = new Map<string, CurriculumLesson[]>();
+  for (const lessonRow of lessonRows) {
+    const rows = lessonsBySection.get(lessonRow.sectionId) ?? [];
+    rows.push(lessonRow);
+    lessonsBySection.set(lessonRow.sectionId, rows);
+  }
+
+  return sectionRows.map((sectionRow) => ({
+    ...sectionRow,
+    lessons: lessonsBySection.get(sectionRow.id) ?? [],
+  }));
+}
+
+/** Curriculum structure without lesson document payloads (for learner shell). */
+export async function getCourseCurriculumOutline(
+  database: Database,
+  input: { courseId: string },
+): Promise<CurriculumSectionOutline[]> {
+  const [sectionRows, lessonRows] = await Promise.all([
+    database
+      .select({
+        id: section.id,
+        courseId: section.courseId,
+        title: section.title,
+        description: section.description,
+        openAt: section.openAt,
+        dueAt: section.dueAt,
+        order: section.order,
+      })
+      .from(section)
+      .where(eq(section.courseId, input.courseId))
+      .orderBy(asc(section.order), asc(section.createdAt)),
+    database
+      .select({
+        id: lesson.id,
+        sectionId: lesson.sectionId,
+        title: lesson.title,
+        type: lesson.type,
+        openAt: lesson.openAt,
+        dueAt: lesson.dueAt,
+        order: lesson.order,
+      })
+      .from(lesson)
+      .innerJoin(section, eq(lesson.sectionId, section.id))
+      .where(eq(section.courseId, input.courseId))
+      .orderBy(
+        asc(section.order),
+        asc(section.createdAt),
+        asc(lesson.order),
+        asc(lesson.createdAt),
+      ),
+  ]);
+
+  const lessonsBySection = new Map<string, CurriculumLessonOutline[]>();
   for (const lessonRow of lessonRows) {
     const rows = lessonsBySection.get(lessonRow.sectionId) ?? [];
     rows.push(lessonRow);

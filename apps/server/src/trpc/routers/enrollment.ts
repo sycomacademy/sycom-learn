@@ -14,6 +14,7 @@ import { TRPCError } from "@trpc/server";
 
 import { protectedProcedure, router } from "../init";
 import {
+  assertCanReadCatalogCourse,
   assertCanReadPublicCourse,
   assertCanUpdatePublicCourse,
 } from "../lib/public-course-access";
@@ -29,6 +30,22 @@ import {
 } from "../schemas";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 
+function assertLearnerCanReadCourseOrThrow(
+  detail: Awaited<ReturnType<typeof getCourseById>> | null | undefined,
+  session: Parameters<typeof assertCanReadCatalogCourse>[0],
+): asserts detail is NonNullable<typeof detail> {
+  if (!detail || detail.status !== "published") {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+  }
+
+  assertCanReadCatalogCourse(session, {
+    organizationId: detail.organizationId,
+    createdBy: detail.createdBy,
+    instructors: detail.instructors,
+  });
+}
+
+/** Legacy enrollment endpoint: platform-published courses only (catalog org enroll uses `catalog.enroll`). */
 function assertReadableCourseOrThrow(
   detail: Awaited<ReturnType<typeof getCourseById>> | null | undefined,
   session: Parameters<typeof assertCanReadPublicCourse>[0],
@@ -108,7 +125,7 @@ export const enrollmentRouter = router({
     .input(getMyCourseProgressInputSchema)
     .query(async ({ ctx, input }) => {
       const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertReadableCourseOrThrow(detail, ctx.session);
+      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
 
       return await getEnrollmentProgressSummary(ctx.db, {
         courseId: input.courseId,
@@ -126,7 +143,7 @@ export const enrollmentRouter = router({
       }
 
       const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertReadableCourseOrThrow(detail, ctx.session);
+      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
 
       await markLessonStarted(ctx.db, { ...input, userId: ctx.session.user.id });
       return { success: true };
@@ -142,7 +159,7 @@ export const enrollmentRouter = router({
       }
 
       const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertReadableCourseOrThrow(detail, ctx.session);
+      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
 
       if (row.type !== "article") {
         throw new TRPCError({
@@ -165,7 +182,7 @@ export const enrollmentRouter = router({
       }
 
       const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertReadableCourseOrThrow(detail, ctx.session);
+      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
 
       if (row.type !== "quiz" && row.type !== "exam") {
         throw new TRPCError({

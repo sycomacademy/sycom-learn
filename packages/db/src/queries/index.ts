@@ -10,6 +10,7 @@ export * from "./enrollment";
 export * from "./feedback";
 export * from "./health";
 export * from "./lesson";
+export * from "./organization";
 export * from "./organization-invitations";
 export * from "./platform-invitations";
 export * from "./profile";

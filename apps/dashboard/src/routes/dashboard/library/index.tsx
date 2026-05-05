@@ -1,16 +1,8 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import {
-  BookOpen,
-  BookOpenIcon,
-  ChevronDown,
-  ChevronRight,
-  GraduationCap,
-  Library,
-} from "lucide-react";
+import { BookOpen, BookOpenIcon, ChevronRight, GraduationCap, Library } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
-
 import {
   OverviewListEmpty,
   OverviewStatCard,
@@ -27,11 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@sycom/ui/components/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@sycom/ui/components/collapsible";
 import { Progress } from "@sycom/ui/components/progress";
 import {
   Sheet,
@@ -213,7 +200,7 @@ function LibraryCourseCard({ course }: { course: LibraryCourseRow }): React.Reac
           </div>
 
           {sections.length > 0 ? (
-            <ul className="divide-y divide-border">
+            <ul className="space-y-0.5">
               {sections.map((section) => (
                 <CourseSectionRow
                   isCurrent={nextSection?.sectionId === section.sectionId}
@@ -237,7 +224,7 @@ function LibraryCourseCard({ course }: { course: LibraryCourseRow }): React.Reac
               <Link
                 className={cn(buttonVariants({ variant: "default", size: "sm" }))}
                 params={{ courseId: course.courseId, lessonId: course.nextLessonId }}
-                to="/learn/course/$courseId/$lessonId"
+                to="/learn/$courseId/$lessonId"
               >
                 {allDone ? "Review course" : "Continue learning"}
                 <ChevronRight className="ml-1 size-3.5" />
@@ -246,7 +233,7 @@ function LibraryCourseCard({ course }: { course: LibraryCourseRow }): React.Reac
               <Link
                 className={cn(buttonVariants({ variant: "default", size: "sm" }))}
                 params={{ courseId: course.courseId }}
-                to="/learn/course/$courseId"
+                to="/learn/$courseId"
               >
                 {allDone ? "Review course" : "Continue learning"}
                 <ChevronRight className="ml-1 size-3.5" />
@@ -360,44 +347,24 @@ function CourseSectionRow({
   section: LibrarySectionRow;
   isCurrent: boolean;
 }): React.ReactElement {
-  const [open, setOpen] = useState(false);
   const isComplete =
     section.totalLessonCount > 0 && section.completedLessonCount >= section.totalLessonCount;
 
   return (
-    <li>
-      <Collapsible onOpenChange={setOpen} open={open}>
-        <CollapsibleTrigger className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-muted/40">
-          <div className="min-w-0 flex-1 space-y-0.5">
-            <p className="truncate text-sm font-medium">{section.title}</p>
-            <p className="text-xs text-muted-foreground">
-              {isComplete
-                ? "All lessons complete"
-                : `${section.completedLessonCount} / ${section.totalLessonCount} lessons complete`}
-            </p>
-          </div>
-          {isCurrent ? (
-            <Badge size="sm" variant="secondary">
-              Current
-            </Badge>
-          ) : null}
-          {open ? (
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-          )}
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="space-y-2 border-t border-border bg-muted/20 px-5 py-3 text-xs text-muted-foreground">
-            <p>
-              {section.totalLessonCount === 0
-                ? "This section has no lessons yet."
-                : `${section.completedLessonCount} of ${section.totalLessonCount} lessons complete in this section.`}
-            </p>
-            <p>Open the course to view lessons in detail.</p>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+    <li className="flex w-full items-center gap-3 border px-5 py-3 text-left transition-colors hover:bg-muted/40">
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <p className="truncate text-sm font-medium">{section.title}</p>
+        <p className="text-xs text-muted-foreground">
+          {isComplete
+            ? "All lessons complete"
+            : `${section.completedLessonCount} / ${section.totalLessonCount} lessons complete`}
+        </p>
+      </div>
+      {isCurrent ? (
+        <Badge size="sm" variant="secondary">
+          Current
+        </Badge>
+      ) : null}
     </li>
   );
 }

@@ -122,6 +122,17 @@
   min-height: 12rem;
 }
 
+[data-editor-variant="learn"] .ProseMirror {
+  padding: var(--editor-spacing-3) var(--editor-spacing-2);
+  margin: 0;
+  max-width: none;
+  min-height: 0;
+}
+
+[data-editor-variant="learn"] .ProseMirror > .react-renderer {
+  margin: var(--editor-spacing-6) 0;
+}
+
 .ProseMirror:focus {
   outline: none;
   box-shadow: none;

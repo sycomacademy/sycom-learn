@@ -5,6 +5,7 @@ import {
   INSTRUCTOR_ROLES,
   LESSON_TYPES,
 } from "@sycom/db/schema/course";
+import { LESSON_PROGRESS_STATUSES } from "@sycom/db/schema/enrollment";
 import { CERTIFICATE_TEMPLATE_IDS } from "@sycom/certificates/meta";
 import {
   storageEntityTypeEnum,
@@ -668,6 +669,92 @@ export const enrollInCatalogCourseSchema = z.object({
   courseId: z.string().min(1),
 });
 export type EnrollInCatalogCourseInput = z.infer<typeof enrollInCatalogCourseSchema>;
+
+// learn (course player)
+export const learnGetPlayerContextSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type LearnGetPlayerContextInput = z.infer<typeof learnGetPlayerContextSchema>;
+
+export const learnGetLessonSchema = z.object({
+  courseId: z.string().min(1),
+  lessonId: z.string().min(1),
+});
+export type LearnGetLessonInput = z.infer<typeof learnGetLessonSchema>;
+
+export const learnCheckAnswerSchema = z.object({
+  courseId: z.string().min(1),
+  lessonId: z.string().min(1),
+  questionId: z.string().min(1),
+  selected: z.array(z.string().min(1)),
+});
+export type LearnCheckAnswerInput = z.infer<typeof learnCheckAnswerSchema>;
+
+const learnLessonOutlineSchema = z.object({
+  id: z.string(),
+  sectionId: z.string(),
+  title: z.string(),
+  type: z.enum(LESSON_TYPES),
+  openAt: z.date().nullable(),
+  dueAt: z.date().nullable(),
+  order: z.number(),
+  progressStatus: z.enum(LESSON_PROGRESS_STATUSES),
+});
+
+const learnSectionOutlineSchema = z.object({
+  id: z.string(),
+  courseId: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  openAt: z.date().nullable(),
+  dueAt: z.date().nullable(),
+  order: z.number(),
+  lessons: z.array(learnLessonOutlineSchema),
+});
+
+export const learnPlayerContextOutputSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("course_not_found") }),
+  z.object({
+    status: z.literal("catalog_forbidden"),
+    contactEmail: z.string(),
+    isPlatformCourse: z.boolean(),
+  }),
+  z.object({
+    status: z.literal("not_enrolled"),
+    contactEmail: z.string(),
+    isPlatformCourse: z.boolean(),
+  }),
+  z.object({
+    status: z.literal("ok"),
+    courseId: z.string(),
+    courseTitle: z.string(),
+    completedLessonCount: z.number(),
+    totalLessonCount: z.number(),
+    progressPercent: z.number(),
+    nextLessonId: z.string().nullable(),
+    sections: z.array(learnSectionOutlineSchema),
+  }),
+]);
+export type LearnPlayerContextOutput = z.infer<typeof learnPlayerContextOutputSchema>;
+
+export const learnGetLessonOutputSchema = z.object({
+  id: z.string(),
+  sectionId: z.string(),
+  courseId: z.string(),
+  title: z.string(),
+  type: z.enum(LESSON_TYPES),
+  openAt: z.date().nullable(),
+  dueAt: z.date().nullable(),
+  order: z.number(),
+  content: z.unknown().nullable(),
+  sectionTitle: z.string(),
+});
+export type LearnGetLessonOutput = z.infer<typeof learnGetLessonOutputSchema>;
+
+export const learnCheckAnswerOutputSchema = z.object({
+  isCorrect: z.boolean(),
+});
+export type LearnCheckAnswerOutput = z.infer<typeof learnCheckAnswerOutputSchema>;
 
 // course (platform-owned courses UI + taxonomy)
 const courseSlugSchema = z
