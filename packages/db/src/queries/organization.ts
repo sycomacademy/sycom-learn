@@ -103,6 +103,52 @@ export async function getOrganizationOnboardingContext(
   return row ? { name: row.name, slug: row.slug, logoPublicId: row.logo } : null;
 }
 
+export type OrganizationWorkspaceContextRow = {
+  organizationId: string;
+  name: string;
+  slug: string;
+  logoPublicId: string | null;
+  accentHexRaw: string | undefined;
+  memberRole: OrganizationRole;
+};
+
+/** Active org branding + caller's membership role for org workspace chrome. */
+export async function getOrganizationWorkspaceContextForMember(
+  database: Database,
+  input: { organizationId: string; userId: string },
+): Promise<OrganizationWorkspaceContextRow | null> {
+  const rows = await database
+    .select({
+      organizationId: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      logoPublicId: organization.logo,
+      metadata: organization.metadata,
+      memberRole: member.role,
+    })
+    .from(member)
+    .innerJoin(organization, eq(member.organizationId, organization.id))
+    .where(and(eq(member.organizationId, input.organizationId), eq(member.userId, input.userId)))
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) return null;
+
+  const meta = parseOrganizationMetadata(row.metadata);
+  const raw = meta.accentHex;
+  const accentHexRaw =
+    typeof raw === "string" && /^#[0-9A-Fa-f]{6}$/.test(raw.trim()) ? raw.trim() : undefined;
+
+  return {
+    organizationId: row.organizationId,
+    name: row.name,
+    slug: row.slug,
+    logoPublicId: row.logoPublicId,
+    accentHexRaw,
+    memberRole: row.memberRole,
+  };
+}
+
 export async function finalizeOrganizationOnboarding(
   database: Database,
   input: {

@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter, useRouterState } from "@tanstack/react-router";
 import { LogOutIcon } from "@sycom/ui/components/animated/icons/log-out";
 import { Avatar, AvatarFallback, AvatarImage } from "@sycom/ui/components/avatar";
 import { Badge } from "@sycom/ui/components/badge";
@@ -22,6 +22,7 @@ import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { useTRPC } from "@/lib/trpc/client";
 import { createShortcutBindings } from "@/lib/shortcuts/bindings";
 import { shortcutIds } from "@/lib/shortcuts/definitions";
 import { getShortcutLabelById } from "@/lib/shortcuts/format";
@@ -38,12 +39,27 @@ import type { UserRole } from "@sycom/db/schema/auth";
 import { useKeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-provider";
 import { Link } from "../layout/foresight-link";
 
+const ORG_WORKSPACE_PREFIX = "/dashboard/org";
+
 export function DashboardUserMenu(): React.ReactElement {
   const { openShortcutsDialog } = useKeyboardShortcutsDialog();
   const {
-    data: { user, profile },
+    data: { user, profile, session },
   } = useUser();
+  const trpc = useTRPC();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isOrgWorkspace = pathname.startsWith(ORG_WORKSPACE_PREFIX);
+
+  const workspaceContextQuery = useQuery({
+    ...trpc.organization.workspaceContext.queryOptions(),
+    enabled: isOrgWorkspace && Boolean(session.activeOrganizationId),
+  });
+
   const userRole = user.role as UserRole;
+  const roleBadgeLabel =
+    isOrgWorkspace && workspaceContextQuery.data?.memberRole
+      ? snakeCaseToTitleCase(workspaceContextQuery.data.memberRole)
+      : snakeCaseToTitleCase(userRole ?? "");
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const queryClient = useQueryClient();
@@ -133,14 +149,14 @@ export function DashboardUserMenu(): React.ReactElement {
               <p className="truncate text-xs text-muted-foreground">{user.email}</p>
             </div>
             <Badge className="mt-2 rounded-none p-2" size="sm" variant="outline">
-              {snakeCaseToTitleCase(userRole ?? "")}
+              {roleBadgeLabel}
             </Badge>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <AnimateIcon animateOnHover>
-            <Link to="/dashboard/settings">
+            <Link to={isOrgWorkspace ? "/dashboard/org/settings" : "/dashboard/settings"}>
               <DropdownMenuItem closeOnClick>
                 <SettingsIcon aria-hidden />
                 <span className="flex-1">Settings</span>
@@ -148,7 +164,9 @@ export function DashboardUserMenu(): React.ReactElement {
             </Link>
           </AnimateIcon>
           <AnimateIcon animateOnHover>
-            <Link to="/dashboard/support/contact">
+            <Link
+              to={isOrgWorkspace ? "/dashboard/org/support/contact" : "/dashboard/support/contact"}
+            >
               <DropdownMenuItem closeOnClick>
                 <MessageCircleQuestionIcon aria-hidden />
                 <span className="flex-1">Support</span>

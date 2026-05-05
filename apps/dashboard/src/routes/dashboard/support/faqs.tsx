@@ -8,11 +8,7 @@ import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "@sycom/
 import { faq } from "@sycom/ui/lib/constants";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/dashboard/support/faqs")({
-  component: FaqsPage,
-});
-
-function FaqsPage() {
+export function FaqsPage() {
   return (
     <Card>
       <CardHeader>
@@ -34,3 +30,7 @@ function FaqsPage() {
     </Card>
   );
 }
+
+export const Route = createFileRoute("/dashboard/support/faqs")({
+  component: FaqsPage,
+});

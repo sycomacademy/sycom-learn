@@ -48,7 +48,7 @@ export const Route = createFileRoute("/dashboard/settings/general")({
   component: GeneralSettings,
 });
 
-function GeneralSettings() {
+export function GeneralSettings() {
   const {
     data: { user, profile },
   } = useUser();

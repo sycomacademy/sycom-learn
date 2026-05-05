@@ -506,6 +506,8 @@ export const revokeSessionSchema = z.object({
 });
 export type RevokeSessionInput = z.infer<typeof revokeSessionSchema>;
 
+export const accentHexSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a #RRGGBB color");
+
 // organization
 export const organizationMembershipSummarySchema = z.object({
   organizationId: z.string(),
@@ -516,6 +518,18 @@ export type OrganizationMembershipSummary = z.infer<typeof organizationMembershi
 
 export const organizationMembershipsOutputSchema = z.array(organizationMembershipSummarySchema);
 export type OrganizationMembershipsOutput = z.infer<typeof organizationMembershipsOutputSchema>;
+
+export const organizationWorkspaceContextOutputSchema = z.object({
+  organizationId: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  logoPublicId: z.string().nullable(),
+  accentHex: accentHexSchema,
+  memberRole: z.enum(organizationRoleEnum.enumValues),
+});
+export type OrganizationWorkspaceContextOutput = z.infer<
+  typeof organizationWorkspaceContextOutputSchema
+>;
 
 // onboarding
 export const onboardingDefaultNextPathSchema = z
@@ -531,8 +545,6 @@ export const onboardingStatusSchema = z.object({
   defaultNextPath: onboardingDefaultNextPathSchema,
 });
 export type OnboardingStatus = z.infer<typeof onboardingStatusSchema>;
-
-export const accentHexSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a #RRGGBB color");
 
 export const completeProfileOnboardingSchema = z.object({
   bio: z.string().max(500).optional(),

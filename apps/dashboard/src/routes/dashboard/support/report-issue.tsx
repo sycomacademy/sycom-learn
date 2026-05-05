@@ -31,10 +31,6 @@ import * as z from "zod/mini";
 import { useUser } from "@/hooks/use-user";
 import { useTRPCClient } from "@/lib/trpc/client";
 
-export const Route = createFileRoute("/dashboard/support/report-issue")({
-  component: ReportIssuePage,
-});
-
 const reportTypeOptions = [
   { label: "Bug", value: "bug" },
   { label: "Feature request", value: "feature" },
@@ -59,7 +55,7 @@ const reportIssueSchema = z.object({
 });
 type ReportIssueInput = z.infer<typeof reportIssueSchema>;
 
-function ReportIssuePage() {
+export function ReportIssuePage() {
   const trpcClient = useTRPCClient();
   const {
     data: { user },
@@ -277,3 +273,7 @@ function ReportIssuePage() {
     </Card>
   );
 }
+
+export const Route = createFileRoute("/dashboard/support/report-issue")({
+  component: ReportIssuePage,
+});

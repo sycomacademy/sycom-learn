@@ -25,7 +25,7 @@ export const Route = createFileRoute("/dashboard/settings/preferences")({
   component: PreferencesSettings,
 });
 
-function PreferencesSettings() {
+export function PreferencesSettings() {
   const { theme, setTheme } = useTheme();
   const {
     data: { profile },

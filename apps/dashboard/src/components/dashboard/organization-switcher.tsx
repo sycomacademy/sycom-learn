@@ -26,6 +26,7 @@ import { ChevronsUpDown } from "lucide-react";
 
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
+import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -58,6 +59,7 @@ export function OrganizationSwitcher(): React.ReactElement | null {
     activeMembership?.name?.trim() || activeMembership?.slug?.trim() || "Personal workspace";
 
   const refreshCaches = async () => {
+    queryClient.removeQueries({ queryKey: trpc.organization.workspaceContext.queryKey() });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY }),
       queryClient.invalidateQueries(trpc.profile.get.queryOptions()),
@@ -65,19 +67,34 @@ export function OrganizationSwitcher(): React.ReactElement | null {
       queryClient.invalidateQueries(trpc.student.getDashboardOverview.queryOptions({})),
       queryClient.invalidateQueries(trpc.student.getLibrary.queryOptions({})),
       queryClient.invalidateQueries({ queryKey: trpc.catalog.list.queryKey() }),
+      queryClient.invalidateQueries(trpc.organization.workspaceContext.queryOptions()),
     ]);
   };
 
-  const handleSwitch = async (organizationId: string) => {
+  const handleSwitch = async (org: { organizationId: string; slug: string }) => {
+    const { organizationId, slug } = org;
     if (organizationId === activeOrganizationId) return;
     setPendingAction({ switchTo: organizationId });
     try {
-      const { error } = await authClient.organization.setActive({ organizationId });
+      const { error } = await authClient.organization.setActive({
+        organizationId,
+        organizationSlug: slug,
+      });
       if (error) {
         toastManager.add({ title: error.message, type: "error" });
         return;
       }
       await refreshCaches();
+      await router.invalidate();
+
+      const pathname = router.state.location.pathname;
+      const onDashboardHome = pathname === "/dashboard" || pathname === "/dashboard/";
+      if (onDashboardHome) {
+        await router.navigate({
+          to: dashboardHomeRoute(organizationId),
+          replace: true,
+        });
+      }
     } catch {
       toastManager.add({
         title: "Couldn't reach server. Check your connection and try again.",
@@ -101,6 +118,7 @@ export function OrganizationSwitcher(): React.ReactElement | null {
         return;
       }
       await refreshCaches();
+      await router.invalidate();
       await router.navigate({ to: "/dashboard", replace: true });
     } catch {
       toastManager.add({
@@ -158,7 +176,10 @@ export function OrganizationSwitcher(): React.ReactElement | null {
                       disabled={selected || isBusy}
                       key={org.organizationId}
                       onClick={() => {
-                        void handleSwitch(org.organizationId);
+                        void handleSwitch({
+                          organizationId: org.organizationId,
+                          slug: org.slug,
+                        });
                       }}
                     >
                       <span className="truncate">

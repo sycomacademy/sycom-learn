@@ -5,7 +5,7 @@ import type { TRoutes } from "@/router";
  */
 export function dashboardHomeRoute(activeOrganizationId: string | null | undefined): TRoutes {
   if (typeof activeOrganizationId === "string" && activeOrganizationId.length > 0) {
-    return "/dashboard/organisation";
+    return "/dashboard/org";
   }
   return "/dashboard";
 }

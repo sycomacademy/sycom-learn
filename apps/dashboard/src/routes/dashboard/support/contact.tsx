@@ -38,7 +38,7 @@ const socialLinks = [
   { label: "LinkedIn", href: contacts.socialMedia.linkedin.contact },
 ];
 
-function ContactPage() {
+export function ContactPage() {
   return (
     <div className="flex flex-col gap-6">
       <Card>

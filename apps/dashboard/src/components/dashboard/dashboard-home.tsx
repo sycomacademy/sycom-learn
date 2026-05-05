@@ -43,7 +43,7 @@ export function DashboardHomePage() {
   }
 }
 
-function DashboardContent({ data }: { data: ProfileOutput }) {
+export function DashboardContent({ data }: { data: ProfileOutput }) {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
       <div>

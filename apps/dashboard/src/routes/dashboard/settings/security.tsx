@@ -71,7 +71,7 @@ export const Route = createFileRoute("/dashboard/settings/security")({
   component: SecuritySettings,
 });
 
-function SecuritySettings() {
+export function SecuritySettings() {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <SecuritySessionsActive />

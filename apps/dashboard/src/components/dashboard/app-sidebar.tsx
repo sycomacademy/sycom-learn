@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { BlocksIcon } from "@sycom/ui/components/animated/icons/blocks";
 import { BuildingIcon } from "@sycom/ui/components/animated/icons/building";
@@ -26,11 +27,14 @@ import {
 import { Link } from "@/components/layout/foresight-link";
 import { OrganizationSwitcher } from "@/components/dashboard/organization-switcher";
 import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
+import { useTRPC } from "@/lib/trpc/client";
 import { useUser } from "@/hooks/use-user";
 import type { TRoutes } from "@/router";
 import { cn } from "@sycom/ui/lib/utils";
 import { AnimateIcon } from "@sycom/ui/components/animated/icons/icon";
 import type { UserRole } from "@sycom/db/schema/auth";
+
+const ORG_WORKSPACE_PREFIX = "/dashboard/org";
 
 type NavIcon = React.ComponentType<{ className?: string }>;
 
@@ -51,6 +55,20 @@ const COMMON_NAV_GROUPS: NavGroup[] = [
     items: [
       { icon: MessageCircleQuestionIcon, label: "Support", to: "/dashboard/support" },
       { icon: SettingsIcon, label: "Settings", to: "/dashboard/settings" },
+    ],
+  },
+];
+
+const ORG_GENERAL_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "General",
+    items: [
+      {
+        icon: MessageCircleQuestionIcon,
+        label: "Support",
+        to: "/dashboard/org/support",
+      },
+      { icon: SettingsIcon, label: "Settings", to: "/dashboard/org/settings" },
     ],
   },
 ];
@@ -100,6 +118,17 @@ const PUBLIC_STUDENT_NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+const ORG_WORKSPACE_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Organization",
+    items: [
+      { icon: LayoutDashboardIcon, label: "Overview", to: "/dashboard/org" },
+      { icon: UsersIcon, label: "Members", to: "/dashboard/org/members" },
+      { icon: LayersIcon, label: "Courses", to: "/dashboard/org/courses" },
+    ],
+  },
+];
+
 const menuButtonStableClass = cn(
   "transition-[width,height,padding,margin] duration-240 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
 );
@@ -123,9 +152,22 @@ export function AppSidebar(): React.ReactElement {
   const {
     data: { user, session },
   } = useUser();
+  const trpc = useTRPC();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const homePath = dashboardHomeRoute(session.activeOrganizationId);
-  const navGroups = rewriteOverviewTargets(getNavGroups(normalizeUserRole(user.role)), homePath);
+  const isOrgWorkspace = pathname.startsWith(ORG_WORKSPACE_PREFIX);
+
+  const workspaceContextQuery = useQuery({
+    ...trpc.organization.workspaceContext.queryOptions(),
+    enabled: isOrgWorkspace && Boolean(session.activeOrganizationId),
+  });
+
+  const navGroups = isOrgWorkspace
+    ? [...ORG_WORKSPACE_NAV_GROUPS, ...ORG_GENERAL_NAV_GROUPS]
+    : [
+        ...rewriteOverviewTargets(getPlatformRoleNavGroups(normalizeUserRole(user.role)), homePath),
+        ...COMMON_NAV_GROUPS,
+      ];
 
   let activeTo: TRoutes | undefined;
   let bestLength = -1;
@@ -139,19 +181,25 @@ export function AppSidebar(): React.ReactElement {
     }
   }
 
+  const headerLinkTo: TRoutes = isOrgWorkspace ? "/dashboard/org" : homePath;
+  const orgLogoPublicId = workspaceContextQuery.data?.logoPublicId?.trim();
+  const logoSrc = isOrgWorkspace && orgLogoPublicId ? orgLogoPublicId : BRAND.LOGO_ICON;
+  const orgName = workspaceContextQuery.data?.name?.trim();
+  const logoAlt = isOrgWorkspace && orgName ? `${orgName} logo` : "Sycom Solutions logo";
+
   return (
     <Sidebar className="border-sidebar-border" collapsible="icon" variant="inset">
       <SidebarHeader>
         <Link
           className="flex w-fit items-center gap-2 text-sm font-semibold text-sidebar-foreground"
-          to={homePath}
+          to={headerLinkTo}
         >
           <Image
-            alt="Sycom Solutions logo"
+            alt={logoAlt}
             className="rounded object-contain"
             height={40}
             width={40}
-            src={BRAND.LOGO_ICON}
+            src={logoSrc}
           />
         </Link>
       </SidebarHeader>
@@ -190,7 +238,7 @@ export function AppSidebar(): React.ReactElement {
   );
 }
 
-function getNavGroups(role: UserRole | null): NavGroup[] {
+function getPlatformRoleNavGroups(role: UserRole | null): NavGroup[] {
   const navGroups: NavGroup[] = [];
 
   if (role === "platform_admin") {
@@ -202,7 +250,6 @@ function getNavGroups(role: UserRole | null): NavGroup[] {
   if (role === "public_student") {
     navGroups.push(...PUBLIC_STUDENT_NAV_GROUPS);
   }
-  navGroups.push(...COMMON_NAV_GROUPS);
 
   return navGroups;
 }
