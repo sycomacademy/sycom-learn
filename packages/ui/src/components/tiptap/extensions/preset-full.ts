@@ -6,7 +6,10 @@ import { ImageExtension } from "@sycom/components/tiptap/extensions/image";
 import { ImagePlaceholder } from "@sycom/components/tiptap/extensions/image-placeholder";
 import type { FullPresetCheckAnswerFn } from "@sycom/components/tiptap/extensions/editor-preset-types";
 import { LessonQuestionFeedback } from "@sycom/components/tiptap/extensions/lesson-question-feedback";
-import { LessonQuestion } from "@sycom/components/tiptap/extensions/question";
+import {
+  LessonQuestion,
+  type LearnQuestionLockMode,
+} from "@sycom/components/tiptap/extensions/question";
 import SearchAndReplace from "@sycom/components/tiptap/extensions/search-and-replace";
 import { TableExtension } from "@sycom/components/tiptap/extensions/table";
 import { VideoExtension } from "@sycom/components/tiptap/extensions/video";
@@ -33,10 +36,11 @@ const lowlight = createLowlight(common);
 export type GetFullExtensionsOptions = {
   onUpload?: TiptapEditorUploadFn;
   onCheckAnswer?: FullPresetCheckAnswerFn;
+  learnQuestionLock?: LearnQuestionLockMode;
 };
 
 export function getFullExtensions(options: GetFullExtensionsOptions = {}): AnyExtension[] {
-  const { onUpload, onCheckAnswer } = options;
+  const { onUpload, onCheckAnswer, learnQuestionLock } = options;
 
   return [
     StarterKit.configure({
@@ -98,7 +102,10 @@ export function getFullExtensions(options: GetFullExtensionsOptions = {}): AnyEx
     SearchAndReplace,
     Typography,
     LessonQuestionFeedback,
-    LessonQuestion.configure(onCheckAnswer ? { onCheckAnswer } : {}),
+    LessonQuestion.configure({
+      ...(onCheckAnswer ? { onCheckAnswer } : {}),
+      ...(learnQuestionLock ? { learnQuestionLock } : {}),
+    }),
     Markdown.configure({
       markedOptions: { gfm: true },
     }),

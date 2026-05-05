@@ -1,12 +1,15 @@
 import {
+  appendExamIntegrityEvent,
   checkLessonAnswer,
   getCourseById,
   getCourseCurriculumOutline,
   getEnrollmentForUserCourse,
   getEnrollmentProgressSummary,
+  getLearnerLessonAnswers,
   getLessonWithCourseId,
   getOrganizationOwnerEmail,
   getSectionById,
+  recordLessonAnswerDraft,
   type CourseDetail,
   type CurriculumSectionOutline,
   type EnrollmentProgressSummary,
@@ -26,11 +29,13 @@ import {
   learnGetLessonSchema,
   learnGetPlayerContextSchema,
   learnPlayerContextOutputSchema,
+  learnRecordExamIntegrityOutputSchema,
+  learnRecordExamIntegritySchema,
 } from "../schemas";
 
 const SUPPORT_EMAIL = contacts.support.email.contact;
 
-function courseCatalogAccessPick(detail: CourseDetail) {
+function courseAccessPick(detail: CourseDetail) {
   return {
     organizationId: detail.organizationId,
     createdBy: detail.createdBy,
@@ -39,186 +44,157 @@ function courseCatalogAccessPick(detail: CourseDetail) {
 }
 
 async function resolveLearnerContactEmail(
-  database: Parameters<typeof getOrganizationOwnerEmail>[0],
-  detail: Pick<CourseDetail, "organizationId">,
+  database: Context["db"],
+  organizationId: string | null,
 ): Promise<string> {
-  if (detail.organizationId) {
-    const ownerEmail = await getOrganizationOwnerEmail(database, detail.organizationId);
-    return ownerEmail ?? SUPPORT_EMAIL;
-  }
-  return SUPPORT_EMAIL;
+  if (!organizationId) return SUPPORT_EMAIL;
+  return (await getOrganizationOwnerEmail(database, organizationId)) ?? SUPPORT_EMAIL;
 }
 
 type LessonWithProgress = CurriculumSectionOutline["lessons"][number] & {
   progressStatus: EnrollmentProgressSummary["lessons"][number]["status"];
 };
 
-type SectionWithProgress = Omit<CurriculumSectionOutline, "lessons"> & {
-  lessons: LessonWithProgress[];
-};
+type LessonLock =
+  | { kind: "scheduled_section"; opensAt: Date }
+  | { kind: "scheduled_lesson"; opensAt: Date }
+  | { kind: "deadline_section"; dueAt: Date }
+  | { kind: "deadline_lesson"; dueAt: Date }
+  | { kind: "progression" };
 
-function mergeOutlineWithProgress(
+type LessonWithLocks = LessonWithProgress & { locked: boolean; lock?: LessonLock };
+
+type SectionWithLocks = Omit<CurriculumSectionOutline, "lessons"> & { lessons: LessonWithLocks[] };
+
+function buildSectionsWithLocks(
   outline: CurriculumSectionOutline[],
   summaryLessons: EnrollmentProgressSummary["lessons"],
-): SectionWithProgress[] {
-  const byId = new Map(summaryLessons.map((l) => [l.lessonId, l.status]));
-  return outline.map((sec) => ({
-    ...sec,
-    lessons: sec.lessons.map((les) => ({
-      ...les,
-      progressStatus: byId.get(les.id) ?? "not_started",
-    })),
-  }));
-}
-
-type LessonWithLocks = LessonWithProgress & {
-  locked: boolean;
-  lock?:
-    | { kind: "scheduled_section"; opensAt: Date }
-    | { kind: "scheduled_lesson"; opensAt: Date }
-    | { kind: "deadline_section"; dueAt: Date }
-    | { kind: "deadline_lesson"; dueAt: Date }
-    | { kind: "progression" };
-};
-
-type SectionWithLocks = Omit<SectionWithProgress, "lessons"> & { lessons: LessonWithLocks[] };
-
-function applyLessonLocks(sections: SectionWithProgress[], now: Date): SectionWithLocks[] {
-  type OrderRow = {
-    lessonId: string;
-    sectionOpenAt: Date | null;
-    lessonOpenAt: Date | null;
-    sectionDueAt: Date | null;
-    lessonDueAt: Date | null;
-    progressStatus: LessonWithProgress["progressStatus"];
-  };
-
-  const order: OrderRow[] = [];
-  for (const sec of sections) {
+  now: Date,
+): SectionWithLocks[] {
+  const statusById = new Map(summaryLessons.map((l) => [l.lessonId, l.status]));
+  const flat: Array<
+    LessonWithProgress & { sectionOpenAt: Date | null; sectionDueAt: Date | null }
+  > = [];
+  for (const sec of outline) {
     for (const l of sec.lessons) {
-      order.push({
-        lessonId: l.id,
+      flat.push({
+        ...l,
+        progressStatus: statusById.get(l.id) ?? "not_started",
         sectionOpenAt: sec.openAt,
-        lessonOpenAt: l.openAt,
         sectionDueAt: sec.dueAt,
-        lessonDueAt: l.dueAt,
-        progressStatus: l.progressStatus,
       });
     }
   }
 
-  const lockById = new Map<string, { locked: boolean; lock?: LessonWithLocks["lock"] }>();
-
-  for (let i = 0; i < order.length; i++) {
-    const row = order[i];
-    if (row === undefined) continue;
-    let locked = false;
-    let lock: LessonWithLocks["lock"];
-
+  const lockById = new Map<string, { locked: boolean; lock?: LessonLock }>();
+  for (const [i, row] of flat.entries()) {
+    const prev = i > 0 ? flat[i - 1] : undefined;
+    let lock: LessonLock | undefined;
     if (row.sectionOpenAt && now < row.sectionOpenAt) {
-      locked = true;
       lock = { kind: "scheduled_section", opensAt: row.sectionOpenAt };
-    } else if (row.lessonOpenAt && now < row.lessonOpenAt) {
-      locked = true;
-      lock = { kind: "scheduled_lesson", opensAt: row.lessonOpenAt };
-    } else if (i > 0) {
-      const prev = order[i - 1];
-      if (prev !== undefined && prev.progressStatus !== "completed") {
-        locked = true;
-        lock = { kind: "progression" };
-      }
-    }
-
-    if (!locked && row.progressStatus !== "completed" && row.lessonDueAt && now > row.lessonDueAt) {
-      locked = true;
-      lock = { kind: "deadline_lesson", dueAt: row.lessonDueAt };
-    } else if (
-      !locked &&
-      row.progressStatus !== "completed" &&
-      row.sectionDueAt &&
-      now > row.sectionDueAt
-    ) {
-      locked = true;
+    } else if (row.openAt && now < row.openAt) {
+      lock = { kind: "scheduled_lesson", opensAt: row.openAt };
+    } else if (prev && prev.progressStatus !== "completed") {
+      lock = { kind: "progression" };
+    } else if (row.progressStatus !== "completed" && row.dueAt && now > row.dueAt) {
+      lock = { kind: "deadline_lesson", dueAt: row.dueAt };
+    } else if (row.progressStatus !== "completed" && row.sectionDueAt && now > row.sectionDueAt) {
       lock = { kind: "deadline_section", dueAt: row.sectionDueAt };
     }
-
-    lockById.set(row.lessonId, { locked, lock });
+    lockById.set(row.id, lock ? { locked: true, lock } : { locked: false });
   }
 
-  return sections.map((sec) => ({
+  return outline.map((sec) => ({
     ...sec,
-    lessons: sec.lessons.map((les) => {
-      const meta = lockById.get(les.id) ?? { locked: false };
-      return {
-        ...les,
-        locked: meta.locked,
-        ...(meta.lock ? { lock: meta.lock } : {}),
-      };
-    }),
+    lessons: sec.lessons.map((les) => ({
+      ...les,
+      progressStatus: statusById.get(les.id) ?? "not_started",
+      ...(lockById.get(les.id) ?? { locked: false }),
+    })),
   }));
 }
 
 function nextPlayableLessonId(sections: SectionWithLocks[]): string | null {
   const flat = sections.flatMap((s) => s.lessons);
-  const nextIncomplete = flat.find((l) => l.progressStatus !== "completed" && !l.locked);
-  if (nextIncomplete) return nextIncomplete.id;
-  const firstOpen = flat.find((l) => !l.locked);
-  return firstOpen?.id ?? null;
+  return (
+    flat.find((l) => l.progressStatus !== "completed" && !l.locked)?.id ??
+    flat.find((l) => !l.locked)?.id ??
+    null
+  );
 }
 
-async function getSectionsWithLocksForLearner(
+function lockMessage(lock: LessonLock | undefined): string {
+  switch (lock?.kind) {
+    case "scheduled_section":
+      return "This module is not open yet.";
+    case "scheduled_lesson":
+      return "This lesson is not open yet.";
+    case "deadline_section":
+      return "This module is closed.";
+    case "deadline_lesson":
+      return "This lesson is closed.";
+    case "progression":
+      return "Finish earlier lessons before continuing.";
+    default:
+      return "This lesson is locked.";
+  }
+}
+
+async function loadLearnerSections(
   database: Context["db"],
   input: { courseId: string; userId: string },
-): Promise<SectionWithLocks[] | null> {
-  const summary = await getEnrollmentProgressSummary(database, {
-    courseId: input.courseId,
-    userId: input.userId,
-  });
+): Promise<{ sections: SectionWithLocks[]; summary: EnrollmentProgressSummary } | null> {
+  const summary = await getEnrollmentProgressSummary(database, input);
   if (!summary) return null;
-  const outline = await getCourseCurriculumOutline(database, {
-    courseId: input.courseId,
-  });
-  const merged = mergeOutlineWithProgress(outline, summary.lessons);
-  return applyLessonLocks(merged, new Date());
+  const outline = await getCourseCurriculumOutline(database, { courseId: input.courseId });
+  return { sections: buildSectionsWithLocks(outline, summary.lessons, new Date()), summary };
 }
 
-async function assertLearnLessonUnlocked(
+async function assertCourseReadable(
   database: Context["db"],
-  input: { courseId: string; lessonId: string; userId: string },
+  session: Context["session"],
+  courseId: string,
+): Promise<CourseDetail> {
+  const detail = await getCourseById(database, { courseId });
+  if (!detail || detail.status !== "published") {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+  }
+  if (!canReadCatalogCourse(session, courseAccessPick(detail))) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not authorized to access this course",
+    });
+  }
+  return detail;
+}
+
+async function assertLessonUnlocked(
+  database: Context["db"],
+  session: NonNullable<Context["session"]>,
+  input: { courseId: string; lessonId: string },
 ) {
-  const sections = await getSectionsWithLocksForLearner(database, {
+  await assertCourseReadable(database, session, input.courseId);
+  const enrollmentRow = await getEnrollmentForUserCourse(database, {
     courseId: input.courseId,
-    userId: input.userId,
+    userId: session.user.id,
   });
-  if (!sections) {
+  if (!enrollmentRow) {
     throw new TRPCError({ code: "FORBIDDEN", message: "You are not enrolled in this course" });
   }
-  for (const sec of sections) {
-    for (const les of sec.lessons) {
-      if (les.id === input.lessonId) {
-        if (les.locked) {
-          const message =
-            les.lock?.kind === "scheduled_section"
-              ? "This module is not open yet."
-              : les.lock?.kind === "scheduled_lesson"
-                ? "This lesson is not open yet."
-                : les.lock?.kind === "deadline_section"
-                  ? "This module is closed."
-                  : les.lock?.kind === "deadline_lesson"
-                    ? "This lesson is closed."
-                    : les.lock?.kind === "progression"
-                      ? "Finish earlier lessons before continuing."
-                      : "This lesson is locked.";
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message,
-          });
-        }
-        return;
-      }
-    }
+  const loaded = await loadLearnerSections(database, {
+    courseId: input.courseId,
+    userId: session.user.id,
+  });
+  if (!loaded) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You are not enrolled in this course" });
   }
-  throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
+  const lesson = loaded.sections.flatMap((s) => s.lessons).find((l) => l.id === input.lessonId);
+  if (!lesson) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
+  }
+  if (lesson.locked) {
+    throw new TRPCError({ code: "FORBIDDEN", message: lockMessage(lesson.lock) });
+  }
 }
 
 export const learnRouter = router({
@@ -231,63 +207,38 @@ export const learnRouter = router({
       if (!detail || detail.status !== "published") {
         return { status: "course_not_found" as const };
       }
-
-      const accessPick = courseCatalogAccessPick(detail);
-      const contactEmail = await resolveLearnerContactEmail(ctx.db, detail);
+      const contactEmail = await resolveLearnerContactEmail(ctx.db, detail.organizationId);
       const isPlatformCourse = detail.organizationId === null;
 
-      if (!canReadCatalogCourse(ctx.session, accessPick)) {
-        return {
-          status: "catalog_forbidden" as const,
-          contactEmail,
-          isPlatformCourse,
-        };
+      if (!canReadCatalogCourse(ctx.session, courseAccessPick(detail))) {
+        return { status: "catalog_forbidden" as const, contactEmail, isPlatformCourse };
       }
 
       const enrollmentRow = await getEnrollmentForUserCourse(ctx.db, {
         courseId: input.courseId,
         userId: ctx.session.user.id,
       });
-      if (!enrollmentRow) {
-        return {
-          status: "not_enrolled" as const,
-          contactEmail,
-          isPlatformCourse,
-        };
+      const loaded = enrollmentRow
+        ? await loadLearnerSections(ctx.db, {
+            courseId: input.courseId,
+            userId: ctx.session.user.id,
+          })
+        : null;
+      if (!loaded) {
+        return { status: "not_enrolled" as const, contactEmail, isPlatformCourse };
       }
 
-      const summary = await getEnrollmentProgressSummary(ctx.db, {
-        courseId: input.courseId,
-        userId: ctx.session.user.id,
-      });
-      if (!summary) {
-        return {
-          status: "not_enrolled" as const,
-          contactEmail,
-          isPlatformCourse,
-        };
-      }
-
-      const outline = await getCourseCurriculumOutline(ctx.db, {
-        courseId: input.courseId,
-      });
-      const merged = mergeOutlineWithProgress(outline, summary.lessons);
-      const sections = applyLessonLocks(merged, new Date());
-
-      const totalLessonCount = summary.lessons.length;
-      const completedLessonCount = summary.lessons.filter((l) => l.status === "completed").length;
-      const progressPercent =
-        totalLessonCount > 0 ? Math.round((completedLessonCount / totalLessonCount) * 100) : 0;
-
+      const total = loaded.summary.lessons.length;
+      const completed = loaded.summary.lessons.filter((l) => l.status === "completed").length;
       return {
         status: "ok" as const,
         courseId: detail.id,
         courseTitle: detail.title,
-        completedLessonCount,
-        totalLessonCount,
-        progressPercent,
-        nextLessonId: nextPlayableLessonId(sections),
-        sections,
+        completedLessonCount: completed,
+        totalLessonCount: total,
+        progressPercent: total > 0 ? Math.round((completed / total) * 100) : 0,
+        nextLessonId: nextPlayableLessonId(loaded.sections),
+        sections: loaded.sections,
       };
     }),
 
@@ -296,40 +247,19 @@ export const learnRouter = router({
     .input(learnGetLessonSchema)
     .output(learnGetLessonOutputSchema)
     .query(async ({ ctx, input }) => {
+      await assertLessonUnlocked(ctx.db, ctx.session, input);
       const row = await getLessonWithCourseId(ctx.db, input.lessonId);
       if (!row || row.courseId !== input.courseId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
       }
-
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      if (!detail || detail.status !== "published") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
-      }
-
-      if (!canReadCatalogCourse(ctx.session, courseCatalogAccessPick(detail))) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not authorized to access this course",
-        });
-      }
-
-      const enrollmentRow = await getEnrollmentForUserCourse(ctx.db, {
-        courseId: input.courseId,
-        userId: ctx.session.user.id,
-      });
-      if (!enrollmentRow) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You are not enrolled in this course" });
-      }
-
-      await assertLearnLessonUnlocked(ctx.db, {
-        courseId: input.courseId,
-        lessonId: input.lessonId,
-        userId: ctx.session.user.id,
-      });
-
-      const sectionRow = await getSectionById(ctx.db, { sectionId: row.sectionId });
-      const sectionTitle = sectionRow?.title ?? "";
-
+      const [sectionRow, learnerAnswers] = await Promise.all([
+        getSectionById(ctx.db, { sectionId: row.sectionId }),
+        getLearnerLessonAnswers(ctx.db, {
+          courseId: input.courseId,
+          userId: ctx.session.user.id,
+          lessonId: input.lessonId,
+        }),
+      ]);
       return {
         id: row.id,
         sectionId: row.sectionId,
@@ -340,7 +270,9 @@ export const learnRouter = router({
         dueAt: row.dueAt,
         order: row.order,
         content: stripQuestionAnswersFromContent(row.content),
-        sectionTitle,
+        sectionTitle: sectionRow?.title ?? "",
+        answers: learnerAnswers.answers,
+        answersSource: learnerAnswers.source,
       };
     }),
 
@@ -349,41 +281,52 @@ export const learnRouter = router({
     .input(learnCheckAnswerSchema)
     .output(learnCheckAnswerOutputSchema)
     .mutation(async ({ ctx, input }) => {
-      const row = await getLessonWithCourseId(ctx.db, input.lessonId);
-      if (!row || row.courseId !== input.courseId) {
+      await assertLessonUnlocked(ctx.db, ctx.session, input);
+      const lessonRow = await getLessonWithCourseId(ctx.db, input.lessonId);
+      if (!lessonRow || lessonRow.courseId !== input.courseId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
       }
-
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      if (!detail || detail.status !== "published") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
-      }
-
-      if (!canReadCatalogCourse(ctx.session, courseCatalogAccessPick(detail))) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not authorized to access this course",
-        });
-      }
-
-      const enrollmentRow = await getEnrollmentForUserCourse(ctx.db, {
-        courseId: input.courseId,
-        userId: ctx.session.user.id,
-      });
-      if (!enrollmentRow) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You are not enrolled in this course" });
-      }
-
-      await assertLearnLessonUnlocked(ctx.db, {
-        courseId: input.courseId,
-        lessonId: input.lessonId,
-        userId: ctx.session.user.id,
-      });
-
-      return await checkLessonAnswer(ctx.db, {
+      const result = await checkLessonAnswer(ctx.db, {
         lessonId: input.lessonId,
         questionId: input.questionId,
         selected: input.selected,
       });
+      const isAssessment = lessonRow.type === "quiz" || lessonRow.type === "exam";
+      if (isAssessment || result.isCorrect) {
+        await recordLessonAnswerDraft(ctx.db, {
+          courseId: input.courseId,
+          userId: ctx.session.user.id,
+          lessonId: input.lessonId,
+          questionId: input.questionId,
+          selected: input.selected,
+          isCorrect: result.isCorrect,
+        });
+      }
+      return result;
+    }),
+
+  recordExamIntegrityFlag: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["read"] }))
+    .input(learnRecordExamIntegritySchema)
+    .output(learnRecordExamIntegrityOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      await assertLessonUnlocked(ctx.db, ctx.session, input);
+      const lessonRow = await getLessonWithCourseId(ctx.db, input.lessonId);
+      if (!lessonRow || lessonRow.courseId !== input.courseId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
+      }
+      if (lessonRow.type !== "exam") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Integrity tracking is only available for exam lessons",
+        });
+      }
+      await appendExamIntegrityEvent(ctx.db, {
+        courseId: input.courseId,
+        lessonId: input.lessonId,
+        userId: ctx.session.user.id,
+        kind: input.kind,
+      });
+      return { success: true as const };
     }),
 });

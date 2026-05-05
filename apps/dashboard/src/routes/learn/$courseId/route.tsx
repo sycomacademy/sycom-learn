@@ -2,13 +2,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 import { LearnAccessPanel } from "@/components/learn/learn-access-panel";
-import { LearnCourseSidebar } from "@/components/learn/learn-course-sidebar";
+import { LearnShell } from "@/components/learn/learn-shell";
 import { useTRPC } from "@/lib/trpc/client";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@sycom/ui/components/resizable";
 
 export const Route = createFileRoute("/learn/$courseId")({
   loader: async ({ context, params }) => {
@@ -33,28 +28,8 @@ function LearnCourseLayout() {
   }
 
   return (
-    <ResizablePanelGroup
-      className="min-h-0 w-full flex-1"
-      id={`learn-course-${courseId}`}
-      orientation="horizontal"
-    >
-      <ResizablePanel
-        className="min-w-0"
-        collapsedSize="0%"
-        collapsible
-        defaultSize="25%"
-        id="learn-sidebar"
-        maxSize="50%"
-        minSize="18%"
-      >
-        <LearnCourseSidebar courseId={courseId} data={data} />
-      </ResizablePanel>
-      <ResizableHandle className="w-1.5 bg-transparent after:w-2" withHandle />
-      <ResizablePanel className="min-w-0" id="learn-main" minSize="35%">
-        <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-          <Outlet />
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+    <LearnShell courseId={courseId} data={data}>
+      <Outlet />
+    </LearnShell>
   );
 }

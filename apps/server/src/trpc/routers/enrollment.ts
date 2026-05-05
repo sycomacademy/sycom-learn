@@ -13,6 +13,7 @@ import {
 } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 
+import type { Context } from "../context";
 import { protectedProcedure, router } from "../init";
 import {
   assertCanReadCatalogCourse,
@@ -31,31 +32,47 @@ import {
 } from "../schemas";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 
-function assertLearnerCanReadCourseOrThrow(
-  detail: Awaited<ReturnType<typeof getCourseById>> | null | undefined,
-  session: Parameters<typeof assertCanReadCatalogCourse>[0],
-): asserts detail is NonNullable<typeof detail> {
+type CourseDetail = NonNullable<Awaited<ReturnType<typeof getCourseById>>>;
+
+async function loadPlatformCourse(
+  database: Context["db"],
+  courseId: string,
+): Promise<CourseDetail> {
+  const detail = await getCourseById(database, { courseId });
+  if (!detail || detail.organizationId !== null) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+  }
+  return detail;
+}
+
+async function loadCatalogCourse(
+  database: Context["db"],
+  session: Context["session"],
+  courseId: string,
+): Promise<CourseDetail> {
+  const detail = await getCourseById(database, { courseId });
   if (!detail || detail.status !== "published") {
     throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
   }
-
   assertCanReadCatalogCourse(session, {
     organizationId: detail.organizationId,
     createdBy: detail.createdBy,
     instructors: detail.instructors,
   });
+  return detail;
 }
 
-/** Legacy enrollment endpoint: platform-published courses only (catalog org enroll uses `catalog.enroll`). */
-function assertReadableCourseOrThrow(
-  detail: Awaited<ReturnType<typeof getCourseById>> | null | undefined,
-  session: Parameters<typeof assertCanReadPublicCourse>[0],
-): asserts detail is NonNullable<typeof detail> {
-  if (!detail || detail.organizationId !== null) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+async function loadLearnerLesson(
+  database: Context["db"],
+  session: Context["session"],
+  input: { courseId: string; lessonId: string },
+) {
+  const row = await getLessonWithCourseId(database, input.lessonId);
+  if (!row || row.courseId !== input.courseId) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
   }
-
-  assertCanReadPublicCourse(session, detail);
+  await loadCatalogCourse(database, session, input.courseId);
+  return row;
 }
 
 export const enrollmentRouter = router({
@@ -63,12 +80,8 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["update"] }))
     .input(listCourseEnrollmentsSchema)
     .query(async ({ ctx, input }) => {
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      if (!detail || detail.organizationId !== null) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
-      }
+      const detail = await loadPlatformCourse(ctx.db, input.courseId);
       assertCanUpdatePublicCourse(ctx.session, detail);
-
       return await listCourseEnrollments(ctx.db, input);
     }),
 
@@ -76,17 +89,13 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["update"] }))
     .input(getCourseEnrollmentDetailSchema)
     .query(async ({ ctx, input }) => {
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      if (!detail || detail.organizationId !== null) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
-      }
+      const detail = await loadPlatformCourse(ctx.db, input.courseId);
       assertCanUpdatePublicCourse(ctx.session, detail);
 
       const row = await getCourseEnrollmentDetail(ctx.db, input);
       if (!row) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Enrollment not found" });
       }
-
       return row;
     }),
 
@@ -94,17 +103,13 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["update"] }))
     .input(removeCourseEnrollmentSchema)
     .mutation(async ({ ctx, input }) => {
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      if (!detail || detail.organizationId !== null) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
-      }
+      const detail = await loadPlatformCourse(ctx.db, input.courseId);
       assertCanUpdatePublicCourse(ctx.session, detail);
 
       const deleted = await removeEnrollment(ctx.db, { enrollmentId: input.enrollmentId });
       if (!deleted || deleted.courseId !== input.courseId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Enrollment not found" });
       }
-
       return { success: true };
     }),
 
@@ -112,9 +117,8 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["read"] }))
     .input(enrollInCourseInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertReadableCourseOrThrow(detail, ctx.session);
-
+      const detail = await loadPlatformCourse(ctx.db, input.courseId);
+      assertCanReadPublicCourse(ctx.session, detail);
       return await createEnrollment(ctx.db, {
         courseId: input.courseId,
         userId: ctx.session.user.id,
@@ -125,9 +129,7 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["read"] }))
     .input(getMyCourseProgressInputSchema)
     .query(async ({ ctx, input }) => {
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
-
+      await loadCatalogCourse(ctx.db, ctx.session, input.courseId);
       return await getEnrollmentProgressSummary(ctx.db, {
         courseId: input.courseId,
         userId: ctx.session.user.id,
@@ -138,14 +140,7 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["read"] }))
     .input(markLessonStartedInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const row = await getLessonWithCourseId(ctx.db, input.lessonId);
-      if (!row || row.courseId !== input.courseId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
-      }
-
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
-
+      await loadLearnerLesson(ctx.db, ctx.session, input);
       await markLessonStarted(ctx.db, { ...input, userId: ctx.session.user.id });
       return { success: true };
     }),
@@ -154,21 +149,13 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["read"] }))
     .input(markLessonCompletedInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const row = await getLessonWithCourseId(ctx.db, input.lessonId);
-      if (!row || row.courseId !== input.courseId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
-      }
-
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
-
+      const row = await loadLearnerLesson(ctx.db, ctx.session, input);
       if (row.type !== "article") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Only article lessons can be marked complete directly",
         });
       }
-
       await markLessonCompleted(ctx.db, { ...input, userId: ctx.session.user.id });
       return { success: true };
     }),
@@ -177,21 +164,13 @@ export const enrollmentRouter = router({
     .use(platformPermissionMiddleware({ course: ["read"] }))
     .input(submitLessonAttemptInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const row = await getLessonWithCourseId(ctx.db, input.lessonId);
-      if (!row || row.courseId !== input.courseId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
-      }
-
-      const detail = await getCourseById(ctx.db, { courseId: input.courseId });
-      assertLearnerCanReadCourseOrThrow(detail, ctx.session);
-
+      const row = await loadLearnerLesson(ctx.db, ctx.session, input);
       if (row.type !== "quiz" && row.type !== "exam") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Only quiz and exam lessons accept scored attempts",
         });
       }
-
       const now = new Date();
       if (row.openAt && now < row.openAt) {
         throw new TRPCError({ code: "FORBIDDEN", message: "This assessment is not open yet" });
@@ -203,7 +182,6 @@ export const enrollmentRouter = router({
       if (sectionRow?.dueAt && now > sectionRow.dueAt) {
         throw new TRPCError({ code: "FORBIDDEN", message: "This assessment is closed" });
       }
-
       return await submitLessonAttempt(ctx.db, { ...input, userId: ctx.session.user.id });
     }),
 });

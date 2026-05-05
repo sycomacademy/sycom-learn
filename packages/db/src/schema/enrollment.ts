@@ -65,6 +65,9 @@ export const lessonProgress = pgTable(
     bestScore: integer("best_score"),
     latestScore: integer("latest_score"),
     attemptCount: integer("attempt_count").default(0).notNull(),
+    draftAnswers: jsonb("draft_answers"),
+    /** Exam session flags (tab blur, fullscreen exit); copied to `lesson_attempt` on submit. */
+    examIntegrityEvents: jsonb("exam_integrity_events"),
     createdAt,
     updatedAt,
   },
@@ -92,6 +95,8 @@ export const lessonAttempt = pgTable(
     maxScore: integer("max_score").notNull(),
     passed: boolean("passed").default(false).notNull(),
     answers: jsonb("answers").notNull(),
+    /** Snapshot of `lesson_progress.exam_integrity_events` at submit time (exams). */
+    integrityEvents: jsonb("integrity_events"),
     submittedAt: timestamp("submitted_at").notNull(),
     createdAt,
   },

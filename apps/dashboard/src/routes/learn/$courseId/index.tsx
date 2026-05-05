@@ -4,14 +4,13 @@ import { useEffect } from "react";
 import { z } from "zod";
 
 import { toastManager } from "@sycom/ui/components/toast";
-import { useTRPC } from "@/lib/trpc/client";
+
 import { findLessonMetaInSections, formatLearnLessonLockMessage } from "@/lib/learn-player";
+import { useTRPC } from "@/lib/trpc/client";
 
 const learnCourseIndexSearchSchema = z.object({
   lockedLesson: z.string().optional(),
 });
-
-type LearnCourseIndexSearch = z.infer<typeof learnCourseIndexSearchSchema>;
 
 export const Route = createFileRoute("/learn/$courseId/")({
   validateSearch: (search) => learnCourseIndexSearchSchema.parse(search),
@@ -49,10 +48,7 @@ function LearnCourseIndexFallback() {
         : `You can't open lesson ${blockedId} yet.`,
       type: "warning",
     });
-    void navigate({
-      search: (prev: LearnCourseIndexSearch) => ({ ...prev, lockedLesson: undefined }),
-      replace: true,
-    });
+    void navigate({ search: { lockedLesson: undefined }, replace: true });
   }, [search.lockedLesson, player, navigate]);
 
   return (

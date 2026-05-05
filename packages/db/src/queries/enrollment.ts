@@ -352,6 +352,163 @@ export async function markLessonCompleted(
   });
 }
 
+export type LessonAnswerDraft = {
+  selected: string[];
+  isCorrect: boolean;
+};
+
+export type LessonAnswerDraftMap = Record<string, LessonAnswerDraft>;
+
+function parseDraftAnswers(value: unknown): LessonAnswerDraftMap {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: LessonAnswerDraftMap = {};
+  for (const [questionId, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (!raw || typeof raw !== "object") continue;
+    const entry = raw as { selected?: unknown; isCorrect?: unknown };
+    if (Array.isArray(entry.selected) && typeof entry.isCorrect === "boolean") {
+      out[questionId] = {
+        selected: entry.selected.filter((s): s is string => typeof s === "string"),
+        isCorrect: entry.isCorrect,
+      };
+    }
+  }
+  return out;
+}
+
+export async function getLearnerLessonAnswers(
+  database: Database,
+  input: { courseId: string; userId: string; lessonId: string },
+): Promise<{ answers: LessonAnswerDraftMap; source: "completed" | "draft" | "none" }> {
+  const currentEnrollment = await getEnrollmentForUserCourse(database, {
+    courseId: input.courseId,
+    userId: input.userId,
+  });
+  if (!currentEnrollment) return { answers: {}, source: "none" };
+
+  const [latestAttempt] = await database
+    .select({ answers: lessonAttempt.answers })
+    .from(lessonAttempt)
+    .where(
+      and(
+        eq(lessonAttempt.enrollmentId, currentEnrollment.id),
+        eq(lessonAttempt.lessonId, input.lessonId),
+      ),
+    )
+    .orderBy(sql`${lessonAttempt.attemptNumber} desc`)
+    .limit(1);
+  if (latestAttempt) {
+    const list =
+      (latestAttempt.answers as Array<{
+        questionId?: string;
+        selected?: string[];
+        isCorrect?: boolean;
+      }>) ?? [];
+    const answers: LessonAnswerDraftMap = {};
+    for (const entry of list) {
+      if (typeof entry.questionId === "string" && Array.isArray(entry.selected)) {
+        answers[entry.questionId] = {
+          selected: entry.selected,
+          isCorrect: Boolean(entry.isCorrect),
+        };
+      }
+    }
+    return { answers, source: "completed" };
+  }
+
+  const [progressRow] = await database
+    .select({ draftAnswers: lessonProgress.draftAnswers })
+    .from(lessonProgress)
+    .where(
+      and(
+        eq(lessonProgress.enrollmentId, currentEnrollment.id),
+        eq(lessonProgress.lessonId, input.lessonId),
+      ),
+    )
+    .limit(1);
+  if (!progressRow) return { answers: {}, source: "none" };
+  const [lessonTypeRow] = await database
+    .select({ type: lesson.type })
+    .from(lesson)
+    .where(eq(lesson.id, input.lessonId))
+    .limit(1);
+  let answers = parseDraftAnswers(progressRow.draftAnswers);
+  if (lessonTypeRow?.type === "article") {
+    answers = Object.fromEntries(Object.entries(answers).filter(([, entry]) => entry.isCorrect));
+  }
+  return { answers, source: "draft" };
+}
+
+export type ExamIntegrityEventRow = { kind: string; at: string };
+
+function parseExamIntegrityEvents(value: unknown): ExamIntegrityEventRow[] {
+  if (!Array.isArray(value)) return [];
+  const out: ExamIntegrityEventRow[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { kind?: unknown; at?: unknown };
+    if (typeof row.kind !== "string" || typeof row.at !== "string") continue;
+    out.push({ kind: row.kind, at: row.at });
+  }
+  return out;
+}
+
+export async function appendExamIntegrityEvent(
+  database: Database,
+  input: {
+    courseId: string;
+    lessonId: string;
+    userId: string;
+    kind: string;
+  },
+) {
+  const currentEnrollment = await ensureEnrollment(database, {
+    courseId: input.courseId,
+    userId: input.userId,
+  });
+  const currentProgress = await ensureLessonProgress(database, {
+    enrollmentId: currentEnrollment.id,
+    lessonId: input.lessonId,
+  });
+  const existing = parseExamIntegrityEvents(currentProgress.examIntegrityEvents);
+  const next: ExamIntegrityEventRow[] = [
+    ...existing,
+    { kind: input.kind, at: now().toISOString() },
+  ];
+  await database
+    .update(lessonProgress)
+    .set({ examIntegrityEvents: next, updatedAt: now() })
+    .where(eq(lessonProgress.id, currentProgress.id));
+}
+
+export async function recordLessonAnswerDraft(
+  database: Database,
+  input: {
+    courseId: string;
+    userId: string;
+    lessonId: string;
+    questionId: string;
+    selected: string[];
+    isCorrect: boolean;
+  },
+) {
+  const currentEnrollment = await ensureEnrollment(database, {
+    courseId: input.courseId,
+    userId: input.userId,
+  });
+  const currentProgress = await ensureLessonProgress(database, {
+    enrollmentId: currentEnrollment.id,
+    lessonId: input.lessonId,
+  });
+
+  const next = parseDraftAnswers(currentProgress.draftAnswers);
+  next[input.questionId] = { selected: input.selected, isCorrect: input.isCorrect };
+
+  await database
+    .update(lessonProgress)
+    .set({ draftAnswers: next, updatedAt: now() })
+    .where(eq(lessonProgress.id, currentProgress.id));
+}
+
 export async function submitLessonAttempt(
   database: Database,
   input: {
@@ -407,6 +564,11 @@ export async function submitLessonAttempt(
 
   const passed = maxScore > 0 && score === maxScore;
 
+  const examIntegritySnapshot =
+    lessonRow.type === "exam"
+      ? parseExamIntegrityEvents(currentProgress.examIntegrityEvents)
+      : null;
+
   const [attemptNumberRow] = await database
     .select({ value: max(lessonAttempt.attemptNumber) })
     .from(lessonAttempt)
@@ -425,32 +587,34 @@ export async function submitLessonAttempt(
     maxScore,
     passed,
     answers: evaluatedAnswers,
+    integrityEvents: examIntegritySnapshot?.length ? examIntegritySnapshot : null,
     submittedAt: now(),
   });
 
+  const timestamp = now();
   await database
     .update(lessonProgress)
     .set({
-      status: passed ? "completed" : "in_progress",
-      startedAt: currentProgress.startedAt ?? now(),
-      completedAt: passed ? now() : currentProgress.completedAt,
-      lastViewedAt: now(),
+      status: "completed",
+      startedAt: currentProgress.startedAt ?? timestamp,
+      completedAt: timestamp,
+      lastViewedAt: timestamp,
       bestScore:
         currentProgress.bestScore == null ? score : Math.max(currentProgress.bestScore, score),
       latestScore: score,
       attemptCount: currentProgress.attemptCount + 1,
-      updatedAt: now(),
+      draftAnswers: null,
+      updatedAt: timestamp,
+      ...(lessonRow.type === "exam" ? { examIntegrityEvents: null } : {}),
     })
     .where(eq(lessonProgress.id, currentProgress.id));
 
   await touchEnrollment(database, currentEnrollment.id);
-  if (passed) {
-    await maybeIssueCertificate(database, {
-      enrollmentId: currentEnrollment.id,
-      courseId: input.courseId,
-      userId: input.userId,
-    });
-  }
+  await maybeIssueCertificate(database, {
+    enrollmentId: currentEnrollment.id,
+    courseId: input.courseId,
+    userId: input.userId,
+  });
 
   return { score, maxScore, passed };
 }

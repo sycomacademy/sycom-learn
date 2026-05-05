@@ -42,8 +42,12 @@ export type LessonQuestionAttrs = {
   explanation?: string;
 };
 
+export type LearnQuestionLockMode = "onCorrect" | "onAttempt";
+
 export interface LessonQuestionOptions {
   onCheckAnswer?: FullPresetCheckAnswerFn;
+  /** Learner UX: when choices + Check stay disabled after a check. Default matches articles (`onCorrect`). */
+  learnQuestionLock?: LearnQuestionLockMode;
 }
 
 declare module "@tiptap/core" {
@@ -67,6 +71,7 @@ export const LessonQuestion = Node.create<LessonQuestionOptions>({
   addOptions() {
     return {
       onCheckAnswer: undefined,
+      learnQuestionLock: "onCorrect" satisfies LearnQuestionLockMode,
     };
   },
 
@@ -152,6 +157,7 @@ function QuestionNodeView(props: NodeViewProps) {
   const canEdit = useEditorEditable(editor);
   const tracking = useQuestionTracking();
   const onCheckAnswer = extension.options.onCheckAnswer as FullPresetCheckAnswerFn | undefined;
+  const lockMode = extension.options.learnQuestionLock ?? "onCorrect";
 
   const questionId = node.attrs.questionId as string;
   const prompt = node.attrs.prompt as string;
@@ -245,13 +251,14 @@ function QuestionNodeView(props: NodeViewProps) {
   });
 
   const viewStatus = attempt?.status;
-  const answered = Boolean(attempt);
+  const selectionLocked =
+    lockMode === "onAttempt" ? Boolean(attempt) : attempt?.status === "correct";
 
   const optionSingleChecked = (optId: string) =>
-    answered && attempt ? attempt.selected[0] === optId : singlePick === optId;
+    selectionLocked && attempt ? attempt.selected[0] === optId : singlePick === optId;
 
   const optionMultiChecked = (optId: string) =>
-    answered && attempt ? attempt.selected.includes(optId) : !!multiPick[optId];
+    selectionLocked && attempt ? attempt.selected.includes(optId) : !!multiPick[optId];
 
   if (canEdit) {
     return (
@@ -366,7 +373,7 @@ function QuestionNodeView(props: NodeViewProps) {
           <CircleHelp className="size-4 text-muted-foreground" />
           Question
         </div>
-        {statusBadge(viewStatus, "learn", answered)}
+        {statusBadge(viewStatus, "learn", selectionLocked)}
       </div>
       <p className="mb-3 text-base font-medium">{prompt || "Question"}</p>
       <div className="space-y-2">
@@ -378,7 +385,7 @@ function QuestionNodeView(props: NodeViewProps) {
                 key={opt.id}
                 className={cn(
                   "flex items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm",
-                  answered ? "cursor-not-allowed opacity-90" : "cursor-pointer",
+                  selectionLocked ? "cursor-not-allowed opacity-90" : "cursor-pointer",
                 )}
               >
                 <input
@@ -386,7 +393,7 @@ function QuestionNodeView(props: NodeViewProps) {
                   type="radio"
                   name={`q-${questionId}`}
                   checked={optionSingleChecked(opt.id)}
-                  disabled={answered}
+                  disabled={selectionLocked}
                   onChange={() => setSinglePick(opt.id)}
                   className="size-4 accent-primary disabled:cursor-not-allowed"
                 />
@@ -402,13 +409,13 @@ function QuestionNodeView(props: NodeViewProps) {
                 key={opt.id}
                 className={cn(
                   "flex items-center gap-2 rounded-md border border-border/80 bg-background px-3 py-2 text-sm",
-                  answered ? "cursor-not-allowed opacity-90" : "cursor-pointer",
+                  selectionLocked ? "cursor-not-allowed opacity-90" : "cursor-pointer",
                 )}
               >
                 <Checkbox
                   id={`${fieldIdPrefix}-answer-${opt.id}`}
                   checked={optionMultiChecked(opt.id)}
-                  disabled={answered}
+                  disabled={selectionLocked}
                   onCheckedChange={(checked) =>
                     setMultiPick((prev) => ({ ...prev, [opt.id]: checked === true }))
                   }
@@ -424,7 +431,7 @@ function QuestionNodeView(props: NodeViewProps) {
           type="button"
           size="sm"
           disabled={
-            answered ||
+            selectionLocked ||
             submitting ||
             !onCheckAnswer ||
             (type === "single" ? !singlePick : !Object.values(multiPick).some(Boolean))

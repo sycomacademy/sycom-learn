@@ -30,6 +30,8 @@ export type RichTextEditorProps = {
   onChange?: (json: JSONContent) => void;
   onUpload?: TiptapEditorUploadFn;
   onCheckAnswer?: FullPresetCheckAnswerFn;
+  /** Course player: article vs quiz/exam question locking (see `LessonQuestion` extension). */
+  learnQuestionLock?: GetFullExtensionsOptions["learnQuestionLock"];
   className?: string;
   contentClassName?: string;
   /** Merged onto the `EditorContent` wrapper (default includes `min-h-[600px]`). */
@@ -48,6 +50,7 @@ export function RichTextEditor({
   onChange,
   onUpload,
   onCheckAnswer,
+  learnQuestionLock,
   className,
   contentClassName,
   editorContentClassName,
@@ -96,8 +99,11 @@ export function RichTextEditor({
         return fn(args);
       };
     }
+    if (learnQuestionLock) {
+      opts.learnQuestionLock = learnQuestionLock;
+    }
     return getFullExtensions(opts);
-  }, [mode, hasUploadCallback, hasCheckAnswerCallback]);
+  }, [mode, hasUploadCallback, hasCheckAnswerCallback, learnQuestionLock]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -198,3 +204,4 @@ export {
   QuestionTrackingProvider,
   useQuestionGate,
 } from "@sycom/components/tiptap/extensions/question-tracking";
+export { useHydrateLessonAnswers } from "@sycom/components/tiptap/extensions/use-hydrate-lesson-answers";

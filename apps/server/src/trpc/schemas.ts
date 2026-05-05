@@ -690,6 +690,25 @@ export const learnCheckAnswerSchema = z.object({
 });
 export type LearnCheckAnswerInput = z.infer<typeof learnCheckAnswerSchema>;
 
+export const EXAM_INTEGRITY_EVENT_KINDS = [
+  "tab_hidden",
+  "fullscreen_exit",
+  "fullscreen_denied",
+] as const;
+export type ExamIntegrityEventKind = (typeof EXAM_INTEGRITY_EVENT_KINDS)[number];
+
+export const learnRecordExamIntegritySchema = z.object({
+  courseId: z.string().min(1),
+  lessonId: z.string().min(1),
+  kind: z.enum(EXAM_INTEGRITY_EVENT_KINDS),
+});
+export type LearnRecordExamIntegrityInput = z.infer<typeof learnRecordExamIntegritySchema>;
+
+export const learnRecordExamIntegrityOutputSchema = z.object({
+  success: z.literal(true),
+});
+export type LearnRecordExamIntegrityOutput = z.infer<typeof learnRecordExamIntegrityOutputSchema>;
+
 export const learnLessonLockSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("scheduled_section"),
@@ -762,6 +781,12 @@ export const learnPlayerContextOutputSchema = z.discriminatedUnion("status", [
 ]);
 export type LearnPlayerContextOutput = z.infer<typeof learnPlayerContextOutputSchema>;
 
+export const learnLessonAnswerSchema = z.object({
+  selected: z.array(z.string()),
+  isCorrect: z.boolean(),
+});
+export type LearnLessonAnswer = z.infer<typeof learnLessonAnswerSchema>;
+
 export const learnGetLessonOutputSchema = z.object({
   id: z.string(),
   sectionId: z.string(),
@@ -773,6 +798,8 @@ export const learnGetLessonOutputSchema = z.object({
   order: z.number(),
   content: z.unknown().nullable(),
   sectionTitle: z.string(),
+  answers: z.record(z.string(), learnLessonAnswerSchema),
+  answersSource: z.enum(["completed", "draft", "none"]),
 });
 export type LearnGetLessonOutput = z.infer<typeof learnGetLessonOutputSchema>;
 

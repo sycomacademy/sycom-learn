@@ -1,40 +1,42 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import type { Editor, JSONContent } from "@tiptap/core";
-import { ChevronLeftIcon, ChevronRightIcon, HomeIcon } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactElement,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import { Button } from "@sycom/ui/components/button";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
 import {
   collectLessonQuestionAnswersForSubmit,
   QuestionTrackingProvider,
   RichTextEditor,
+  useHydrateLessonAnswers,
   useQuestionGate,
 } from "@sycom/ui/components/tiptap/rich-text-editor";
 import { toastManager } from "@sycom/ui/components/toast";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@sycom/ui/components/tooltip";
-import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
+
+import { LearnFooter } from "@/components/learn/learn-footer";
+import {
+  useExamIntegritySession,
+  type ExamIntegrityFlagKind,
+} from "@/hooks/use-exam-integrity-session";
 import {
   findLessonMetaInSections,
+  findUnlockedNeighbor,
   flattenLearnLessons,
   formatLearnLessonLockMessage,
   lastAccessibleLessonId,
+  useScrolledToBottom,
 } from "@/lib/learn-player";
+import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
+import { Button } from "@sycom/ui/components/button";
 
 const learnLessonSearchSchema = z.object({
   lockedLesson: z.string().optional(),
 });
 
-type LearnLessonSearch = z.infer<typeof learnLessonSearchSchema>;
+type PlayerContext = AppRouterOutputs["learn"]["getPlayerContext"];
+type OkPlayer = Extract<PlayerContext, { status: "ok" }>;
+type Lesson = AppRouterOutputs["learn"]["getLesson"];
 
 export const Route = createFileRoute("/learn/$courseId/$lessonId")({
   validateSearch: (search) => learnLessonSearchSchema.parse(search),
@@ -82,8 +84,6 @@ function LearnLessonPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
-  const queryClient = useQueryClient();
 
   const { data: player } = useSuspenseQuery(trpc.learn.getPlayerContext.queryOptions({ courseId }));
   const { data: lesson } = useSuspenseQuery(
@@ -101,98 +101,124 @@ function LearnLessonPage() {
         : `You can't open lesson ${blockedId} yet.`,
       type: "warning",
     });
-    void navigate({
-      search: (prev: LearnLessonSearch) => ({ ...prev, lockedLesson: undefined }),
-      replace: true,
-    });
+    void navigate({ search: { lockedLesson: undefined }, replace: true });
   }, [search.lockedLesson, player, navigate]);
 
-  const ordered = useMemo(() => {
-    if (player.status !== "ok") return [];
-    const flat: Array<{ lessonId: string; locked: boolean }> = [];
-    for (const sec of player.sections) {
-      for (const l of sec.lessons) {
-        flat.push({ lessonId: l.id, locked: l.locked });
-      }
-    }
-    return flat;
-  }, [player]);
+  if (player.status !== "ok") return null;
 
-  const idx = ordered.findIndex((l) => l.lessonId === lessonId);
-  const prevLessonId = useMemo(() => {
-    if (idx < 0) return undefined;
-    for (let i = idx - 1; i >= 0; i--) {
-      if (!ordered[i].locked) return ordered[i].lessonId;
-    }
-    return undefined;
-  }, [idx, ordered]);
-  const nextLessonId = useMemo(() => {
-    if (idx < 0) return undefined;
-    for (let i = idx + 1; i < ordered.length; i++) {
-      if (!ordered[i].locked) return ordered[i].lessonId;
-    }
-    return undefined;
-  }, [idx, ordered]);
+  return <LearnLessonBody key={lessonId} courseId={courseId} lesson={lesson} player={player} />;
+}
+
+function LearnLessonBody({
+  courseId,
+  lesson,
+  player,
+}: {
+  courseId: string;
+  lesson: Lesson;
+  player: OkPlayer;
+}) {
+  const lessonId = lesson.id;
+  const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
+  const queryClient = useQueryClient();
+
+  const flat = flattenLearnLessons(player.sections);
+  const idx = flat.findIndex((l) => l.id === lessonId);
+  const prevLessonId = findUnlockedNeighbor(flat, idx, "prev");
+  const nextLessonId = findUnlockedNeighbor(flat, idx, "next");
+  const assessmentCompleted =
+    findLessonMetaInSections(player.sections, lessonId)?.progressStatus === "completed";
 
   const { mutate: fireMarkStarted } = useMutation(
     trpc.enrollment.markLessonStarted.mutationOptions(),
   );
-  const markComplete = useMutation(trpc.enrollment.markLessonCompleted.mutationOptions());
-
   useEffect(() => {
     fireMarkStarted({ courseId, lessonId });
   }, [courseId, lessonId, fireMarkStarted]);
 
-  const invalidateLearn = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: trpc.learn.getPlayerContext.queryKey({ courseId }),
-    });
-    await queryClient.invalidateQueries({
-      queryKey: trpc.learn.getLesson.queryKey({ courseId, lessonId }),
-    });
-  };
+  const markComplete = useMutation(trpc.enrollment.markLessonCompleted.mutationOptions());
+  const submitAssessment = useMutation(trpc.enrollment.submitAttempt.mutationOptions());
+  const recordIntegrity = useMutation(trpc.learn.recordExamIntegrityFlag.mutationOptions());
+
+  const examIntegrityEnabled = lesson.type === "exam" && !assessmentCompleted;
+  const [examSessionStarted, setExamSessionStarted] = useState(!examIntegrityEnabled);
+
+  useEffect(() => {
+    setExamSessionStarted(!examIntegrityEnabled);
+  }, [examIntegrityEnabled, lessonId]);
+
+  const reportExamFlag = useCallback(
+    (kind: ExamIntegrityFlagKind) => {
+      if (!examIntegrityEnabled) return;
+      recordIntegrity.mutate({ courseId, lessonId, kind });
+    },
+    [courseId, lessonId, examIntegrityEnabled, recordIntegrity],
+  );
+
+  const examShellRef = useRef<HTMLDivElement>(null);
+
+  useExamIntegritySession({
+    enabled: examIntegrityEnabled,
+    sessionActive: examSessionStarted,
+    containerRef: examShellRef,
+    onFlag: reportExamFlag,
+  });
+
+  const startExamSession = useCallback(async () => {
+    const el = examShellRef.current;
+    if (typeof el?.requestFullscreen === "function") {
+      try {
+        await el.requestFullscreen();
+      } catch {
+        recordIntegrity.mutate({ courseId, lessonId, kind: "fullscreen_denied" });
+      }
+    } else {
+      recordIntegrity.mutate({ courseId, lessonId, kind: "fullscreen_denied" });
+    }
+    setExamSessionStarted(true);
+  }, [courseId, lessonId, recordIntegrity]);
+
+  const refreshLearnData = () =>
+    Promise.all([
+      queryClient.refetchQueries({ queryKey: trpc.learn.getPlayerContext.queryKey({ courseId }) }),
+      queryClient.refetchQueries({
+        queryKey: trpc.learn.getLesson.queryKey({ courseId, lessonId }),
+      }),
+    ]);
+
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const gate = useQuestionGate(editor);
+  useHydrateLessonAnswers(editor, lesson.answers);
 
   const onMarkComplete = async () => {
     try {
       await markComplete.mutateAsync({ courseId, lessonId });
-      await invalidateLearn();
+      await refreshLearnData();
     } catch {
-      /* server shows error via tRPC if needed */
+      toastManager.add({
+        title: "Couldn't mark complete",
+        description: "Check your connection and try again.",
+        type: "error",
+      });
     }
   };
 
-  const showMarkComplete = lesson.type === "article";
-
-  const submitAssessment = useMutation(trpc.enrollment.submitAttempt.mutationOptions());
-
-  const [learnEditor, setLearnEditor] = useState<Editor | null>(null);
-  useEffect(() => {
-    setLearnEditor(null);
-  }, [lessonId]);
-
-  const gate = useQuestionGate(learnEditor);
-
-  const currentLessonProgress = useMemo(() => {
-    if (player.status !== "ok") return undefined;
-    for (const sec of player.sections) {
-      const row = sec.lessons.find((les) => les.id === lessonId);
-      if (row) return row.progressStatus;
-    }
-    return undefined;
-  }, [player, lessonId]);
-
-  const assessmentCompleted = currentLessonProgress === "completed";
-
   const onSubmitAssessment = async () => {
-    if (!learnEditor || !gate.allCorrect || gate.questionCount === 0 || assessmentCompleted) return;
+    if (!editor || !gate.allAttempted || gate.questionCount === 0 || assessmentCompleted) return;
     try {
-      await submitAssessment.mutateAsync({
+      const result = await submitAssessment.mutateAsync({
         courseId,
         lessonId,
-        answers: collectLessonQuestionAnswersForSubmit(learnEditor.state),
+        answers: collectLessonQuestionAnswersForSubmit(editor.state),
       });
-      await invalidateLearn();
-      toastManager.add({ title: "Lesson completed", type: "success" });
+      await refreshLearnData();
+      toastManager.add({
+        title: "Lesson completed",
+        description:
+          result.maxScore > 0 ? `Score: ${result.score} / ${result.maxScore}.` : undefined,
+        type: "success",
+      });
     } catch {
       toastManager.add({
         title: "Couldn't submit assessment",
@@ -202,225 +228,116 @@ function LearnLessonPage() {
     }
   };
 
-  const [editorKey, setEditorKey] = useState(0);
-  useEffect(() => {
-    setEditorKey((k) => k + 1);
-  }, [lessonId]);
-
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrolledToBottom, setScrolledToBottom] = useState(false);
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const threshold = 48;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-    setScrolledToBottom(atBottom);
-  }, []);
-
-  useLayoutEffect(() => {
-    scrollRef.current?.scrollTo(0, 0);
-    setScrolledToBottom(false);
-  }, [lessonId]);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    checkScroll();
-    const onScroll = () => checkScroll();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    const ro = new ResizeObserver(() => checkScroll());
-    ro.observe(el);
-    const mo = new MutationObserver(() => checkScroll());
-    mo.observe(el, { childList: true, subtree: true });
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      ro.disconnect();
-      mo.disconnect();
-    };
-  }, [lessonId, checkScroll, editorKey]);
-
-  if (player.status !== "ok") {
-    return null;
-  }
+  const scrolledToBottom = useScrolledToBottom(scrollRef);
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b bg-background px-4 py-3">
-        <Button render={<Link to="/dashboard" />} size="sm" variant="outline">
-          <HomeIcon />
-          Home
-        </Button>
-        <div className="min-w-0 text-right">
-          <p className="truncate text-sm font-medium">{player.courseTitle}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {lesson.sectionTitle} · {lesson.title}
-          </p>
+    <div
+      className="flex min-h-0 min-w-0 flex-1 flex-col [&:fullscreen]:bg-background"
+      ref={examShellRef}
+    >
+      {examIntegrityEnabled ? (
+        <div className="shrink-0 border-b bg-muted/35 px-3 py-2.5 md:px-5">
+          {!examSessionStarted ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Fullscreen is recommended. Switching tabs or exiting fullscreen during the exam is
+                recorded.
+              </p>
+              <Button
+                className="shrink-0"
+                onClick={() => void startExamSession()}
+                size="sm"
+                type="button"
+              >
+                Begin exam
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Stay on this tab until you submit. Leaving the exam may be flagged.
+            </p>
+          )}
         </div>
-      </header>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 md:px-5" ref={scrollRef}>
-        <h1 className="mb-4 text-2xl font-semibold tracking-tight md:text-3xl">{lesson.title}</h1>
-        <QuestionTrackingProvider>
-          <RichTextEditor
-            key={editorKey}
-            className="border-0 bg-transparent"
-            content={(lesson.content ?? null) as JSONContent | null}
-            editable={false}
-            mode="full"
-            onCheckAnswer={async (args: { questionId: string; selected: string[] }) => {
-              const result = await trpcClient.learn.checkAnswer.mutate({
-                courseId,
-                lessonId,
-                questionId: args.questionId,
-                selected: args.selected,
-              });
-              return { isCorrect: result.isCorrect };
-            }}
-            onEditorReady={setLearnEditor}
-            showAdvancedChrome={false}
-            variant="learn"
-          />
-        </QuestionTrackingProvider>
+      ) : null}
+      <div
+        className={`relative min-h-0 flex-1 ${examIntegrityEnabled && !examSessionStarted ? "overflow-hidden" : ""}`}
+      >
+        <div
+          className={`h-full min-h-0 overflow-y-auto px-3 py-4 md:px-5 ${examIntegrityEnabled && !examSessionStarted ? "pointer-events-none opacity-40 select-none" : ""}`}
+          ref={scrollRef}
+        >
+          {lesson.sectionTitle ? (
+            <p className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              {lesson.sectionTitle}
+            </p>
+          ) : null}
+          <h1 className="mb-4 text-2xl font-semibold tracking-tight md:text-3xl">{lesson.title}</h1>
+          <QuestionTrackingProvider>
+            <RichTextEditor
+              className="border-0 bg-transparent"
+              content={(lesson.content ?? null) as JSONContent | null}
+              editable={false}
+              learnQuestionLock={lesson.type === "article" ? "onCorrect" : "onAttempt"}
+              mode="full"
+              onCheckAnswer={async (args) => {
+                const result = await trpcClient.learn.checkAnswer.mutate({
+                  courseId,
+                  lessonId,
+                  questionId: args.questionId,
+                  selected: args.selected,
+                });
+                queryClient.setQueryData(
+                  trpc.learn.getLesson.queryKey({ courseId, lessonId }),
+                  (prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          answers: {
+                            ...prev.answers,
+                            [args.questionId]: {
+                              selected: args.selected,
+                              isCorrect: result.isCorrect,
+                            },
+                          },
+                        }
+                      : prev,
+                );
+                return { isCorrect: result.isCorrect };
+              }}
+              onEditorReady={setEditor}
+              showAdvancedChrome={false}
+              variant="learn"
+            />
+          </QuestionTrackingProvider>
+        </div>
+        {examIntegrityEnabled && !examSessionStarted ? (
+          <div className="pointer-events-none absolute inset-0 flex items-start justify-center px-4 pt-16">
+            <p className="max-w-sm rounded-md border bg-background/95 px-4 py-3 text-center text-sm shadow-md">
+              Tap <span className="font-medium">Begin exam</span> above to enter fullscreen and
+              unlock the questions.
+            </p>
+          </div>
+        ) : null}
       </div>
-
-      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t bg-background px-4 py-3">
-        <div className="flex flex-wrap gap-2">
-          {prevLessonId ? (
-            <Button
-              render={
-                <Link
-                  params={{ courseId, lessonId: prevLessonId }}
-                  to="/learn/$courseId/$lessonId"
-                />
-              }
-              size="sm"
-              variant="outline"
-            >
-              <ChevronLeftIcon />
-              Previous
-            </Button>
-          ) : (
-            <Button disabled size="sm" variant="outline">
-              <ChevronLeftIcon />
-              Previous
-            </Button>
-          )}
-          {nextLessonId ? (
-            <Button
-              render={
-                <Link
-                  params={{ courseId, lessonId: nextLessonId }}
-                  to="/learn/$courseId/$lessonId"
-                />
-              }
-              size="sm"
-              variant="outline"
-            >
-              Next
-              <ChevronRightIcon />
-            </Button>
-          ) : (
-            <Button disabled size="sm" variant="outline">
-              Next
-              <ChevronRightIcon />
-            </Button>
-          )}
-        </div>
-        {showMarkComplete ? (
-          !scrolledToBottom && !markComplete.isPending ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  (
-                    <span className="inline-flex cursor-not-allowed">
-                      <Button disabled size="sm" variant="default">
-                        Mark complete
-                      </Button>
-                    </span>
-                  ) as ReactElement<Record<string, unknown>>
-                }
-              />
-              <TooltipPopup side="top">
-                Scroll to the bottom of this lesson before marking it complete.
-              </TooltipPopup>
-            </Tooltip>
-          ) : (
-            <Button
-              disabled={!scrolledToBottom || markComplete.isPending}
-              loading={markComplete.isPending}
-              onClick={() => void onMarkComplete()}
-              size="sm"
-              variant="default"
-            >
-              Mark complete
-            </Button>
-          )
-        ) : lesson.type === "quiz" || lesson.type === "exam" ? (
-          assessmentCompleted ? (
-            <Button disabled size="sm" variant="default">
-              Completed
-            </Button>
-          ) : !learnEditor ? (
-            <Button
-              className="max-w-[min(100%,22rem)] text-center"
-              disabled
-              size="sm"
-              variant="default"
-            >
-              Answer all questions before marking complete
-            </Button>
-          ) : gate.questionCount === 0 ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  (
-                    <span className="inline-flex max-w-[min(100%,22rem)] cursor-not-allowed">
-                      <Button className="text-center" disabled size="sm" variant="outline">
-                        No questions in this lesson
-                      </Button>
-                    </span>
-                  ) as ReactElement<Record<string, unknown>>
-                }
-              />
-              <TooltipPopup side="top">
-                Add question blocks to this lesson to enable completion.
-              </TooltipPopup>
-            </Tooltip>
-          ) : !gate.allCorrect ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  (
-                    <span className="inline-flex max-w-[min(100%,22rem)] cursor-not-allowed">
-                      <Button className="text-center" disabled size="sm" variant="default">
-                        Marke complete
-                      </Button>
-                    </span>
-                  ) as ReactElement<Record<string, unknown>>
-                }
-              />
-              <TooltipPopup side="top">
-                Mark this lesson complete when you have answered all questions correctly.
-              </TooltipPopup>
-            </Tooltip>
-          ) : (
-            <Button
-              disabled={submitAssessment.isPending}
-              loading={submitAssessment.isPending}
-              onClick={() => void onSubmitAssessment()}
-              size="sm"
-              variant="default"
-            >
-              Mark complete
-            </Button>
-          )
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Complete assessments from the lesson when available.
-          </p>
-        )}
-      </footer>
+      <LearnFooter
+        assessment={{
+          completed: assessmentCompleted,
+          editor,
+          gate,
+          submitting: submitAssessment.isPending,
+          onSubmit: () => void onSubmitAssessment(),
+        }}
+        courseId={courseId}
+        lesson={lesson}
+        markComplete={{
+          pending: markComplete.isPending,
+          scrolledToBottom,
+          onClick: () => void onMarkComplete(),
+        }}
+        nextLessonId={nextLessonId}
+        prevLessonId={prevLessonId}
+      />
     </div>
   );
 }
