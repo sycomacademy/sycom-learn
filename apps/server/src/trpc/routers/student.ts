@@ -1,6 +1,8 @@
+import type { Database } from "@sycom/db";
 import {
   getCourseAnalyticsStudentDetail,
   getEnrollmentForUserCourse,
+  getMemberRole,
   getStudentDashboardOverview,
   getStudentLibrary,
 } from "@sycom/db/queries/index";
@@ -15,14 +17,37 @@ import {
   studentLibraryOutputSchema,
 } from "../schemas";
 
+async function assertPublicStudentOrActiveOrgMember(ctx: {
+  db: Database;
+  session: {
+    user: { id: string; role?: string | null };
+    session: { activeOrganizationId?: string | null };
+  };
+}): Promise<void> {
+  if (ctx.session.user.role === "public_student") {
+    return;
+  }
+
+  const organizationId = ctx.session.session.activeOrganizationId;
+  if (!organizationId) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+
+  const memberRole = await getMemberRole(ctx.db, {
+    organizationId,
+    userId: ctx.session.user.id,
+  });
+  if (!memberRole) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+}
+
 export const studentRouter = router({
   getDashboardOverview: protectedProcedure
     .input(studentDashboardOverviewInputSchema)
     .output(studentDashboardOverviewOutputSchema)
     .query(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== "public_student") {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertPublicStudentOrActiveOrgMember(ctx);
 
       const orgId = ctx.session.session.activeOrganizationId ?? null;
 
@@ -38,9 +63,7 @@ export const studentRouter = router({
     .input(studentLibraryInputSchema)
     .output(studentLibraryOutputSchema)
     .query(async ({ ctx }) => {
-      if (ctx.session.user.role !== "public_student") {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertPublicStudentOrActiveOrgMember(ctx);
 
       const orgId = ctx.session.session.activeOrganizationId ?? null;
 
@@ -53,9 +76,7 @@ export const studentRouter = router({
   getCourseScores: protectedProcedure
     .input(studentCourseScoresInputSchema)
     .query(async ({ ctx, input }) => {
-      if (ctx.session.user.role !== "public_student") {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertPublicStudentOrActiveOrgMember(ctx);
 
       const userEnrollment = await getEnrollmentForUserCourse(ctx.db, {
         courseId: input.courseId,

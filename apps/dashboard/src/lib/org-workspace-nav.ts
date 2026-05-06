@@ -1,7 +1,13 @@
 import type { OrganizationRole } from "@sycom/db/schema/auth";
 import type { TRoutes } from "@/router";
 
-export type OrgWorkspacePrimarySlug = "overview" | "users" | "cohorts" | "organization" | "courses";
+export type OrgWorkspacePrimarySlug =
+  | "overview"
+  | "users"
+  | "cohorts"
+  | "organization"
+  | "courses"
+  | "library";
 
 /** Canonical URLs for primary org chrome navigation. */
 export const ORG_PRIMARY_PATHS = {
@@ -10,6 +16,7 @@ export const ORG_PRIMARY_PATHS = {
   cohorts: "/dashboard/org/cohorts",
   organization: "/dashboard/org/organization",
   courses: "/dashboard/org/courses",
+  library: "/dashboard/org/library",
 } satisfies Record<OrgWorkspacePrimarySlug, TRoutes>;
 
 const OWNER_ORDER: OrgWorkspacePrimarySlug[] = [
@@ -24,7 +31,7 @@ const ADMIN_ORDER: OrgWorkspacePrimarySlug[] = ["overview", "users", "cohorts", 
 
 const TEACHER_ORDER: OrgWorkspacePrimarySlug[] = ["overview", "cohorts", "courses"];
 
-const STUDENT_ORDER: OrgWorkspacePrimarySlug[] = ["overview", "courses"];
+const STUDENT_ORDER: OrgWorkspacePrimarySlug[] = ["overview", "library"];
 
 /** Primary tab slug order per org membership role. */
 export function getOrgWorkspacePrimarySlugs(role: OrganizationRole): OrgWorkspacePrimarySlug[] {
@@ -46,6 +53,7 @@ const LABEL_BY_SLUG: Record<OrgWorkspacePrimarySlug, string> = {
   cohorts: "Cohorts",
   organization: "Organization",
   courses: "Courses",
+  library: "My library",
 };
 
 export function orgWorkspaceSlugToLabel(slug: OrgWorkspacePrimarySlug): string {

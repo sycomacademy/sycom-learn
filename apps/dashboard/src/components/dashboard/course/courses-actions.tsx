@@ -113,7 +113,7 @@ export function CourseActions({ course }: { course: CourseRow }): ReactNode {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {canSeed ? (
+      {canSeed && seedOpen ? (
         <SeedCourseDialog
           courseId={course.id}
           courseTitle={course.title}

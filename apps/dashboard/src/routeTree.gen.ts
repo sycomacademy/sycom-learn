@@ -66,6 +66,7 @@ import { Route as DashboardOrgUsersIndexRouteImport } from "./routes/dashboard/o
 import { Route as DashboardOrgSupportIndexRouteImport } from "./routes/dashboard/org/support/index";
 import { Route as DashboardOrgSettingsIndexRouteImport } from "./routes/dashboard/org/settings/index";
 import { Route as DashboardOrgOrganizationIndexRouteImport } from "./routes/dashboard/org/organization/index";
+import { Route as DashboardOrgLibraryIndexRouteImport } from "./routes/dashboard/org/library/index";
 import { Route as DashboardOrgCoursesIndexRouteImport } from "./routes/dashboard/org/courses/index";
 import { Route as DashboardOrgCohortsIndexRouteImport } from "./routes/dashboard/org/cohorts/index";
 import { Route as DashboardCourseCourseIdIndexRouteImport } from "./routes/dashboard/course/$courseId/index";
@@ -81,7 +82,6 @@ import { Route as DashboardOrgSettingsPreferencesRouteImport } from "./routes/da
 import { Route as DashboardOrgSettingsGeneralRouteImport } from "./routes/dashboard/org/settings/general";
 import { Route as DashboardOrgOrganizationRulesRouteImport } from "./routes/dashboard/org/organization/rules";
 import { Route as DashboardOrgOrganizationIntegrationsRouteImport } from "./routes/dashboard/org/organization/integrations";
-import { Route as DashboardOrgCoursesAssignmentsRouteImport } from "./routes/dashboard/org/courses/assignments";
 import { Route as DashboardCourseCourseIdMembersRouteImport } from "./routes/dashboard/course/$courseId/members";
 import { Route as DashboardCourseCourseIdCertificatesRouteImport } from "./routes/dashboard/course/$courseId/certificates";
 import { Route as DashboardCourseCourseIdAnnouncementsRouteImport } from "./routes/dashboard/course/$courseId/announcements";
@@ -390,6 +390,11 @@ const DashboardOrgOrganizationIndexRoute = DashboardOrgOrganizationIndexRouteImp
   path: "/",
   getParentRoute: () => DashboardOrgOrganizationRouteRoute,
 } as any);
+const DashboardOrgLibraryIndexRoute = DashboardOrgLibraryIndexRouteImport.update({
+  id: "/library/",
+  path: "/library/",
+  getParentRoute: () => DashboardOrgRouteRoute,
+} as any);
 const DashboardOrgCoursesIndexRoute = DashboardOrgCoursesIndexRouteImport.update({
   id: "/",
   path: "/",
@@ -466,11 +471,6 @@ const DashboardOrgOrganizationIntegrationsRoute =
     path: "/integrations",
     getParentRoute: () => DashboardOrgOrganizationRouteRoute,
   } as any);
-const DashboardOrgCoursesAssignmentsRoute = DashboardOrgCoursesAssignmentsRouteImport.update({
-  id: "/assignments",
-  path: "/assignments",
-  getParentRoute: () => DashboardOrgCoursesRouteRoute,
-} as any);
 const DashboardCourseCourseIdMembersRoute = DashboardCourseCourseIdMembersRouteImport.update({
   id: "/members",
   path: "/members",
@@ -666,7 +666,6 @@ export interface FileRoutesByFullPath {
   "/dashboard/course/$courseId/announcements": typeof DashboardCourseCourseIdAnnouncementsRoute;
   "/dashboard/course/$courseId/certificates": typeof DashboardCourseCourseIdCertificatesRoute;
   "/dashboard/course/$courseId/members": typeof DashboardCourseCourseIdMembersRoute;
-  "/dashboard/org/courses/assignments": typeof DashboardOrgCoursesAssignmentsRoute;
   "/dashboard/org/organization/integrations": typeof DashboardOrgOrganizationIntegrationsRoute;
   "/dashboard/org/organization/rules": typeof DashboardOrgOrganizationRulesRoute;
   "/dashboard/org/settings/general": typeof DashboardOrgSettingsGeneralRoute;
@@ -682,6 +681,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/course/$courseId/": typeof DashboardCourseCourseIdIndexRoute;
   "/dashboard/org/cohorts/": typeof DashboardOrgCohortsIndexRoute;
   "/dashboard/org/courses/": typeof DashboardOrgCoursesIndexRoute;
+  "/dashboard/org/library/": typeof DashboardOrgLibraryIndexRoute;
   "/dashboard/org/organization/": typeof DashboardOrgOrganizationIndexRoute;
   "/dashboard/org/settings/": typeof DashboardOrgSettingsIndexRoute;
   "/dashboard/org/support/": typeof DashboardOrgSupportIndexRoute;
@@ -742,7 +742,6 @@ export interface FileRoutesByTo {
   "/dashboard/course/$courseId/announcements": typeof DashboardCourseCourseIdAnnouncementsRoute;
   "/dashboard/course/$courseId/certificates": typeof DashboardCourseCourseIdCertificatesRoute;
   "/dashboard/course/$courseId/members": typeof DashboardCourseCourseIdMembersRoute;
-  "/dashboard/org/courses/assignments": typeof DashboardOrgCoursesAssignmentsRoute;
   "/dashboard/org/organization/integrations": typeof DashboardOrgOrganizationIntegrationsRoute;
   "/dashboard/org/organization/rules": typeof DashboardOrgOrganizationRulesRoute;
   "/dashboard/org/settings/general": typeof DashboardOrgSettingsGeneralRoute;
@@ -758,6 +757,7 @@ export interface FileRoutesByTo {
   "/dashboard/course/$courseId": typeof DashboardCourseCourseIdIndexRoute;
   "/dashboard/org/cohorts": typeof DashboardOrgCohortsIndexRoute;
   "/dashboard/org/courses": typeof DashboardOrgCoursesIndexRoute;
+  "/dashboard/org/library": typeof DashboardOrgLibraryIndexRoute;
   "/dashboard/org/organization": typeof DashboardOrgOrganizationIndexRoute;
   "/dashboard/org/settings": typeof DashboardOrgSettingsIndexRoute;
   "/dashboard/org/support": typeof DashboardOrgSupportIndexRoute;
@@ -841,7 +841,6 @@ export interface FileRoutesById {
   "/dashboard/course/$courseId/announcements": typeof DashboardCourseCourseIdAnnouncementsRoute;
   "/dashboard/course/$courseId/certificates": typeof DashboardCourseCourseIdCertificatesRoute;
   "/dashboard/course/$courseId/members": typeof DashboardCourseCourseIdMembersRoute;
-  "/dashboard/org/courses/assignments": typeof DashboardOrgCoursesAssignmentsRoute;
   "/dashboard/org/organization/integrations": typeof DashboardOrgOrganizationIntegrationsRoute;
   "/dashboard/org/organization/rules": typeof DashboardOrgOrganizationRulesRoute;
   "/dashboard/org/settings/general": typeof DashboardOrgSettingsGeneralRoute;
@@ -857,6 +856,7 @@ export interface FileRoutesById {
   "/dashboard/course/$courseId/": typeof DashboardCourseCourseIdIndexRoute;
   "/dashboard/org/cohorts/": typeof DashboardOrgCohortsIndexRoute;
   "/dashboard/org/courses/": typeof DashboardOrgCoursesIndexRoute;
+  "/dashboard/org/library/": typeof DashboardOrgLibraryIndexRoute;
   "/dashboard/org/organization/": typeof DashboardOrgOrganizationIndexRoute;
   "/dashboard/org/settings/": typeof DashboardOrgSettingsIndexRoute;
   "/dashboard/org/support/": typeof DashboardOrgSupportIndexRoute;
@@ -940,7 +940,6 @@ export interface FileRouteTypes {
     | "/dashboard/course/$courseId/announcements"
     | "/dashboard/course/$courseId/certificates"
     | "/dashboard/course/$courseId/members"
-    | "/dashboard/org/courses/assignments"
     | "/dashboard/org/organization/integrations"
     | "/dashboard/org/organization/rules"
     | "/dashboard/org/settings/general"
@@ -956,6 +955,7 @@ export interface FileRouteTypes {
     | "/dashboard/course/$courseId/"
     | "/dashboard/org/cohorts/"
     | "/dashboard/org/courses/"
+    | "/dashboard/org/library/"
     | "/dashboard/org/organization/"
     | "/dashboard/org/settings/"
     | "/dashboard/org/support/"
@@ -1016,7 +1016,6 @@ export interface FileRouteTypes {
     | "/dashboard/course/$courseId/announcements"
     | "/dashboard/course/$courseId/certificates"
     | "/dashboard/course/$courseId/members"
-    | "/dashboard/org/courses/assignments"
     | "/dashboard/org/organization/integrations"
     | "/dashboard/org/organization/rules"
     | "/dashboard/org/settings/general"
@@ -1032,6 +1031,7 @@ export interface FileRouteTypes {
     | "/dashboard/course/$courseId"
     | "/dashboard/org/cohorts"
     | "/dashboard/org/courses"
+    | "/dashboard/org/library"
     | "/dashboard/org/organization"
     | "/dashboard/org/settings"
     | "/dashboard/org/support"
@@ -1114,7 +1114,6 @@ export interface FileRouteTypes {
     | "/dashboard/course/$courseId/announcements"
     | "/dashboard/course/$courseId/certificates"
     | "/dashboard/course/$courseId/members"
-    | "/dashboard/org/courses/assignments"
     | "/dashboard/org/organization/integrations"
     | "/dashboard/org/organization/rules"
     | "/dashboard/org/settings/general"
@@ -1130,6 +1129,7 @@ export interface FileRouteTypes {
     | "/dashboard/course/$courseId/"
     | "/dashboard/org/cohorts/"
     | "/dashboard/org/courses/"
+    | "/dashboard/org/library/"
     | "/dashboard/org/organization/"
     | "/dashboard/org/settings/"
     | "/dashboard/org/support/"
@@ -1560,6 +1560,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardOrgOrganizationIndexRouteImport;
       parentRoute: typeof DashboardOrgOrganizationRouteRoute;
     };
+    "/dashboard/org/library/": {
+      id: "/dashboard/org/library/";
+      path: "/library";
+      fullPath: "/dashboard/org/library/";
+      preLoaderRoute: typeof DashboardOrgLibraryIndexRouteImport;
+      parentRoute: typeof DashboardOrgRouteRoute;
+    };
     "/dashboard/org/courses/": {
       id: "/dashboard/org/courses/";
       path: "/";
@@ -1664,13 +1671,6 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard/org/organization/integrations";
       preLoaderRoute: typeof DashboardOrgOrganizationIntegrationsRouteImport;
       parentRoute: typeof DashboardOrgOrganizationRouteRoute;
-    };
-    "/dashboard/org/courses/assignments": {
-      id: "/dashboard/org/courses/assignments";
-      path: "/assignments";
-      fullPath: "/dashboard/org/courses/assignments";
-      preLoaderRoute: typeof DashboardOrgCoursesAssignmentsRouteImport;
-      parentRoute: typeof DashboardOrgCoursesRouteRoute;
     };
     "/dashboard/course/$courseId/members": {
       id: "/dashboard/course/$courseId/members";
@@ -2022,13 +2022,11 @@ const DashboardOrgCoursesCourseIdRouteRouteWithChildren =
 
 interface DashboardOrgCoursesRouteRouteChildren {
   DashboardOrgCoursesCourseIdRouteRoute: typeof DashboardOrgCoursesCourseIdRouteRouteWithChildren;
-  DashboardOrgCoursesAssignmentsRoute: typeof DashboardOrgCoursesAssignmentsRoute;
   DashboardOrgCoursesIndexRoute: typeof DashboardOrgCoursesIndexRoute;
 }
 
 const DashboardOrgCoursesRouteRouteChildren: DashboardOrgCoursesRouteRouteChildren = {
   DashboardOrgCoursesCourseIdRouteRoute: DashboardOrgCoursesCourseIdRouteRouteWithChildren,
-  DashboardOrgCoursesAssignmentsRoute: DashboardOrgCoursesAssignmentsRoute,
   DashboardOrgCoursesIndexRoute: DashboardOrgCoursesIndexRoute,
 };
 
@@ -2110,6 +2108,7 @@ interface DashboardOrgRouteRouteChildren {
   DashboardOrgUsersRouteRoute: typeof DashboardOrgUsersRouteRouteWithChildren;
   DashboardOrgMembersRoute: typeof DashboardOrgMembersRoute;
   DashboardOrgIndexRoute: typeof DashboardOrgIndexRoute;
+  DashboardOrgLibraryIndexRoute: typeof DashboardOrgLibraryIndexRoute;
 }
 
 const DashboardOrgRouteRouteChildren: DashboardOrgRouteRouteChildren = {
@@ -2121,6 +2120,7 @@ const DashboardOrgRouteRouteChildren: DashboardOrgRouteRouteChildren = {
   DashboardOrgUsersRouteRoute: DashboardOrgUsersRouteRouteWithChildren,
   DashboardOrgMembersRoute: DashboardOrgMembersRoute,
   DashboardOrgIndexRoute: DashboardOrgIndexRoute,
+  DashboardOrgLibraryIndexRoute: DashboardOrgLibraryIndexRoute,
 };
 
 const DashboardOrgRouteRouteWithChildren = DashboardOrgRouteRoute._addFileChildren(

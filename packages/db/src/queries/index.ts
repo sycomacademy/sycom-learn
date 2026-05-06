@@ -14,6 +14,8 @@ export * from "./organization";
 export * from "./organization-cohorts";
 export * from "./organization-invitations";
 export * from "./organization-members";
+export * from "./org-owner-admin-overview";
+export * from "./org-teacher-overview";
 export * from "./platform-invitations";
 export * from "./profile";
 export * from "./storage";

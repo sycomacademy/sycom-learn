@@ -1,7 +1,8 @@
-import { and, desc, eq, gte, isNull, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 import type { Database } from "..";
-import { course, lesson, section } from "../schema/course";
+import { cohort, cohort_member } from "../schema/auth";
+import { cohortCourse, course, lesson, section } from "../schema/course";
 import { certificate, enrollment, lessonProgress } from "../schema/enrollment";
 
 import type { CourseScope } from "./course";
@@ -219,6 +220,8 @@ export type StudentLibraryCourseRow = {
   totalLessonCount: number;
   certificateIssued: boolean;
   nextLessonId: string | null;
+  /** Cohort names the student belongs to that link this course (org library only). */
+  cohortNames: string[];
   sections: StudentLibrarySectionRow[];
 };
 
@@ -355,6 +358,34 @@ export async function getStudentLibrary(database: Database, input: GetStudentLib
     sectionsByCourse.set(row.courseId, list);
   }
 
+  const cohortNamesByCourseId = new Map<string, string[]>();
+  if (scope === "organization" && organizationId && courseRows.length > 0) {
+    const libraryCourseIds = courseRows.map((r) => r.courseId);
+    const cohortLinkRows = await database
+      .select({ courseId: cohortCourse.courseId, cohortName: cohort.name })
+      .from(cohortCourse)
+      .innerJoin(cohort, eq(cohortCourse.cohortId, cohort.id))
+      .innerJoin(cohort_member, eq(cohort_member.teamId, cohort.id))
+      .where(
+        and(
+          eq(cohort.organizationId, organizationId),
+          eq(cohort_member.userId, userId),
+          inArray(cohortCourse.courseId, libraryCourseIds),
+        ),
+      );
+    for (const link of cohortLinkRows) {
+      const names = cohortNamesByCourseId.get(link.courseId) ?? [];
+      if (!names.includes(link.cohortName)) {
+        names.push(link.cohortName);
+      }
+      cohortNamesByCourseId.set(link.courseId, names);
+    }
+    for (const [cid, names] of cohortNamesByCourseId) {
+      names.sort((a, b) => a.localeCompare(b));
+      cohortNamesByCourseId.set(cid, names);
+    }
+  }
+
   return {
     totals,
     courses: courseRows.map<StudentLibraryCourseRow>((row) => ({
@@ -371,6 +402,7 @@ export async function getStudentLibrary(database: Database, input: GetStudentLib
       totalLessonCount: row.totalLessonCount,
       certificateIssued: row.certificateIssued,
       nextLessonId: row.nextLessonId,
+      cohortNames: cohortNamesByCourseId.get(row.courseId) ?? [],
       sections: sectionsByCourse.get(row.courseId) ?? [],
     })),
     certificates: certificateRows.map<StudentLibraryCertificateRow>((row) => ({

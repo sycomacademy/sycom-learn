@@ -314,6 +314,49 @@ export const creatorDashboardOverviewOutputSchema = z.object({
 });
 export type CreatorDashboardOverviewOutput = z.infer<typeof creatorDashboardOverviewOutputSchema>;
 
+// organization overview (org workspace)
+export const orgOwnerAdminOverviewInputSchema = z.object({
+  joinDays: z.number().int().min(1).max(90).default(7),
+  recentMemberLimit: z.number().int().min(1).max(50).default(8),
+});
+export type OrgOwnerAdminOverviewInput = z.infer<typeof orgOwnerAdminOverviewInputSchema>;
+
+export const orgOwnerAdminOverviewTotalsSchema = z.object({
+  members: z.number().int(),
+  cohorts: z.number().int(),
+  courses: z.number().int(),
+  enrollments: z.number().int(),
+});
+export type OrgOwnerAdminOverviewTotalsOutput = z.infer<typeof orgOwnerAdminOverviewTotalsSchema>;
+
+export const orgOwnerAdminJoinDaySchema = z.object({
+  date: z.string(),
+  total: z.number().int(),
+});
+export type OrgOwnerAdminJoinDayOutput = z.infer<typeof orgOwnerAdminJoinDaySchema>;
+
+export const orgOwnerAdminRecentMemberSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  image: z.string().nullable(),
+  role: z.enum(organizationRoleEnum.enumValues),
+  createdAt: z.date(),
+});
+export type OrgOwnerAdminRecentMemberOutput = z.infer<typeof orgOwnerAdminRecentMemberSchema>;
+
+export const orgOwnerAdminOverviewOutputSchema = z.object({
+  totals: orgOwnerAdminOverviewTotalsSchema,
+  joinsByDay: z.array(orgOwnerAdminJoinDaySchema),
+  recentMembers: z.array(orgOwnerAdminRecentMemberSchema),
+});
+export type OrgOwnerAdminOverviewOutput = z.infer<typeof orgOwnerAdminOverviewOutputSchema>;
+
+export const orgTeacherOverviewInputSchema = creatorDashboardOverviewInputSchema;
+export type OrgTeacherOverviewInput = z.infer<typeof orgTeacherOverviewInputSchema>;
+export const orgTeacherOverviewOutputSchema = creatorDashboardOverviewOutputSchema;
+export type OrgTeacherOverviewOutput = z.infer<typeof orgTeacherOverviewOutputSchema>;
+
 // student
 export const studentDashboardOverviewInputSchema = z.object({
   enrollmentDays: z.number().int().min(1).max(90).default(7),
@@ -383,6 +426,7 @@ export const studentLibraryCourseSchema = z.object({
   totalLessonCount: z.number().int(),
   certificateIssued: z.boolean(),
   nextLessonId: z.string().nullable(),
+  cohortNames: z.array(z.string()),
   sections: z.array(studentLibrarySectionSchema),
 });
 export type StudentLibraryCourseOutput = z.infer<typeof studentLibraryCourseSchema>;

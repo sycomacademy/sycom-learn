@@ -9,6 +9,8 @@ import {
   deleteOrganization,
   findOrganizationMembershipByEmail,
   findPendingOrganizationInvitationForEmail,
+  getOrgOwnerAdminOverview,
+  getOrgTeacherOverview,
   getOrganizationCohortById,
   getMemberRole,
   getOrganizationById,
@@ -51,6 +53,10 @@ import {
   listOrgMembersSchema,
   mutateOrganizationCohortCoursesSchema,
   mutateOrganizationCohortMembersSchema,
+  orgOwnerAdminOverviewInputSchema,
+  orgOwnerAdminOverviewOutputSchema,
+  orgTeacherOverviewInputSchema,
+  orgTeacherOverviewOutputSchema,
   organizationMembershipsOutputSchema,
   organizationWorkspaceContextOutputSchema,
   removeOrgMemberSchema,
@@ -199,6 +205,39 @@ export const organizationRouter = router({
         accentHex: row.accentHexRaw ?? DEFAULT_ORG_ACCENT_HEX,
         memberRole: row.memberRole,
       };
+    }),
+
+  getOwnerAdminOverview: protectedProcedure
+    .input(orgOwnerAdminOverviewInputSchema)
+    .output(orgOwnerAdminOverviewOutputSchema)
+    .query(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (role !== "owner" && role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      return getOrgOwnerAdminOverview(ctx.db, {
+        organizationId,
+        joinDays: input.joinDays,
+        recentMemberLimit: input.recentMemberLimit,
+      });
+    }),
+
+  getTeacherOverview: protectedProcedure
+    .input(orgTeacherOverviewInputSchema)
+    .output(orgTeacherOverviewOutputSchema)
+    .query(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_READ_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      return getOrgTeacherOverview(ctx.db, {
+        organizationId,
+        userId: ctx.session.user.id,
+        enrollmentDays: input.enrollmentDays,
+        recentCourseLimit: input.recentCourseLimit,
+      });
     }),
 
   updateBranding: protectedProcedure

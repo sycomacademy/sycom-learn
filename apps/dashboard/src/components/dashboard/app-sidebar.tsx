@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BookOpen } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { BlocksIcon } from "@sycom/ui/components/animated/icons/blocks";
@@ -130,6 +131,7 @@ const ORG_NAV_ICON_BY_SLUG: Record<OrgWorkspacePrimarySlug, NavIcon> = {
   cohorts: BlocksIcon,
   organization: BuildingIcon,
   courses: LayersIcon,
+  library: BookOpen,
 };
 
 function buildOrgWorkspaceNavGroups(role: OrganizationRole | undefined): NavGroup[] {
