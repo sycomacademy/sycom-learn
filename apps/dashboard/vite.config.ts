@@ -9,6 +9,17 @@ import tsconfigPaths from "vite-tsconfig-paths";
 const shouldAnalyzeBundle = process.env.BUNDLE_ANALYZE === "true";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
+          return;
+        }
+
+        warn(warning);
+      },
+    },
+  },
   plugins: [
     tsconfigPaths(),
     tailwindcss(),
