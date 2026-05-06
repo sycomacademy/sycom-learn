@@ -1,385 +1,379 @@
-# Azure Deployment
+# Deployment
 
-This repo is set up to deploy two Bun containers to Azure Container Apps:
+End-to-end guide for standing up Sycom on Azure. Following it top-to-bottom in a fresh subscription will produce a working staging *and* production deployment.
 
-- `dashboard` on `app.domain.com`
-- `server` on `api.domain.com`
+## Architecture at a glance
 
-The same stack is defined twice through Bicep parameter files:
+Two Bun containers run on Azure Container Apps:
 
-- `infra/params/staging.bicepparam`
-- `infra/params/prod.bicepparam`
+| App         | Port | Health  | Image             |
+| ----------- | ---- | ------- | ----------------- |
+| `dashboard` | 3000 | `/health` | `Dockerfile.dashboard` |
+| `server`    | 3001 | `/health` | `Dockerfile.server`    |
 
-`staging` is intended to use your Neon staging branch `DATABASE_URL`.
+Per environment, the same Bicep template ([`infra/main.bicep`](infra/main.bicep)) creates:
 
-## What This Deploys
-
-- Azure Container Registry
+- Azure Container Registry (ACR)
 - Azure Key Vault
-- Azure Log Analytics Workspace
-- Azure Container Apps Environment
-- One Container App for `dashboard`
-- One Container App for `server`
+- Azure Log Analytics workspace
+- Azure Container Apps environment
+- Two Container Apps (`dashboard`, `server`)
 - One user-assigned managed identity per app
-- RBAC so the apps can pull images and the server can read Key Vault secrets
+- Role assignments: each identity gets `AcrPull`; the server identity also gets `Key Vault Secrets User`
 
-## Files Added
+Two Bicep parameter files drive it:
 
-- `Dockerfile.dashboard`
-- `Dockerfile.server`
-- `.dockerignore`
-- `infra/main.bicep`
-- `infra/params/staging.bicepparam`
-- `infra/params/prod.bicepparam`
-- `.github/workflows/deploy.yml`
+- [`infra/params/staging.bicepparam`](infra/params/staging.bicepparam) — staging stack
+- [`infra/params/prod.bicepparam`](infra/params/prod.bicepparam) — production stack
 
-## Before First Deploy
+The GitHub Actions workflow ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) deploys on push:
+- Push to `staging` → staging environment
+- Push to `main` → production environment
 
-1. Update `infra/params/staging.bicepparam`.
-2. Update `infra/params/prod.bicepparam`.
-3. Replace the placeholder resource names with names you actually want.
-4. Replace the example URLs with your real URLs.
-5. Make sure the ACR and Key Vault names are globally unique.
+## Repository layout
 
-## Recommended Azure Layout
+```
+infra/
+  main.bicep                # the entire Azure stack
+  params/
+    staging.bicepparam      # staging values
+    prod.bicepparam         # prod values
+  secrets/
+    secrets.env.example     # template for the Key Vault seed file
+    .gitignore              # keeps real .env files out of git
+scripts/
+  bootstrap-azure-oidc.sh   # one-shot: AAD app + federated creds + RBAC
+  seed-keyvault.sh          # bulk-load secrets into a Key Vault
+  get-deployed-urls.sh      # print Container App FQDNs
+.github/workflows/
+  deploy.yml                # CI/CD
+Dockerfile.dashboard
+Dockerfile.server
+.dockerignore
+```
 
-- Resource group for staging: `sycom-staging-rg`
-- Resource group for prod: `sycom-prod-rg`
-- GitHub environment: `staging`
-- GitHub environment: `production`
+## Prerequisites
 
-## Key Vault Secrets
+On the operator's machine:
+- Azure CLI ≥ 2.60 (`az --version`)
+- `jq` (`brew install jq` / `apt install jq`)
+- `bash` ≥ 4
+- `gh` if you want to set GitHub secrets/vars from the terminal (optional)
 
-The server app expects these Key Vault secret names by default:
+In Azure:
+- An empty subscription, or one where you have **Owner** at the subscription scope (needed to create role assignments).
 
-- `database-url`
-- `better-auth-secret`
-- `better-auth-api-key`
-- `google-client-id`
-- `google-client-secret`
-- `linkedin-client-id`
-- `linkedin-client-secret`
-- `cloudinary-cloud-name`
-- `cloudinary-api-key`
-- `cloudinary-api-secret`
-- `resend-api-key`
-- `resend-email-from`
-- `resend-email-reply-to`
-- `ai-gateway-api-key`
+In GitHub:
+- Repository admin to create Environments and add secrets/variables.
 
-If you want different secret names, change `keyVaultSecretNames` in `infra/main.bicep` or override that object in the parameter files.
+## Required configuration values
 
-## Populate Staging Secrets
+You will need values for everything in this table before starting. Put placeholders for any URL columns — they get rewritten in the bootstrap pass.
 
-Use the staging Key Vault created by the staging deployment and load the staging values into it.
+### Per-environment Bicep parameters
+Edited in `infra/params/<env>.bicepparam`.
 
-Important staging note:
+| Parameter               | Example                            | Notes                                      |
+| ----------------------- | ---------------------------------- | ------------------------------------------ |
+| `location`              | `uksouth`                          | Any Azure region                           |
+| `projectName`           | `sycom`                            | Drives default resource names              |
+| `environmentName`       | `staging` / `prod`                 |                                            |
+| `containerRegistryName` | `sycomprodacr`                     | **Globally unique**, alphanumeric, 5-50 ch |
+| `keyVaultName`          | `sycom-prod-uks-kv`                | **Globally unique**, 3-24 ch               |
+| `dashboardUrl`          | `https://app.sycom.com`            | Final public URL                           |
+| `serverUrl`             | `https://api.sycom.com`            | Final public URL                           |
+| `websiteUrl`            | `https://sycom.com`                | Optional marketing site                    |
+| `corsOrigins`           | `['https://app.sycom.com']`        | Browsers allowed to call the server        |
+| `debugPerformance`      | `'false'`                          | `'true'` only in staging                   |
 
-- `database-url` should be your Neon staging branch connection string.
+### GitHub environment secrets (per environment)
 
-Example:
+OIDC handles auth — no client secrets to rotate.
+
+| Secret                  | Source                            |
+| ----------------------- | --------------------------------- |
+| `AZURE_CLIENT_ID`       | Output of `bootstrap-azure-oidc.sh` |
+| `AZURE_TENANT_ID`       | Output of `bootstrap-azure-oidc.sh` |
+| `AZURE_SUBSCRIPTION_ID` | Output of `bootstrap-azure-oidc.sh` |
+
+### GitHub environment variables (per environment)
+
+These are **not secret** — they're public URLs and resource names baked into the dashboard image at build time.
+
+| Variable                | Example                          |
+| ----------------------- | -------------------------------- |
+| `AZURE_RESOURCE_GROUP`  | `sycom-prod-rg`                  |
+| `AZURE_LOCATION`        | `uksouth`                        |
+| `DASHBOARD_URL`         | `https://app.sycom.com`          |
+| `SERVER_URL`            | `https://api.sycom.com`          |
+| `WEBSITE_URL`           | `https://sycom.com`              |
+| `CLOUDINARY_CLOUD_NAME` | `sycom`                          |
+
+### Runtime secrets (per environment)
+
+The server reads these from Key Vault. Names below match `keyVaultSecretNames` in `infra/main.bicep` and the keys in `infra/secrets/secrets.env.example`.
+
+| Env var (runtime)         | Key Vault secret name     | Source                                       |
+| ------------------------- | ------------------------- | -------------------------------------------- |
+| `DATABASE_URL`            | `database-url`            | Neon connection string (use staging branch for staging) |
+| `BETTER_AUTH_SECRET`      | `better-auth-secret`      | `openssl rand -base64 32`                    |
+| `BETTER_AUTH_API_KEY`     | `better-auth-api-key`     | Better Auth dashboard                        |
+| `GOOGLE_CLIENT_ID`        | `google-client-id`        | Google Cloud Console → OAuth                 |
+| `GOOGLE_CLIENT_SECRET`    | `google-client-secret`    | Google Cloud Console → OAuth                 |
+| `LINKEDIN_CLIENT_ID`      | `linkedin-client-id`      | LinkedIn Developers → app                    |
+| `LINKEDIN_CLIENT_SECRET`  | `linkedin-client-secret`  | LinkedIn Developers → app                    |
+| `CLOUDINARY_CLOUD_NAME`   | `cloudinary-cloud-name`   | Cloudinary dashboard                         |
+| `CLOUDINARY_API_KEY`      | `cloudinary-api-key`      | Cloudinary dashboard                         |
+| `CLOUDINARY_API_SECRET`   | `cloudinary-api-secret`   | Cloudinary dashboard                         |
+| `RESEND_API_KEY`          | `resend-api-key`          | Resend dashboard                             |
+| `RESEND_EMAIL_FROM`       | `resend-email-from`       | e.g. `Sycom <noreply@sycom.com>`             |
+| `RESEND_EMAIL_REPLY_TO`   | `resend-email-reply-to`   | e.g. `support@sycom.com`                     |
+| `AI_GATEWAY_API_KEY`      | `ai-gateway-api-key`      | Vercel AI Gateway                            |
+
+## First-time deploy: step by step
+
+The first deploy is **two passes**: pass 1 brings the apps up on Azure-generated URLs so you can see them work; pass 2 (after DNS) switches them to your real domains. The dashboard image bakes `VITE_*` URLs at build time, which is why you need two passes.
+
+### 1. Edit the Bicep param files
+
+Open `infra/params/staging.bicepparam` and `infra/params/prod.bicepparam`. Replace placeholder names. For the URL params you have two choices:
+- Use throwaway placeholders like `https://bootstrap.example.com` for now — pass 2 will rewrite them. Pick this if you don't yet know the Azure FQDNs.
+- Use your final domains right away. Pick this if DNS is already prepared.
+
+`containerRegistryName` and `keyVaultName` must be globally unique — make them obviously yours (`sycomprodacr`, `sycom-prod-kv`).
+
+### 2. Bootstrap GitHub OIDC
 
 ```bash
-az keyvault secret set --vault-name <staging-key-vault-name> --name database-url --value '<neon-staging-branch-url>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name better-auth-secret --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name better-auth-api-key --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name google-client-id --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name google-client-secret --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name linkedin-client-id --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name linkedin-client-secret --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name cloudinary-cloud-name --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name cloudinary-api-key --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name cloudinary-api-secret --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name resend-api-key --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name resend-email-from --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name resend-email-reply-to --value '<secret>'
-az keyvault secret set --vault-name <staging-key-vault-name> --name ai-gateway-api-key --value '<secret>'
+az login
+
+GITHUB_OWNER=sycom \
+GITHUB_REPO=sycom \
+APP_NAME=sycom-deploy \
+STAGING_RG=sycom-staging-rg \
+PROD_RG=sycom-prod-rg \
+scripts/bootstrap-azure-oidc.sh
 ```
 
-Repeat the same process for prod with the prod Key Vault.
+This creates one Entra ID app, registers federated credentials for the `staging` and `production` GitHub environments, and grants **Owner** on both resource groups. It prints the three IDs you need next.
 
-## GitHub Environments
+> **Why Owner, not Contributor?** `main.bicep` creates three role assignments (`AcrPull` for both apps, `Key Vault Secrets User` for the server). `Contributor` explicitly excludes `Microsoft.Authorization/*/write`, so a Contributor-only principal fails on the first Bicep deploy. If the client requires least privilege, change `ROLES` in the script to `('Contributor' 'User Access Administrator')` — same effect.
 
-Create two GitHub environments:
+### 3. Configure GitHub Environments
 
-- `staging`
-- `production`
+Repo → Settings → Environments → create `staging` and `production`.
 
-Add these secrets to each environment:
-
-- `AZURE_CLIENT_ID`
-- `AZURE_TENANT_ID`
-- `AZURE_SUBSCRIPTION_ID`
-
-Add these variables to each environment:
-
-- `AZURE_RESOURCE_GROUP`
-- `AZURE_LOCATION`
-- `DASHBOARD_URL`
-- `SERVER_URL`
-- `WEBSITE_URL`
-- `CLOUDINARY_CLOUD_NAME`
-
-Notes:
-
-- `staging` should point at the staging domains and staging resource group.
-- `production` should point at the production domains and production resource group.
-- `DASHBOARD_URL`, `SERVER_URL`, and `WEBSITE_URL` should match the values in the matching Bicep parameter file.
-
-## Azure Login for GitHub Actions
-
-Use OIDC instead of a client secret if possible.
-
-High-level setup:
-
-1. Create one Azure AD app registration for GitHub Actions.
-2. Add a federated credential for your GitHub repo.
-3. Grant that app enough access to the subscription or the two resource groups.
-4. Put the app and tenant identifiers into the GitHub environment secrets.
-
-## Branch Behavior
-
-The workflow at `.github/workflows/deploy.yml` does this:
-
-- Push to `staging` deploys the staging environment.
-- Push to `main` deploys the production environment.
-
-Each deployment:
-
-1. Ensures the resource group exists.
-2. Deploys shared Azure infrastructure with `deployApps=false`.
-3. Builds and pushes the dashboard image.
-4. Builds and pushes the server image.
-5. Deploys the Container Apps with the new image tags.
-
-## Custom Domains on Hostinger
-
-Because your DNS is on Hostinger, the DNS part is manual.
-
-Recommended production domains:
-
-- `app.domain.com` for dashboard
-- `api.domain.com` for server
-
-Recommended staging domains:
-
-- `staging-app.domain.com`
-- `staging-api.domain.com`
-
-Typical flow:
-
-1. Run the first deployment and note the default Azure Container App URLs.
-2. In the Azure portal, add the custom hostname to each Container App.
-3. Azure will show the DNS verification records it needs.
-4. Add those records in Hostinger.
-5. Wait for DNS propagation.
-6. Complete the hostname binding in Azure.
-7. Confirm Azure-managed certificates are issued.
-8. Verify the apps respond on the final domains.
-
-Do this separately for staging and prod.
-
-## OAuth Provider Updates
-
-Update Google and LinkedIn OAuth settings to include the correct callback and allowed origin values for:
-
-- staging domains
-- production domains
-
-Also check:
-
-- Better Auth base URL
-- any email links generated by the app
-- any third-party provider allowlists
-
-## First-Time Deployment Checklist
-
-1. Update both Bicep parameter files.
-2. Create the `staging` and `production` GitHub environments.
-3. Configure Azure OIDC for GitHub Actions.
-4. Push staging secrets into the staging Key Vault.
-5. Push prod secrets into the prod Key Vault.
-6. Create the `staging` branch if it does not already exist.
-7. Push to `staging` and let the workflow deploy staging.
-8. Set up Hostinger DNS for the staging custom domains.
-9. Test staging end to end.
-10. Push to `main` when you are ready for prod.
-11. Set up Hostinger DNS for the production custom domains.
-
-## Bootstrap With Azure Default URLs First
-
-You can absolutely bring the app up on the Azure-generated Container Apps URLs first, then switch to `app.domain.com` and `api.domain.com` later.
-
-Because the dashboard bakes `VITE_SERVER_URL` into the image at build time, the clean way to do this is a two-pass bootstrap.
-
-### Why Two Passes Are Needed
-
-- The server URL is needed by the dashboard image build.
-- Azure only gives you the default Container App FQDN after the app exists.
-- So you create the apps once, read the Azure URLs, then redeploy with those URLs wired in.
-
-### Bootstrap Flow
-
-1. Pick temporary Azure URLs as your first public endpoints.
-2. In both Bicep param files, set `dashboardUrl` and `serverUrl` to temporary placeholder URLs just for the first deploy.
-3. Run the first deployment.
-4. Read the generated Azure FQDNs for the dashboard and server.
-5. Update the Bicep params and GitHub environment variables to use those Azure URLs.
-6. Redeploy staging.
-7. Test everything on the Azure URLs.
-8. Later, change the values again to your final Hostinger domains and redeploy.
-
-### First Bootstrap Deploy
-
-For the first pass, use any valid temporary HTTPS URLs in the parameter files, for example:
-
-```bicep
-param dashboardUrl = 'https://bootstrap-dashboard.example.com'
-param serverUrl = 'https://bootstrap-server.example.com'
-```
-
-These are only there to satisfy configuration on the first deploy.
-
-Then deploy staging once.
-
-### Get The Azure-Generated URLs
-
-After the first deploy, get the Azure default FQDNs:
+For each, add the secrets and variables from the tables above. Using `gh` from the terminal:
 
 ```bash
-az containerapp show \
-  --resource-group <staging-rg> \
-  --name <staging-dashboard-app-name> \
-  --query properties.configuration.ingress.fqdn \
-  --output tsv
+gh secret set AZURE_CLIENT_ID       --env staging --body "<from script output>"
+gh secret set AZURE_TENANT_ID       --env staging --body "<from script output>"
+gh secret set AZURE_SUBSCRIPTION_ID --env staging --body "<from script output>"
 
-az containerapp show \
-  --resource-group <staging-rg> \
-  --name <staging-server-app-name> \
-  --query properties.configuration.ingress.fqdn \
-  --output tsv
+gh variable set AZURE_RESOURCE_GROUP  --env staging --body "sycom-staging-rg"
+gh variable set AZURE_LOCATION        --env staging --body "uksouth"
+gh variable set DASHBOARD_URL         --env staging --body "https://bootstrap-dashboard.example.com"
+gh variable set SERVER_URL            --env staging --body "https://bootstrap-server.example.com"
+gh variable set WEBSITE_URL           --env staging --body "https://bootstrap-www.example.com"
+gh variable set CLOUDINARY_CLOUD_NAME --env staging --body "<your-cloud>"
 ```
 
-Those will return values like:
+Repeat for `production`.
 
-```text
-my-dashboard.orangeflower-123456.uksouth.azurecontainerapps.io
-my-server.orangeflower-123456.uksouth.azurecontainerapps.io
+### 4. Seed Key Vault secrets
+
+For each environment:
+
+```bash
+cp infra/secrets/secrets.env.example infra/secrets/staging.env
+$EDITOR infra/secrets/staging.env
+
+# After step 5 below the vault exists. Run:
+scripts/seed-keyvault.sh sycom-staging-ukwest-kv infra/secrets/staging.env
 ```
 
-Convert them to full URLs:
+The file is gitignored. Same flow for prod with `prod.env` and the prod vault name. Re-running the script just creates new secret versions.
 
-```text
-https://my-dashboard.orangeflower-123456.uksouth.azurecontainerapps.io
-https://my-server.orangeflower-123456.uksouth.azurecontainerapps.io
+### 5. Trigger pass 1 (deploys infra + apps with placeholder URLs)
+
+```bash
+git checkout staging
+git push origin staging
 ```
 
-### Redeploy Using The Azure URLs
+The workflow:
+1. `az group create` — idempotent
+2. Deploys `main.bicep` with `deployApps=false` → creates ACR, Key Vault, Container Apps environment, identities, RBAC
+3. (Now run step 4 above to populate the new vault, then re-trigger by pushing again or rerunning the workflow.)
+4. Builds and pushes the dashboard + server images to ACR (with registry-cached layers)
+5. Deploys `main.bicep` with `deployApps=true` and the new image tags
 
-Update these places with the Azure URLs:
+For the very first run, step 3 is unavoidable: the vault has to exist before you can put secrets in it. Either rerun the workflow after seeding, or run `az deployment group create ... deployApps=false` from your machine first.
 
-- `infra/params/staging.bicepparam`
-- GitHub `staging` environment variables:
-  - `DASHBOARD_URL`
-  - `SERVER_URL`
-  - `WEBSITE_URL` if needed
+### 6. Read the Azure-generated FQDNs
 
-For staging, that means setting:
+```bash
+scripts/get-deployed-urls.sh sycom-staging-rg staging
+```
 
-- `dashboardUrl` to the Azure dashboard URL
-- `serverUrl` to the Azure server URL
-- `corsOrigins` to the Azure dashboard URL
-- `VITE_DASHBOARD_URL` from GitHub vars to the Azure dashboard URL
-- `VITE_SERVER_URL` from GitHub vars to the Azure server URL
+Output looks like:
 
-Then push to `staging` again.
+```
+dashboardUrl = https://sycom-staging-dashboard.orangeflower-123.uksouth.azurecontainerapps.io
+serverUrl    = https://sycom-staging-server.orangeflower-123.uksouth.azurecontainerapps.io
+```
 
-After that second deploy, the app should work fully on the Azure-generated URLs.
+### 7. Pass 2: rebuild with the real URLs baked in
 
-### Move To Live Domains Later
+Decide whether to point at the Azure FQDNs (instant) or your real domains (requires DNS first — see next section).
 
-When you are ready to move from Azure URLs to Hostinger domains:
+Update the values in two places:
+- `infra/params/<env>.bicepparam` (`dashboardUrl`, `serverUrl`, `corsOrigins`)
+- GitHub environment variables (`DASHBOARD_URL`, `SERVER_URL`, `WEBSITE_URL`)
 
-1. Bind the custom domains in Azure Container Apps.
-2. Add the required Hostinger DNS records.
-3. Update:
-   - `infra/params/staging.bicepparam` or `infra/params/prod.bicepparam`
-   - GitHub environment variables for that environment
-   - OAuth provider callback/origin settings
-4. Redeploy.
+Push again. The workflow rebuilds the dashboard image with the new `VITE_*` values and rolls out a new revision.
 
-That final redeploy rebuilds the dashboard with the live API URL and updates the server runtime URLs to match.
+### 8. Push to main → production
 
-## Demo Steps
+After staging looks good, merge / fast-forward to `main` and push.
 
-Use staging for demos.
+```bash
+git checkout main
+git merge staging
+git push origin main
+```
 
-1. Confirm the staging Key Vault contains the Neon staging branch `database-url`.
-2. Push the latest demo-ready code to the `staging` branch.
-3. Wait for the GitHub Actions workflow to finish.
-4. Open `staging-app.domain.com`.
-5. Verify sign-in, sign-up, and any OAuth flows you plan to show.
-6. Verify the dashboard is talking to `staging-api.domain.com`.
-7. Verify email actions if they are part of the demo.
-8. Verify storage and uploads if they are part of the demo.
-9. Keep a rollback point by noting the previous successful staging deployment commit SHA.
+Repeat steps 4–7 against production values.
 
-## Client Handoff Steps
+## Custom domains (Hostinger or any DNS provider)
 
-1. Transfer or grant the client access to the Azure subscription, resource groups, and GitHub repository.
-2. Give the client the list of GitHub environment variables and secrets required by `.github/workflows/deploy.yml`.
-3. Move ownership of the DNS records in Hostinger or get the client to recreate them.
-4. Move or rotate all production secrets in Key Vault.
-5. Move or rotate all third-party provider credentials:
-   - Google OAuth
-   - LinkedIn OAuth
-   - Resend
-   - Cloudinary
-   - Neon or the database provider
-6. Show the client how staging deploys from `staging` and prod deploys from `main`.
-7. Hand over the exact Bicep parameter files used in production.
-8. Have the client run one deployment themselves before final sign-off.
+Recommended subdomains:
 
-## Recreate in a Fresh Azure Subscription
+| Use         | Domain                  |
+| ----------- | ----------------------- |
+| Dashboard   | `app.sycom.com`         |
+| API         | `api.sycom.com`         |
+| Marketing   | `sycom.com`             |
+| Staging app | `staging-app.sycom.com` |
+| Staging api | `staging-api.sycom.com` |
 
-1. Create new resource groups for staging and prod.
-2. Update the Bicep parameter files with new globally unique names.
-3. Configure GitHub OIDC against the new subscription.
-4. Populate the new Key Vaults with secrets.
-5. Push to `staging`.
-6. Validate staging.
-7. Push to `main`.
+Per Container App:
+
+1. Azure Portal → Container Apps → `<app>` → Custom domains → Add
+2. Azure shows the verification records — typically a `TXT` (`asuid.<sub>`) plus a `CNAME` to the default FQDN, or an `A` record to the environment IP for apex domains
+3. Add those records in your DNS provider
+4. Wait for propagation (`dig <domain>`)
+5. Complete the binding in Azure → it issues a managed certificate
+6. Update `dashboardUrl` / `serverUrl` / `corsOrigins` and the GitHub `*_URL` vars; push to redeploy
+
+## OAuth provider configuration
+
+After domains are settled, update each provider's allowed callback / redirect URLs:
+
+- **Google**: `<dashboardUrl>/api/auth/callback/google` (and the staging equivalent)
+- **LinkedIn**: same shape
+- **Better Auth**: `BETTER_AUTH_URL` env var is set automatically from `serverUrl` in Bicep
+- **Resend**: verify the sending domain in the Resend dashboard if `RESEND_EMAIL_FROM` is on a custom domain
+- **Cloudinary**: optional — restrict allowed origins in Console → Settings → Security if you want
+
+## Branch & deploy behavior
+
+| Push to    | Triggers                       |
+| ---------- | ------------------------------ |
+| `staging`  | `deploy-staging` job           |
+| `main`     | `deploy-production` job        |
+| any other  | nothing                        |
+
+Each deployment is image-tagged with `${GITHUB_SHA}`, so every revision in Container Apps maps to a single git commit.
 
 ## Rollback
 
-Fast rollback path:
-
-1. Find the last known good commit SHA.
-2. Re-run the deployment workflow from that commit, or revert the bad commit and push again.
-3. Confirm both Container Apps are healthy.
-
-Because the deployment is image-tagged by commit SHA, every deployment is traceable to a Git commit.
-
-## Operational Notes
-
-- The dashboard image is environment-specific because `VITE_*` values are baked in at build time.
-- The server image is the same shape across environments, but runtime secrets and URLs come from Azure.
-- `dashboard` health checks use `/health`.
-- `server` health checks use `/health`.
-- The server binds to `0.0.0.0` and respects `PORT` for container hosting.
-
-## Commands You May Still Run Manually
-
-Deploy staging infrastructure from your machine:
-
 ```bash
-az group create --name <staging-rg> --location <location>
-az deployment group create --resource-group <staging-rg> --template-file infra/main.bicep --parameters @infra/params/staging.bicepparam deployApps=false
+# Find the desired SHA (or use the Container Apps revision history).
+git revert <bad-sha>
+git push origin main
 ```
 
-Deploy prod infrastructure from your machine:
+Or, with no rebuild, point the Container App at a previous image:
 
 ```bash
-az group create --name <prod-rg> --location <location>
-az deployment group create --resource-group <prod-rg> --template-file infra/main.bicep --parameters @infra/params/prod.bicepparam deployApps=false
+az containerapp update \
+  --resource-group sycom-prod-rg \
+  --name sycom-prod-dashboard \
+  --image <acr>.azurecr.io/dashboard:<good-sha>
+```
+
+## Operational notes
+
+- Dashboard image is environment-specific because `VITE_*` values are baked at build time. Re-tagging across environments will not work.
+- Server image is the same shape across environments; runtime values come from Bicep + Key Vault.
+- Secrets in Container Apps are referenced by Key Vault URL, so rotating a secret's value in Key Vault is picked up on the next revision (force one with `az containerapp update --revision-suffix`).
+- Logs land in the Log Analytics workspace tied to the Container Apps environment. Query them in Azure Portal → Log Analytics → `ContainerAppConsoleLogs_CL`.
+
+## Client handoff checklist
+
+When the project transfers to the client:
+
+1. Add the client's Entra ID account as **Owner** on both resource groups (or the subscription).
+2. Transfer the GitHub repository to the client's org — federated credentials are tied to the repo path, so re-run `bootstrap-azure-oidc.sh` with the new `GITHUB_OWNER` if the org changes.
+3. Move DNS ownership: client recreates records at their registrar.
+4. Rotate every value in `infra/secrets/<env>.env`:
+   - Neon: rotate the connection password (or hand over the project)
+   - `BETTER_AUTH_SECRET`: regenerate and re-seed the vault
+   - Google / LinkedIn / Resend / Cloudinary / AI Gateway: client creates their own apps/keys and reseeds
+5. Re-run `scripts/seed-keyvault.sh` for both environments with the rotated values.
+6. Force a redeploy by pushing an empty commit; verify both apps come up healthy.
+7. Walk the client through one full deploy end-to-end (push to `staging` → verify → merge to `main`).
+8. Hand over this file plus the populated `infra/params/*.bicepparam` files.
+
+## Recreating in a fresh subscription
+
+Same path as the first-time deploy:
+
+1. Edit both bicepparam files with new globally-unique names
+2. `scripts/bootstrap-azure-oidc.sh`
+3. Configure GitHub environment secrets/vars
+4. `scripts/seed-keyvault.sh` (after the first `deployApps=false` pass creates the vaults)
+5. Push to `staging`, then `main`
+
+## Troubleshooting
+
+| Symptom                                          | Likely cause                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `staging` deploy job shows "Skipped"             | You pushed to `main`, not `staging`. The `if: github.ref_name == 'staging'` guard is by design.    |
+| Container exits with `Module not found .output/server/index.mjs` | Stale image. Rebuild — the dashboard now serves from `dist/server/server.js`.            |
+| Container App shows `ImagePullBackOff`           | Managed identity missing `AcrPull` on the registry. Re-run the Bicep deploy.                       |
+| Server returns 500 on every request              | Key Vault secret missing or the server identity lacks `Key Vault Secrets User`. Check the vault's RBAC. |
+| Dashboard hits CORS errors against the API       | `corsOrigins` in bicepparam doesn't include the dashboard's URL. Update and redeploy.              |
+| OAuth redirect loops or "redirect_uri_mismatch"  | Provider allowed-callbacks list still points at the old Azure FQDN; update it to the live domain.  |
+| Build job takes 25+ min                          | Someone re-added the standalone `nitro()` plugin. Remove it; TanStack Start already bundles Nitro. |
+
+## Manual operations
+
+Deploy infrastructure only (no apps) from your machine — useful when seeding Key Vault before the first CI run:
+
+```bash
+az group create --name sycom-staging-rg --location uksouth
+az deployment group create \
+  --resource-group sycom-staging-rg \
+  --parameters infra/params/staging.bicepparam \
+  --parameters deployApps=false
+```
+
+Stream logs from a Container App:
+
+```bash
+az containerapp logs show \
+  --resource-group sycom-prod-rg \
+  --name sycom-prod-server \
+  --follow
+```
+
+Force a new revision (e.g. after rotating a Key Vault secret):
+
+```bash
+az containerapp update \
+  --resource-group sycom-prod-rg \
+  --name sycom-prod-server \
+  --revision-suffix "$(date +%s)"
 ```

@@ -10,8 +10,15 @@ import {
 import { createAuthClient } from "better-auth/react";
 import { dashClient } from "@better-auth/infra/client";
 
+// Container Apps in the same environment must call each other via the
+// internal FQDN; the public FQDN hairpins through Envoy and hangs.
+const baseURL =
+  typeof window === "undefined"
+    ? (process.env.INTERNAL_SERVER_URL ?? env.VITE_SERVER_URL)
+    : env.VITE_SERVER_URL;
+
 export const authClient = createAuthClient({
-  baseURL: env.VITE_SERVER_URL,
+  baseURL,
   plugins: [
     passkeyClient(),
     lastLoginMethodClient(),

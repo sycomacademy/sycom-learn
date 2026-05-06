@@ -4,12 +4,9 @@ node_modules
 **/node_modules
 **/.turbo
 **/dist
-**/.output
-**/.nitro
 **/.cache
 **/.DS_Store
 apps/*/.env*
 packages/*/.env*
+infra/secrets/*.env
 *.log
-!apps/dashboard/.output
-!apps/dashboard/.output/**

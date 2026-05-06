@@ -110,6 +110,9 @@ var defaultCorsOrigins = empty(websiteUrl) ? [dashboardUrl] : [dashboardUrl, web
 var effectiveCorsOrigins = length(corsOrigins) > 0 ? corsOrigins : defaultCorsOrigins
 var corsOriginValue = join(effectiveCorsOrigins, ',')
 var keyVaultBaseUrl = '${keyVault.properties.vaultUri}secrets'
+// In Container Apps, two apps in the same env must call each other via the
+// internal FQDN — the public FQDN hairpins through Envoy and hangs.
+var internalServerUrl = deployApps ? 'https://${serverAppName}.internal.${containerAppsEnvironment.properties.defaultDomain}' : ''
 var acrPullRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
 var dashboardIdentityMap = {
@@ -263,6 +266,12 @@ resource dashboardApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps)
             cpu: json('0.5')
             memory: '1Gi'
           }
+          env: [
+            {
+              name: 'INTERNAL_SERVER_URL'
+              value: internalServerUrl
+            }
+          ]
           probes: [
             {
               type: 'Startup'
