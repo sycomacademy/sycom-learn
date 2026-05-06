@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+**/node_modules
+**/.turbo
+**/dist
+**/.output
+**/.nitro
+**/.cache
+**/.DS_Store
+apps/*/.env*
+packages/*/.env*
+*.log

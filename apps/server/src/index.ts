@@ -15,6 +15,7 @@ import { csrf } from "hono/csrf";
 import { readFile } from "node:fs/promises";
 
 const honoLogger = createLoggerWithContext("hono");
+const port = Number.parseInt(process.env.PORT ?? "3001", 10);
 
 const app = new Hono();
 const authRateLimiter = createRateLimitMiddleware({
@@ -144,6 +145,7 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 export default {
-  port: 3001,
+  hostname: "0.0.0.0",
+  port,
   fetch: app.fetch,
 };

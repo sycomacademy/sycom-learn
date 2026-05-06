@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root";
+import { Route as HealthRouteImport } from "./routes/health";
 import { Route as AcceptInviteRouteImport } from "./routes/accept-invite";
 import { Route as AuthRouteImport } from "./routes/_auth";
 import { Route as SplatRouteImport } from "./routes/$";
@@ -108,6 +109,11 @@ import { Route as DashboardCourseCourseIdCurriculumLessonIdEditRouteImport } fro
 import { Route as DashboardOrgCoursesCourseIdCurriculumLessonIdViewRouteImport } from "./routes/dashboard/org/courses/$courseId/curriculum/$lessonId/view";
 import { Route as DashboardOrgCoursesCourseIdCurriculumLessonIdEditRouteImport } from "./routes/dashboard/org/courses/$courseId/curriculum/$lessonId/edit";
 
+const HealthRoute = HealthRouteImport.update({
+  id: "/health",
+  path: "/health",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AcceptInviteRoute = AcceptInviteRouteImport.update({
   id: "/accept-invite",
   path: "/accept-invite",
@@ -622,6 +628,7 @@ export interface FileRoutesByFullPath {
   "/onboarding": typeof OnboardingRouteRouteWithChildren;
   "/$": typeof SplatRoute;
   "/accept-invite": typeof AcceptInviteRoute;
+  "/health": typeof HealthRoute;
   "/dashboard/admin": typeof DashboardAdminRouteRouteWithChildren;
   "/dashboard/catalog": typeof DashboardCatalogRouteRouteWithChildren;
   "/dashboard/course": typeof DashboardCourseRouteRouteWithChildren;
@@ -719,6 +726,7 @@ export interface FileRoutesByTo {
   "/learn": typeof LearnRouteRouteWithChildren;
   "/$": typeof SplatRoute;
   "/accept-invite": typeof AcceptInviteRoute;
+  "/health": typeof HealthRoute;
   "/check-email": typeof AuthCheckEmailRoute;
   "/forgot-password": typeof AuthForgotPasswordRoute;
   "/reset-password": typeof AuthResetPasswordRoute;
@@ -801,6 +809,7 @@ export interface FileRoutesById {
   "/$": typeof SplatRoute;
   "/_auth": typeof AuthRouteWithChildren;
   "/accept-invite": typeof AcceptInviteRoute;
+  "/health": typeof HealthRoute;
   "/dashboard/admin": typeof DashboardAdminRouteRouteWithChildren;
   "/dashboard/catalog": typeof DashboardCatalogRouteRouteWithChildren;
   "/dashboard/course": typeof DashboardCourseRouteRouteWithChildren;
@@ -902,6 +911,7 @@ export interface FileRouteTypes {
     | "/onboarding"
     | "/$"
     | "/accept-invite"
+    | "/health"
     | "/dashboard/admin"
     | "/dashboard/catalog"
     | "/dashboard/course"
@@ -999,6 +1009,7 @@ export interface FileRouteTypes {
     | "/learn"
     | "/$"
     | "/accept-invite"
+    | "/health"
     | "/check-email"
     | "/forgot-password"
     | "/reset-password"
@@ -1080,6 +1091,7 @@ export interface FileRouteTypes {
     | "/$"
     | "/_auth"
     | "/accept-invite"
+    | "/health"
     | "/dashboard/admin"
     | "/dashboard/catalog"
     | "/dashboard/course"
@@ -1181,10 +1193,18 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute;
   AuthRoute: typeof AuthRouteWithChildren;
   AcceptInviteRoute: typeof AcceptInviteRoute;
+  HealthRoute: typeof HealthRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/health": {
+      id: "/health";
+      path: "/health";
+      fullPath: "/health";
+      preLoaderRoute: typeof HealthRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/accept-invite": {
       id: "/accept-invite";
       path: "/accept-invite";
@@ -2301,6 +2321,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   AuthRoute: AuthRouteWithChildren,
   AcceptInviteRoute: AcceptInviteRoute,
+  HealthRoute: HealthRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
