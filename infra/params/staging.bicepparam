@@ -6,7 +6,7 @@ param environmentName = 'staging'
 
 // Update globally unique names before the first deployment.
 param containerRegistryName = 'changesycomstagingacr'
-param keyVaultName = 'sycom-staging-kv'
+param keyVaultName = 'sycom-staging-ukwest-kv'
 param logAnalyticsWorkspaceName = 'sycom-staging-logs'
 param containerAppsEnvironmentName = 'sycom-staging-cae'
 param dashboardIdentityName = 'sycom-staging-dashboard-id'
