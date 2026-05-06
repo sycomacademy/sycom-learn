@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 
 import type { Database } from "..";
-import { organization, user, type UserRole } from "../schema/auth";
+import { member, organization, user, type OrganizationRole, type UserRole } from "../schema/auth";
 import {
   category,
   course,
@@ -83,6 +83,19 @@ export type AvailableCoInstructorRow = {
 
 export type ListAvailableCoInstructorsResult = {
   rows: AvailableCoInstructorRow[];
+  totalCount: number;
+};
+
+export type OrgAvailableCoInstructorRow = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  organizationRole: OrganizationRole;
+};
+
+export type ListAvailableOrgCourseCoInstructorsResult = {
+  rows: OrgAvailableCoInstructorRow[];
   totalCount: number;
 };
 
@@ -788,6 +801,75 @@ export async function listAvailableCourseCoInstructors(
       .limit(input.limit)
       .offset(input.offset),
     database.select({ value: count() }).from(user).where(where),
+  ]);
+
+  return {
+    rows,
+    totalCount: totalRow[0]?.value ?? 0,
+  };
+}
+
+export async function listAvailableOrgCourseCoInstructors(
+  database: Database,
+  input: {
+    courseId: string;
+    organizationId: string;
+    search?: string;
+    limit: number;
+    offset: number;
+    orgRoles: OrganizationRole[];
+  },
+): Promise<ListAvailableOrgCourseCoInstructorsResult> {
+  const filters: SQL[] = [
+    eq(member.organizationId, input.organizationId),
+    inArray(member.role, input.orgRoles),
+  ];
+
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(user.name, pattern), ilike(user.email, pattern));
+    if (expr) filters.push(expr);
+  }
+
+  filters.push(
+    sql`not exists (
+      select 1
+      from ${courseInstructor}
+      where ${courseInstructor.courseId} = ${input.courseId}
+        and ${courseInstructor.userId} = ${user.id}
+    )`,
+  );
+  filters.push(
+    sql`not exists (
+      select 1
+      from ${course}
+      where ${course.id} = ${input.courseId}
+        and ${course.createdBy} = ${user.id}
+    )`,
+  );
+
+  const where = and(...filters);
+
+  const [rows, totalRow] = await Promise.all([
+    database
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        organizationRole: member.role,
+      })
+      .from(user)
+      .innerJoin(member, eq(member.userId, user.id))
+      .where(where)
+      .orderBy(asc(user.name), asc(user.email))
+      .limit(input.limit)
+      .offset(input.offset),
+    database
+      .select({ value: count() })
+      .from(user)
+      .innerJoin(member, eq(member.userId, user.id))
+      .where(where),
   ]);
 
   return {

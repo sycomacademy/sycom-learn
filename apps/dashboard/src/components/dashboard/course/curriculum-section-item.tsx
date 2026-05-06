@@ -43,7 +43,14 @@ function EmptySectionDroppable({ sectionId }: { sectionId: string }) {
 }
 
 type CurriculumSectionItemProps = {
+  courseId: string;
   expandedLessonId: string | null;
+  lessonEditPath:
+    | "/dashboard/course/$courseId/curriculum/$lessonId/edit"
+    | "/dashboard/org/courses/$courseId/curriculum/$lessonId/edit";
+  lessonViewPath:
+    | "/dashboard/course/$courseId/curriculum/$lessonId/view"
+    | "/dashboard/org/courses/$courseId/curriculum/$lessonId/view";
   onCreateLesson: (sectionId: string) => Promise<void>;
   onDeleteLesson: (lessonId: string) => Promise<void>;
   onDeleteSection: (sectionId: string) => Promise<void>;
@@ -73,7 +80,10 @@ type CurriculumSectionItemProps = {
 };
 
 function CurriculumSectionItemImpl({
+  courseId,
   expandedLessonId,
+  lessonEditPath,
+  lessonViewPath,
   onCreateLesson,
   onDeleteLesson,
   onDeleteSection,
@@ -180,8 +190,11 @@ function CurriculumSectionItemImpl({
                         value={lesson.id}
                       >
                         <CurriculumLessonItem
+                          courseId={courseId}
                           expanded={expandedLessonId === lesson.id}
                           lesson={lesson}
+                          lessonEditPath={lessonEditPath}
+                          lessonViewPath={lessonViewPath}
                           onDeleteLesson={onDeleteLesson}
                           moveTargets={moveTargets}
                           onMoveToSection={onMoveLessonToSection}

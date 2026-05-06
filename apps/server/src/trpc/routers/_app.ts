@@ -11,6 +11,7 @@ import { inviteRouter } from "./invite";
 import { learnRouter } from "./learn";
 import { onboardingRouter } from "./onboarding";
 import { organizationRouter } from "./organization";
+import { orgCourseRouter } from "./orgCourse";
 import { lessonRouter } from "./lesson";
 import { profileRouter } from "./profile";
 import { storageRouter } from "./storage";
@@ -30,6 +31,7 @@ export const appRouter = router({
   learn: learnRouter,
   onboarding: onboardingRouter,
   organization: organizationRouter,
+  orgCourse: orgCourseRouter,
   profile: profileRouter,
   storage: storageRouter,
   student: studentRouter,

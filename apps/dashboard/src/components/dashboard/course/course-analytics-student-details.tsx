@@ -175,14 +175,17 @@ export function SelfCourseScoresSheetContent({
 export function StudentDetailsTrigger({
   courseId,
   enrollmentId,
+  analyticsProcedureRouter = "course",
 }: {
   courseId: string;
   enrollmentId: string;
+  analyticsProcedureRouter?: "course" | "orgCourse";
 }) {
   const trpc = useTRPC();
   const [open, setOpen] = useState(false);
+  const analyticsApi = analyticsProcedureRouter === "orgCourse" ? trpc.orgCourse : trpc.course;
   const detailQuery = useQuery({
-    ...trpc.course.getAnalyticsStudent.queryOptions({ courseId, enrollmentId }),
+    ...analyticsApi.getAnalyticsStudent.queryOptions({ courseId, enrollmentId }),
     enabled: open,
   });
 

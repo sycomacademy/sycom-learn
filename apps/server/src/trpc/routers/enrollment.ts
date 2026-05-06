@@ -15,11 +15,8 @@ import { TRPCError } from "@trpc/server";
 
 import type { Context } from "../context";
 import { protectedProcedure, router } from "../init";
-import {
-  assertCanReadCatalogCourse,
-  assertCanReadPublicCourse,
-  assertCanUpdatePublicCourse,
-} from "../lib/public-course-access";
+import { assertCanReadCatalogCourse, assertCanReadPublicCourse } from "../lib/public-course-access";
+import { assertPlatformOrOrgCourseWrite } from "../lib/org-course-access";
 import {
   enrollInCourseInputSchema,
   getCourseEnrollmentDetailSchema,
@@ -77,20 +74,16 @@ async function loadLearnerLesson(
 
 export const enrollmentRouter = router({
   listByCourse: protectedProcedure
-    .use(platformPermissionMiddleware({ course: ["update"] }))
     .input(listCourseEnrollmentsSchema)
     .query(async ({ ctx, input }) => {
-      const detail = await loadPlatformCourse(ctx.db, input.courseId);
-      assertCanUpdatePublicCourse(ctx.session, detail);
+      await assertPlatformOrOrgCourseWrite(ctx, input.courseId);
       return await listCourseEnrollments(ctx.db, input);
     }),
 
   getEnrollmentDetail: protectedProcedure
-    .use(platformPermissionMiddleware({ course: ["update"] }))
     .input(getCourseEnrollmentDetailSchema)
     .query(async ({ ctx, input }) => {
-      const detail = await loadPlatformCourse(ctx.db, input.courseId);
-      assertCanUpdatePublicCourse(ctx.session, detail);
+      await assertPlatformOrOrgCourseWrite(ctx, input.courseId);
 
       const row = await getCourseEnrollmentDetail(ctx.db, input);
       if (!row) {
@@ -100,11 +93,9 @@ export const enrollmentRouter = router({
     }),
 
   removeEnrollment: protectedProcedure
-    .use(platformPermissionMiddleware({ course: ["update"] }))
     .input(removeCourseEnrollmentSchema)
     .mutation(async ({ ctx, input }) => {
-      const detail = await loadPlatformCourse(ctx.db, input.courseId);
-      assertCanUpdatePublicCourse(ctx.session, detail);
+      await assertPlatformOrOrgCourseWrite(ctx, input.courseId);
 
       const deleted = await removeEnrollment(ctx.db, { enrollmentId: input.enrollmentId });
       if (!deleted || deleted.courseId !== input.courseId) {

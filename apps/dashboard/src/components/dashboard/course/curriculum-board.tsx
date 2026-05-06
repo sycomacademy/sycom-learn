@@ -78,14 +78,31 @@ function moveLessonAcrossSections(
   return nextSections;
 }
 
-export function CurriculumBoard({ courseId }: { courseId: string }) {
+export function CurriculumBoard({
+  courseId,
+  courseProcedureRouter = "course",
+}: {
+  courseId: string;
+  /** Use `orgCourse` tRPC router + org lesson URLs for organization-owned courses. */
+  courseProcedureRouter?: "course" | "orgCourse";
+}) {
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
-  const queryKey = trpc.course.getCurriculum.queryKey({ courseId });
-  const { data: curriculum } = useSuspenseQuery(
-    trpc.course.getCurriculum.queryOptions({ courseId }),
-  );
+  const courseApi = courseProcedureRouter === "orgCourse" ? trpc.orgCourse : trpc.course;
+  const courseMutations =
+    courseProcedureRouter === "orgCourse" ? trpcClient.orgCourse : trpcClient.course;
+  const lessonEditPath =
+    courseProcedureRouter === "orgCourse"
+      ? ("/dashboard/org/courses/$courseId/curriculum/$lessonId/edit" as const)
+      : ("/dashboard/course/$courseId/curriculum/$lessonId/edit" as const);
+  const lessonViewPath =
+    courseProcedureRouter === "orgCourse"
+      ? ("/dashboard/org/courses/$courseId/curriculum/$lessonId/view" as const)
+      : ("/dashboard/course/$courseId/curriculum/$lessonId/view" as const);
+
+  const queryKey = courseApi.getCurriculum.queryKey({ courseId });
+  const { data: curriculum } = useSuspenseQuery(courseApi.getCurriculum.queryOptions({ courseId }));
 
   const [sections, setSections] = useState(() => cloneCurriculumSections(curriculum));
   const [collapsedSectionIds, setCollapsedSectionIds] = useState<Set<string>>(new Set());
@@ -127,7 +144,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     replaceCurriculum(nextSections);
 
     try {
-      await trpcClient.course.saveCurriculumOrder.mutate(
+      await courseMutations.saveCurriculumOrder.mutate(
         buildCurriculumOrderInput(courseId, nextSections),
       );
     } catch (error) {
@@ -145,7 +162,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
 
   const handleCreateSection = async () => {
     try {
-      const created = await trpcClient.course.createSection.mutate({
+      const created = await courseMutations.createSection.mutate({
         courseId,
         title: `Section ${sections.length + 1}`,
       });
@@ -239,7 +256,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     );
 
     try {
-      await trpcClient.course.updateSection.mutate({ sectionId, patch: { title } });
+      await courseMutations.updateSection.mutate({ sectionId, patch: { title } });
       toastManager.add({ title: "Section updated", type: "success" });
     } catch (error) {
       replaceCurriculum(previousSections);
@@ -264,7 +281,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     );
 
     try {
-      await trpcClient.course.updateSection.mutate({ sectionId, patch });
+      await courseMutations.updateSection.mutate({ sectionId, patch });
       toastManager.add({ title: "Section schedule updated", type: "success" });
     } catch (error) {
       replaceCurriculum(previousSections);
@@ -320,7 +337,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     } finally {
       setSavingLessonId((current) => (current === lessonId ? null : current));
       queryClient.invalidateQueries({ queryKey: trpc.lesson.get.queryKey() });
-      queryClient.invalidateQueries({ queryKey: trpc.course.getCurriculum.queryKey({ courseId }) });
+      queryClient.invalidateQueries({ queryKey: courseApi.getCurriculum.queryKey({ courseId }) });
     }
   };
 
@@ -344,7 +361,7 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
     replaceCurriculum(nextSections);
 
     try {
-      await trpcClient.course.deleteSection.mutate({ sectionId });
+      await courseMutations.deleteSection.mutate({ sectionId });
       toastManager.add({ title: "Section deleted", type: "success" });
     } catch (error) {
       replaceCurriculum(previousSections);
@@ -500,7 +517,10 @@ export function CurriculumBoard({ courseId }: { courseId: string }) {
             <div className="space-y-3">
               {sections.map((section) => (
                 <CurriculumSectionItem
+                  courseId={courseId}
                   expandedLessonId={expandedLessonId}
+                  lessonEditPath={lessonEditPath}
+                  lessonViewPath={lessonViewPath}
                   key={section.id}
                   onCreateLesson={handleCreateLesson}
                   onDeleteSection={handleDeleteSection}

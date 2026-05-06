@@ -6,6 +6,7 @@ const ORG_HOME = "/dashboard/org" as const;
 
 const USERS_ROLES = new Set<OrganizationRole>(["owner", "admin"]);
 const COHORTS_ROLES = new Set<OrganizationRole>(["owner", "admin", "teacher"]);
+const COURSES_ROLES = new Set<OrganizationRole>(["owner", "admin", "teacher"]);
 const ORGANIZATION_SETTINGS_ROLES = new Set<OrganizationRole>(["owner"]);
 
 /**
@@ -13,7 +14,7 @@ const ORGANIZATION_SETTINGS_ROLES = new Set<OrganizationRole>(["owner"]);
  */
 export function redirectIfForbiddenOrgRoles(input: {
   memberRole: OrganizationRole | undefined;
-  segment: "users" | "cohorts" | "organization";
+  segment: "users" | "cohorts" | "courses" | "organization";
 }): void {
   const { memberRole, segment } = input;
   if (!memberRole) {
@@ -25,6 +26,8 @@ export function redirectIfForbiddenOrgRoles(input: {
     allowed = USERS_ROLES.has(memberRole);
   } else if (segment === "cohorts") {
     allowed = COHORTS_ROLES.has(memberRole);
+  } else if (segment === "courses") {
+    allowed = COURSES_ROLES.has(memberRole);
   } else if (segment === "organization") {
     allowed = ORGANIZATION_SETTINGS_ROLES.has(memberRole);
   }

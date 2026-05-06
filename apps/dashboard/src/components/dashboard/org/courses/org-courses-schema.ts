@@ -1,0 +1,81 @@
+import {
+  COURSE_STATUSES,
+  DIFFICULTY_LEVELS,
+  type CourseStatus,
+  type DifficultyLevel,
+} from "@sycom/db/schema/course";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
+import { z } from "zod";
+
+export const listOrgCoursesSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  statuses: z.array(z.enum(COURSE_STATUSES)).optional(),
+  difficulties: z.array(z.enum(DIFFICULTY_LEVELS)).optional(),
+  categoryIds: z.array(z.string().min(1)).optional(),
+  view: z.enum(["list", "cards"]).default("cards"),
+  sortBy: z.enum(["title", "createdAt", "updatedAt", "status", "difficulty"]).default("updatedAt"),
+  sortDirection: z.enum(["asc", "desc"]).default("desc"),
+});
+
+export type ListOrgCoursesInput = z.infer<typeof listOrgCoursesSchema>;
+export type OrgCourseViewMode = ListOrgCoursesInput["view"];
+export type OrgCourseSortField = ListOrgCoursesInput["sortBy"];
+export type OrgCourseRow = AppRouterOutputs["orgCourse"]["list"]["rows"][number];
+export type { CourseStatus, DifficultyLevel };
+
+export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
+  draft: "Draft",
+  published: "Published",
+};
+
+export const COURSE_STATUS_OPTIONS = COURSE_STATUSES.map((value) => ({
+  value,
+  label: COURSE_STATUS_LABELS[value],
+}));
+
+export const COURSE_STATUS_VARIANTS: Record<OrgCourseRow["status"], "secondary" | "default"> = {
+  draft: "secondary",
+  published: "default",
+};
+
+export const COURSE_DIFFICULTY_LABELS: Record<DifficultyLevel, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+  expert: "Expert",
+};
+
+export const createOrgCourseSchema = z.object({
+  title: z.string().check(z.minLength(1, "Title is required"), z.maxLength(160)),
+  slug: z.string().check(
+    z.minLength(2, "Slug must be at least 2 characters"),
+    z.maxLength(80, "Slug must be at most 80 characters"),
+    z.regex(
+      /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
+      "Use lowercase letters, numbers, and hyphens only",
+    ),
+    z.refine((value) => !value.includes("--"), "No consecutive hyphens"),
+  ),
+  description: z.string().check(z.maxLength(2000)),
+  difficulty: z.enum(DIFFICULTY_LEVELS),
+  categoryIds: z.array(z.string().min(1)),
+  coverImage: z.any().optional(),
+});
+
+export type CreateOrgCourseFormInput = z.infer<typeof createOrgCourseSchema>;
+
+export const DEFAULT_CREATE_ORG_COURSE_VALUES: CreateOrgCourseFormInput = {
+  title: "",
+  slug: "",
+  description: "",
+  difficulty: "beginner",
+  categoryIds: [],
+  coverImage: undefined,
+};
+
+export function getOrgCoursesQueryInput(input: ListOrgCoursesInput) {
+  const { view: _view, ...queryInput } = input;
+  return queryInput;
+}

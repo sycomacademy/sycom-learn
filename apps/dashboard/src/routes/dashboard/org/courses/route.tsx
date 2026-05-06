@@ -4,10 +4,20 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 import { SecondaryMenu } from "@/components/dashboard/secondary-menu";
 import type { SecondaryMenuItem } from "@/components/dashboard/secondary-menu";
+import { redirectIfForbiddenOrgRoles } from "@/lib/auth/org-route-role-access";
 import type { TRoutes } from "@/router";
 import { cn } from "@sycom/ui/lib/utils";
 
 export const Route = createFileRoute("/dashboard/org/courses")({
+  beforeLoad: async ({ context }) => {
+    const ctx = await context.queryClient.ensureQueryData(
+      context.trpc.organization.workspaceContext.queryOptions(),
+    );
+    redirectIfForbiddenOrgRoles({
+      segment: "courses",
+      memberRole: ctx.memberRole,
+    });
+  },
   component: OrgCoursesSectionLayout,
 });
 

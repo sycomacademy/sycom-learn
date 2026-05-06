@@ -98,8 +98,15 @@ function useLessonEditorUpload(lessonId: string) {
 }
 
 type CurriculumLessonItemProps = {
+  courseId: string;
   lesson: CurriculumLesson;
   expanded: boolean;
+  lessonEditPath:
+    | "/dashboard/course/$courseId/curriculum/$lessonId/edit"
+    | "/dashboard/org/courses/$courseId/curriculum/$lessonId/edit";
+  lessonViewPath:
+    | "/dashboard/course/$courseId/curriculum/$lessonId/view"
+    | "/dashboard/org/courses/$courseId/curriculum/$lessonId/view";
   moveTargets: CurriculumSection[];
   onDeleteLesson: (lessonId: string) => Promise<void>;
   saving: boolean;
@@ -119,8 +126,11 @@ type CurriculumLessonItemProps = {
 };
 
 function CurriculumLessonItemImpl({
+  courseId,
   lesson,
   expanded,
+  lessonEditPath,
+  lessonViewPath,
   moveTargets,
   onDeleteLesson,
   saving,
@@ -255,12 +265,7 @@ function CurriculumLessonItemImpl({
                 (
                   <Button
                     aria-label="Edit in fullscreen"
-                    render={
-                      <Link
-                        params={{ lessonId: lesson.id }}
-                        to="/dashboard/course/$courseId/curriculum/$lessonId/edit"
-                      />
-                    }
+                    render={<Link params={{ courseId, lessonId: lesson.id }} to={lessonEditPath} />}
                     size="sm"
                     variant="ghost"
                   />
@@ -277,12 +282,7 @@ function CurriculumLessonItemImpl({
                 (
                   <Button
                     aria-label="Preview lesson"
-                    render={
-                      <Link
-                        params={{ lessonId: lesson.id }}
-                        to="/dashboard/course/$courseId/curriculum/$lessonId/view"
-                      />
-                    }
+                    render={<Link params={{ courseId, lessonId: lesson.id }} to={lessonViewPath} />}
                     size="sm"
                     variant="ghost"
                   />

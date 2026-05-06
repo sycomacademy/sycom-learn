@@ -38,7 +38,11 @@ function ProgressCell({ completed, total }: { completed: number; total: number }
 
 const columnHelper = createColumnHelper<CourseAnalyticsStudentRow>();
 
-export function buildAnalyticsColumns(courseId: string) {
+export function buildAnalyticsColumns(
+  courseId: string,
+  options?: { analyticsProcedureRouter?: "course" | "orgCourse" },
+) {
+  const analyticsProcedureRouter = options?.analyticsProcedureRouter ?? "course";
   return [
     columnHelper.accessor("name", {
       id: "name",
@@ -80,7 +84,11 @@ export function buildAnalyticsColumns(courseId: string) {
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <StudentDetailsTrigger courseId={courseId} enrollmentId={row.original.enrollmentId} />
+        <StudentDetailsTrigger
+          analyticsProcedureRouter={analyticsProcedureRouter}
+          courseId={courseId}
+          enrollmentId={row.original.enrollmentId}
+        />
       ),
       meta: { headerClassName: "w-32", className: "w-32 pe-2 text-end" },
     }),
