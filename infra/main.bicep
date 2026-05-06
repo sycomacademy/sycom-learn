@@ -109,7 +109,7 @@ var mergedTags = union(tags, {
 var defaultCorsOrigins = empty(websiteUrl) ? [dashboardUrl] : [dashboardUrl, websiteUrl]
 var effectiveCorsOrigins = length(corsOrigins) > 0 ? corsOrigins : defaultCorsOrigins
 var corsOriginValue = join(effectiveCorsOrigins, ',')
-var keyVaultBaseUrl = 'https://${keyVault.name}.${environment().suffixes.keyvaultDns}'
+var keyVaultBaseUrl = '${keyVault.properties.vaultUri}secrets'
 var acrPullRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
 var dashboardIdentityMap = {
@@ -334,72 +334,72 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
         {
           name: 'database-url'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.databaseUrl}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.databaseUrl}'
         }
         {
           name: 'better-auth-secret'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.betterAuthSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.betterAuthSecret}'
         }
         {
           name: 'better-auth-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.betterAuthApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.betterAuthApiKey}'
         }
         {
           name: 'google-client-id'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.googleClientId}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.googleClientId}'
         }
         {
           name: 'google-client-secret'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.googleClientSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.googleClientSecret}'
         }
         {
           name: 'linkedin-client-id'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.linkedinClientId}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.linkedinClientId}'
         }
         {
           name: 'linkedin-client-secret'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.linkedinClientSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.linkedinClientSecret}'
         }
         {
           name: 'cloudinary-cloud-name'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.cloudinaryCloudName}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryCloudName}'
         }
         {
           name: 'cloudinary-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.cloudinaryApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryApiKey}'
         }
         {
           name: 'cloudinary-api-secret'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.cloudinaryApiSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryApiSecret}'
         }
         {
           name: 'resend-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.resendApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendApiKey}'
         }
         {
           name: 'resend-email-from'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.resendEmailFrom}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendEmailFrom}'
         }
         {
           name: 'resend-email-reply-to'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.resendEmailReplyTo}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendEmailReplyTo}'
         }
         {
           name: 'ai-gateway-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.aiGatewayApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.aiGatewayApiKey}'
         }
       ]
     }

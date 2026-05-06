@@ -1,6 +1,6 @@
 using '../main.bicep'
 
-param location = 'uksouth'
+param location = 'ukwest'
 param projectName = 'sycom'
 param environmentName = 'staging'
 
