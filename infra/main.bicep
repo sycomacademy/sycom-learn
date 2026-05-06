@@ -111,8 +111,13 @@ var effectiveCorsOrigins = length(corsOrigins) > 0 ? corsOrigins : defaultCorsOr
 var corsOriginValue = join(effectiveCorsOrigins, ',')
 var keyVaultBaseUrl = '${keyVault.properties.vaultUri}secrets'
 // In Container Apps, two apps in the same env must call each other via the
-// internal FQDN — the public FQDN hairpins through Envoy and hangs.
-var internalServerUrl = deployApps ? 'https://${serverAppName}.internal.${containerAppsEnvironment.properties.defaultDomain}' : ''
+// internal hostname (bare app name) over HTTP — the public FQDN hairpins
+// through Envoy, and HTTPS to the internal LB has TLS-handshake quirks
+// with some HTTP clients (Bun included). Plain HTTP on the bare app name
+// is the documented service-to-service path. Requires
+// allowInsecure: true on the server's ingress so the LB doesn't 302
+// us back to HTTPS.
+var internalServerUrl = deployApps ? 'http://${serverAppName}' : ''
 var acrPullRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
 var dashboardIdentityMap = {
@@ -322,7 +327,10 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: {
-        allowInsecure: false
+        // Allow plain HTTP so dashboard SSR can reach us via the internal
+        // hostname without the 302→HTTPS redirect. External traffic still
+        // arrives over HTTPS via the env edge regardless of this flag.
+        allowInsecure: true
         external: true
         targetPort: serverTargetPort
         transport: 'auto'
