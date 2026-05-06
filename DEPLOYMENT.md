@@ -103,7 +103,7 @@ Repeat the same process for prod with the prod Key Vault.
 Create two GitHub environments:
 
 - `staging`
-- `prod`
+- `production`
 
 Add these secrets to each environment:
 

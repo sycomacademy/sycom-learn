@@ -16,7 +16,7 @@ param serverAppName = 'sycom-staging-server'
 
 param dashboardUrl = 'https://staging-app.example.com'
 param serverUrl = 'https://staging-api.example.com'
-param websiteUrl = 'https://www.example.com'
+param websiteUrl = 'https://staging-www.example.com'
 param corsOrigins = [
   'https://staging-app.example.com'
 ]

@@ -83,7 +83,7 @@ jobs:
   deploy-production:
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
-    environment: prod
+    environment: production
     concurrency:
       group: deploy-production
       cancel-in-progress: true

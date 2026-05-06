@@ -14,11 +14,11 @@ param serverIdentityName = 'sycom-prod-server-id'
 param dashboardAppName = 'sycom-prod-dashboard'
 param serverAppName = 'sycom-prod-server'
 
-param dashboardUrl = 'https://app.example.com'
-param serverUrl = 'https://api.example.com'
-param websiteUrl = 'https://www.example.com'
+param dashboardUrl = 'https://staging-app.example.com'
+param serverUrl = 'https://staging-api.example.com'
+param websiteUrl = 'https://staging-www.example.com'
 param corsOrigins = [
-  'https://app.example.com'
+  'https://staging-app.example.com'
 ]
 
 param debugPerformance = 'false'
