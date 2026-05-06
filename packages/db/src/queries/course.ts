@@ -12,6 +12,7 @@ import {
   type CourseStatus,
   type DifficultyLevel,
   type InstructorRole,
+  type LessonType,
 } from "../schema/course";
 
 // ---------------------------------------------------------------------------
@@ -520,6 +521,240 @@ export async function updateCourseCertificateSettings(
 
 export async function deleteCourse(database: Database, input: { courseId: string }): Promise<void> {
   await database.delete(course).where(eq(course.id, input.courseId));
+}
+
+// ---------------------------------------------------------------------------
+// AI-generated course tree insert
+// ---------------------------------------------------------------------------
+
+export type GeneratedCourseLessonBlock =
+  | { kind: "heading"; level: number; text: string }
+  | { kind: "paragraph"; text: string }
+  | { kind: "bullet"; items: string[] };
+
+export type GeneratedCourseLessonPayload = {
+  title: string;
+  type: LessonType;
+  blocks: GeneratedCourseLessonBlock[];
+  questions?: Array<{
+    prompt: string;
+    type: "single" | "multi";
+    options: Array<{ text: string; isCorrect: boolean }>;
+  }>;
+};
+
+export type GeneratedCourseSectionPayload = {
+  title: string;
+  description?: string | null;
+  lessons: GeneratedCourseLessonPayload[];
+};
+
+export type GeneratedCourseTreePayload = {
+  title: string;
+  description?: string | null;
+  slug: string;
+  summaryBullets?: string[];
+  sections: GeneratedCourseSectionPayload[];
+};
+
+async function platformCourseSlugExists(database: Database, slug: string): Promise<boolean> {
+  const rows = await database
+    .select({ id: course.id })
+    .from(course)
+    .where(and(eq(course.slug, slug), isNull(course.organizationId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+async function allocateUniquePlatformSlug(database: Database, desired: string): Promise<string> {
+  let base = desired.trim().toLowerCase().slice(0, 80);
+  if (base.length < 2) {
+    base = "course";
+  }
+  let candidate = base;
+  let n = 0;
+  while (await platformCourseSlugExists(database, candidate)) {
+    n += 1;
+    const suffix = `-${n}`;
+    candidate = `${base.slice(0, Math.max(1, 80 - suffix.length))}${suffix}`;
+  }
+  return candidate;
+}
+
+function buildLessonDocContent(lessonPayload: GeneratedCourseLessonPayload): unknown {
+  const docContent: unknown[] = [
+    {
+      type: "paragraph",
+      content: [
+        {
+          type: "text",
+          text: "[Media placeholder] Add images or video in the editor where helpful.",
+          marks: [{ type: "italic" }],
+        },
+      ],
+    },
+  ];
+
+  for (const block of lessonPayload.blocks) {
+    if (block.kind === "heading") {
+      docContent.push({
+        type: "heading",
+        attrs: { level: block.level },
+        content: [{ type: "text", text: block.text }],
+      });
+    } else if (block.kind === "paragraph") {
+      docContent.push({
+        type: "paragraph",
+        content: [{ type: "text", text: block.text }],
+      });
+    } else if (block.kind === "bullet") {
+      docContent.push({
+        type: "bulletList",
+        content: block.items.map((item) => ({
+          type: "listItem",
+          content: [
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: item }],
+            },
+          ],
+        })),
+      });
+    }
+  }
+
+  if (lessonPayload.type === "quiz" || lessonPayload.type === "exam") {
+    for (const q of lessonPayload.questions ?? []) {
+      docContent.push({
+        type: "question",
+        attrs: {
+          questionId: `q_${crypto.randomUUID().replaceAll("-", "")}`,
+          prompt: q.prompt,
+          type: q.type,
+          options: q.options.map((o) => ({
+            id: `opt_${crypto.randomUUID().replaceAll("-", "")}`,
+            text: o.text,
+            isCorrect: o.isCorrect,
+          })),
+        },
+      });
+    }
+  }
+
+  return { type: "doc", content: docContent };
+}
+
+export async function insertGeneratedCourseTree(
+  database: Database,
+  input: {
+    tree: GeneratedCourseTreePayload;
+    createdBy: string;
+    organizationId: string | null;
+    difficulty: DifficultyLevel;
+  },
+): Promise<{ courseId: string }> {
+  const slug = await allocateUniquePlatformSlug(database, input.tree.slug);
+  const summary =
+    input.tree.summaryBullets && input.tree.summaryBullets.length > 0
+      ? { bullets: input.tree.summaryBullets }
+      : null;
+
+  const [newCourse] = await database
+    .insert(course)
+    .values({
+      organizationId: input.organizationId,
+      title: input.tree.title,
+      slug,
+      description: input.tree.description ?? null,
+      summary,
+      imageUrl: null,
+      difficulty: input.difficulty,
+      status: "draft",
+      createdBy: input.createdBy,
+    })
+    .returning({ id: course.id });
+
+  if (!newCourse) {
+    throw new Error("Failed to insert AI-generated course");
+  }
+
+  try {
+    const sectionIdByIndex = new Map<number, string>();
+
+    for (let sIdx = 0; sIdx < input.tree.sections.length; sIdx += 1) {
+      const sec = input.tree.sections[sIdx];
+      if (!sec) {
+        throw new Error("Section index out of range");
+      }
+      const [newSection] = await database
+        .insert(section)
+        .values({
+          courseId: newCourse.id,
+          title: sec.title,
+          description: sec.description ?? null,
+          order: sIdx,
+        })
+        .returning({ id: section.id });
+
+      if (!newSection) {
+        throw new Error("Failed to insert section");
+      }
+      sectionIdByIndex.set(sIdx, newSection.id);
+    }
+
+    const newLessons: Array<{
+      sectionId: string;
+      title: string;
+      content: unknown;
+      type: LessonType;
+      openAt: Date | null;
+      dueAt: Date | null;
+      order: number;
+    }> = [];
+
+    for (let sIdx = 0; sIdx < input.tree.sections.length; sIdx += 1) {
+      const sec = input.tree.sections[sIdx];
+      if (!sec) {
+        throw new Error("Section index out of range");
+      }
+      const sectionId = sectionIdByIndex.get(sIdx);
+      if (!sectionId) {
+        throw new Error("Section mapping missing");
+      }
+
+      for (let lIdx = 0; lIdx < sec.lessons.length; lIdx += 1) {
+        const les = sec.lessons[lIdx];
+        if (!les) {
+          throw new Error("Lesson index out of range");
+        }
+        const content = buildLessonDocContent(les);
+        let openAt: Date | null = null;
+        let dueAt: Date | null = null;
+        if (les.type === "exam") {
+          openAt = new Date();
+          dueAt = new Date(openAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+        }
+        newLessons.push({
+          sectionId,
+          title: les.title,
+          content,
+          type: les.type,
+          openAt,
+          dueAt,
+          order: lIdx,
+        });
+      }
+    }
+
+    if (newLessons.length > 0) {
+      await database.insert(lesson).values(newLessons);
+    }
+
+    return { courseId: newCourse.id };
+  } catch (err) {
+    await database.delete(course).where(eq(course.id, newCourse.id));
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------

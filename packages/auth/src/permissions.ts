@@ -16,7 +16,7 @@ const platformStatements = {
   feedback: ["submit", "list", "update"],
   report: ["submit", "list", "update"],
   organization: ["create", "read", "update", "delete"],
-  course: ["create", "list", "read", "update", "delete", "seed"],
+  course: ["create", "list", "read", "update", "delete", "seed", "generate"],
   audit: ["read"],
 } as const;
 
@@ -27,7 +27,7 @@ export const platformAdminRole = platformAc.newRole({
   feedback: ["submit", "list", "update"],
   report: ["submit", "list", "update"],
   organization: ["create", "read", "update", "delete"],
-  course: ["create", "list", "read", "update", "delete", "seed"],
+  course: ["create", "list", "read", "update", "delete", "seed", "generate"],
   audit: ["read"],
 });
 
@@ -35,7 +35,7 @@ export const contentCreatorRole = platformAc.newRole({
   ...platformBuiltInUserAc.statements,
   feedback: ["submit"],
   report: ["submit"],
-  course: ["create", "list", "read", "update", "delete"],
+  course: ["create", "list", "read", "update", "delete", "generate"],
 });
 
 export const publicStudentRole = platformAc.newRole({

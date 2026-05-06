@@ -1215,6 +1215,82 @@ export const createCourseSchema = z.object({
 });
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;
 
+// course-ai (platform admins + content creators — LLM → `insertGeneratedCourseTree`)
+const generatedCourseSlugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2, "Slug must be at least 2 characters")
+  .max(80, "Slug must be at most 80 characters")
+  .regex(slugPattern, "Slug must be lowercase letters, numbers, and hyphens")
+  .refine((value) => !value.includes("--"), "Slug cannot contain consecutive hyphens");
+
+const generatedLessonBlockSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("heading"),
+    level: z.number().int().min(2).max(3),
+    text: z.string().min(1).max(500),
+  }),
+  z.object({
+    kind: z.literal("paragraph"),
+    text: z.string().min(1).max(8000),
+  }),
+  z.object({
+    kind: z.literal("bullet"),
+    items: z.array(z.string().min(1).max(500)).min(1).max(20),
+  }),
+]);
+
+const generatedLessonQuestionSchema = z.object({
+  prompt: z.string().min(1).max(2000),
+  type: z.enum(["single", "multi"]),
+  options: z
+    .array(
+      z.object({
+        text: z.string().min(1).max(500),
+        isCorrect: z.boolean(),
+      }),
+    )
+    .min(2)
+    .max(8)
+    .refine(
+      (opts) => opts.some((o) => o.isCorrect),
+      "Each question must mark at least one correct option",
+    ),
+});
+
+export const generatedCourseLessonSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  type: z.enum(LESSON_TYPES),
+  blocks: z.array(generatedLessonBlockSchema).default([]),
+  questions: z.array(generatedLessonQuestionSchema).optional(),
+});
+
+export const generatedCourseSectionSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional(),
+  lessons: z.array(generatedCourseLessonSchema).min(1),
+});
+
+export const generatedCourseTreeSchema = z.object({
+  title: z.string().trim().min(1).max(160),
+  description: z.string().trim().max(2000).optional(),
+  slug: generatedCourseSlugSchema,
+  summaryBullets: z.array(z.string().min(1).max(400)).max(16).optional(),
+  sections: z.array(generatedCourseSectionSchema).min(1),
+});
+export type GeneratedCourseTreeOutput = z.infer<typeof generatedCourseTreeSchema>;
+
+export const generateCourseWithAIInputSchema = z.object({
+  topic: z.string().trim().min(8).max(500),
+  audience: z.string().trim().max(200).optional(),
+  difficulty: z.enum(DIFFICULTY_LEVELS).default("beginner"),
+  sectionCount: z.number().int().min(1).max(10).default(4),
+  lessonsPerSection: z.number().int().min(1).max(8).default(4),
+  includeQuizzes: z.boolean().default(true),
+});
+export type GenerateCourseWithAIInput = z.infer<typeof generateCourseWithAIInputSchema>;
+
 export const updateCourseSchema = z.object({
   courseId: z.string().min(1),
   patch: z

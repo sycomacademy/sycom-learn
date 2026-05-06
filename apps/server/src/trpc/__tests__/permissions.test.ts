@@ -53,6 +53,24 @@ describe("platform permission helpers", () => {
     expect(hasPlatformPermission(session, { user: ["set-role"] })).toBe(false);
   });
 
+  test("platform_admin can generate courses with AI", () => {
+    const session = makeSession("platform_admin");
+
+    expect(hasPlatformPermission(session, { course: ["generate"] })).toBe(true);
+  });
+
+  test("content_creator can generate courses with AI", () => {
+    const session = makeSession("content_creator");
+
+    expect(hasPlatformPermission(session, { course: ["generate"] })).toBe(true);
+  });
+
+  test("public_student cannot generate courses with AI", () => {
+    const session = makeSession("public_student");
+
+    expect(hasPlatformPermission(session, { course: ["generate"] })).toBe(false);
+  });
+
   test("assertPlatformPermission throws for forbidden action", () => {
     const session = makeSession("content_creator");
 

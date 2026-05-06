@@ -50,6 +50,7 @@ import { Route as DashboardSettingsSecurityRouteImport } from "./routes/dashboar
 import { Route as DashboardSettingsPreferencesRouteImport } from "./routes/dashboard/settings/preferences";
 import { Route as DashboardSettingsGeneralRouteImport } from "./routes/dashboard/settings/general";
 import { Route as DashboardOrgMembersRouteImport } from "./routes/dashboard/org/members";
+import { Route as DashboardCourseGenerateRouteImport } from "./routes/dashboard/course/generate";
 import { Route as DashboardCourseCategoriesRouteImport } from "./routes/dashboard/course/categories";
 import { Route as DashboardOrgUsersRouteRouteImport } from "./routes/dashboard/org/users/route";
 import { Route as DashboardOrgSupportRouteRouteImport } from "./routes/dashboard/org/support/route";
@@ -310,6 +311,11 @@ const DashboardOrgMembersRoute = DashboardOrgMembersRouteImport.update({
   id: "/members",
   path: "/members",
   getParentRoute: () => DashboardOrgRouteRoute,
+} as any);
+const DashboardCourseGenerateRoute = DashboardCourseGenerateRouteImport.update({
+  id: "/generate",
+  path: "/generate",
+  getParentRoute: () => DashboardCourseRouteRoute,
 } as any);
 const DashboardCourseCategoriesRoute = DashboardCourseCategoriesRouteImport.update({
   id: "/categories",
@@ -645,6 +651,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/org/support": typeof DashboardOrgSupportRouteRouteWithChildren;
   "/dashboard/org/users": typeof DashboardOrgUsersRouteRouteWithChildren;
   "/dashboard/course/categories": typeof DashboardCourseCategoriesRoute;
+  "/dashboard/course/generate": typeof DashboardCourseGenerateRoute;
   "/dashboard/org/members": typeof DashboardOrgMembersRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
@@ -724,6 +731,7 @@ export interface FileRoutesByTo {
   "/dashboard": typeof DashboardIndexRoute;
   "/onboarding": typeof OnboardingIndexRoute;
   "/dashboard/course/categories": typeof DashboardCourseCategoriesRoute;
+  "/dashboard/course/generate": typeof DashboardCourseGenerateRoute;
   "/dashboard/org/members": typeof DashboardOrgMembersRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
@@ -822,6 +830,7 @@ export interface FileRoutesById {
   "/dashboard/org/support": typeof DashboardOrgSupportRouteRouteWithChildren;
   "/dashboard/org/users": typeof DashboardOrgUsersRouteRouteWithChildren;
   "/dashboard/course/categories": typeof DashboardCourseCategoriesRoute;
+  "/dashboard/course/generate": typeof DashboardCourseGenerateRoute;
   "/dashboard/org/members": typeof DashboardOrgMembersRoute;
   "/dashboard/settings/general": typeof DashboardSettingsGeneralRoute;
   "/dashboard/settings/preferences": typeof DashboardSettingsPreferencesRoute;
@@ -922,6 +931,7 @@ export interface FileRouteTypes {
     | "/dashboard/org/support"
     | "/dashboard/org/users"
     | "/dashboard/course/categories"
+    | "/dashboard/course/generate"
     | "/dashboard/org/members"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
@@ -1001,6 +1011,7 @@ export interface FileRouteTypes {
     | "/dashboard"
     | "/onboarding"
     | "/dashboard/course/categories"
+    | "/dashboard/course/generate"
     | "/dashboard/org/members"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
@@ -1098,6 +1109,7 @@ export interface FileRouteTypes {
     | "/dashboard/org/support"
     | "/dashboard/org/users"
     | "/dashboard/course/categories"
+    | "/dashboard/course/generate"
     | "/dashboard/org/members"
     | "/dashboard/settings/general"
     | "/dashboard/settings/preferences"
@@ -1459,6 +1471,13 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard/org/members";
       preLoaderRoute: typeof DashboardOrgMembersRouteImport;
       parentRoute: typeof DashboardOrgRouteRoute;
+    };
+    "/dashboard/course/generate": {
+      id: "/dashboard/course/generate";
+      path: "/generate";
+      fullPath: "/dashboard/course/generate";
+      preLoaderRoute: typeof DashboardCourseGenerateRouteImport;
+      parentRoute: typeof DashboardCourseRouteRoute;
     };
     "/dashboard/course/categories": {
       id: "/dashboard/course/categories";
@@ -1967,12 +1986,14 @@ const DashboardCourseCourseIdRouteRouteWithChildren =
 interface DashboardCourseRouteRouteChildren {
   DashboardCourseCourseIdRouteRoute: typeof DashboardCourseCourseIdRouteRouteWithChildren;
   DashboardCourseCategoriesRoute: typeof DashboardCourseCategoriesRoute;
+  DashboardCourseGenerateRoute: typeof DashboardCourseGenerateRoute;
   DashboardCourseIndexRoute: typeof DashboardCourseIndexRoute;
 }
 
 const DashboardCourseRouteRouteChildren: DashboardCourseRouteRouteChildren = {
   DashboardCourseCourseIdRouteRoute: DashboardCourseCourseIdRouteRouteWithChildren,
   DashboardCourseCategoriesRoute: DashboardCourseCategoriesRoute,
+  DashboardCourseGenerateRoute: DashboardCourseGenerateRoute,
   DashboardCourseIndexRoute: DashboardCourseIndexRoute,
 };
 

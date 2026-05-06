@@ -3,7 +3,8 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@sycom/ui/componen
 import { Spinner } from "@sycom/ui/components/spinner";
 import { Tabs, TabsList, TabsTab } from "@sycom/ui/components/tabs";
 import { cn } from "@sycom/ui/lib/utils";
-import { LayoutGridIcon, ListIcon, Plus, RefreshCcw, Search } from "lucide-react";
+import { Link } from "@/components/layout/foresight-link";
+import { LayoutGridIcon, ListIcon, Plus, RefreshCcw, Search, SparklesIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { CreateCourseSheet } from "./create-course-sheet";
@@ -16,6 +17,7 @@ export type CoursesToolbarProps = {
   onRefresh?: () => void;
   view: CourseViewMode;
   onViewChange: (next: CourseViewMode) => void;
+  showGenerateWithAi?: boolean;
 };
 
 export function CoursesToolbar({
@@ -24,6 +26,7 @@ export function CoursesToolbar({
   onSearchChange,
   onViewChange,
   search,
+  showGenerateWithAi = false,
   view,
 }: CoursesToolbarProps): ReactNode {
   return (
@@ -57,6 +60,13 @@ export function CoursesToolbar({
           >
             <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
           </Button>
+
+          {showGenerateWithAi ? (
+            <Button render={<Link to="/dashboard/course/generate" />} variant="outline">
+              <SparklesIcon className="size-4" />
+              Generate with AI
+            </Button>
+          ) : null}
 
           <CreateCourseSheet
             trigger={

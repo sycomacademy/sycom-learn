@@ -25,6 +25,7 @@ import {
 import { CoursesToolbar } from "@/components/dashboard/course/courses-toolbar";
 import { DataTable } from "@/components/dashboard/data-table";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
+import { sessionQueryOptions } from "@/lib/auth/session";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/course/")({
@@ -62,6 +63,10 @@ function CoursesPage() {
 
   const queryInput = useMemo(() => getCoursesQueryInput(search), [search]);
   const query = useSuspenseQuery(trpc.course.list.queryOptions(queryInput));
+  const { data: session } = useSuspenseQuery(sessionQueryOptions());
+  const showGenerateWithAi =
+    session != null &&
+    (session.user.role === "platform_admin" || session.user.role === "content_creator");
   const isFetching = useIsFetching({ queryKey: trpc.course.list.queryKey() }) > 0;
   const tableState = useMemo(
     () => ({
@@ -151,6 +156,7 @@ function CoursesPage() {
           })
         }
         search={searchInput}
+        showGenerateWithAi={showGenerateWithAi}
         view={search.view}
       />
 

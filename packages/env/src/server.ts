@@ -31,6 +31,10 @@ export const env = createEnv({
       )
       .pipe(z.array(z.url())),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    /** Optional: enables platform course generation via AI SDK (`apps/server`). */
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    /** OpenAI chat model id for course generation (default: gpt-4o-mini). */
+    OPENAI_COURSE_MODEL: z.string().min(1).default("gpt-4o-mini"),
     DEBUG_PERFORMANCE: z
       .enum(["true", "false"])
       .default("false")
