@@ -6,6 +6,7 @@ import {
   enrollment,
   lessonAttempt,
   lessonProgress,
+  type EnrollmentAccessSource,
   type LessonProgressStatus,
 } from "../schema/enrollment";
 import { course, lesson, section, type LessonType } from "../schema/course";
@@ -83,7 +84,15 @@ function buildCertificateNumber() {
   return `SYC-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
-async function ensureEnrollment(database: Database, input: { courseId: string; userId: string }) {
+async function ensureEnrollment(
+  database: Database,
+  input: {
+    courseId: string;
+    userId: string;
+    accessSource?: EnrollmentAccessSource;
+    grantedByUserId?: string | null;
+  },
+) {
   const existing = await getEnrollmentForUserCourse(database, input);
   if (existing) {
     return existing;
@@ -98,6 +107,8 @@ async function ensureEnrollment(database: Database, input: { courseId: string; u
       status: "active",
       startedAt: timestamp,
       lastActivityAt: timestamp,
+      accessSource: input.accessSource ?? "free",
+      grantedByUserId: input.grantedByUserId ?? null,
     })
     .returning();
 
@@ -221,7 +232,12 @@ export async function getEnrollmentForUserCourse(
 
 export async function createEnrollment(
   database: Database,
-  input: { courseId: string; userId: string },
+  input: {
+    courseId: string;
+    userId: string;
+    accessSource?: EnrollmentAccessSource;
+    grantedByUserId?: string | null;
+  },
 ) {
   return ensureEnrollment(database, input);
 }
@@ -440,7 +456,7 @@ export async function getLearnerLessonAnswers(
 
 export type ExamIntegrityEventRow = { kind: string; at: string };
 
-function parseExamIntegrityEvents(value: unknown): ExamIntegrityEventRow[] {
+export function parseExamIntegrityEvents(value: unknown): ExamIntegrityEventRow[] {
   if (!Array.isArray(value)) return [];
   const out: ExamIntegrityEventRow[] = [];
   for (const item of value) {

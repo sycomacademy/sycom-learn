@@ -18,7 +18,8 @@ import {
 } from "@sycom/ui/components/sheet";
 import { Spinner } from "@sycom/ui/components/spinner";
 import { buildImageUrl } from "@sycom/ui/image/cdn";
-import { getInitials } from "@sycom/ui/lib/string";
+import { formatDate } from "@sycom/ui/lib/date";
+import { getInitials, snakeCaseToTitleCase } from "@sycom/ui/lib/string";
 
 import type {
   CourseAnalyticsLesson,
@@ -55,27 +56,78 @@ function LessonList({
   return (
     <ul className="space-y-2">
       {items.map((lesson) => (
-        <li
-          className="flex items-start justify-between gap-3 border px-3 py-2"
-          key={lesson.lessonId}
-        >
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{lesson.title}</p>
-            <p className="truncate text-xs text-muted-foreground">{lesson.sectionTitle}</p>
+        <li className="flex flex-col gap-2 border px-3 py-2" key={lesson.lessonId}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{lesson.title}</p>
+              <p className="truncate text-xs text-muted-foreground">{lesson.sectionTitle}</p>
+            </div>
+            <div className="shrink-0">
+              {showScore ? (
+                <ScorePill lesson={lesson} />
+              ) : lesson.status === "completed" ? (
+                <Badge variant="success">Completed</Badge>
+              ) : (
+                <Badge variant="secondary">Pending</Badge>
+              )}
+            </div>
           </div>
-          <div className="shrink-0">
-            {showScore ? (
-              <ScorePill lesson={lesson} />
-            ) : lesson.status === "completed" ? (
-              <Badge variant="success">Completed</Badge>
-            ) : (
-              <Badge variant="secondary">Pending</Badge>
-            )}
-          </div>
+          <ExamIntegrityBlock lesson={lesson} />
         </li>
       ))}
     </ul>
   );
+}
+
+function formatIntegrityKind(kind: string): string {
+  switch (kind) {
+    case "tab_hidden":
+      return "Tab or window hidden";
+    case "fullscreen_exit":
+      return "Exited fullscreen";
+    case "fullscreen_denied":
+      return "Fullscreen not granted";
+    default:
+      return snakeCaseToTitleCase(kind);
+  }
+}
+
+function ExamIntegrityBlock({ lesson }: { lesson: CourseAnalyticsLesson }) {
+  if (lesson.type !== "exam") return null;
+
+  const hasSubmittedAttempt = lesson.status === "completed" || lesson.bestScore != null;
+
+  if (lesson.integrityEvents && lesson.integrityEvents.length > 0) {
+    return (
+      <div className="border-t border-border pt-2">
+        <p className="mb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+          Exam integrity
+        </p>
+        <ul className="space-y-1 text-xs text-muted-foreground">
+          {lesson.integrityEvents.map((ev, i) => (
+            <li key={`${ev.at}-${i}-${ev.kind}`}>
+              <span className="text-foreground">{formatIntegrityKind(ev.kind)}</span>
+              {" · "}
+              {formatDate(ev.at)}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  if (hasSubmittedAttempt) {
+    return (
+      <div className="border-t border-border pt-2">
+        <p className="mb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+          Exam integrity
+        </p>
+        <p className="text-xs text-muted-foreground">No flags on latest submitted attempt.</p>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {

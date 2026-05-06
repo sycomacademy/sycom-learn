@@ -2,6 +2,7 @@ import type { CourseDetail } from "@sycom/db/queries/index";
 import { TRPCError } from "@trpc/server";
 
 import type { Context } from "../context";
+import type { EnrollmentAccessSource } from "@sycom/db/schema/enrollment";
 
 function requireSession(session: Context["session"]) {
   if (!session) {
@@ -19,6 +20,36 @@ function isAssignedContentCreator(
     detail.createdBy === userId ||
     detail.instructors.some((instructor) => instructor.userId === userId)
   );
+}
+
+export type CatalogEnrollClassification =
+  | { kind: "requires_payment" }
+  | { kind: "allowed"; accessSource: EnrollmentAccessSource };
+
+/** How `catalog.enroll` / platform `enrollment.enroll` should record access after {@link assertCanReadCatalogCourse} or {@link assertCanReadPublicCourse}. */
+export function classifyCatalogEnrollAccess(
+  session: Context["session"],
+  detail: Pick<CourseDetail, "organizationId" | "createdBy" | "instructors">,
+): CatalogEnrollClassification {
+  const currentSession = requireSession(session);
+
+  if (detail.organizationId !== null) {
+    return { kind: "allowed", accessSource: "org_grant" };
+  }
+
+  switch (currentSession.user.role) {
+    case "platform_admin":
+      return { kind: "allowed", accessSource: "free" };
+    case "content_creator":
+      if (isAssignedContentCreator(detail, currentSession.user.id)) {
+        return { kind: "allowed", accessSource: "free" };
+      }
+      return { kind: "requires_payment" };
+    case "public_student":
+      return { kind: "requires_payment" };
+    default:
+      return { kind: "requires_payment" };
+  }
 }
 
 export function canReadPublicCourse(

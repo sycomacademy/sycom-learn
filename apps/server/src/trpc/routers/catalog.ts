@@ -13,12 +13,16 @@ import { and, eq } from "drizzle-orm";
 
 import { renderIssuedCertificatePdfBuffer } from "../../lib/certificate-pdf-issue";
 import { estimateLessonMinutes } from "../lib/duration";
-import { assertCanReadCatalogCourse } from "../lib/public-course-access";
+import {
+  assertCanReadCatalogCourse,
+  classifyCatalogEnrollAccess,
+} from "../lib/public-course-access";
 import { protectedProcedure, router } from "../init";
 import { platformPermissionMiddleware } from "../middleware/permissions";
 import {
   enrollInCatalogCourseSchema,
   getCatalogCourseSchema,
+  grantCatalogAccessSchema,
   listCatalogCoursesSchema,
 } from "../schemas";
 
@@ -137,9 +141,55 @@ export const catalogRouter = router({
 
       assertCanReadCatalogCourse(ctx.session, catalogAccessDetailPick(raw));
 
+      const classification = classifyCatalogEnrollAccess(ctx.session, catalogAccessDetailPick(raw));
+      if (classification.kind === "requires_payment") {
+        throw new TRPCError({ code: "PAYMENT_REQUIRED", message: "Payment required" });
+      }
+
       return createEnrollment(ctx.db, {
         courseId: input.courseId,
         userId: ctx.session.user.id,
+        accessSource: classification.accessSource,
+      });
+    }),
+
+  grantAccessAsImpersonator: protectedProcedure
+    .use(platformPermissionMiddleware({ course: ["read"] }))
+    .input(grantCatalogAccessSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session.session.impersonatedBy) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Impersonation required" });
+      }
+
+      const raw = await getCatalogCourseDetail(ctx.db, {
+        courseId: input.courseId,
+        userId: ctx.session.user.id,
+      });
+      if (!raw) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+      }
+
+      if (raw.organizationId !== null) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only platform catalog courses support this grant",
+        });
+      }
+
+      assertCanReadCatalogCourse(ctx.session, catalogAccessDetailPick(raw));
+
+      if (ctx.session.user.role !== "public_student") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Grant is only for public student accounts",
+        });
+      }
+
+      return createEnrollment(ctx.db, {
+        courseId: input.courseId,
+        userId: ctx.session.user.id,
+        accessSource: "admin_grant",
+        grantedByUserId: ctx.session.session.impersonatedBy,
       });
     }),
 

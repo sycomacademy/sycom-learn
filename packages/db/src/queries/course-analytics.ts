@@ -3,7 +3,13 @@ import { and, asc, count, desc, eq, ilike, inArray, or, type SQL } from "drizzle
 import type { Database } from "..";
 import { user } from "../schema/auth";
 import { lesson, section, type LessonType } from "../schema/course";
-import { enrollment, lessonProgress, type LessonProgressStatus } from "../schema/enrollment";
+import {
+  enrollment,
+  lessonAttempt,
+  lessonProgress,
+  type LessonProgressStatus,
+} from "../schema/enrollment";
+import { type ExamIntegrityEventRow, parseExamIntegrityEvents } from "./enrollment";
 import { countQuestionBlocksInContent } from "./lesson";
 
 export type CourseAnalyticsOverview = {
@@ -33,6 +39,7 @@ export type ListCourseAnalyticsStudentsResult = {
 
 export type CourseAnalyticsLessonResult = {
   bestScore: number | null;
+  integrityEvents: ExamIntegrityEventRow[] | null;
   lessonId: string;
   maxScore: number;
   sectionTitle: string;
@@ -280,6 +287,7 @@ export async function getCourseAnalyticsStudentDetail(
     const progress = progressByLesson.get(row.lessonId);
     const result: CourseAnalyticsLessonResult = {
       bestScore: progress?.bestScore ?? null,
+      integrityEvents: null,
       lessonId: row.lessonId,
       maxScore:
         row.type === "quiz" || row.type === "exam" ? countQuestionBlocksInContent(row.content) : 0,
@@ -291,6 +299,43 @@ export async function getCourseAnalyticsStudentDetail(
     if (row.type === "article") articles.push(result);
     else if (row.type === "quiz") quizzes.push(result);
     else if (row.type === "exam") exams.push(result);
+  }
+
+  const examLessonIds = exams.map((e) => e.lessonId);
+  if (examLessonIds.length > 0) {
+    const attemptRows = await database
+      .select({
+        attemptNumber: lessonAttempt.attemptNumber,
+        integrityEvents: lessonAttempt.integrityEvents,
+        lessonId: lessonAttempt.lessonId,
+      })
+      .from(lessonAttempt)
+      .where(
+        and(
+          eq(lessonAttempt.enrollmentId, input.enrollmentId),
+          inArray(lessonAttempt.lessonId, examLessonIds),
+        ),
+      );
+
+    const latestByLesson = new Map<
+      string,
+      { attemptNumber: number; events: ExamIntegrityEventRow[] }
+    >();
+    for (const row of attemptRows) {
+      const parsed = parseExamIntegrityEvents(row.integrityEvents);
+      const prev = latestByLesson.get(row.lessonId);
+      if (!prev || row.attemptNumber > prev.attemptNumber) {
+        latestByLesson.set(row.lessonId, {
+          attemptNumber: row.attemptNumber,
+          events: parsed,
+        });
+      }
+    }
+
+    for (const exam of exams) {
+      const entry = latestByLesson.get(exam.lessonId);
+      exam.integrityEvents = entry && entry.events.length > 0 ? entry.events : null;
+    }
   }
 
   return {

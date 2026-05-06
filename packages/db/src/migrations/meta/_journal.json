@@ -127,6 +127,13 @@
       "when": 1778060979240,
       "tag": "0017_melted_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1778077344654,
+      "tag": "0018_colossal_dust",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import {
   index,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -20,6 +21,14 @@ export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];
 export const LESSON_PROGRESS_STATUSES = ["not_started", "in_progress", "completed"] as const;
 export type LessonProgressStatus = (typeof LESSON_PROGRESS_STATUSES)[number];
 
+export const enrollmentAccessSourceEnum = pgEnum("enrollment_access_source", [
+  "paid",
+  "org_grant",
+  "admin_grant",
+  "free",
+]);
+export type EnrollmentAccessSource = (typeof enrollmentAccessSourceEnum.enumValues)[number];
+
 export const enrollment = pgTable(
   "enrollment",
   {
@@ -32,6 +41,8 @@ export const enrollment = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    accessSource: enrollmentAccessSourceEnum("access_source").default("free").notNull(),
+    grantedByUserId: text("granted_by_user_id").references(() => user.id, { onDelete: "set null" }),
     status: text("status", { enum: ENROLLMENT_STATUSES }).default("active").notNull(),
     startedAt: timestamp("started_at"),
     completedAt: timestamp("completed_at"),

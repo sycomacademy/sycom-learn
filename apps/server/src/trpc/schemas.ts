@@ -903,6 +903,11 @@ export const enrollInCatalogCourseSchema = z.object({
 });
 export type EnrollInCatalogCourseInput = z.infer<typeof enrollInCatalogCourseSchema>;
 
+export const grantCatalogAccessSchema = z.object({
+  courseId: z.string().min(1),
+});
+export type GrantCatalogAccessInput = z.infer<typeof grantCatalogAccessSchema>;
+
 // learn (course player)
 export const learnGetPlayerContextSchema = z.object({
   courseId: z.string().min(1),

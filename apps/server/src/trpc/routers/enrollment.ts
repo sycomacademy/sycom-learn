@@ -15,7 +15,11 @@ import { TRPCError } from "@trpc/server";
 
 import type { Context } from "../context";
 import { protectedProcedure, router } from "../init";
-import { assertCanReadCatalogCourse, assertCanReadPublicCourse } from "../lib/public-course-access";
+import {
+  assertCanReadCatalogCourse,
+  assertCanReadPublicCourse,
+  classifyCatalogEnrollAccess,
+} from "../lib/public-course-access";
 import { assertPlatformOrOrgCourseWrite } from "../lib/org-course-access";
 import {
   enrollInCourseInputSchema,
@@ -110,9 +114,19 @@ export const enrollmentRouter = router({
     .mutation(async ({ ctx, input }) => {
       const detail = await loadPlatformCourse(ctx.db, input.courseId);
       assertCanReadPublicCourse(ctx.session, detail);
+      const classification = classifyCatalogEnrollAccess(ctx.session, {
+        organizationId: detail.organizationId,
+        createdBy: detail.createdBy,
+        instructors: detail.instructors,
+      });
+      if (classification.kind === "requires_payment") {
+        throw new TRPCError({ code: "PAYMENT_REQUIRED", message: "Payment required" });
+      }
+
       return await createEnrollment(ctx.db, {
         courseId: input.courseId,
         userId: ctx.session.user.id,
+        accessSource: classification.accessSource,
       });
     }),
 

@@ -338,6 +338,7 @@ export async function addMembersToCohort(
         cohortCourseRows.map((cohortCourseRow) => ({
           courseId: cohortCourseRow.courseId,
           userId: student.userId,
+          accessSource: "org_grant" as const,
           status: "active" as const,
           startedAt: timestamp,
           lastActivityAt: timestamp,
@@ -545,6 +546,7 @@ export async function addCoursesToCohort(
         orgCourseRows.map((courseRow) => ({
           courseId: courseRow.courseId,
           userId: student.userId,
+          accessSource: "org_grant" as const,
           status: "active" as const,
           startedAt: timestamp,
           lastActivityAt: timestamp,

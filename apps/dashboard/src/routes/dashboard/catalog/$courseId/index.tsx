@@ -14,11 +14,14 @@ import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@sycom/ui/components/button";
 import { FadeIn } from "@/components/layout/motion-fade";
 
-export const Route = createFileRoute("/dashboard/catalog/$courseId")({
+export const Route = createFileRoute("/dashboard/catalog/$courseId/")({
   loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(
-      context.trpc.catalog.get.queryOptions({ courseId: params.courseId }),
-    );
+    await Promise.all([
+      context.queryClient.ensureQueryData(
+        context.trpc.catalog.get.queryOptions({ courseId: params.courseId }),
+      ),
+      context.queryClient.ensureQueryData(context.trpc.profile.get.queryOptions()),
+    ]);
   },
   component: CatalogCourseDetailPage,
 });

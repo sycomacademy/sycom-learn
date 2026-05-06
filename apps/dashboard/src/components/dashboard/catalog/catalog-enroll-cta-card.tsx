@@ -1,6 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { BookOpenIcon } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { Button } from "@sycom/ui/components/button";
@@ -25,11 +25,23 @@ export function CatalogEnrollCtaCard({ courseId, detail }: CatalogEnrollCtaCardP
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { data: profile } = useSuspenseQuery(trpc.profile.get.queryOptions());
   const [pending, setPending] = useState(false);
 
   const lessonCount = detail.sections.reduce((n, s) => n + s.lessons.length, 0);
+  const isPlatformCourse = detail.organizationId == null;
+  const isPublicStudent = profile.user.role === "public_student";
+  const needsPaywall = isPlatformCourse && isPublicStudent;
+
+  const primaryCtaLabel = needsPaywall ? "Get access" : "Enroll in course";
 
   const onEnroll = async () => {
+    if (needsPaywall) {
+      await navigate({ to: "/dashboard/catalog/$courseId/pay", params: { courseId } });
+      return;
+    }
+
     setPending(true);
     try {
       await trpcClient.catalog.enroll.mutate({ courseId });
@@ -64,7 +76,9 @@ export function CatalogEnrollCtaCard({ courseId, detail }: CatalogEnrollCtaCardP
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Ready to start?</CardTitle>
         <CardDescription>
-          Review the details, then jump into the course when you are ready.
+          {needsPaywall
+            ? "Purchase access to unlock the full course and start learning."
+            : "Review the details, then jump into the course when you are ready."}
         </CardDescription>
       </CardHeader>
       <CardContent className="pb-4">
@@ -79,7 +93,7 @@ export function CatalogEnrollCtaCard({ courseId, detail }: CatalogEnrollCtaCardP
             onClick={() => void onEnroll()}
             type="button"
           >
-            Enroll in course
+            {primaryCtaLabel}
           </Button>
         )}
       </CardContent>
