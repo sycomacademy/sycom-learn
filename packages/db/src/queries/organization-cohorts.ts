@@ -15,6 +15,7 @@ import {
 import type { Database } from "..";
 import { cohort, cohort_member, member, user } from "../schema/auth";
 import { cohortCourse, course } from "../schema/course";
+import { enrollment } from "../schema/enrollment";
 
 export type ListOrganizationCohortsFilter = {
   organizationId: string;
@@ -282,7 +283,7 @@ export async function listAvailableOrgMembersForCohort(
 
 export async function addMembersToCohort(
   database: Database,
-  input: { cohortId: string; userIds: string[] },
+  input: { organizationId: string; cohortId: string; userIds: string[] },
 ): Promise<void> {
   if (input.userIds.length === 0) {
     return;
@@ -298,11 +299,57 @@ export async function addMembersToCohort(
       })),
     )
     .onConflictDoNothing({ target: [cohort_member.teamId, cohort_member.userId] });
+
+  const studentRows = await database
+    .select({ userId: member.userId })
+    .from(member)
+    .where(
+      and(
+        eq(member.organizationId, input.organizationId),
+        eq(member.role, "student"),
+        inArray(member.userId, input.userIds),
+      ),
+    );
+
+  if (studentRows.length === 0) {
+    return;
+  }
+
+  const cohortCourseRows = await database
+    .select({ courseId: cohortCourse.courseId })
+    .from(cohortCourse)
+    .innerJoin(course, eq(course.id, cohortCourse.courseId))
+    .where(
+      and(
+        eq(cohortCourse.cohortId, input.cohortId),
+        eq(course.organizationId, input.organizationId),
+      ),
+    );
+
+  if (cohortCourseRows.length === 0) {
+    return;
+  }
+
+  const timestamp = new Date();
+  await database
+    .insert(enrollment)
+    .values(
+      studentRows.flatMap((student) =>
+        cohortCourseRows.map((cohortCourseRow) => ({
+          courseId: cohortCourseRow.courseId,
+          userId: student.userId,
+          status: "active" as const,
+          startedAt: timestamp,
+          lastActivityAt: timestamp,
+        })),
+      ),
+    )
+    .onConflictDoNothing({ target: [enrollment.courseId, enrollment.userId] });
 }
 
 export async function removeMembersFromCohort(
   database: Database,
-  input: { cohortId: string; userIds: string[] },
+  input: { organizationId: string; cohortId: string; userIds: string[] },
 ): Promise<void> {
   if (input.userIds.length === 0) {
     return;
@@ -313,6 +360,53 @@ export async function removeMembersFromCohort(
     .where(
       and(eq(cohort_member.teamId, input.cohortId), inArray(cohort_member.userId, input.userIds)),
     );
+
+  const studentRows = await database
+    .select({ userId: member.userId })
+    .from(member)
+    .where(
+      and(
+        eq(member.organizationId, input.organizationId),
+        eq(member.role, "student"),
+        inArray(member.userId, input.userIds),
+      ),
+    );
+  if (studentRows.length === 0) {
+    return;
+  }
+
+  const cohortCourseRows = await database
+    .select({ courseId: cohortCourse.courseId })
+    .from(cohortCourse)
+    .innerJoin(course, eq(course.id, cohortCourse.courseId))
+    .where(
+      and(
+        eq(cohortCourse.cohortId, input.cohortId),
+        eq(course.organizationId, input.organizationId),
+      ),
+    );
+  if (cohortCourseRows.length === 0) {
+    return;
+  }
+
+  const studentUserIds = studentRows.map((row) => row.userId);
+  const affectedCourseIds = cohortCourseRows.map((row) => row.courseId);
+
+  await database.delete(enrollment).where(
+    and(
+      inArray(enrollment.userId, studentUserIds),
+      inArray(enrollment.courseId, affectedCourseIds),
+      sql`not exists (
+          select 1
+          from ${cohort_member} cm
+          inner join ${cohortCourse} cc on cc.cohort_id = cm.team_id
+          inner join ${cohort} c on c.id = cm.team_id
+          where cm.user_id = ${enrollment.userId}
+            and cc.course_id = ${enrollment.courseId}
+            and c.organization_id = ${input.organizationId}
+        )`,
+    ),
+  );
 }
 
 export async function listCohortCourses(
@@ -399,7 +493,7 @@ export async function listAvailableOrgCoursesForCohort(
 
 export async function addCoursesToCohort(
   database: Database,
-  input: { cohortId: string; courseIds: string[] },
+  input: { organizationId: string; cohortId: string; courseIds: string[] },
 ): Promise<void> {
   if (input.courseIds.length === 0) {
     return;
@@ -415,11 +509,54 @@ export async function addCoursesToCohort(
       })),
     )
     .onConflictDoNothing({ target: [cohortCourse.cohortId, cohortCourse.courseId] });
+
+  const studentRows = await database
+    .select({ userId: cohort_member.userId })
+    .from(cohort_member)
+    .innerJoin(member, eq(member.userId, cohort_member.userId))
+    .where(
+      and(
+        eq(cohort_member.teamId, input.cohortId),
+        eq(member.organizationId, input.organizationId),
+        eq(member.role, "student"),
+      ),
+    );
+
+  if (studentRows.length === 0) {
+    return;
+  }
+
+  const orgCourseRows = await database
+    .select({ courseId: course.id })
+    .from(course)
+    .where(
+      and(eq(course.organizationId, input.organizationId), inArray(course.id, input.courseIds)),
+    );
+
+  if (orgCourseRows.length === 0) {
+    return;
+  }
+
+  const timestamp = new Date();
+  await database
+    .insert(enrollment)
+    .values(
+      studentRows.flatMap((student) =>
+        orgCourseRows.map((courseRow) => ({
+          courseId: courseRow.courseId,
+          userId: student.userId,
+          status: "active" as const,
+          startedAt: timestamp,
+          lastActivityAt: timestamp,
+        })),
+      ),
+    )
+    .onConflictDoNothing({ target: [enrollment.courseId, enrollment.userId] });
 }
 
 export async function removeCoursesFromCohort(
   database: Database,
-  input: { cohortId: string; courseIds: string[] },
+  input: { organizationId: string; cohortId: string; courseIds: string[] },
 ): Promise<void> {
   if (input.courseIds.length === 0) {
     return;
@@ -433,4 +570,48 @@ export async function removeCoursesFromCohort(
         inArray(cohortCourse.courseId, input.courseIds),
       ),
     );
+
+  const cohortStudentRows = await database
+    .select({ userId: cohort_member.userId })
+    .from(cohort_member)
+    .innerJoin(member, eq(member.userId, cohort_member.userId))
+    .where(
+      and(
+        eq(cohort_member.teamId, input.cohortId),
+        eq(member.organizationId, input.organizationId),
+        eq(member.role, "student"),
+      ),
+    );
+  if (cohortStudentRows.length === 0) {
+    return;
+  }
+
+  const orgCourseRows = await database
+    .select({ courseId: course.id })
+    .from(course)
+    .where(
+      and(eq(course.organizationId, input.organizationId), inArray(course.id, input.courseIds)),
+    );
+  if (orgCourseRows.length === 0) {
+    return;
+  }
+
+  const studentUserIds = cohortStudentRows.map((row) => row.userId);
+  const removedCourseIds = orgCourseRows.map((row) => row.courseId);
+
+  await database.delete(enrollment).where(
+    and(
+      inArray(enrollment.userId, studentUserIds),
+      inArray(enrollment.courseId, removedCourseIds),
+      sql`not exists (
+          select 1
+          from ${cohort_member} cm
+          inner join ${cohortCourse} cc on cc.cohort_id = cm.team_id
+          inner join ${cohort} c on c.id = cm.team_id
+          where cm.user_id = ${enrollment.userId}
+            and cc.course_id = ${enrollment.courseId}
+            and c.organization_id = ${input.organizationId}
+        )`,
+    ),
+  );
 }

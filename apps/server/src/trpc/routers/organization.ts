@@ -363,6 +363,7 @@ export const organizationRouter = router({
       }
 
       await addMembersToCohort(ctx.db, {
+        organizationId,
         cohortId: input.cohortId,
         userIds: input.userIds,
       });
@@ -386,6 +387,7 @@ export const organizationRouter = router({
       }
 
       await removeMembersFromCohort(ctx.db, {
+        organizationId,
         cohortId: input.cohortId,
         userIds: input.userIds,
       });
@@ -443,6 +445,7 @@ export const organizationRouter = router({
       }
 
       await addCoursesToCohort(ctx.db, {
+        organizationId,
         cohortId: input.cohortId,
         courseIds: input.courseIds,
       });
@@ -466,6 +469,7 @@ export const organizationRouter = router({
       }
 
       await removeCoursesFromCohort(ctx.db, {
+        organizationId,
         cohortId: input.cohortId,
         courseIds: input.courseIds,
       });
