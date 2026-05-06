@@ -14,11 +14,11 @@ param serverIdentityName = 'sycom-prod-server-id'
 param dashboardAppName = 'sycom-prod-dashboard'
 param serverAppName = 'sycom-prod-server'
 
-param dashboardUrl = 'https://staging-app.example.com'
-param serverUrl = 'https://staging-api.example.com'
-param websiteUrl = 'https://staging-www.example.com'
+param dashboardUrl = 'https://sycom-prod-dashboard.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
+param serverUrl = 'https://sycom-prod-server.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
+param websiteUrl = 'https://sycom-prod-dashboard.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
 param corsOrigins = [
-  'https://staging-app.example.com'
+  'https://sycom-prod-dashboard.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
 ]
 
 param debugPerformance = 'false'
