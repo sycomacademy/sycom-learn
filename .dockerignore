@@ -11,3 +11,5 @@ node_modules
 apps/*/.env*
 packages/*/.env*
 *.log
+!apps/dashboard/.output
+!apps/dashboard/.output/**
