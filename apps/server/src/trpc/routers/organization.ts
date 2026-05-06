@@ -2,14 +2,18 @@ import type { Database } from "@sycom/db";
 import { auth } from "@sycom/auth";
 import { sendOrgMemberInviteEmail } from "@sycom/auth/config";
 import {
+  createOrganizationCohort,
+  deleteOrganizationCohort,
   deleteOrganization,
   findOrganizationMembershipByEmail,
   findPendingOrganizationInvitationForEmail,
+  getOrganizationCohortById,
   getMemberRole,
   getOrganizationById,
   getOrganizationMemberById,
   getOrganizationWorkspaceContextForMember,
   insertOrganizationMemberInviteRow,
+  listOrganizationCohorts,
   listOrganizationInvitations,
   listOrganizationMembers,
   listOrganizationMembershipsForUser,
@@ -27,8 +31,12 @@ import { orgAdminProcedure, protectedProcedure, router } from "../init";
 import {
   bulkInviteOrgMembersOutputSchema,
   bulkInviteOrgMembersSchema,
+  createOrganizationCohortSchema,
+  deleteOrganizationCohortSchema,
+  getOrganizationCohortSchema,
   getOrgMemberSchema,
   inviteOrgMemberSchema,
+  listOrganizationCohortsSchema,
   listActiveOrgInvitationsSchema,
   listOrgMembersSchema,
   organizationMembershipsOutputSchema,
@@ -38,6 +46,28 @@ import {
 } from "../schemas";
 
 const ORG_MEMBER_INVITE_TTL_MS = 24 * 60 * 60 * 1000;
+const ORG_COHORT_READ_ROLES = new Set(["owner", "admin", "teacher"]);
+const ORG_COHORT_WRITE_ROLES = new Set(["owner", "admin"]);
+
+async function getOrganizationRoleOrThrow(ctx: {
+  db: Database;
+  session: { user: { id: string }; session: { activeOrganizationId?: string | null } };
+}) {
+  const organizationId = ctx.session.session.activeOrganizationId;
+  if (!organizationId) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" });
+  }
+
+  const role = await getMemberRole(ctx.db, {
+    organizationId,
+    userId: ctx.session.user.id,
+  });
+  if (!role) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Not a member of this organization" });
+  }
+
+  return { organizationId, role };
+}
 
 function buildOrgMemberInviteUrl(token: string) {
   const dashboardUrl = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
@@ -188,6 +218,86 @@ export const organizationRouter = router({
       }
 
       return { ok: true as const };
+    }),
+
+  listCohorts: protectedProcedure
+    .input(listOrganizationCohortsSchema)
+    .query(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_READ_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      return await listOrganizationCohorts(ctx.db, {
+        ...input,
+        organizationId,
+      });
+    }),
+
+  getCohort: protectedProcedure.input(getOrganizationCohortSchema).query(async ({ ctx, input }) => {
+    const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+    if (!ORG_COHORT_READ_ROLES.has(role)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+    }
+
+    const row = await getOrganizationCohortById(ctx.db, {
+      organizationId,
+      cohortId: input.cohortId,
+    });
+
+    if (!row) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Cohort not found" });
+    }
+
+    return row;
+  }),
+
+  deleteCohort: protectedProcedure
+    .input(deleteOrganizationCohortSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_WRITE_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      const result = await deleteOrganizationCohort(ctx.db, {
+        organizationId,
+        cohortId: input.cohortId,
+      });
+      if (!result.deleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Cohort not found" });
+      }
+
+      return { success: true as const };
+    }),
+
+  createCohort: protectedProcedure
+    .input(createOrganizationCohortSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_WRITE_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      try {
+        return await createOrganizationCohort(ctx.db, {
+          organizationId,
+          name: input.name,
+        });
+      } catch (error) {
+        const errorCode =
+          typeof error === "object" && error !== null && "code" in error
+            ? String((error as { code?: string }).code)
+            : null;
+        if (errorCode === "23505") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "A cohort with that name already exists.",
+          });
+        }
+
+        throw error;
+      }
     }),
 
   listMembers: orgAdminProcedure.input(listOrgMembersSchema).query(async ({ ctx, input }) => {

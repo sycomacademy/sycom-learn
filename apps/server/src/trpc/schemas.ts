@@ -606,6 +606,30 @@ export const updateOrganizationBrandingSchema = z
   });
 export type UpdateOrganizationBrandingInput = z.infer<typeof updateOrganizationBrandingSchema>;
 
+export const listOrganizationCohortsSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+  sortBy: z.enum(["name", "createdAt"]).default("name"),
+  sortDirection: z.enum(["asc", "desc"]).default("asc"),
+});
+export type ListOrganizationCohortsInput = z.infer<typeof listOrganizationCohortsSchema>;
+
+export const getOrganizationCohortSchema = z.object({
+  cohortId: z.string().min(1),
+});
+export type GetOrganizationCohortInput = z.infer<typeof getOrganizationCohortSchema>;
+
+export const deleteOrganizationCohortSchema = z.object({
+  cohortId: z.string().min(1),
+});
+export type DeleteOrganizationCohortInput = z.infer<typeof deleteOrganizationCohortSchema>;
+
+export const createOrganizationCohortSchema = z.object({
+  name: z.string().trim().min(1, "Cohort name is required").max(120),
+});
+export type CreateOrganizationCohortInput = z.infer<typeof createOrganizationCohortSchema>;
+
 // onboarding
 export const onboardingDefaultNextPathSchema = z
   .union([z.literal("/onboarding"), z.literal("/onboarding/organization")])

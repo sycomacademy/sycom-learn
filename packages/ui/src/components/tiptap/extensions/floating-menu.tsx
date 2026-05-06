@@ -483,6 +483,7 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
                     ref={(element) => {
                       itemRefs.current[item.flatIndex] = element;
                     }}
+                    tabIndex={item.flatIndex === selectedIndex ? 0 : -1}
                   >
                     <div
                       className={cn(

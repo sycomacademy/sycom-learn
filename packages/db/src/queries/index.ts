@@ -11,6 +11,7 @@ export * from "./feedback";
 export * from "./health";
 export * from "./lesson";
 export * from "./organization";
+export * from "./organization-cohorts";
 export * from "./organization-invitations";
 export * from "./organization-members";
 export * from "./platform-invitations";

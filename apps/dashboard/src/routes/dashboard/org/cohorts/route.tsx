@@ -1,12 +1,10 @@
 "use client";
 
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 
+import { CollapseFade } from "@/components/layout/motion-fade";
 import { SecondaryMenu } from "@/components/dashboard/secondary-menu";
-import type { SecondaryMenuItem } from "@/components/dashboard/secondary-menu";
 import { redirectIfForbiddenOrgRoles } from "@/lib/auth/org-route-role-access";
-import type { TRoutes } from "@/router";
-import { cn } from "@sycom/ui/lib/utils";
 
 export const Route = createFileRoute("/dashboard/org/cohorts")({
   beforeLoad: async ({ context }) => {
@@ -21,23 +19,29 @@ export const Route = createFileRoute("/dashboard/org/cohorts")({
   component: OrgCohortsSectionLayout,
 });
 
-const cohortsSectionPaths = {
-  base: "/dashboard/org/cohorts" satisfies TRoutes,
-  items: [
-    { path: "/dashboard/org/cohorts", label: "Overview" },
-    { path: "/dashboard/org/cohorts/roster", label: "Roster" },
-  ],
-} satisfies { base: TRoutes; items: SecondaryMenuItem[] };
+function useShowCohortsSecondaryMenu(): boolean {
+  return useRouterState({
+    select: (state) => {
+      const p = state.location.pathname.replace(/\/+$/, "") || "/";
+      return p === "/dashboard/org/cohorts";
+    },
+  });
+}
 
 function OrgCohortsSectionLayout() {
+  const showSecondaryMenu = useShowCohortsSecondaryMenu();
+
   return (
-    <div className={cn("mx-auto w-full max-w-6xl")}>
-      <SecondaryMenu
-        base={cohortsSectionPaths.base}
-        items={cohortsSectionPaths.items}
-        label="Cohorts"
-      />
-      <section className="mt-6">
+    <div className="mb-10 max-w-6xl md:ml-10">
+      <CollapseFade show={showSecondaryMenu}>
+        <SecondaryMenu
+          base="/dashboard/org/cohorts"
+          items={[{ path: "/dashboard/org/cohorts", label: "Cohorts" }]}
+          label="Cohorts"
+        />
+      </CollapseFade>
+
+      <section>
         <Outlet />
       </section>
     </div>

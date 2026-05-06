@@ -91,6 +91,7 @@ function SecuritySessionsActive() {
   } = useUser();
   const listSessionsQueryOptions = trpc.profile.listSessions.queryOptions();
   const { data: sessions } = useSuspenseQuery(listSessionsQueryOptions);
+  const typedSessions = sessions as ActiveSession[];
   const revokeSession = useMutation({
     ...trpc.profile.revokeSession.mutationOptions({
       onMutate: async ({ token }) => {
@@ -98,7 +99,7 @@ function SecuritySessionsActive() {
 
         const previousSessions = queryClient.getQueryData(listSessionsQueryOptions.queryKey);
 
-        queryClient.setQueryData(listSessionsQueryOptions.queryKey, (current) =>
+        queryClient.setQueryData<ActiveSession[]>(listSessionsQueryOptions.queryKey, (current) =>
           (current ?? []).filter((activeSession) => activeSession.token !== token),
         );
 
@@ -129,12 +130,12 @@ function SecuritySessionsActive() {
         </CardDescription>
       </CardHeader>
       <CardPanel className="flex flex-col gap-2">
-        {sessions.length === 0 ? (
+        {typedSessions.length === 0 ? (
           <p className="border px-3 py-2.5 text-sm text-muted-foreground">
             No active sessions found.
           </p>
         ) : (
-          sessions.map((activeSession) => {
+          typedSessions.map((activeSession) => {
             const DeviceIcon = isMobileAgent(activeSession.userAgent) ? SmartphoneIcon : LaptopIcon;
             const isCurrentSession = session?.token === activeSession.token;
             const isPending =
@@ -190,12 +191,25 @@ const changePasswordSchema = z
   );
 
 type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+type ActiveSession = {
+  token: string;
+  userAgent: string | null;
+};
+type ProviderAccount = {
+  providerId: string;
+};
+type PasskeyCredential = {
+  id: string;
+  name: string | null;
+  createdAt: Date;
+};
 
 function SecurityChangePassword() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: accounts } = useSuspenseQuery(trpc.profile.listAccounts.queryOptions());
-  const hasPasswordAccount = accounts.some((account) => account.providerId === "credential");
+  const typedAccounts = accounts as ProviderAccount[];
+  const hasPasswordAccount = typedAccounts.some((account) => account.providerId === "credential");
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -381,6 +395,7 @@ function SecurityPasskeys() {
   const queryClient = useQueryClient();
   const listPasskeysQueryOptions = trpc.profile.listPasskeys.queryOptions();
   const { data: passkeys } = useSuspenseQuery(listPasskeysQueryOptions);
+  const typedPasskeys = passkeys as PasskeyCredential[];
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
 
@@ -456,12 +471,12 @@ function SecurityPasskeys() {
           </CardDescription>
         </CardHeader>
         <CardPanel className="space-y-3 py-0">
-          {passkeys.length === 0 ? (
+          {typedPasskeys.length === 0 ? (
             <div className="border px-3 py-2.5 text-sm text-muted-foreground">
               No passkeys registered yet.
             </div>
           ) : (
-            passkeys.map((passkey) => (
+            typedPasskeys.map((passkey) => (
               <div
                 className="flex items-center justify-between gap-3 border px-3 py-2.5"
                 key={passkey.id}
@@ -540,11 +555,12 @@ function SecurityLinkedAccounts() {
   const queryClient = useQueryClient();
   const listAccountsQueryOptions = trpc.profile.listAccounts.queryOptions();
   const { data: accounts } = useSuspenseQuery(listAccountsQueryOptions);
+  const typedAccounts = accounts as ProviderAccount[];
   const [linkingProvider, setLinkingProvider] = useState<LinkedAccountProvider | null>(null);
   const [unlinkingProviderId, setUnlinkingProviderId] = useState<string | null>(null);
 
   const getProviderAccount = (provider: LinkedAccountProvider) =>
-    accounts.find(
+    typedAccounts.find(
       (account) => account.providerId === provider || account.providerId.startsWith(`${provider}:`),
     );
 
