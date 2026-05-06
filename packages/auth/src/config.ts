@@ -1,4 +1,5 @@
 import {
+  OrgMemberInviteEmail,
   OrgOwnerAssignedEmail,
   PlatformInviteEmail,
   render,
@@ -125,6 +126,39 @@ export const sendOrgOwnerAssignedEmail = async (input: SendOrgOwnerAssignedEmail
     subject: `You’ve been assigned owner of ${input.organizationName}`,
     html,
     label: "org owner assigned",
+  });
+};
+
+export const sendOrgMemberInviteEmail = async ({
+  to,
+  inviteUrl,
+  inviterName,
+  name,
+  organizationName,
+  role,
+}: {
+  to: string;
+  inviteUrl: string;
+  inviterName: string;
+  name: string;
+  organizationName: string;
+  role: "admin" | "teacher" | "student";
+}) => {
+  const html = await render(
+    OrgMemberInviteEmail({
+      inviteUrl,
+      inviterName,
+      name,
+      organizationName,
+      role,
+    }),
+  );
+
+  await sendAuthEmail({
+    to,
+    subject: `Invitation to join ${organizationName} on Sycom LMS`,
+    html,
+    label: "org member invite",
   });
 };
 

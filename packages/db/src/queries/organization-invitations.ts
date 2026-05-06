@@ -1,4 +1,18 @@
-import { and, asc, count, desc, eq, gte, ilike, inArray, lte, or, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import type { Database } from "..";
 import {
@@ -142,9 +156,9 @@ export async function markOrganizationInvitationRejected(
   return result.length > 0;
 }
 
-export async function insertOrganizationOwnerMember(
+export async function insertOrganizationMember(
   database: Database,
-  input: { organizationId: string; userId: string },
+  input: { organizationId: string; userId: string; role: OrganizationRole },
 ): Promise<{ id: string }> {
   const id = crypto.randomUUID();
   const [row] = await database
@@ -153,15 +167,92 @@ export async function insertOrganizationOwnerMember(
       id,
       organizationId: input.organizationId,
       userId: input.userId,
-      role: "owner",
+      role: input.role,
     })
     .returning({ id: member.id });
 
   if (!row) {
-    throw new Error("Failed to insert organization owner member");
+    throw new Error("Failed to insert organization member");
   }
 
   return row;
+}
+
+export async function insertOrganizationOwnerMember(
+  database: Database,
+  input: { organizationId: string; userId: string },
+): Promise<{ id: string }> {
+  return insertOrganizationMember(database, { ...input, role: "owner" });
+}
+
+/** Normalized email match for org-scoped lookups. */
+export async function findOrganizationMembershipByEmail(
+  database: Database,
+  input: { organizationId: string; email: string },
+): Promise<{ memberId: string; userId: string } | null> {
+  const normalized = input.email.trim().toLowerCase();
+  const [row] = await database
+    .select({ memberId: member.id, userId: member.userId })
+    .from(member)
+    .innerJoin(user, eq(member.userId, user.id))
+    .where(
+      and(
+        eq(member.organizationId, input.organizationId),
+        eq(sql`lower(${user.email})`, normalized),
+      ),
+    )
+    .limit(1);
+
+  return row ?? null;
+}
+
+/** Pending, unexpired invitation for this org + email. */
+export async function findPendingOrganizationInvitationForEmail(
+  database: Database,
+  input: { organizationId: string; email: string },
+): Promise<{ id: string } | null> {
+  const normalized = input.email.trim().toLowerCase();
+  const now = new Date();
+  const [row] = await database
+    .select({ id: invitation.id })
+    .from(invitation)
+    .where(
+      and(
+        eq(invitation.organizationId, input.organizationId),
+        eq(sql`lower(${invitation.email})`, normalized),
+        eq(invitation.status, "pending"),
+        gt(invitation.expiresAt, now),
+      ),
+    )
+    .limit(1);
+
+  return row ?? null;
+}
+
+export async function insertOrganizationMemberInviteRow(
+  database: Database,
+  input: {
+    id: string;
+    organizationId: string;
+    email: string;
+    inviteeName: string;
+    role: OrganizationRole;
+    tokenHash: string;
+    inviterId: string;
+    expiresAt: Date;
+  },
+): Promise<void> {
+  await database.insert(invitation).values({
+    id: input.id,
+    organizationId: input.organizationId,
+    email: input.email.trim().toLowerCase(),
+    inviteeName: input.inviteeName.trim(),
+    role: input.role,
+    status: "pending",
+    expiresAt: input.expiresAt,
+    inviterId: input.inviterId,
+    tokenHash: input.tokenHash,
+  });
 }
 
 export async function listOrganizationInvitations(

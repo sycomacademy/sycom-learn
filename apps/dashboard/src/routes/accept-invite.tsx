@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import * as z from "zod/mini";
 
+import { OrganizationMemberInviteForm } from "@/components/auth/organization-member-invite-form";
 import { OrganizationOwnerInviteForm } from "@/components/auth/organization-owner-invite-form";
 import { PublicInviteForm } from "@/components/auth/public-invite-form";
 import { AuthLeftPanel } from "@/components/auth/left-panel";
@@ -11,7 +12,7 @@ import { BRAND, Image } from "@sycom/ui/image";
 
 const acceptInviteSearchSchema = z.object({
   token: z.optional(z.string()),
-  kind: z.optional(z.literal("organization")),
+  kind: z.optional(z.enum(["organization", "organization-member"])),
 });
 
 export const Route = createFileRoute("/accept-invite")({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/accept-invite")({
       { title: "Accept invite | Sycom LMS" },
       {
         name: "description",
-        content: "Accept your Sycom LMS invitation or organization owner invite.",
+        content: "Accept your Sycom LMS invitation or organization invitation.",
       },
     ],
   }),
@@ -35,6 +36,8 @@ function AcceptInvitePage() {
 
   if (token && kind === "organization") {
     form = <OrganizationOwnerInviteForm token={token} />;
+  } else if (token && kind === "organization-member") {
+    form = <OrganizationMemberInviteForm token={token} />;
   } else if (token) {
     form = <PublicInviteForm token={token} />;
   } else {

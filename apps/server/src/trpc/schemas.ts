@@ -206,6 +206,36 @@ export const listActiveOrgInvitationsSchema = z.object({
 });
 export type ListActiveOrgInvitationsInput = z.infer<typeof listActiveOrgInvitationsSchema>;
 
+export const orgInvitableRoleSchema = z.enum(["admin", "teacher", "student"]);
+export type OrgInvitableRole = z.infer<typeof orgInvitableRoleSchema>;
+
+export const inviteOrgMemberSchema = z.object({
+  email: z.email().transform((value) => value.trim().toLowerCase()),
+  name: z.string().trim().min(1).max(120),
+  role: orgInvitableRoleSchema,
+});
+export type InviteOrgMemberInput = z.infer<typeof inviteOrgMemberSchema>;
+
+export const bulkInviteOrgMemberRowSchema = z.object({
+  email: z.email().transform((value) => value.trim().toLowerCase()),
+  name: z.string().trim().min(1).max(120),
+  role: orgInvitableRoleSchema,
+});
+
+export const bulkInviteOrgMembersSchema = z.object({
+  rows: z.array(bulkInviteOrgMemberRowSchema).min(1).max(200),
+});
+export type BulkInviteOrgMembersInput = z.infer<typeof bulkInviteOrgMembersSchema>;
+
+export const bulkInviteOrgMembersOutputSchema = z.object({
+  sent: z.number().int(),
+  skippedExistingUser: z.number().int(),
+  skippedAlreadyMember: z.number().int(),
+  skippedPendingInvite: z.number().int(),
+  failedToSendEmail: z.number().int(),
+});
+export type BulkInviteOrgMembersOutput = z.infer<typeof bulkInviteOrgMembersOutputSchema>;
+
 export const adminLogsAnalyticsOverviewSchema = z.object({});
 export type AdminLogsAnalyticsOverviewInput = z.infer<typeof adminLogsAnalyticsOverviewSchema>;
 
@@ -464,7 +494,7 @@ export type GetOrganizationInvitationByTokenInput = z.infer<
 
 export const acceptOrganizationInvitationSchema = z.object({
   token: z.string().min(1),
-  password: z.string().min(8).max(128),
+  password: z.optional(z.string().min(8).max(128)),
 });
 export type AcceptOrganizationInvitationInput = z.infer<typeof acceptOrganizationInvitationSchema>;
 

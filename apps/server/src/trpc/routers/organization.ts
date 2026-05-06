@@ -1,24 +1,34 @@
+import type { Database } from "@sycom/db";
 import { auth } from "@sycom/auth";
+import { sendOrgMemberInviteEmail } from "@sycom/auth/config";
 import {
   deleteOrganization,
+  findOrganizationMembershipByEmail,
+  findPendingOrganizationInvitationForEmail,
   getMemberRole,
   getOrganizationById,
   getOrganizationMemberById,
   getOrganizationWorkspaceContextForMember,
+  insertOrganizationMemberInviteRow,
   listOrganizationInvitations,
   listOrganizationMembers,
   listOrganizationMembershipsForUser,
   recordApplicationAuditEvent,
   updateOrganizationBranding,
 } from "@sycom/db/queries/index";
-
+import { env } from "@sycom/env/server";
 import { TRPCError } from "@trpc/server";
+import { createHash, randomBytes } from "node:crypto";
 
 import { DEFAULT_ORG_ACCENT_HEX } from "../constants/onboarding-brand";
+import { placeholderScheduleOrgBulkMemberInvites } from "../../lib/org-bulk-invite-job";
 import { auditRequestMeta } from "../lib/request-audit";
 import { orgAdminProcedure, protectedProcedure, router } from "../init";
 import {
+  bulkInviteOrgMembersOutputSchema,
+  bulkInviteOrgMembersSchema,
   getOrgMemberSchema,
+  inviteOrgMemberSchema,
   listActiveOrgInvitationsSchema,
   listOrgMembersSchema,
   organizationMembershipsOutputSchema,
@@ -26,6 +36,94 @@ import {
   removeOrgMemberSchema,
   updateOrganizationBrandingSchema,
 } from "../schemas";
+
+const ORG_MEMBER_INVITE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function buildOrgMemberInviteUrl(token: string) {
+  const dashboardUrl = env.DASHBOARD_URL ?? env.BETTER_AUTH_URL;
+  return `${dashboardUrl}/accept-invite?kind=organization-member&token=${encodeURIComponent(token)}`;
+}
+
+type OrgMemberInviteMutationCtx = {
+  db: Database;
+  session: { user: { id: string; name: string } };
+  organizationId: string;
+};
+
+type OrgMemberInviteCoreInput = {
+  email: string;
+  name: string;
+  role: "admin" | "teacher" | "student";
+};
+
+type CreateOrgMemberInviteResult =
+  | { status: "sent" }
+  | {
+      status: "skip";
+      reason: "already_member" | "pending_invite";
+    }
+  | { status: "email_failed" };
+
+async function createOrgMemberInvitationAndEmail(
+  ctx: OrgMemberInviteMutationCtx,
+  input: OrgMemberInviteCoreInput,
+): Promise<CreateOrgMemberInviteResult> {
+  const email = input.email.trim().toLowerCase();
+
+  if (
+    await findOrganizationMembershipByEmail(ctx.db, {
+      organizationId: ctx.organizationId,
+      email,
+    })
+  ) {
+    return { status: "skip", reason: "already_member" };
+  }
+
+  if (
+    await findPendingOrganizationInvitationForEmail(ctx.db, {
+      organizationId: ctx.organizationId,
+      email,
+    })
+  ) {
+    return { status: "skip", reason: "pending_invite" };
+  }
+
+  const org = await getOrganizationById(ctx.db, { organizationId: ctx.organizationId });
+  if (!org) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+  }
+
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(Date.now() + ORG_MEMBER_INVITE_TTL_MS);
+  const invitationId = crypto.randomUUID();
+
+  await insertOrganizationMemberInviteRow(ctx.db, {
+    id: invitationId,
+    organizationId: ctx.organizationId,
+    email,
+    inviteeName: input.name.trim(),
+    role: input.role,
+    tokenHash,
+    inviterId: ctx.session.user.id,
+    expiresAt,
+  });
+
+  try {
+    await sendOrgMemberInviteEmail({
+      to: email,
+      inviteUrl: buildOrgMemberInviteUrl(token),
+      inviterName: ctx.session.user.name,
+      name: input.name.trim(),
+      organizationName: org.name,
+      role: input.role,
+    });
+  } catch {
+    return { status: "email_failed" };
+  }
+
+  return { status: "sent" };
+}
 
 export const organizationRouter = router({
   memberships: protectedProcedure
@@ -154,6 +252,64 @@ export const organizationRouter = router({
         sortBy: input.sortBy,
         sortDirection: input.sortDirection,
       });
+    }),
+
+  inviteMember: orgAdminProcedure.input(inviteOrgMemberSchema).mutation(async ({ ctx, input }) => {
+    const result = await createOrgMemberInvitationAndEmail(ctx, input);
+
+    if (result.status === "skip") {
+      const messageByReason = {
+        already_member: "This email already belongs to a member of this organization.",
+        pending_invite: "A pending invitation already exists for this email.",
+      } as const;
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: messageByReason[result.reason],
+      });
+    }
+
+    if (result.status === "email_failed") {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message:
+          "Invitation was created but the email failed to send. Check pending invites / try again later.",
+      });
+    }
+
+    return { success: true as const };
+  }),
+
+  bulkInviteMembers: orgAdminProcedure
+    .input(bulkInviteOrgMembersSchema)
+    .output(bulkInviteOrgMembersOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      await placeholderScheduleOrgBulkMemberInvites({
+        organizationId: ctx.organizationId,
+        rowCount: input.rows.length,
+      });
+
+      const tallies = {
+        sent: 0,
+        skippedExistingUser: 0,
+        skippedAlreadyMember: 0,
+        skippedPendingInvite: 0,
+        failedToSendEmail: 0,
+      };
+
+      for (const row of input.rows) {
+        const result = await createOrgMemberInvitationAndEmail(ctx, row);
+        if (result.status === "sent") {
+          tallies.sent++;
+        } else if (result.status === "email_failed") {
+          tallies.failedToSendEmail++;
+        } else if (result.reason === "already_member") {
+          tallies.skippedAlreadyMember++;
+        } else {
+          tallies.skippedPendingInvite++;
+        }
+      }
+
+      return tallies;
     }),
 
   deleteActiveOrganization: protectedProcedure.mutation(async ({ ctx }) => {

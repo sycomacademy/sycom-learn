@@ -5,6 +5,7 @@ import { cn } from "@sycom/ui/lib/utils";
 import { RefreshCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { InviteOrgMemberDialog } from "@/components/dashboard/org/users/invite-org-member-dialog";
 export type OrgMembersToolbarProps = {
   search: string;
   onSearchChange: (next: string) => void;
@@ -47,6 +48,8 @@ export function OrgMembersToolbar({
       >
         <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
       </Button>
+
+      <InviteOrgMemberDialog />
     </div>
   );
 }

@@ -21,8 +21,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/components/layout/foresight-link";
 import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
 import { useUser } from "@/hooks/use-user";
-import { ORG_ACCENT_PRESETS, ORG_BRAND_PRIMARY_HEX } from "@/routes/onboarding/org-brand-presets";
-import { OnboardingFadeSwap } from "@/routes/onboarding/onboarding-motion";
+import { ORG_ACCENT_PRESETS, ORG_BRAND_PRIMARY_HEX } from "@/routes/onboarding/-org-brand-presets";
+import { OnboardingFadeSwap } from "@/routes/onboarding/-onboarding-motion";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

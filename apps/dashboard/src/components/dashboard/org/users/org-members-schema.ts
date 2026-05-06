@@ -31,6 +31,15 @@ export const ORG_ROLE_OPTIONS = [
   { value: "student", label: ORG_ROLE_LABELS.student },
 ] as const;
 
+export const orgInvitableRoleSchema = z.enum(["admin", "teacher", "student"]);
+export type OrgInvitableRole = z.infer<typeof orgInvitableRoleSchema>;
+
+export const ORG_INVITABLE_ROLE_OPTIONS = [
+  { value: "admin", label: ORG_ROLE_LABELS.admin },
+  { value: "teacher", label: ORG_ROLE_LABELS.teacher },
+  { value: "student", label: ORG_ROLE_LABELS.student },
+] as const;
+
 export const ORG_STATUS_LABELS: Record<OrgMemberStatus, string> = {
   verified: "Verified",
   unverified: "Unverified email",

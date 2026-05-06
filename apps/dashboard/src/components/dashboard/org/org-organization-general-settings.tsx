@@ -33,7 +33,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
-import { ORG_ACCENT_PRESETS } from "@/routes/onboarding/org-brand-presets";
+import { ORG_ACCENT_PRESETS } from "@/routes/onboarding/-org-brand-presets";
 import { authClient } from "@/lib/auth/auth-client";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 

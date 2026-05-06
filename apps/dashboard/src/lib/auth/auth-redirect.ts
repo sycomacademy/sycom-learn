@@ -2,8 +2,10 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { AnyRouter } from "@tanstack/react-router";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
+import { authClient } from "@/lib/auth/auth-client";
 import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
 import { applyPendingOwnerInviteActiveOrganization } from "@/lib/auth/pending-owner-invite-org";
+import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 import type { AppRouter } from "server/trpc/routers/_app";
 
 const FALLBACK = "/dashboard";
@@ -33,7 +35,24 @@ export async function resolveAuthenticatedEntryHref(
 ): Promise<string> {
   await applyPendingOwnerInviteActiveOrganization(queryClient);
 
-  const onboarding = await queryClient.fetchQuery(trpc.onboarding.status.queryOptions());
+  let onboarding = await queryClient.fetchQuery(trpc.onboarding.status.queryOptions());
+
+  if (!onboarding.activeOrganizationId) {
+    const memberships = await queryClient.fetchQuery(trpc.organization.memberships.queryOptions());
+    const firstMembership = memberships[0];
+
+    if (firstMembership) {
+      const { error } = await authClient.organization.setActive({
+        organizationId: firstMembership.organizationId,
+        organizationSlug: firstMembership.slug,
+      });
+
+      if (!error) {
+        await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+        onboarding = await queryClient.fetchQuery(trpc.onboarding.status.queryOptions());
+      }
+    }
+  }
 
   if (onboarding.defaultNextPath) {
     return onboarding.defaultNextPath;

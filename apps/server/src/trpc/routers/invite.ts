@@ -1,8 +1,10 @@
 import { auth } from "@sycom/auth";
 import {
+  findOrganizationMembershipByEmail,
   getOrganizationInvitationByTokenHash,
   getPlatformInvitationByTokenHash,
   getPlatformUserByEmail,
+  insertOrganizationMember,
   insertOrganizationOwnerMember,
   markOrganizationInvitationAccepted,
   markOrganizationInvitationRejected,
@@ -200,7 +202,12 @@ export const inviteRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
       }
 
-      return invitation;
+      const existingUser = await getPlatformUserByEmail(ctx.db, { email: invitation.email });
+
+      return {
+        ...invitation,
+        requiresPassword: !existingUser,
+      };
     }),
 
   acceptOrganizationInvite: publicProcedure
@@ -236,11 +243,87 @@ export const inviteRouter = router({
         email: invitation.email,
       });
 
-      if (existingUser) {
+      const isOwnerInvite = invitation.role === "owner";
+
+      if (isOwnerInvite) {
+        if (existingUser) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "An account with this email already exists. Sign in and open Organization setup.",
+          });
+        }
+      } else {
+        if (!invitation.role) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This invitation is invalid.",
+          });
+        }
+        if (existingUser) {
+          const existingUserDisplayName = invitation.inviteeName?.trim() || invitation.email;
+          const existingMembership = await findOrganizationMembershipByEmail(ctx.db, {
+            organizationId: invitation.organizationId,
+            email: invitation.email,
+          });
+
+          if (!existingMembership) {
+            await insertOrganizationMember(ctx.db, {
+              organizationId: invitation.organizationId,
+              userId: existingUser.id,
+              role: invitation.role,
+            });
+          }
+
+          const updated = await markOrganizationInvitationAccepted(ctx.db, {
+            invitationId: invitation.id,
+          });
+
+          if (!updated) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Could not finalize this invitation. Try again.",
+            });
+          }
+
+          const { ip, userAgent } = auditRequestMeta(ctx);
+          await recordApplicationAuditEvent(ctx.db, {
+            event: "organization_invitation_accepted",
+            eventTitle: "Organization Invitation Accepted",
+            eventSubtitle: `${existingUserDisplayName} joined ${invitation.organizationName} as ${invitation.role}`,
+            actorId: existingUser.id,
+            actorType: "user",
+            organizationId: invitation.organizationId,
+            ip,
+            userAgent,
+            metadata: {
+              userId: existingUser.id,
+              userName: existingUserDisplayName,
+              userEmail: existingUser.email,
+              invitationId: invitation.id,
+              inviteEmail: invitation.email,
+              organizationId: invitation.organizationId,
+              organizationName: invitation.organizationName,
+              organizationSlug: invitation.organizationSlug,
+              inviterName: invitation.inviterName,
+              organizationRole: invitation.role,
+              inviteKind: "member",
+              acceptedWithExistingAccount: true,
+            },
+          });
+
+          return {
+            success: true as const,
+            organizationId: invitation.organizationId,
+            organizationSlug: invitation.organizationSlug,
+          };
+        }
+      }
+
+      if (!input.password) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "An account with this email already exists. Sign in and open Organization setup.",
+          message: "Password is required to accept this invitation.",
         });
       }
 
@@ -259,10 +342,18 @@ export const inviteRouter = router({
         },
       });
 
-      await insertOrganizationOwnerMember(ctx.db, {
-        organizationId: invitation.organizationId,
-        userId: createdUser.user.id,
-      });
+      if (isOwnerInvite) {
+        await insertOrganizationOwnerMember(ctx.db, {
+          organizationId: invitation.organizationId,
+          userId: createdUser.user.id,
+        });
+      } else {
+        await insertOrganizationMember(ctx.db, {
+          organizationId: invitation.organizationId,
+          userId: createdUser.user.id,
+          role: invitation.role as NonNullable<typeof invitation.role>,
+        });
+      }
 
       const updated = await markOrganizationInvitationAccepted(ctx.db, {
         invitationId: invitation.id,
@@ -281,7 +372,9 @@ export const inviteRouter = router({
         await recordApplicationAuditEvent(ctx.db, {
           event: "organization_invitation_accepted",
           eventTitle: "Organization Invitation Accepted",
-          eventSubtitle: `${displayName} joined ${invitation.organizationName}`,
+          eventSubtitle: isOwnerInvite
+            ? `${displayName} joined ${invitation.organizationName}`
+            : `${displayName} joined ${invitation.organizationName} as ${invitation.role}`,
           actorId: createdUser.user.id,
           actorType: "user",
           organizationId: invitation.organizationId,
@@ -297,6 +390,8 @@ export const inviteRouter = router({
             organizationName: invitation.organizationName,
             organizationSlug: invitation.organizationSlug,
             inviterName: invitation.inviterName,
+            organizationRole: invitation.role,
+            inviteKind: isOwnerInvite ? "owner" : "member",
           },
         });
       }

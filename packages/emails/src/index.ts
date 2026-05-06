@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Resend } from "resend";
 export { ResetPasswordEmail } from "./templates/reset-password";
 export { OrgOwnerAssignedEmail } from "./templates/org-owner-assigned";
+export { OrgMemberInviteEmail } from "./templates/org-member-invite";
 export { PlatformInviteEmail } from "./templates/platform-invite";
 export { VerifyEmail } from "./templates/verify-email";
 

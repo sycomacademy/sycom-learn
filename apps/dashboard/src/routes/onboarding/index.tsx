@@ -16,7 +16,7 @@ import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
 import { useUser } from "@/hooks/use-user";
 import { useTRPC } from "@/lib/trpc/client";
 
-import { OnboardingFadeSwap } from "@/routes/onboarding/onboarding-motion";
+import { OnboardingFadeSwap } from "@/routes/onboarding/-onboarding-motion";
 
 const onboardingBioSchema = z.object({
   bio: z.string().check(z.maxLength(500, "Bio must be 500 characters or fewer")),
