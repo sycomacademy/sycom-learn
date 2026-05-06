@@ -4,6 +4,7 @@ import { Spinner } from "@sycom/ui/components/spinner";
 import { cn } from "@sycom/ui/lib/utils";
 import { RefreshCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
+import { InviteOrgMemberDialog } from "./invite-org-member-dialog";
 
 export type OrgInvitationsToolbarProps = {
   search: string;
@@ -47,6 +48,8 @@ export function OrgInvitationsToolbar({
       >
         <RefreshCcw className={cn(isFetching ? "animate-spin" : "", "size-4")} />
       </Button>
+
+      <InviteOrgMemberDialog />
     </div>
   );
 }
