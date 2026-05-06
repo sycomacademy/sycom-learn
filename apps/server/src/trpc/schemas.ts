@@ -630,6 +630,42 @@ export const createOrganizationCohortSchema = z.object({
 });
 export type CreateOrganizationCohortInput = z.infer<typeof createOrganizationCohortSchema>;
 
+export const listOrganizationCohortMembersSchema = z.object({
+  cohortId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+});
+export type ListOrganizationCohortMembersInput = z.infer<
+  typeof listOrganizationCohortMembersSchema
+>;
+
+export const mutateOrganizationCohortMembersSchema = z.object({
+  cohortId: z.string().min(1),
+  userIds: z.array(z.string().min(1)).min(1),
+});
+export type MutateOrganizationCohortMembersInput = z.infer<
+  typeof mutateOrganizationCohortMembersSchema
+>;
+
+export const listOrganizationCohortCoursesSchema = z.object({
+  cohortId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(20),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().trim().min(1).optional(),
+});
+export type ListOrganizationCohortCoursesInput = z.infer<
+  typeof listOrganizationCohortCoursesSchema
+>;
+
+export const mutateOrganizationCohortCoursesSchema = z.object({
+  cohortId: z.string().min(1),
+  courseIds: z.array(z.string().min(1)).min(1),
+});
+export type MutateOrganizationCohortCoursesInput = z.infer<
+  typeof mutateOrganizationCohortCoursesSchema
+>;
+
 // onboarding
 export const onboardingDefaultNextPathSchema = z
   .union([z.literal("/onboarding"), z.literal("/onboarding/organization")])

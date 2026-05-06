@@ -1,7 +1,20 @@
-import { and, asc, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  notInArray,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import type { Database } from "..";
-import { cohort, cohort_member } from "../schema/auth";
+import { cohort, cohort_member, member, user } from "../schema/auth";
+import { cohortCourse, course } from "../schema/course";
 
 export type ListOrganizationCohortsFilter = {
   organizationId: string;
@@ -141,4 +154,283 @@ export async function deleteOrganizationCohort(
     .returning({ id: cohort.id });
 
   return { deleted: deletedRows.length > 0 };
+}
+
+export type CohortMemberRow = {
+  userId: string;
+  memberId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: "owner" | "admin" | "teacher" | "student";
+  joinedAt: Date;
+};
+
+export type CohortCourseRow = {
+  courseId: string;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  status: "draft" | "published";
+  updatedAt: Date;
+};
+
+type CohortEntityListFilter = {
+  organizationId: string;
+  cohortId: string;
+  limit: number;
+  offset: number;
+  search?: string;
+};
+
+export async function listCohortMembers(
+  database: Database,
+  input: CohortEntityListFilter,
+): Promise<{ rows: CohortMemberRow[]; totalCount: number }> {
+  const filters: SQL[] = [
+    eq(member.organizationId, input.organizationId),
+    sql`${member.userId} in (select ${cohort_member.userId} from ${cohort_member} where ${eq(cohort_member.teamId, input.cohortId)})`,
+  ];
+
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(user.name, pattern), ilike(user.email, pattern));
+    if (expr) {
+      filters.push(expr);
+    }
+  }
+
+  const where = and(...filters);
+
+  const [rows, totalRows] = await Promise.all([
+    database
+      .select({
+        userId: user.id,
+        memberId: member.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: member.role,
+        joinedAt: member.createdAt,
+      })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(where)
+      .orderBy(asc(user.name))
+      .limit(input.limit)
+      .offset(input.offset),
+    database
+      .select({ value: count() })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(where),
+  ]);
+
+  return { rows, totalCount: totalRows[0]?.value ?? 0 };
+}
+
+export async function listAvailableOrgMembersForCohort(
+  database: Database,
+  input: CohortEntityListFilter,
+): Promise<{ rows: CohortMemberRow[]; totalCount: number }> {
+  const assignedRows = await database
+    .select({ userId: cohort_member.userId })
+    .from(cohort_member)
+    .where(eq(cohort_member.teamId, input.cohortId));
+  const assignedUserIds = assignedRows.map((row) => row.userId);
+
+  const filters: SQL[] = [eq(member.organizationId, input.organizationId)];
+  if (assignedUserIds.length > 0) {
+    filters.push(notInArray(member.userId, assignedUserIds));
+  }
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(user.name, pattern), ilike(user.email, pattern));
+    if (expr) {
+      filters.push(expr);
+    }
+  }
+
+  const where = and(...filters);
+
+  const [rows, totalRows] = await Promise.all([
+    database
+      .select({
+        userId: user.id,
+        memberId: member.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: member.role,
+        joinedAt: member.createdAt,
+      })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(where)
+      .orderBy(asc(user.name))
+      .limit(input.limit)
+      .offset(input.offset),
+    database
+      .select({ value: count() })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(where),
+  ]);
+
+  return { rows, totalCount: totalRows[0]?.value ?? 0 };
+}
+
+export async function addMembersToCohort(
+  database: Database,
+  input: { cohortId: string; userIds: string[] },
+): Promise<void> {
+  if (input.userIds.length === 0) {
+    return;
+  }
+
+  await database
+    .insert(cohort_member)
+    .values(
+      input.userIds.map((userId) => ({
+        id: crypto.randomUUID(),
+        teamId: input.cohortId,
+        userId,
+      })),
+    )
+    .onConflictDoNothing({ target: [cohort_member.teamId, cohort_member.userId] });
+}
+
+export async function removeMembersFromCohort(
+  database: Database,
+  input: { cohortId: string; userIds: string[] },
+): Promise<void> {
+  if (input.userIds.length === 0) {
+    return;
+  }
+
+  await database
+    .delete(cohort_member)
+    .where(
+      and(eq(cohort_member.teamId, input.cohortId), inArray(cohort_member.userId, input.userIds)),
+    );
+}
+
+export async function listCohortCourses(
+  database: Database,
+  input: CohortEntityListFilter,
+): Promise<{ rows: CohortCourseRow[]; totalCount: number }> {
+  const filters: SQL[] = [eq(course.organizationId, input.organizationId)];
+  filters.push(
+    sql`${course.id} in (select ${cohortCourse.courseId} from ${cohortCourse} where ${eq(cohortCourse.cohortId, input.cohortId)})`,
+  );
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(course.title, pattern), ilike(course.slug, pattern));
+    if (expr) {
+      filters.push(expr);
+    }
+  }
+
+  const where = and(...filters);
+  const [rows, totalRows] = await Promise.all([
+    database
+      .select({
+        courseId: course.id,
+        title: course.title,
+        slug: course.slug,
+        imageUrl: course.imageUrl,
+        status: course.status,
+        updatedAt: course.updatedAt,
+      })
+      .from(course)
+      .where(where)
+      .orderBy(asc(course.title))
+      .limit(input.limit)
+      .offset(input.offset),
+    database.select({ value: count() }).from(course).where(where),
+  ]);
+
+  return { rows, totalCount: totalRows[0]?.value ?? 0 };
+}
+
+export async function listAvailableOrgCoursesForCohort(
+  database: Database,
+  input: CohortEntityListFilter,
+): Promise<{ rows: CohortCourseRow[]; totalCount: number }> {
+  const assignedRows = await database
+    .select({ courseId: cohortCourse.courseId })
+    .from(cohortCourse)
+    .where(eq(cohortCourse.cohortId, input.cohortId));
+  const assignedCourseIds = assignedRows.map((row) => row.courseId);
+
+  const filters: SQL[] = [eq(course.organizationId, input.organizationId)];
+  if (assignedCourseIds.length > 0) {
+    filters.push(notInArray(course.id, assignedCourseIds));
+  }
+  if (input.search) {
+    const pattern = `%${input.search}%`;
+    const expr = or(ilike(course.title, pattern), ilike(course.slug, pattern));
+    if (expr) {
+      filters.push(expr);
+    }
+  }
+
+  const where = and(...filters);
+  const [rows, totalRows] = await Promise.all([
+    database
+      .select({
+        courseId: course.id,
+        title: course.title,
+        slug: course.slug,
+        imageUrl: course.imageUrl,
+        status: course.status,
+        updatedAt: course.updatedAt,
+      })
+      .from(course)
+      .where(where)
+      .orderBy(asc(course.title))
+      .limit(input.limit)
+      .offset(input.offset),
+    database.select({ value: count() }).from(course).where(where),
+  ]);
+
+  return { rows, totalCount: totalRows[0]?.value ?? 0 };
+}
+
+export async function addCoursesToCohort(
+  database: Database,
+  input: { cohortId: string; courseIds: string[] },
+): Promise<void> {
+  if (input.courseIds.length === 0) {
+    return;
+  }
+
+  await database
+    .insert(cohortCourse)
+    .values(
+      input.courseIds.map((courseId) => ({
+        id: `ccr_${crypto.randomUUID()}`,
+        cohortId: input.cohortId,
+        courseId,
+      })),
+    )
+    .onConflictDoNothing({ target: [cohortCourse.cohortId, cohortCourse.courseId] });
+}
+
+export async function removeCoursesFromCohort(
+  database: Database,
+  input: { cohortId: string; courseIds: string[] },
+): Promise<void> {
+  if (input.courseIds.length === 0) {
+    return;
+  }
+
+  await database
+    .delete(cohortCourse)
+    .where(
+      and(
+        eq(cohortCourse.cohortId, input.cohortId),
+        inArray(cohortCourse.courseId, input.courseIds),
+      ),
+    );
 }

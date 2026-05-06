@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { createdAt, updatedAt } from "./_shared";
-import { organization, user } from "./auth";
+import { cohort, organization, user } from "./auth";
 
 // ---------------------------------------------------------------------------
 // Enums (inline text enums)
@@ -131,6 +131,27 @@ export const courseInstructor = pgTable(
   (table) => [primaryKey({ columns: [table.courseId, table.userId] })],
 );
 
+export const cohortCourse = pgTable(
+  "cohort_course",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => `ccr_${crypto.randomUUID()}`),
+    cohortId: text("cohort_id")
+      .notNull()
+      .references(() => cohort.id, { onDelete: "cascade" }),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => course.id, { onDelete: "cascade" }),
+    createdAt,
+  },
+  (table) => [
+    index("cohort_course_cohort_id_idx").on(table.cohortId),
+    index("cohort_course_course_id_idx").on(table.courseId),
+    uniqueIndex("cohort_course_cohort_course_uidx").on(table.cohortId, table.courseId),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Sections (groups of lessons within a course)
 // ---------------------------------------------------------------------------
@@ -196,6 +217,18 @@ export const courseRelations = relations(course, ({ one, many }) => ({
   instructors: many(courseInstructor),
   sections: many(section),
   categories: many(courseCategory),
+  cohortCourses: many(cohortCourse),
+}));
+
+export const cohortCourseRelations = relations(cohortCourse, ({ one }) => ({
+  cohort: one(cohort, {
+    fields: [cohortCourse.cohortId],
+    references: [cohort.id],
+  }),
+  course: one(course, {
+    fields: [cohortCourse.courseId],
+    references: [course.id],
+  }),
 }));
 
 export const courseInstructorRelations = relations(courseInstructor, ({ one }) => ({
@@ -251,6 +284,9 @@ export const courseCategoryRelations = relations(courseCategory, ({ one }) => ({
 
 export type Course = typeof course.$inferSelect;
 export type NewCourse = typeof course.$inferInsert;
+
+export type CohortCourse = typeof cohortCourse.$inferSelect;
+export type NewCohortCourse = typeof cohortCourse.$inferInsert;
 
 export type Section = typeof section.$inferSelect;
 export type NewSection = typeof section.$inferInsert;

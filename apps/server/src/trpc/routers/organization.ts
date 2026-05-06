@@ -2,6 +2,8 @@ import type { Database } from "@sycom/db";
 import { auth } from "@sycom/auth";
 import { sendOrgMemberInviteEmail } from "@sycom/auth/config";
 import {
+  addCoursesToCohort,
+  addMembersToCohort,
   createOrganizationCohort,
   deleteOrganizationCohort,
   deleteOrganization,
@@ -13,11 +15,17 @@ import {
   getOrganizationMemberById,
   getOrganizationWorkspaceContextForMember,
   insertOrganizationMemberInviteRow,
+  listAvailableOrgCoursesForCohort,
+  listAvailableOrgMembersForCohort,
+  listCohortCourses,
+  listCohortMembers,
   listOrganizationCohorts,
   listOrganizationInvitations,
   listOrganizationMembers,
   listOrganizationMembershipsForUser,
   recordApplicationAuditEvent,
+  removeCoursesFromCohort,
+  removeMembersFromCohort,
   updateOrganizationBranding,
 } from "@sycom/db/queries/index";
 import { env } from "@sycom/env/server";
@@ -36,9 +44,13 @@ import {
   getOrganizationCohortSchema,
   getOrgMemberSchema,
   inviteOrgMemberSchema,
+  listOrganizationCohortCoursesSchema,
+  listOrganizationCohortMembersSchema,
   listOrganizationCohortsSchema,
   listActiveOrgInvitationsSchema,
   listOrgMembersSchema,
+  mutateOrganizationCohortCoursesSchema,
+  mutateOrganizationCohortMembersSchema,
   organizationMembershipsOutputSchema,
   organizationWorkspaceContextOutputSchema,
   removeOrgMemberSchema,
@@ -298,6 +310,166 @@ export const organizationRouter = router({
 
         throw error;
       }
+    }),
+
+  listCohortMembers: protectedProcedure
+    .input(listOrganizationCohortMembersSchema)
+    .query(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_READ_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      return await listCohortMembers(ctx.db, {
+        cohortId: input.cohortId,
+        organizationId,
+        limit: input.limit,
+        offset: input.offset,
+        search: input.search,
+      });
+    }),
+
+  listAvailableCohortMembers: protectedProcedure
+    .input(listOrganizationCohortMembersSchema)
+    .query(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_READ_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      return await listAvailableOrgMembersForCohort(ctx.db, {
+        cohortId: input.cohortId,
+        organizationId,
+        limit: input.limit,
+        offset: input.offset,
+        search: input.search,
+      });
+    }),
+
+  addCohortMembers: protectedProcedure
+    .input(mutateOrganizationCohortMembersSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_WRITE_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      const cohortRow = await getOrganizationCohortById(ctx.db, {
+        organizationId,
+        cohortId: input.cohortId,
+      });
+      if (!cohortRow) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Cohort not found" });
+      }
+
+      await addMembersToCohort(ctx.db, {
+        cohortId: input.cohortId,
+        userIds: input.userIds,
+      });
+      return { success: true as const };
+    }),
+
+  removeCohortMembers: protectedProcedure
+    .input(mutateOrganizationCohortMembersSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_WRITE_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      const cohortRow = await getOrganizationCohortById(ctx.db, {
+        organizationId,
+        cohortId: input.cohortId,
+      });
+      if (!cohortRow) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Cohort not found" });
+      }
+
+      await removeMembersFromCohort(ctx.db, {
+        cohortId: input.cohortId,
+        userIds: input.userIds,
+      });
+      return { success: true as const };
+    }),
+
+  listCohortCourses: protectedProcedure
+    .input(listOrganizationCohortCoursesSchema)
+    .query(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_READ_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      return await listCohortCourses(ctx.db, {
+        cohortId: input.cohortId,
+        organizationId,
+        limit: input.limit,
+        offset: input.offset,
+        search: input.search,
+      });
+    }),
+
+  listAvailableCohortCourses: protectedProcedure
+    .input(listOrganizationCohortCoursesSchema)
+    .query(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_READ_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      return await listAvailableOrgCoursesForCohort(ctx.db, {
+        cohortId: input.cohortId,
+        organizationId,
+        limit: input.limit,
+        offset: input.offset,
+        search: input.search,
+      });
+    }),
+
+  addCohortCourses: protectedProcedure
+    .input(mutateOrganizationCohortCoursesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_WRITE_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      const cohortRow = await getOrganizationCohortById(ctx.db, {
+        organizationId,
+        cohortId: input.cohortId,
+      });
+      if (!cohortRow) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Cohort not found" });
+      }
+
+      await addCoursesToCohort(ctx.db, {
+        cohortId: input.cohortId,
+        courseIds: input.courseIds,
+      });
+      return { success: true as const };
+    }),
+
+  removeCohortCourses: protectedProcedure
+    .input(mutateOrganizationCohortCoursesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_WRITE_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      const cohortRow = await getOrganizationCohortById(ctx.db, {
+        organizationId,
+        cohortId: input.cohortId,
+      });
+      if (!cohortRow) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Cohort not found" });
+      }
+
+      await removeCoursesFromCohort(ctx.db, {
+        cohortId: input.cohortId,
+        courseIds: input.courseIds,
+      });
+      return { success: true as const };
     }),
 
   listMembers: orgAdminProcedure.input(listOrgMembersSchema).query(async ({ ctx, input }) => {

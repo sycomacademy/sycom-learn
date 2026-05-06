@@ -120,6 +120,13 @@
       "when": 1777990851168,
       "tag": "0016_lowly_zaladane",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1778060979240,
+      "tag": "0017_melted_yellow_claw",
+      "breakpoints": true
     }
   ]
 }
