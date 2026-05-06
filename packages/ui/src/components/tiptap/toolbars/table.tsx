@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@sycom/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@sycom/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";

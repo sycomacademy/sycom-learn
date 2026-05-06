@@ -1,5 +1,3 @@
-"use client";
-
 import { Eye } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";

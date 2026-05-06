@@ -1,5 +1,3 @@
-"use client";
-
 import { m, type Variants } from "motion/react";
 
 import {

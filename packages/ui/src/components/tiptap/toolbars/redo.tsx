@@ -1,5 +1,3 @@
-"use client";
-
 import { Redo2 } from "lucide-react";
 import React from "react";
 

@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, useId, useMemo } from "react";
 import { Legend, ResponsiveContainer, Tooltip } from "recharts";
 

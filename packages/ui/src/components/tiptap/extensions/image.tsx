@@ -1,4 +1,3 @@
-"use client";
 // @ts-nocheck
 /* eslint-disable */
 import Image from "@tiptap/extension-image";

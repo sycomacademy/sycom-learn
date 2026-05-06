@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { KeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-dialog";
 import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";

@@ -1,4 +1,3 @@
-"use client";
 import { ArrowLeftIcon, ArrowRightIcon, X, Repeat } from "lucide-react";
 import { useEffect, useState, type ChangeEvent } from "react";
 

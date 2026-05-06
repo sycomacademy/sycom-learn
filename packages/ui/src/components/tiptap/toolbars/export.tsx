@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@sycom/components/ui/button";
 import {
   DropdownMenu,

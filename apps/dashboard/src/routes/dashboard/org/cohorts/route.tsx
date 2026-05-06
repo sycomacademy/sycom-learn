@@ -1,5 +1,3 @@
-"use client";
-
 import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 
 import { CollapseFade } from "@/components/layout/motion-fade";

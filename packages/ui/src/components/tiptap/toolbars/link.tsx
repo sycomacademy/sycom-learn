@@ -1,5 +1,3 @@
-"use client";
-
 import { Trash2, X } from "lucide-react";
 import React, { type ChangeEvent, type FormEvent } from "react";
 

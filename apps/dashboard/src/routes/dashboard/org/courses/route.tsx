@@ -1,5 +1,3 @@
-"use client";
-
 import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 
 import { SecondaryMenu } from "@/components/dashboard/secondary-menu";

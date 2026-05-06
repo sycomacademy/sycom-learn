@@ -1,5 +1,3 @@
-"use client";
-
 import { useIsoLayoutEffect } from "@base-ui/utils/useIsoLayoutEffect";
 import { useMergedRefs } from "@base-ui/utils/useMergedRefs";
 import { useRefWithInit } from "@base-ui/utils/useRefWithInit";

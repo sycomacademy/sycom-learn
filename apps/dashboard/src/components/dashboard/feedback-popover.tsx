@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@sycom/ui/components/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@sycom/ui/components/field";

@@ -1,5 +1,3 @@
-"use client";
-
 import { ListOrdered } from "lucide-react";
 import React from "react";
 

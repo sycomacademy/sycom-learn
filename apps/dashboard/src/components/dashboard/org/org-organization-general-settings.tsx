@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { uploadFile } from "@sycom/storage/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

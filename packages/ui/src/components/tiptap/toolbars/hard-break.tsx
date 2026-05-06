@@ -1,5 +1,3 @@
-"use client";
-
 import { WrapText } from "lucide-react";
 import React from "react";
 

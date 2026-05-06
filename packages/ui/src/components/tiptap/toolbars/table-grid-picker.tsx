@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@sycom/ui/lib/utils";
 import { useCallback, useState } from "react";
 

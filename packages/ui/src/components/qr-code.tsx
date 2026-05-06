@@ -1,6 +1,4 @@
 // oxlint-disable typescript/no-non-null-assertion
-"use client";
-
 import { formatHex, oklch } from "culori";
 import QRCodeGenerator from "qrcode";
 import { type HTMLAttributes, useEffect, useState } from "react";

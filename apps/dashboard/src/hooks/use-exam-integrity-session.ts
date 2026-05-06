@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 
 export type ExamIntegrityFlagKind = "tab_hidden" | "fullscreen_exit" | "fullscreen_denied";

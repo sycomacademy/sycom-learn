@@ -1,5 +1,3 @@
-"use client";
-
 import { SeparatorHorizontal } from "lucide-react";
 import React from "react";
 

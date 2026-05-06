@@ -1,5 +1,3 @@
-"use client";
-
 import { type Editor, useEditorState } from "@tiptap/react";
 
 /** Subscribes node views and overlays to `editor.isEditable` updates (e.g. read-only toggles). */

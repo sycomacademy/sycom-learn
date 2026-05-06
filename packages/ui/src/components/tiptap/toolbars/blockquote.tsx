@@ -1,5 +1,3 @@
-"use client";
-
 import { TextQuote } from "lucide-react";
 import React from "react";
 

@@ -1,4 +1,3 @@
-"use client";
 /* eslint-disable */
 // @ts-nocheck
 import { Button } from "@sycom/components/ui/button";

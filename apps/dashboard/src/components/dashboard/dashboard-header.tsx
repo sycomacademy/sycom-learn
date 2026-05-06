@@ -1,5 +1,3 @@
-"use client";
-
 import { SidebarTrigger } from "@sycom/ui/components/sidebar";
 import { FeedbackPopover } from "@/components/dashboard/feedback-popover";
 import { DashboardUserMenu } from "@/components/dashboard/dashboard-user-menu";

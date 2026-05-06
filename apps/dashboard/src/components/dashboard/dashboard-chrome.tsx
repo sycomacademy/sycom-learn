@@ -1,5 +1,3 @@
-"use client";
-
 import type * as React from "react";
 
 import { ImpersonationBanner } from "@/components/dashboard/admin/impersonation-banner";

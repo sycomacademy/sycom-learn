@@ -1,5 +1,3 @@
-"use client";
-
 import { lazy, Suspense } from "react";
 import type { AppRouterOutputs } from "server/trpc/routers/_app";
 

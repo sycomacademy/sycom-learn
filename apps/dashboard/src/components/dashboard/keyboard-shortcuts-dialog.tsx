@@ -1,5 +1,3 @@
-"use client";
-
 import { shortcuts, type ShortcutId } from "@/lib/shortcuts/definitions";
 import { getShortcutLabelById } from "@/lib/shortcuts/format";
 import {

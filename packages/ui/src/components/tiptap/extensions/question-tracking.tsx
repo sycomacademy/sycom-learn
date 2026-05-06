@@ -1,5 +1,3 @@
-"use client";
-
 import type { Editor } from "@tiptap/core";
 import { getLessonQuestionGateSnapshot } from "@sycom/components/tiptap/extensions/lesson-question-feedback";
 import {

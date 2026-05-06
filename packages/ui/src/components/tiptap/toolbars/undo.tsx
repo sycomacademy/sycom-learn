@@ -1,5 +1,3 @@
-"use client";
-
 import { Button, type ButtonProps } from "@sycom/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@sycom/components/ui/tooltip";
 import { cn } from "@sycom/ui/lib/utils";

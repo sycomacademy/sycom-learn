@@ -1,5 +1,3 @@
-"use client";
-
 import type { NodeViewProps } from "@tiptap/react";
 import {
   type CommandProps,

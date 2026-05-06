@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@sycom/components/ui/button";
 import { cn } from "@sycom/ui/lib/utils";
 import { ChevronDown } from "lucide-react";

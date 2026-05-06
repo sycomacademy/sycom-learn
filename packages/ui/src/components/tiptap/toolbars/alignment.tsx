@@ -1,5 +1,3 @@
-"use client";
-
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Check, ChevronDown } from "lucide-react";
 import { useMediaQuery } from "@sycom/hooks/use-media-query";
 import { MobileToolbarGroup, MobileToolbarItem } from "./mobile-toolbar-group";

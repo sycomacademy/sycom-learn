@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { m, isMotionComponent, type HTMLMotionProps } from "motion/react";
 import { cn } from "@sycom/ui/lib/utils";

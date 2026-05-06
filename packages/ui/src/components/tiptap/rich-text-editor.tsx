@@ -1,4 +1,3 @@
-"use client";
 import "./tiptap.css";
 
 import { getLightweightExtensions } from "@sycom/components/tiptap/extensions/preset-lightweight";

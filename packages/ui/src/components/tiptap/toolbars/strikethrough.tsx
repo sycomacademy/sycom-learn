@@ -1,5 +1,3 @@
-"use client";
-
 import { Strikethrough } from "lucide-react";
 import React from "react";
 

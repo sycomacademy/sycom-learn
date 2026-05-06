@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@sycom/ui/components/button";
 import { Calendar } from "@sycom/ui/components/calendar";
 import { Input } from "@sycom/ui/components/input";

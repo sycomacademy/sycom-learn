@@ -1,5 +1,3 @@
-"use client";
-
 import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button } from "@sycom/components/ui/button";
 import { Checkbox } from "@sycom/components/ui/checkbox";

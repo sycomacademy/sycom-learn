@@ -1,5 +1,3 @@
-"use client";
-
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import * as React from "react";
 import { cn } from "@sycom/ui/lib/utils";

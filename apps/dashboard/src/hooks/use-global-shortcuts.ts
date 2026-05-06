@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { shortcuts, type ShortcutId } from "@/lib/shortcuts/definitions";
 import { isEditableTarget, isShortcutMatch } from "@/lib/shortcuts/format";

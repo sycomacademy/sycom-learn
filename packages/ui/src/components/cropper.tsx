@@ -1,5 +1,3 @@
-"use client";
-
 import { Cropper as CropperPrimitive } from "@origin-space/image-cropper";
 
 import { cn } from "@sycom/ui/lib/utils";

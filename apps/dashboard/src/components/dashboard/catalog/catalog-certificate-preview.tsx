@@ -1,5 +1,3 @@
-"use client";
-
 import { mergeCertificatePdfPayload } from "@sycom/certificates/course-settings";
 import type { CertificatePdfPayload } from "@sycom/certificates";
 import { lazy, Suspense, useMemo, useState } from "react";
