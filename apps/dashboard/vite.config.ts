@@ -3,7 +3,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
-import { nitro } from "nitro/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const shouldAnalyzeBundle = process.env.BUNDLE_ANALYZE === "true";
@@ -25,7 +24,6 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart(),
     viteReact(),
-    nitro(),
     shouldAnalyzeBundle &&
       visualizer({
         filename: "dist/stats.html",
