@@ -33,7 +33,7 @@ const DIFFICULTY_ITEMS = DIFFICULTY_LEVELS.map((level) => ({
 }));
 
 const generateCourseAiFormSchema = z.object({
-  topic: z.string().trim().min(8, "Topic must be at least 8 characters").max(500),
+  topic: z.string().trim().min(8, "Topic must be at least 8 characters").max(1000),
   audience: z.string().trim().max(200).optional(),
   difficulty: z.enum(DIFFICULTY_LEVELS),
   sectionCount: z.number().int().min(1).max(10),

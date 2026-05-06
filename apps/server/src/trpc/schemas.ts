@@ -1225,21 +1225,47 @@ const generatedCourseSlugSchema = z
   .regex(slugPattern, "Slug must be lowercase letters, numbers, and hyphens")
   .refine((value) => !value.includes("--"), "Slug cannot contain consecutive hyphens");
 
-const generatedLessonBlockSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("heading"),
-    level: z.number().int().min(2).max(3),
-    text: z.string().min(1).max(500),
-  }),
-  z.object({
-    kind: z.literal("paragraph"),
-    text: z.string().min(1).max(8000),
-  }),
-  z.object({
-    kind: z.literal("bullet"),
-    items: z.array(z.string().min(1).max(500)).min(1).max(20),
-  }),
-]);
+const generatedLessonBlockSchema = z
+  .object({
+    kind: z.enum(["heading", "paragraph", "bullet"]),
+    level: z.number().int().min(2).max(3).nullable(),
+    text: z.string().min(1).max(8000).nullable(),
+    items: z.array(z.string().min(1).max(500)).min(1).max(20).nullable(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.kind === "heading") {
+      if (value.level == null) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Heading blocks require level",
+          path: ["level"],
+        });
+      }
+      if (value.text == null) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Heading blocks require text",
+          path: ["text"],
+        });
+      }
+    }
+
+    if (value.kind === "paragraph" && value.text == null) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Paragraph blocks require text",
+        path: ["text"],
+      });
+    }
+
+    if (value.kind === "bullet" && value.items == null) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Bullet blocks require items",
+        path: ["items"],
+      });
+    }
+  });
 
 const generatedLessonQuestionSchema = z.object({
   prompt: z.string().min(1).max(2000),
@@ -1259,30 +1285,68 @@ const generatedLessonQuestionSchema = z.object({
     ),
 });
 
+const generatedLessonBlockRuntimeSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("heading"),
+    level: z.number().int().min(2).max(3),
+    text: z.string().min(1).max(500),
+  }),
+  z.object({
+    kind: z.literal("paragraph"),
+    text: z.string().min(1).max(8000),
+  }),
+  z.object({
+    kind: z.literal("bullet"),
+    items: z.array(z.string().min(1).max(500)).min(1).max(20),
+  }),
+]);
+
 export const generatedCourseLessonSchema = z.object({
   title: z.string().trim().min(1).max(200),
   type: z.enum(LESSON_TYPES),
-  blocks: z.array(generatedLessonBlockSchema).default([]),
-  questions: z.array(generatedLessonQuestionSchema).optional(),
+  blocks: z.array(generatedLessonBlockSchema),
+  questions: z.array(generatedLessonQuestionSchema).nullable(),
 });
 
 export const generatedCourseSectionSchema = z.object({
   title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(2000).optional(),
+  description: z.string().trim().max(2000).nullable(),
   lessons: z.array(generatedCourseLessonSchema).min(1),
 });
 
 export const generatedCourseTreeSchema = z.object({
   title: z.string().trim().min(1).max(160),
+  description: z.string().trim().max(2000).nullable(),
+  slug: generatedCourseSlugSchema,
+  summaryBullets: z.array(z.string().min(1).max(400)).max(16).nullable(),
+  sections: z.array(generatedCourseSectionSchema).min(1),
+});
+export type GeneratedCourseTreeModelOutput = z.infer<typeof generatedCourseTreeSchema>;
+
+const generatedCourseLessonRuntimeSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  type: z.enum(LESSON_TYPES),
+  blocks: z.array(generatedLessonBlockRuntimeSchema).default([]),
+  questions: z.array(generatedLessonQuestionSchema).optional(),
+});
+
+const generatedCourseSectionRuntimeSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional(),
+  lessons: z.array(generatedCourseLessonRuntimeSchema).min(1),
+});
+
+export const generatedCourseTreeRuntimeSchema = z.object({
+  title: z.string().trim().min(1).max(160),
   description: z.string().trim().max(2000).optional(),
   slug: generatedCourseSlugSchema,
   summaryBullets: z.array(z.string().min(1).max(400)).max(16).optional(),
-  sections: z.array(generatedCourseSectionSchema).min(1),
+  sections: z.array(generatedCourseSectionRuntimeSchema).min(1),
 });
-export type GeneratedCourseTreeOutput = z.infer<typeof generatedCourseTreeSchema>;
+export type GeneratedCourseTreeOutput = z.infer<typeof generatedCourseTreeRuntimeSchema>;
 
 export const generateCourseWithAIInputSchema = z.object({
-  topic: z.string().trim().min(8).max(500),
+  topic: z.string().trim().min(8).max(1000),
   audience: z.string().trim().max(200).optional(),
   difficulty: z.enum(DIFFICULTY_LEVELS).default("beginner"),
   sectionCount: z.number().int().min(1).max(10).default(4),

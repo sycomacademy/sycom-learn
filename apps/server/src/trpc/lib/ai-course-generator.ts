@@ -4,14 +4,16 @@
  * Model routing is handled by AI SDK model IDs (for example `openai/gpt-4o-mini`)
  * and can run through Vercel AI Gateway when `AI_GATEWAY_API_KEY` is set.
  */
-import { generateText } from "ai";
+import { generateText, Output } from "ai";
 
 import { env } from "@sycom/env/server";
 import { TRPCError } from "@trpc/server";
 
 import {
   generatedCourseTreeSchema,
+  generatedCourseTreeRuntimeSchema,
   type GenerateCourseWithAIInput,
+  type GeneratedCourseTreeModelOutput,
   type GeneratedCourseTreeOutput,
 } from "../schemas";
 
@@ -87,23 +89,72 @@ export function assertGeneratedTreeMatchesRequest(
   }
 }
 
+function normalizeGeneratedTree(tree: GeneratedCourseTreeModelOutput): GeneratedCourseTreeOutput {
+  const normalized = {
+    title: tree.title,
+    slug: tree.slug,
+    description: tree.description ?? undefined,
+    summaryBullets: tree.summaryBullets ?? undefined,
+    sections: tree.sections.map((section) => ({
+      title: section.title,
+      description: section.description ?? undefined,
+      lessons: section.lessons.map((lesson) => ({
+        title: lesson.title,
+        type: lesson.type,
+        questions: lesson.questions ?? undefined,
+        blocks: lesson.blocks.map((block) => {
+          if (block.kind === "heading") {
+            return {
+              kind: "heading" as const,
+              level: block.level,
+              text: block.text,
+            };
+          }
+
+          if (block.kind === "paragraph") {
+            return {
+              kind: "paragraph" as const,
+              text: block.text,
+            };
+          }
+
+          return {
+            kind: "bullet" as const,
+            items: block.items,
+          };
+        }),
+      })),
+    })),
+  };
+
+  const parsed = generatedCourseTreeRuntimeSchema.safeParse(normalized);
+  if (!parsed.success) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "AI returned an invalid course structure. Try again.",
+      cause: parsed.error,
+    });
+  }
+
+  return parsed.data;
+}
+
 export async function generateCourseTreeWithAi(input: GenerateCourseWithAIInput) {
-  if (!env.AI_GATEWAY_API_KEY && !env.OPENAI_API_KEY) {
+  if (!env.AI_GATEWAY_API_KEY) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
-      message:
-        "AI course generation is not configured (missing AI_GATEWAY_API_KEY or OPENAI_API_KEY on the server).",
+      message: "AI course generation is not configured (missing AI_GATEWAY_API_KEY on the server).",
     });
   }
 
   const result = await generateText({
-    model: env.OPENAI_COURSE_MODEL,
-    output: {
+    model: "openai/gpt-5.4-nano",
+    output: Output.object({
       schema: generatedCourseTreeSchema,
-      schemaName: "CourseTree",
-      schemaDescription:
+      name: "CourseTree",
+      description:
         "Full LMS course: metadata, sections, lessons with text blocks and optional quiz questions",
-    },
+    }),
     system:
       "You are an expert instructional designer. Return only data that satisfies the JSON schema. Be concise but pedagogically sound.",
     prompt: buildUserPrompt(input),
@@ -111,7 +162,7 @@ export async function generateCourseTreeWithAi(input: GenerateCourseWithAIInput)
   });
 
   return {
-    object: result.object,
+    object: normalizeGeneratedTree(result.output),
     usage: result.usage,
   };
 }

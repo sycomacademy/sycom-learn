@@ -31,7 +31,7 @@ export const courseAiRouter = router({
     .use(platformPermissionMiddleware({ course: ["generate"] }))
     .input(generateCourseWithAIInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const configured = Boolean(env.AI_GATEWAY_API_KEY || env.OPENAI_API_KEY);
+      const configured = Boolean(env.AI_GATEWAY_API_KEY);
       if (!configured) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
@@ -51,7 +51,7 @@ export const courseAiRouter = router({
         });
       }
 
-      const modelId = env.OPENAI_COURSE_MODEL;
+      const modelId = "openai/gpt-5.4-nano";
       const promptAudit = JSON.stringify(input);
 
       const { id: usageId } = await recordAIGenerationStart(ctx.db, {
@@ -112,8 +112,7 @@ export const courseAiRouter = router({
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message:
-            "Generation failed. This attempt does not count against your weekly success quota.",
+          message: `Generation failed: ${err instanceof Error ? err.message : "unknown error"}. This attempt does not count against your weekly success quota.`,
           cause: err,
         });
       }

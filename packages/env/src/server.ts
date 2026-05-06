@@ -32,11 +32,8 @@ export const env = createEnv({
       .pipe(z.array(z.url())),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     /** Optional: enables platform course generation via AI SDK (`apps/server`). */
-    OPENAI_API_KEY: z.string().min(1).optional(),
-    /** Optional: Vercel AI Gateway API key for unified model access. */
-    AI_GATEWAY_API_KEY: z.string().min(1).optional(),
-    /** AI SDK model id for course generation (default: openai/gpt-4o-mini). */
-    OPENAI_COURSE_MODEL: z.string().min(1).default("openai/gpt-4o-mini"),
+
+    AI_GATEWAY_API_KEY: z.string().min(1),
     DEBUG_PERFORMANCE: z
       .enum(["true", "false"])
       .default("false")
