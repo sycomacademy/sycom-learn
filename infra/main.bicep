@@ -109,6 +109,7 @@ var mergedTags = union(tags, {
 var defaultCorsOrigins = empty(websiteUrl) ? [dashboardUrl] : [dashboardUrl, websiteUrl]
 var effectiveCorsOrigins = length(corsOrigins) > 0 ? corsOrigins : defaultCorsOrigins
 var corsOriginValue = join(effectiveCorsOrigins, ',')
+var keyVaultBaseUrl = 'https://${keyVault.name}.${environment().suffixes.keyvaultDns}'
 var acrPullRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
 var dashboardIdentityMap = {
@@ -183,13 +184,13 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01'
   location: location
   properties: {
     appLogsConfiguration: {
-      destination: 'log-analytics'
-      logAnalyticsConfiguration: {
-        customerId: logAnalyticsWorkspace.properties.customerId
-        sharedKey: listKeys(logAnalyticsWorkspace.id, logAnalyticsWorkspace.apiVersion).primarySharedKey
+        destination: 'log-analytics'
+        logAnalyticsConfiguration: {
+          customerId: logAnalyticsWorkspace.properties.customerId
+          sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+        }
       }
     }
-  }
   tags: mergedTags
 }
 
@@ -333,72 +334,72 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
         {
           name: 'database-url'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.databaseUrl}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.databaseUrl}'
         }
         {
           name: 'better-auth-secret'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.betterAuthSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.betterAuthSecret}'
         }
         {
           name: 'better-auth-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.betterAuthApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.betterAuthApiKey}'
         }
         {
           name: 'google-client-id'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.googleClientId}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.googleClientId}'
         }
         {
           name: 'google-client-secret'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.googleClientSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.googleClientSecret}'
         }
         {
           name: 'linkedin-client-id'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.linkedinClientId}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.linkedinClientId}'
         }
         {
           name: 'linkedin-client-secret'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.linkedinClientSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.linkedinClientSecret}'
         }
         {
           name: 'cloudinary-cloud-name'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.cloudinaryCloudName}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.cloudinaryCloudName}'
         }
         {
           name: 'cloudinary-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.cloudinaryApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.cloudinaryApiKey}'
         }
         {
           name: 'cloudinary-api-secret'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.cloudinaryApiSecret}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.cloudinaryApiSecret}'
         }
         {
           name: 'resend-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.resendApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.resendApiKey}'
         }
         {
           name: 'resend-email-from'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.resendEmailFrom}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.resendEmailFrom}'
         }
         {
           name: 'resend-email-reply-to'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.resendEmailReplyTo}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.resendEmailReplyTo}'
         }
         {
           name: 'ai-gateway-api-key'
           identity: serverIdentity.id
-          keyVaultUrl: 'https://${keyVault.name}.vault.azure.net/secrets/${keyVaultSecretNames.aiGatewayApiKey}'
+          keyVaultUrl: '${keyVaultBaseUrl}/secrets/${keyVaultSecretNames.aiGatewayApiKey}'
         }
       ]
     }
@@ -542,5 +543,5 @@ output keyVaultName string = keyVault.name
 output containerAppsEnvironmentId string = containerAppsEnvironment.id
 output dashboardContainerAppName string = dashboardAppName
 output serverContainerAppName string = serverAppName
-output dashboardDefaultUrl string = deployApps ? 'https://${dashboardApp.properties.configuration.ingress.fqdn}' : ''
-output serverDefaultUrl string = deployApps ? 'https://${serverApp.properties.configuration.ingress.fqdn}' : ''
+output dashboardDefaultUrl string = deployApps ? 'https://${dashboardApp!.properties.configuration.ingress.fqdn}' : ''
+output serverDefaultUrl string = deployApps ? 'https://${serverApp!.properties.configuration.ingress.fqdn}' : ''

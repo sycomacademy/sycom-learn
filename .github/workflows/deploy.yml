@@ -1,5 +1,8 @@
 name: Deploy Azure
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches:
@@ -20,7 +23,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure login
         uses: azure/login@v2
@@ -36,8 +39,7 @@ jobs:
         run: |
           az deployment group create \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --template-file infra/main.bicep \
-            --parameters @infra/params/staging.bicepparam deployApps=false > /tmp/staging-bootstrap.json
+            --parameters infra/params/staging.bicepparam deployApps=false > /tmp/staging-bootstrap.json
 
           echo "ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' /tmp/staging-bootstrap.json)" >> "$GITHUB_ENV"
           echo "ACR_LOGIN_SERVER=$(jq -r '.properties.outputs.containerRegistryLoginServer.value' /tmp/staging-bootstrap.json)" >> "$GITHUB_ENV"
@@ -73,8 +75,7 @@ jobs:
         run: |
           az deployment group create \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --template-file infra/main.bicep \
-            --parameters @infra/params/staging.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/staging-deploy.json
+            --parameters infra/params/staging.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/staging-deploy.json
 
           echo "Dashboard default URL: $(jq -r '.properties.outputs.dashboardDefaultUrl.value' /tmp/staging-deploy.json)"
           echo "Server default URL: $(jq -r '.properties.outputs.serverDefaultUrl.value' /tmp/staging-deploy.json)"
@@ -82,13 +83,13 @@ jobs:
   deploy-production:
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod
     concurrency:
       group: deploy-production
       cancel-in-progress: true
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure login
         uses: azure/login@v2
@@ -104,8 +105,7 @@ jobs:
         run: |
           az deployment group create \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --template-file infra/main.bicep \
-            --parameters @infra/params/prod.bicepparam deployApps=false > /tmp/prod-bootstrap.json
+            --parameters infra/params/prod.bicepparam deployApps=false > /tmp/prod-bootstrap.json
 
           echo "ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' /tmp/prod-bootstrap.json)" >> "$GITHUB_ENV"
           echo "ACR_LOGIN_SERVER=$(jq -r '.properties.outputs.containerRegistryLoginServer.value' /tmp/prod-bootstrap.json)" >> "$GITHUB_ENV"
@@ -141,8 +141,7 @@ jobs:
         run: |
           az deployment group create \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --template-file infra/main.bicep \
-            --parameters @infra/params/prod.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/prod-deploy.json
+            --parameters infra/params/prod.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/prod-deploy.json
 
           echo "Dashboard default URL: $(jq -r '.properties.outputs.dashboardDefaultUrl.value' /tmp/prod-deploy.json)"
           echo "Server default URL: $(jq -r '.properties.outputs.serverDefaultUrl.value' /tmp/prod-deploy.json)"
