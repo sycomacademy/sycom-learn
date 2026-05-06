@@ -1,11 +1,10 @@
 /**
  * LLM course generation using the Vercel AI SDK.
  *
- * Provider: swap `@ai-sdk/openai` for `@ai-sdk/anthropic` / `@ai-sdk/google` and change
- * `getCourseAiModel()` to e.g. `anthropic("claude-sonnet-4-20250514")`.
+ * Model routing is handled by AI SDK model IDs (for example `openai/gpt-4o-mini`)
+ * and can run through Vercel AI Gateway when `AI_GATEWAY_API_KEY` is set.
  */
-import { generateObject, type LanguageModel } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { generateText } from "ai";
 
 import { env } from "@sycom/env/server";
 import { TRPCError } from "@trpc/server";
@@ -15,10 +14,6 @@ import {
   type GenerateCourseWithAIInput,
   type GeneratedCourseTreeOutput,
 } from "../schemas";
-
-export function getCourseAiModel(): LanguageModel {
-  return openai(env.OPENAI_COURSE_MODEL);
-}
 
 function buildUserPrompt(input: GenerateCourseWithAIInput): string {
   const audience = input.audience?.trim() ? input.audience.trim() : "General learners";
@@ -93,24 +88,30 @@ export function assertGeneratedTreeMatchesRequest(
 }
 
 export async function generateCourseTreeWithAi(input: GenerateCourseWithAIInput) {
-  if (!env.OPENAI_API_KEY) {
+  if (!env.AI_GATEWAY_API_KEY && !env.OPENAI_API_KEY) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
-      message: "AI course generation is not configured (missing OPENAI_API_KEY on the server).",
+      message:
+        "AI course generation is not configured (missing AI_GATEWAY_API_KEY or OPENAI_API_KEY on the server).",
     });
   }
 
-  const model = getCourseAiModel();
-
-  return generateObject({
-    model,
-    schema: generatedCourseTreeSchema,
-    schemaName: "CourseTree",
-    schemaDescription:
-      "Full LMS course: metadata, sections, lessons with text blocks and optional quiz questions",
+  const result = await generateText({
+    model: env.OPENAI_COURSE_MODEL,
+    output: {
+      schema: generatedCourseTreeSchema,
+      schemaName: "CourseTree",
+      schemaDescription:
+        "Full LMS course: metadata, sections, lessons with text blocks and optional quiz questions",
+    },
     system:
       "You are an expert instructional designer. Return only data that satisfies the JSON schema. Be concise but pedagogically sound.",
     prompt: buildUserPrompt(input),
     temperature: 0.55,
   });
+
+  return {
+    object: result.object,
+    usage: result.usage,
+  };
 }

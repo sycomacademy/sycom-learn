@@ -31,11 +31,12 @@ export const courseAiRouter = router({
     .use(platformPermissionMiddleware({ course: ["generate"] }))
     .input(generateCourseWithAIInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const configured = Boolean(env.OPENAI_API_KEY);
+      const configured = Boolean(env.AI_GATEWAY_API_KEY || env.OPENAI_API_KEY);
       if (!configured) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "AI course generation is not configured (missing OPENAI_API_KEY on the server).",
+          message:
+            "AI course generation is not configured (missing AI_GATEWAY_API_KEY or OPENAI_API_KEY on the server).",
         });
       }
 
