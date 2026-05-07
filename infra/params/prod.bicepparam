@@ -14,9 +14,10 @@ param appName = 'sycom-prod-app'
 
 // Single public URL — both UI and /api/auth, /trpc traffic come in here.
 param dashboardUrl = 'https://sycom-prod-app.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
-param websiteUrl = 'https://sycom-prod-app.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
+param websiteUrl = 'https://sycomsolutions.com'
 param corsOrigins = [
   'https://sycom-prod-app.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
+  'https://sycomsolutions.com'
 ]
 
 param debugPerformance = 'false'
