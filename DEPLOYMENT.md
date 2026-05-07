@@ -4,22 +4,24 @@ End-to-end guide for standing up Sycom on Azure. Following it top-to-bottom in a
 
 ## Architecture at a glance
 
-Two Bun containers run on Azure Container Apps:
+A single Container App with two containers sharing a network namespace:
 
-| App         | Port | Health  | Image             |
-| ----------- | ---- | ------- | ----------------- |
-| `dashboard` | 3000 | `/health` | `Dockerfile.dashboard` |
-| `server`    | 3001 | `/health` | `Dockerfile.server`    |
+| Container   | Port | Reachable from   | Image                 |
+| ----------- | ---- | ---------------- | --------------------- |
+| `dashboard` | 3000 | Public ingress   | `Dockerfile.dashboard` |
+| `server`    | 3001 | Loopback only    | `Dockerfile.server`    |
 
-Per environment, the same Bicep template ([`infra/main.bicep`](infra/main.bicep)) creates:
+The dashboard is a TanStack Start app whose Bun entry (`apps/dashboard/start.ts`) reverse-proxies `/api/auth/*` and `/trpc/*` to `http://localhost:3001` (the server container in the same pod). Browsers see only one URL — the dashboard's. This sidesteps Azure Container Apps' env-internal hairpin/TLS quirks that make two-app intra-env communication unreliable on the Consumption tier.
+
+Per environment, the Bicep template ([`infra/main.bicep`](infra/main.bicep)) creates:
 
 - Azure Container Registry (ACR)
 - Azure Key Vault
 - Azure Log Analytics workspace
 - Azure Container Apps environment
-- Two Container Apps (`dashboard`, `server`)
-- One user-assigned managed identity per app
-- Role assignments: each identity gets `AcrPull`; the server identity also gets `Key Vault Secrets User`
+- One Container App with two containers (`dashboard` + `server`)
+- One user-assigned managed identity (shared by both containers)
+- Role assignments: `AcrPull` on the registry, `Key Vault Secrets User` on the vault
 
 Two Bicep parameter files drive it:
 
@@ -80,10 +82,11 @@ Edited in `infra/params/<env>.bicepparam`.
 | `environmentName`       | `staging` / `prod`                 |                                            |
 | `containerRegistryName` | `sycomprodacr`                     | **Globally unique**, alphanumeric, 5-50 ch |
 | `keyVaultName`          | `sycom-prod-uks-kv`                | **Globally unique**, 3-24 ch               |
-| `dashboardUrl`          | `https://app.sycom.com`            | Final public URL                           |
-| `serverUrl`             | `https://api.sycom.com`            | Final public URL                           |
+| `appName`               | `sycom-prod-app`                   | Container App name (single app)            |
+| `appIdentityName`       | `sycom-prod-app-id`                | Shared managed identity                    |
+| `dashboardUrl`          | `https://app.sycom.com`            | Single public URL — UI + `/api/auth` + `/trpc` |
 | `websiteUrl`            | `https://sycom.com`                | Optional marketing site                    |
-| `corsOrigins`           | `['https://app.sycom.com']`        | Browsers allowed to call the server        |
+| `corsOrigins`           | `['https://app.sycom.com']`        | Browsers allowed to call the API           |
 | `debugPerformance`      | `'false'`                          | `'true'` only in staging                   |
 
 ### GitHub environment secrets (per environment)
@@ -105,9 +108,10 @@ These are **not secret** — they're public URLs and resource names baked into t
 | `AZURE_RESOURCE_GROUP`  | `sycom-prod-rg`                  |
 | `AZURE_LOCATION`        | `uksouth`                        |
 | `DASHBOARD_URL`         | `https://app.sycom.com`          |
-| `SERVER_URL`            | `https://api.sycom.com`          |
 | `WEBSITE_URL`           | `https://sycom.com`              |
 | `CLOUDINARY_CLOUD_NAME` | `sycom`                          |
+
+`SERVER_URL` is no longer needed — the workflow bakes the dashboard URL into both `VITE_SERVER_URL` and `VITE_DASHBOARD_URL` because the browser only ever hits the dashboard ingress.
 
 ### Runtime secrets (per environment)
 
@@ -307,8 +311,9 @@ az containerapp update \
 
 - Dashboard image is environment-specific because `VITE_*` values are baked at build time. Re-tagging across environments will not work.
 - Server image is the same shape across environments; runtime values come from Bicep + Key Vault.
+- Both containers share a network namespace, so the dashboard reaches the server at `http://127.0.0.1:3001` (set via `INTERNAL_SERVER_URL` env var in Bicep). The server has no external ingress.
 - Secrets in Container Apps are referenced by Key Vault URL, so rotating a secret's value in Key Vault is picked up on the next revision (force one with `az containerapp update --revision-suffix`).
-- Logs land in the Log Analytics workspace tied to the Container Apps environment. Query them in Azure Portal → Log Analytics → `ContainerAppConsoleLogs_CL`.
+- Logs land in the Log Analytics workspace tied to the Container Apps environment. Query them in Azure Portal → Log Analytics → `ContainerAppConsoleLogs_CL`. Use the `ContainerName_s` column to filter `dashboard` vs `server`.
 
 ## Client handoff checklist
 
@@ -341,10 +346,11 @@ Same path as the first-time deploy:
 | Symptom                                          | Likely cause                                                                                        |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | `staging` deploy job shows "Skipped"             | You pushed to `main`, not `staging`. The `if: github.ref_name == 'staging'` guard is by design.    |
-| Container exits with `Module not found .output/server/index.mjs` | Stale image. Rebuild — the dashboard now serves from `dist/server/server.js`.            |
+| Container exits with `Module not found .output/server/index.mjs` | Stale image. Rebuild — the dashboard now serves from `start.ts`.                       |
 | Container App shows `ImagePullBackOff`           | Managed identity missing `AcrPull` on the registry. Re-run the Bicep deploy.                       |
-| Server returns 500 on every request              | Key Vault secret missing or the server identity lacks `Key Vault Secrets User`. Check the vault's RBAC. |
-| Dashboard hits CORS errors against the API       | `corsOrigins` in bicepparam doesn't include the dashboard's URL. Update and redeploy.              |
+| `/api/auth/*` returns 500 immediately            | Server container hasn't started yet (cold-start race) or crashed. Check logs for the `server` container in the same Container App. |
+| `/api/auth/*` returns 502 from ingress           | Server container not listening on `127.0.0.1:3001`. Confirm `PORT=3001` and `HOST=127.0.0.1` env vars (set by Bicep).         |
+| Dashboard hits CORS errors against `/api/auth`   | Should never happen now (same origin). If it does, check that `VITE_SERVER_URL` was built with the **dashboard** URL, not a separate API URL. |
 | OAuth redirect loops or "redirect_uri_mismatch"  | Provider allowed-callbacks list still points at the old Azure FQDN; update it to the live domain.  |
 | Build job takes 25+ min                          | Someone re-added the standalone `nitro()` plugin. Remove it; TanStack Start already bundles Nitro. |
 

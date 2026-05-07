@@ -4,9 +4,9 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 import { getForwardedCookieHeader } from "@/functions/forward-header-cookies";
 
-// This client only runs on the server (createServerFn). Prefer the
-// Container Apps internal FQDN to avoid the same-env hairpin that hangs
-// public-FQDN calls between two apps in one environment.
+// Server-only client. Talk directly to the server container over loopback
+// via INTERNAL_SERVER_URL (set in Bicep) instead of looping back through
+// the dashboard's own /trpc proxy.
 const baseURL = process.env.INTERNAL_SERVER_URL ?? env.VITE_SERVER_URL;
 
 export const serverTRPC = createTRPCClient<AppRouter>({

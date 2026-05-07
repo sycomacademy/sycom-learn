@@ -1,5 +1,10 @@
 targetScope = 'resourceGroup'
 
+// One Container App with two containers (dashboard + server). Dashboard
+// reverse-proxies /api/auth/* and /trpc/* to the server on localhost:3001
+// so the env-internal hairpin / TLS handshake quirks are bypassed
+// entirely. Server has no external ingress.
+
 @description('Azure region for this environment.')
 param location string = resourceGroup().location
 
@@ -9,7 +14,7 @@ param projectName string = 'sycom'
 @description('Environment name, usually staging or prod.')
 param environmentName string
 
-@description('Deploy only the shared infrastructure when false, or infrastructure plus apps when true.')
+@description('Deploy only the shared infrastructure when false, or infrastructure plus the app when true.')
 param deployApps bool = true
 
 @description('Globally unique Azure Container Registry name.')
@@ -24,17 +29,11 @@ param logAnalyticsWorkspaceName string = '${projectName}-${environmentName}-logs
 @description('Container Apps environment name.')
 param containerAppsEnvironmentName string = '${projectName}-${environmentName}-cae'
 
-@description('Dashboard user-assigned managed identity name.')
-param dashboardIdentityName string = '${projectName}-${environmentName}-dashboard-id'
+@description('User-assigned managed identity name (shared by both containers).')
+param appIdentityName string = '${projectName}-${environmentName}-app-id'
 
-@description('Server user-assigned managed identity name.')
-param serverIdentityName string = '${projectName}-${environmentName}-server-id'
-
-@description('Dashboard Container App name.')
-param dashboardAppName string = '${projectName}-${environmentName}-dashboard'
-
-@description('Server Container App name.')
-param serverAppName string = '${projectName}-${environmentName}-server'
+@description('Container App name. Both containers live in this single app.')
+param appName string = '${projectName}-${environmentName}-app'
 
 @description('Dashboard image reference in ACR.')
 param dashboardImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
@@ -42,11 +41,8 @@ param dashboardImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowo
 @description('Server image reference in ACR.')
 param serverImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-@description('Public dashboard URL for this environment.')
+@description('Public app URL for this environment (browser-facing, hits the dashboard ingress).')
 param dashboardUrl string
-
-@description('Public server URL for this environment.')
-param serverUrl string
 
 @description('Optional public website URL used by server-side links.')
 param websiteUrl string = ''
@@ -54,32 +50,26 @@ param websiteUrl string = ''
 @description('Allowed browser origins for the server. Defaults to dashboardUrl plus websiteUrl when omitted.')
 param corsOrigins array = []
 
-@description('Dashboard container port.')
+@description('Dashboard container port (the only ingress).')
 param dashboardTargetPort int = 3000
 
-@description('Server container port.')
+@description('Server container port (loopback only).')
 param serverTargetPort int = 3001
 
-@description('Minimum dashboard replicas.')
-param dashboardMinReplicas int = 1
+@description('Minimum app replicas.')
+param appMinReplicas int = 1
 
-@description('Maximum dashboard replicas.')
-param dashboardMaxReplicas int = 2
+@description('Maximum app replicas.')
+param appMaxReplicas int = 2
 
-@description('Minimum server replicas.')
-param serverMinReplicas int = 1
-
-@description('Maximum server replicas.')
-param serverMaxReplicas int = 2
-
-@description('DEBUG_PERFORMANCE value passed to the server app.')
+@description('DEBUG_PERFORMANCE value passed to the server.')
 @allowed([
   'true'
   'false'
 ])
 param debugPerformance string = 'false'
 
-@description('Key Vault secret names expected by the server container app.')
+@description('Key Vault secret names expected by the server container.')
 param keyVaultSecretNames object = {
   databaseUrl: 'database-url'
   betterAuthSecret: 'better-auth-secret'
@@ -110,21 +100,13 @@ var defaultCorsOrigins = empty(websiteUrl) ? [dashboardUrl] : [dashboardUrl, web
 var effectiveCorsOrigins = length(corsOrigins) > 0 ? corsOrigins : defaultCorsOrigins
 var corsOriginValue = join(effectiveCorsOrigins, ',')
 var keyVaultBaseUrl = '${keyVault.properties.vaultUri}secrets'
-// In Container Apps, two apps in the same env must call each other via the
-// internal hostname (bare app name) over HTTP — the public FQDN hairpins
-// through Envoy, and HTTPS to the internal LB has TLS-handshake quirks
-// with some HTTP clients (Bun included). Plain HTTP on the bare app name
-// is the documented service-to-service path. Requires
-// allowInsecure: true on the server's ingress so the LB doesn't 302
-// us back to HTTPS.
-var internalServerUrl = deployApps ? 'http://${serverAppName}' : ''
+// Both containers share a network namespace; dashboard SSR talks to the
+// server over loopback. No env-level service discovery needed.
+var internalServerUrl = 'http://localhost:${serverTargetPort}'
 var acrPullRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
-var dashboardIdentityMap = {
-  '${dashboardIdentity.id}': {}
-}
-var serverIdentityMap = {
-  '${serverIdentity.id}': {}
+var appIdentityMap = {
+  '${appIdentity.id}': {}
 }
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -175,14 +157,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   tags: mergedTags
 }
 
-resource dashboardIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: dashboardIdentityName
-  location: location
-  tags: mergedTags
-}
-
-resource serverIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: serverIdentityName
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: appIdentityName
   location: location
   tags: mergedTags
 }
@@ -202,42 +178,32 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01'
   tags: mergedTags
 }
 
-resource dashboardAcrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(containerRegistry.id, dashboardIdentity.id, 'acr-pull')
+resource appAcrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerRegistry.id, appIdentity.id, 'acr-pull')
   scope: containerRegistry
   properties: {
-    principalId: dashboardIdentity.properties.principalId
+    principalId: appIdentity.properties.principalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: acrPullRoleDefinitionId
   }
 }
 
-resource serverAcrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(containerRegistry.id, serverIdentity.id, 'acr-pull')
-  scope: containerRegistry
-  properties: {
-    principalId: serverIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: acrPullRoleDefinitionId
-  }
-}
-
-resource serverKeyVaultSecretsUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, serverIdentity.id, 'key-vault-secrets-user')
+resource appKeyVaultSecretsUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, appIdentity.id, 'key-vault-secrets-user')
   scope: keyVault
   properties: {
-    principalId: serverIdentity.properties.principalId
+    principalId: appIdentity.properties.principalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: keyVaultSecretsUserRoleDefinitionId
   }
 }
 
-resource dashboardApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
-  name: dashboardAppName
+resource app 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
+  name: appName
   location: location
   identity: {
     type: 'UserAssigned'
-    userAssignedIdentities: dashboardIdentityMap
+    userAssignedIdentities: appIdentityMap
   }
   properties: {
     managedEnvironmentId: containerAppsEnvironment.id
@@ -258,7 +224,79 @@ resource dashboardApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps)
       registries: [
         {
           server: containerRegistry.properties.loginServer
-          identity: dashboardIdentity.id
+          identity: appIdentity.id
+        }
+      ]
+      secrets: [
+        {
+          name: 'database-url'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.databaseUrl}'
+        }
+        {
+          name: 'better-auth-secret'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.betterAuthSecret}'
+        }
+        {
+          name: 'better-auth-api-key'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.betterAuthApiKey}'
+        }
+        {
+          name: 'google-client-id'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.googleClientId}'
+        }
+        {
+          name: 'google-client-secret'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.googleClientSecret}'
+        }
+        {
+          name: 'linkedin-client-id'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.linkedinClientId}'
+        }
+        {
+          name: 'linkedin-client-secret'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.linkedinClientSecret}'
+        }
+        {
+          name: 'cloudinary-cloud-name'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryCloudName}'
+        }
+        {
+          name: 'cloudinary-api-key'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryApiKey}'
+        }
+        {
+          name: 'cloudinary-api-secret'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryApiSecret}'
+        }
+        {
+          name: 'resend-api-key'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendApiKey}'
+        }
+        {
+          name: 'resend-email-from'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendEmailFrom}'
+        }
+        {
+          name: 'resend-email-reply-to'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendEmailReplyTo}'
+        }
+        {
+          name: 'ai-gateway-api-key'
+          identity: appIdentity.id
+          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.aiGatewayApiKey}'
         }
       ]
     }
@@ -302,126 +340,6 @@ resource dashboardApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps)
             }
           ]
         }
-      ]
-      scale: {
-        minReplicas: dashboardMinReplicas
-        maxReplicas: dashboardMaxReplicas
-      }
-    }
-  }
-  dependsOn: [
-    dashboardAcrPullRole
-  ]
-  tags: mergedTags
-}
-
-resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
-  name: serverAppName
-  location: location
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: serverIdentityMap
-  }
-  properties: {
-    managedEnvironmentId: containerAppsEnvironment.id
-    configuration: {
-      activeRevisionsMode: 'Single'
-      ingress: {
-        // Allow plain HTTP so dashboard SSR can reach us via the internal
-        // hostname without the 302→HTTPS redirect. External traffic still
-        // arrives over HTTPS via the env edge regardless of this flag.
-        allowInsecure: true
-        external: true
-        targetPort: serverTargetPort
-        transport: 'auto'
-        traffic: [
-          {
-            latestRevision: true
-            weight: 100
-          }
-        ]
-      }
-      registries: [
-        {
-          server: containerRegistry.properties.loginServer
-          identity: serverIdentity.id
-        }
-      ]
-      secrets: [
-        {
-          name: 'database-url'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.databaseUrl}'
-        }
-        {
-          name: 'better-auth-secret'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.betterAuthSecret}'
-        }
-        {
-          name: 'better-auth-api-key'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.betterAuthApiKey}'
-        }
-        {
-          name: 'google-client-id'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.googleClientId}'
-        }
-        {
-          name: 'google-client-secret'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.googleClientSecret}'
-        }
-        {
-          name: 'linkedin-client-id'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.linkedinClientId}'
-        }
-        {
-          name: 'linkedin-client-secret'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.linkedinClientSecret}'
-        }
-        {
-          name: 'cloudinary-cloud-name'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryCloudName}'
-        }
-        {
-          name: 'cloudinary-api-key'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryApiKey}'
-        }
-        {
-          name: 'cloudinary-api-secret'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.cloudinaryApiSecret}'
-        }
-        {
-          name: 'resend-api-key'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendApiKey}'
-        }
-        {
-          name: 'resend-email-from'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendEmailFrom}'
-        }
-        {
-          name: 'resend-email-reply-to'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.resendEmailReplyTo}'
-        }
-        {
-          name: 'ai-gateway-api-key'
-          identity: serverIdentity.id
-          keyVaultUrl: '${keyVaultBaseUrl}/${keyVaultSecretNames.aiGatewayApiKey}'
-        }
-      ]
-    }
-    template: {
-      containers: [
         {
           name: 'server'
           image: serverImage
@@ -436,7 +354,7 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
             }
             {
               name: 'BETTER_AUTH_URL'
-              value: serverUrl
+              value: dashboardUrl
             }
             {
               name: 'DASHBOARD_URL'
@@ -444,7 +362,7 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
             }
             {
               name: 'SERVER_URL'
-              value: serverUrl
+              value: dashboardUrl
             }
             {
               name: 'WEBSITE_URL'
@@ -457,6 +375,14 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
             {
               name: 'DEBUG_PERFORMANCE'
               value: debugPerformance
+            }
+            {
+              name: 'PORT'
+              value: string(serverTargetPort)
+            }
+            {
+              name: 'HOST'
+              value: '127.0.0.1'
             }
             {
               name: 'DATABASE_URL'
@@ -518,19 +444,17 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
           probes: [
             {
               type: 'Startup'
-              httpGet: {
-                path: '/health'
+              tcpSocket: {
                 port: serverTargetPort
               }
-              initialDelaySeconds: 10
-              periodSeconds: 10
-              timeoutSeconds: 5
-              failureThreshold: 12
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 24
             }
             {
               type: 'Liveness'
-              httpGet: {
-                path: '/health'
+              tcpSocket: {
                 port: serverTargetPort
               }
               initialDelaySeconds: 15
@@ -542,14 +466,14 @@ resource serverApp 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
         }
       ]
       scale: {
-        minReplicas: serverMinReplicas
-        maxReplicas: serverMaxReplicas
+        minReplicas: appMinReplicas
+        maxReplicas: appMaxReplicas
       }
     }
   }
   dependsOn: [
-    serverAcrPullRole
-    serverKeyVaultSecretsUserRole
+    appAcrPullRole
+    appKeyVaultSecretsUserRole
   ]
   tags: mergedTags
 }
@@ -558,7 +482,5 @@ output containerRegistryName string = containerRegistry.name
 output containerRegistryLoginServer string = containerRegistry.properties.loginServer
 output keyVaultName string = keyVault.name
 output containerAppsEnvironmentId string = containerAppsEnvironment.id
-output dashboardContainerAppName string = dashboardAppName
-output serverContainerAppName string = serverAppName
-output dashboardDefaultUrl string = deployApps ? 'https://${dashboardApp!.properties.configuration.ingress.fqdn}' : ''
-output serverDefaultUrl string = deployApps ? 'https://${serverApp!.properties.configuration.ingress.fqdn}' : ''
+output appContainerAppName string = appName
+output appDefaultUrl string = deployApps ? 'https://${app!.properties.configuration.ingress.fqdn}' : ''

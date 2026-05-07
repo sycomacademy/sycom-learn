@@ -9,16 +9,14 @@ param containerRegistryName = 'changesycomprodacr'
 param keyVaultName = 'sycom-prod-kv'
 param logAnalyticsWorkspaceName = 'sycom-prod-logs'
 param containerAppsEnvironmentName = 'sycom-prod-cae'
-param dashboardIdentityName = 'sycom-prod-dashboard-id'
-param serverIdentityName = 'sycom-prod-server-id'
-param dashboardAppName = 'sycom-prod-dashboard'
-param serverAppName = 'sycom-prod-server'
+param appIdentityName = 'sycom-prod-app-id'
+param appName = 'sycom-prod-app'
 
-param dashboardUrl = 'https://sycom-prod-dashboard.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
-param serverUrl = 'https://sycom-prod-server.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
-param websiteUrl = 'https://sycom-prod-dashboard.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
+// Single public URL — both UI and /api/auth, /trpc traffic come in here.
+param dashboardUrl = 'https://sycom-prod-app.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
+param websiteUrl = 'https://sycom-prod-app.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
 param corsOrigins = [
-  'https://sycom-prod-dashboard.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
+  'https://sycom-prod-app.ambitiousgrass-33894738.uksouth.azurecontainerapps.io'
 ]
 
 param debugPerformance = 'false'

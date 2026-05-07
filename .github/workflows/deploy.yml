@@ -60,7 +60,7 @@ jobs:
           cache-from: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache
           cache-to: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache,mode=max
           build-args: |
-            VITE_SERVER_URL=${{ vars.SERVER_URL }}
+            VITE_SERVER_URL=${{ vars.DASHBOARD_URL }}
             VITE_DASHBOARD_URL=${{ vars.DASHBOARD_URL }}
             VITE_WEBSITE_URL=${{ vars.WEBSITE_URL }}
             VITE_CLOUDINARY_CLOUD_NAME=${{ vars.CLOUDINARY_CLOUD_NAME }}
@@ -87,8 +87,7 @@ jobs:
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --parameters infra/params/staging.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/staging-deploy.json
 
-          echo "Dashboard default URL: $(jq -r '.properties.outputs.dashboardDefaultUrl.value' /tmp/staging-deploy.json)"
-          echo "Server default URL: $(jq -r '.properties.outputs.serverDefaultUrl.value' /tmp/staging-deploy.json)"
+          echo "App default URL: $(jq -r '.properties.outputs.appDefaultUrl.value' /tmp/staging-deploy.json)"
 
   deploy-production:
     if: github.ref_name == 'main'
@@ -136,7 +135,7 @@ jobs:
           cache-from: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache
           cache-to: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache,mode=max
           build-args: |
-            VITE_SERVER_URL=${{ vars.SERVER_URL }}
+            VITE_SERVER_URL=${{ vars.DASHBOARD_URL }}
             VITE_DASHBOARD_URL=${{ vars.DASHBOARD_URL }}
             VITE_WEBSITE_URL=${{ vars.WEBSITE_URL }}
             VITE_CLOUDINARY_CLOUD_NAME=${{ vars.CLOUDINARY_CLOUD_NAME }}
@@ -163,5 +162,4 @@ jobs:
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --parameters infra/params/prod.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/prod-deploy.json
 
-          echo "Dashboard default URL: $(jq -r '.properties.outputs.dashboardDefaultUrl.value' /tmp/prod-deploy.json)"
-          echo "Server default URL: $(jq -r '.properties.outputs.serverDefaultUrl.value' /tmp/prod-deploy.json)"
+          echo "App default URL: $(jq -r '.properties.outputs.appDefaultUrl.value' /tmp/prod-deploy.json)"

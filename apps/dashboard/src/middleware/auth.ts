@@ -6,6 +6,8 @@ import { authClient } from "@/lib/auth/auth-client";
 const startFnLogger = createLoggerWithContext("start:fn");
 
 export const sessionMiddleware = createMiddleware().server(async ({ next, request }) => {
+  const cookie = request.headers.get("cookie") ?? "";
+
   startFnLogger.info("getSession request", {
     method: request.method,
     url: request.url,
@@ -13,14 +15,24 @@ export const sessionMiddleware = createMiddleware().server(async ({ next, reques
 
   const data = await authClient.getSession({
     fetchOptions: {
-      headers: request.headers,
+      headers: cookie ? { cookie } : {},
       throw: true,
     },
   });
+
+  const payload = data as {
+    data?: { session?: unknown; user?: unknown } | null;
+    session?: unknown;
+    user?: unknown;
+  };
+
+  const session = payload.data?.session ?? payload.session ?? null;
+  const user = payload.data?.user ?? payload.user ?? null;
+
   return next({
     context: {
-      session: data?.session ?? null,
-      user: data?.user ?? null,
+      session,
+      user,
     },
   });
 });

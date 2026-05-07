@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "NODE_OPTIONS=--max-old-space-size=8192 vite build",
-    "start": "bun dist/server/server.js",
+    "start": "bun start.ts",
     "serve": "vite preview",
     "dev": "vite dev",
     "build:analyze": "BUNDLE_ANALYZE=true vite build",
