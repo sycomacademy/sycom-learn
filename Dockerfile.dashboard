@@ -21,22 +21,27 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
+# Reference these ARGs directly inside the RUN below so their *values* are
+# part of BuildKit's cache key. Setting them via an intermediate ENV layer
+# does NOT reliably cache-bust with registry-backed cache (cache-from/to),
+# which is how we got a stale dashboard image with last-deploy URLs baked
+# into the bundle.
 ARG VITE_SERVER_URL
 ARG VITE_DASHBOARD_URL
 ARG VITE_WEBSITE_URL
 ARG VITE_CLOUDINARY_CLOUD_NAME
 
-ENV NODE_ENV=production \
-    VITE_SERVER_URL=${VITE_SERVER_URL} \
-    VITE_DASHBOARD_URL=${VITE_DASHBOARD_URL} \
-    VITE_WEBSITE_URL=${VITE_WEBSITE_URL} \
-    VITE_CLOUDINARY_CLOUD_NAME=${VITE_CLOUDINARY_CLOUD_NAME}
-
-RUN bun run turbo -F dashboard build
+RUN NODE_ENV=production \
+    VITE_SERVER_URL="${VITE_SERVER_URL}" \
+    VITE_DASHBOARD_URL="${VITE_DASHBOARD_URL}" \
+    VITE_WEBSITE_URL="${VITE_WEBSITE_URL}" \
+    VITE_CLOUDINARY_CLOUD_NAME="${VITE_CLOUDINARY_CLOUD_NAME}" \
+    bun run turbo -F dashboard build
 
 WORKDIR /app/apps/dashboard
 
-ENV HOST=0.0.0.0 \
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
     PORT=3000
 
 EXPOSE 3000
