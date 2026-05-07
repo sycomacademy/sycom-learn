@@ -11,8 +11,17 @@ const upstream = new URL(UPSTREAM);
 
 const PROXY_PREFIXES = ["/api/auth", "/trpc"];
 
+const STATIC_ROOT = "./dist/client";
+
+const ROOT_STATIC_FILE_RE =
+  /^\/[^/]+\.(?:ico|png|jpg|jpeg|gif|svg|webp|avif|woff2?|ttf|otf|txt|xml|webmanifest)$/i;
+
 function shouldProxy(pathname: string): boolean {
   return PROXY_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+function shouldServeStatic(pathname: string): boolean {
+  return pathname.startsWith("/assets/") || ROOT_STATIC_FILE_RE.test(pathname);
 }
 
 async function proxy(req: Request): Promise<Response> {
@@ -26,12 +35,28 @@ async function proxy(req: Request): Promise<Response> {
   });
 }
 
+async function serveStatic(pathname: string): Promise<Response | null> {
+  const file = Bun.file(`${STATIC_ROOT}${pathname}`);
+  if (!(await file.exists())) return null;
+  return new Response(file, {
+    headers: {
+      "cache-control": pathname.startsWith("/assets/")
+        ? "public, max-age=31536000, immutable"
+        : "public, max-age=3600",
+    },
+  });
+}
+
 export default {
   port: Number(process.env.PORT ?? 3000),
   hostname: process.env.HOST ?? "0.0.0.0",
   async fetch(req: Request) {
     const { pathname } = new URL(req.url);
     if (shouldProxy(pathname)) return proxy(req);
+    if (shouldServeStatic(pathname)) {
+      const res = await serveStatic(pathname);
+      if (res) return res;
+    }
     return start.fetch(req);
   },
 };
