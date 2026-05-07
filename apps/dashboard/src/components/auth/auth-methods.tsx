@@ -15,19 +15,25 @@ import { FingerprintIcon } from "lucide-react";
 import type React from "react";
 
 type AuthMethodsProps = {
-  disabledSocialReason: string;
   lastUsedMethod?: string | null;
+  linkedInLoading?: boolean;
+  onLinkedIn?: () => void;
+  onGoogle?: () => void;
   onPasskey?: () => void;
   passkeyLoading?: boolean;
+  socialDisabledReason?: string;
   showPasskey?: boolean;
   title: string;
 };
 
 export function AuthMethods({
-  disabledSocialReason,
   lastUsedMethod,
+  linkedInLoading = false,
+  onLinkedIn,
+  onGoogle,
   onPasskey,
   passkeyLoading = false,
+  socialDisabledReason = "Not yet available",
   showPasskey = false,
   title,
 }: AuthMethodsProps) {
@@ -57,21 +63,24 @@ export function AuthMethods({
             </AuthMethodButton>
           ) : null}
 
-          <DisabledAuthMethodButton
-            disabledReason={disabledSocialReason}
+          <SocialAuthMethodButton
+            disabledReason={socialDisabledReason}
             icon={<GoogleLogo className="size-4" />}
             isLastUsed={lastUsedMethod === "google"}
+            onClick={onGoogle}
           >
             Continue with Google
-          </DisabledAuthMethodButton>
+          </SocialAuthMethodButton>
 
-          <DisabledAuthMethodButton
-            disabledReason={disabledSocialReason}
+          <SocialAuthMethodButton
+            disabledReason={socialDisabledReason}
             icon={<LinkedinLogo className="size-4" />}
             isLastUsed={lastUsedMethod === "linkedin"}
+            loading={linkedInLoading}
+            onClick={onLinkedIn}
           >
             Continue with LinkedIn
-          </DisabledAuthMethodButton>
+          </SocialAuthMethodButton>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -119,17 +128,29 @@ function AuthMethodButton({
   );
 }
 
-function DisabledAuthMethodButton({
+function SocialAuthMethodButton({
   children,
   disabledReason,
   icon,
   isLastUsed = false,
+  loading = false,
+  onClick,
 }: {
   children: React.ReactNode;
   disabledReason: string;
   icon: React.ReactNode;
   isLastUsed?: boolean;
+  loading?: boolean;
+  onClick?: () => void;
 }) {
+  if (onClick) {
+    return (
+      <AuthMethodButton icon={icon} isLastUsed={isLastUsed} loading={loading} onClick={onClick}>
+        {children}
+      </AuthMethodButton>
+    );
+  }
+
   return (
     <Tooltip>
       <TooltipTrigger

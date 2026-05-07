@@ -60,6 +60,7 @@ export const Route = createFileRoute("/_auth/sign-up")({
 function SignUpPage() {
   const router = useRouter();
   const [lastUsedMethod, setLastUsedMethod] = useState<string | null>(null);
+  const [linkedInPending, setLinkedInPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<SignUpInput>({
@@ -101,6 +102,31 @@ function SignUpPage() {
           type: "error",
         });
       }
+    }
+  };
+
+  const handleLinkedInSignUp = async () => {
+    setLinkedInPending(true);
+
+    try {
+      const { error } = await authClient.signIn.social({
+        callbackURL: `${env.VITE_DASHBOARD_URL}/dashboard`,
+        provider: "linkedin",
+      });
+
+      if (error) {
+        toastManager.add({ title: error.message, type: "error" });
+        setLinkedInPending(false);
+      }
+    } catch (error) {
+      toastManager.add({
+        title:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+      setLinkedInPending(false);
     }
   };
 
@@ -225,8 +251,12 @@ function SignUpPage() {
               </Button>
 
               <AuthMethods
-                disabledSocialReason={"Not yet available"}
                 lastUsedMethod={lastUsedMethod}
+                linkedInLoading={linkedInPending}
+                onLinkedIn={() => {
+                  void handleLinkedInSignUp();
+                }}
+                socialDisabledReason="Not yet available"
                 title="More ways to continue"
               />
             </form>

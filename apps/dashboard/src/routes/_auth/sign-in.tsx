@@ -24,7 +24,7 @@ import * as z from "zod/mini";
 import { AuthMethods } from "@/components/auth/auth-methods";
 import { Link } from "@/components/layout/foresight-link";
 import { authClient } from "@/lib/auth/auth-client";
-import { resolveAuthenticatedEntryHref } from "@/lib/auth/auth-redirect";
+import { resolveAuthenticatedEntryHref, safeRedirectPath } from "@/lib/auth/auth-redirect";
 import { SESSION_QUERY_KEY } from "@/lib/auth/session";
 import { useTRPC } from "@/lib/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -36,8 +36,6 @@ const signInSchema = z.object({
 });
 
 type SignInInput = z.infer<typeof signInSchema>;
-
-const disabledOAuthReason = "Not yet available";
 
 export const Route = createFileRoute("/_auth/sign-in")({
   head: () => ({
@@ -60,6 +58,7 @@ function SignInPage() {
   const trpc = useTRPC();
   const { redirect: redirectParam } = useSearch({ from: "/_auth" });
   const [lastUsedMethod, setLastUsedMethod] = useState<string | null>(null);
+  const [linkedInPending, setLinkedInPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [passkeyPending, setPasskeyPending] = useState(false);
 
@@ -154,6 +153,32 @@ function SignInPage() {
       });
     } finally {
       setPasskeyPending(false);
+    }
+  };
+
+  const handleLinkedInSignIn = async () => {
+    setLinkedInPending(true);
+
+    try {
+      const callbackPath = safeRedirectPath(redirectParam) ?? "/dashboard";
+      const { error } = await authClient.signIn.social({
+        callbackURL: `${env.VITE_DASHBOARD_URL}${callbackPath}`,
+        provider: "linkedin",
+      });
+
+      if (error) {
+        toastManager.add({ title: error.message, type: "error" });
+        setLinkedInPending(false);
+      }
+    } catch (error) {
+      toastManager.add({
+        title:
+          error instanceof Error
+            ? error.message
+            : "Couldn't reach server. Check your connection and try again.",
+        type: "error",
+      });
+      setLinkedInPending(false);
     }
   };
 
@@ -277,13 +302,17 @@ function SignInPage() {
               </div>
 
               <AuthMethods
-                disabledSocialReason={disabledOAuthReason}
                 lastUsedMethod={lastUsedMethod}
+                linkedInLoading={linkedInPending}
+                onLinkedIn={() => {
+                  void handleLinkedInSignIn();
+                }}
                 onPasskey={() => {
                   void handlePasskeySignIn();
                 }}
                 passkeyLoading={passkeyPending}
                 showPasskey
+                socialDisabledReason="Not yet available"
                 title="More ways to sign in"
               />
             </form>
