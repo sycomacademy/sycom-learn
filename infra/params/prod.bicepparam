@@ -1,4 +1,4 @@
-using '../main.bicep'
+using '../main.local-deploy.bicep'
 
 param location = 'uksouth'
 param projectName = 'sycomlearn'
@@ -9,8 +9,8 @@ param containerRegistryName = 'sycomlearnprodacr01'
 param keyVaultName = 'sycomlearnprodkv01'
 param logAnalyticsWorkspaceName = 'sycomlearn-prod-logs'
 param containerAppsEnvironmentName = 'sycomlearn-prod-cae'
-param appIdentityName = 'sycomlearn-prod-app-id'
 param appName = 'sycomlearn-prod-app'
+param keyVaultAdminObjectId = 'edee4978-903c-44c1-8ff4-590a926e1d82'
 
 // Single public URL — both UI and /api/auth, /trpc traffic come in here.
 param dashboardUrl = 'https://learn.sycom.academy'
