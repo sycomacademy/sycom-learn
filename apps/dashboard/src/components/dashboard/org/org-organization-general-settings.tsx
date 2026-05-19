@@ -33,6 +33,7 @@ import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { ORG_ACCENT_PRESETS } from "@/routes/onboarding/-org-brand-presets";
 import { authClient } from "@/lib/auth/auth-client";
+import { sessionQueryOptions } from "@/lib/auth/session";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 
 const accentFormSchema = z.object({
@@ -148,8 +149,18 @@ export function OrgOrganizationGeneralSettings({ workspace }: { workspace: OrgWo
         });
       }
 
-      await queryClient.invalidateQueries(trpc.profile.get.queryOptions());
-      await queryClient.invalidateQueries(trpc.organization.memberships.queryOptions());
+      await Promise.all([
+        queryClient.invalidateQueries(trpc.profile.get.queryOptions()),
+        queryClient.invalidateQueries(trpc.organization.memberships.queryOptions()),
+        queryClient.invalidateQueries(trpc.onboarding.status.queryOptions()),
+      ]);
+
+      await Promise.all([
+        queryClient.fetchQuery(sessionQueryOptions()),
+        queryClient.fetchQuery(trpc.profile.get.queryOptions()),
+        queryClient.fetchQuery(trpc.onboarding.status.queryOptions()),
+      ]);
+
       await navigate({ to: "/dashboard", replace: true });
     } catch (error) {
       const message =

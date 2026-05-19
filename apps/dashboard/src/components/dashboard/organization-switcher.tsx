@@ -25,7 +25,7 @@ import { ChevronsUpDown } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { authClient } from "@/lib/auth/auth-client";
 import { dashboardHomeRoute } from "@/lib/auth/dashboard-home-route";
-import { SESSION_QUERY_KEY } from "@/lib/auth/session";
+import { SESSION_QUERY_KEY, sessionQueryOptions } from "@/lib/auth/session";
 import { useTRPC } from "@/lib/trpc/client";
 
 export function OrganizationSwitcher(): React.ReactElement | null {
@@ -56,8 +56,7 @@ export function OrganizationSwitcher(): React.ReactElement | null {
   const triggerLabel =
     activeMembership?.name?.trim() || activeMembership?.slug?.trim() || "Personal workspace";
 
-  const refreshCaches = async () => {
-    queryClient.removeQueries({ queryKey: trpc.organization.workspaceContext.queryKey() });
+  const syncWorkspaceState = async (nextOrganizationId: string | null) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY }),
       queryClient.invalidateQueries(trpc.profile.get.queryOptions()),
@@ -65,7 +64,19 @@ export function OrganizationSwitcher(): React.ReactElement | null {
       queryClient.invalidateQueries(trpc.student.getDashboardOverview.queryOptions({})),
       queryClient.invalidateQueries(trpc.student.getLibrary.queryOptions({})),
       queryClient.invalidateQueries({ queryKey: trpc.catalog.list.queryKey() }),
-      queryClient.invalidateQueries(trpc.organization.workspaceContext.queryOptions()),
+    ]);
+
+    if (nextOrganizationId) {
+      await queryClient.invalidateQueries(trpc.organization.workspaceContext.queryOptions());
+    }
+
+    await Promise.all([
+      queryClient.fetchQuery(sessionQueryOptions()),
+      queryClient.fetchQuery(trpc.profile.get.queryOptions()),
+      queryClient.fetchQuery(trpc.onboarding.status.queryOptions()),
+      nextOrganizationId
+        ? queryClient.fetchQuery(trpc.organization.workspaceContext.queryOptions())
+        : Promise.resolve(),
     ]);
   };
 
@@ -82,17 +93,12 @@ export function OrganizationSwitcher(): React.ReactElement | null {
         toastManager.add({ title: error.message, type: "error" });
         return;
       }
-      await refreshCaches();
+      await syncWorkspaceState(organizationId);
+      await router.navigate({
+        to: dashboardHomeRoute(organizationId),
+        replace: true,
+      });
       await router.invalidate();
-
-      const pathname = router.state.location.pathname;
-      const onDashboardHome = pathname === "/dashboard" || pathname === "/dashboard/";
-      if (onDashboardHome) {
-        await router.navigate({
-          to: dashboardHomeRoute(organizationId),
-          replace: true,
-        });
-      }
     } catch {
       toastManager.add({
         title: "Couldn't reach server. Check your connection and try again.",
@@ -115,9 +121,9 @@ export function OrganizationSwitcher(): React.ReactElement | null {
         toastManager.add({ title: error.message, type: "error" });
         return;
       }
-      await refreshCaches();
-      await router.invalidate();
+      await syncWorkspaceState(null);
       await router.navigate({ to: "/dashboard", replace: true });
+      await router.invalidate();
     } catch {
       toastManager.add({
         title: "Couldn't reach server. Check your connection and try again.",

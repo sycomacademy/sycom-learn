@@ -684,7 +684,7 @@ export function UserActions({ user }: { user: UserRow }): ReactNode {
   const impersonateMutation = useMutation({
     ...trpc.admin.impersonateUser.mutationOptions({
       onSuccess: () => {
-        window.location.reload();
+        window.location.assign("/dashboard");
       },
       onError: (error) => {
         toastManager.add({

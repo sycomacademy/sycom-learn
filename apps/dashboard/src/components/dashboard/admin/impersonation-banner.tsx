@@ -15,7 +15,7 @@ export function ImpersonationBanner() {
   const stopImpersonatingMutation = useMutation({
     ...trpc.admin.stopImpersonatingUser.mutationOptions({
       onSuccess: () => {
-        window.location.assign("/dashboard/admin");
+        window.location.replace("/dashboard/admin");
       },
       onError: (error) => {
         toastManager.add({
