@@ -6,7 +6,6 @@ env:
 on:
   push:
     branches:
-      - staging
       - main
 
 permissions:
@@ -14,83 +13,7 @@ permissions:
   id-token: write
 
 jobs:
-  deploy-staging:
-    if: github.ref_name == 'staging'
-    runs-on: ubuntu-latest
-    environment: staging
-    concurrency:
-      group: deploy-staging
-      cancel-in-progress: true
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
-
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Create resource group
-        run: az group create --name "${{ vars.AZURE_RESOURCE_GROUP }}" --location "${{ vars.AZURE_LOCATION }}"
-
-      - name: Bootstrap shared staging infrastructure
-        run: |
-          az deployment group create \
-            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --parameters infra/params/staging.bicepparam deployApps=false > /tmp/staging-bootstrap.json
-
-          echo "ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' /tmp/staging-bootstrap.json)" >> "$GITHUB_ENV"
-          echo "ACR_LOGIN_SERVER=$(jq -r '.properties.outputs.containerRegistryLoginServer.value' /tmp/staging-bootstrap.json)" >> "$GITHUB_ENV"
-
-      - name: Log in to Azure Container Registry
-        run: az acr login --name "$ACR_NAME"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push dashboard image
-        uses: docker/build-push-action@v6
-        with:
-          file: Dockerfile.dashboard
-          context: .
-          push: true
-          tags: ${{ env.ACR_LOGIN_SERVER }}/dashboard:${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          cache-from: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache
-          cache-to: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache,mode=max
-          build-args: |
-            VITE_SERVER_URL=${{ vars.DASHBOARD_URL }}
-            VITE_DASHBOARD_URL=${{ vars.DASHBOARD_URL }}
-            VITE_WEBSITE_URL=${{ vars.WEBSITE_URL }}
-            VITE_CLOUDINARY_CLOUD_NAME=${{ vars.CLOUDINARY_CLOUD_NAME }}
-
-      - name: Record dashboard image tag
-        run: echo "DASHBOARD_IMAGE=$ACR_LOGIN_SERVER/dashboard:${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
-
-      - name: Build and push server image
-        uses: docker/build-push-action@v6
-        with:
-          file: Dockerfile.server
-          context: .
-          push: true
-          tags: ${{ env.ACR_LOGIN_SERVER }}/server:${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          cache-from: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/server:buildcache
-          cache-to: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/server:buildcache,mode=max
-
-      - name: Record server image tag
-        run: echo "SERVER_IMAGE=$ACR_LOGIN_SERVER/server:${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
-
-      - name: Deploy staging apps
-        run: |
-          az deployment group create \
-            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --parameters infra/params/staging.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/staging-deploy.json
-
-          echo "App default URL: $(jq -r '.properties.outputs.appDefaultUrl.value' /tmp/staging-deploy.json)"
-
   deploy-production:
-    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     environment: production
     concurrency:
@@ -114,44 +37,39 @@ jobs:
         run: |
           az deployment group create \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --parameters infra/params/prod.bicepparam deployApps=false > /tmp/prod-bootstrap.json
+            --template-file infra/main.local-deploy.bicep \
+            --parameters infra/params/prod.bicepparam \
+            --parameters deployApps=false keyVaultAdminObjectId="${{ vars.KEY_VAULT_ADMIN_OBJECT_ID }}" > /tmp/prod-bootstrap.json
 
           echo "ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' /tmp/prod-bootstrap.json)" >> "$GITHUB_ENV"
           echo "ACR_LOGIN_SERVER=$(jq -r '.properties.outputs.containerRegistryLoginServer.value' /tmp/prod-bootstrap.json)" >> "$GITHUB_ENV"
-
-      - name: Log in to Azure Container Registry
-        run: az acr login --name "$ACR_NAME"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          echo "CONTAINER_APPS_DEFAULT_DOMAIN=$(jq -r '.properties.outputs.containerAppsEnvironmentDefaultDomain.value' /tmp/prod-bootstrap.json)" >> "$GITHUB_ENV"
+          echo "APP_URL=${{ vars.DASHBOARD_URL }}" >> "$GITHUB_ENV"
 
       - name: Build and push dashboard image
-        uses: docker/build-push-action@v6
-        with:
-          file: Dockerfile.dashboard
-          context: .
-          push: true
-          tags: ${{ env.ACR_LOGIN_SERVER }}/dashboard:${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          cache-from: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache
-          cache-to: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/dashboard:buildcache,mode=max
-          build-args: |
-            VITE_SERVER_URL=${{ vars.DASHBOARD_URL }}
-            VITE_DASHBOARD_URL=${{ vars.DASHBOARD_URL }}
-            VITE_WEBSITE_URL=${{ vars.WEBSITE_URL }}
-            VITE_CLOUDINARY_CLOUD_NAME=${{ vars.CLOUDINARY_CLOUD_NAME }}
+        run: |
+          IMAGE_TAG="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "dashboard:${IMAGE_TAG}" \
+            --file Dockerfile.dashboard \
+            --build-arg "VITE_SERVER_URL=$APP_URL" \
+            --build-arg "VITE_DASHBOARD_URL=$APP_URL" \
+            --build-arg "VITE_WEBSITE_URL=${{ vars.WEBSITE_URL }}" \
+            --build-arg "VITE_CLOUDINARY_CLOUD_NAME=${{ vars.CLOUDINARY_CLOUD_NAME }}" \
+            .
 
       - name: Record dashboard image tag
         run: echo "DASHBOARD_IMAGE=$ACR_LOGIN_SERVER/dashboard:${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
 
       - name: Build and push server image
-        uses: docker/build-push-action@v6
-        with:
-          file: Dockerfile.server
-          context: .
-          push: true
-          tags: ${{ env.ACR_LOGIN_SERVER }}/server:${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          cache-from: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/server:buildcache
-          cache-to: type=registry,ref=${{ env.ACR_LOGIN_SERVER }}/server:buildcache,mode=max
+        run: |
+          IMAGE_TAG="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "server:${IMAGE_TAG}" \
+            --file Dockerfile.server \
+            .
 
       - name: Record server image tag
         run: echo "SERVER_IMAGE=$ACR_LOGIN_SERVER/server:${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
@@ -160,6 +78,27 @@ jobs:
         run: |
           az deployment group create \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --parameters infra/params/prod.bicepparam deployApps=true dashboardImage="$DASHBOARD_IMAGE" serverImage="$SERVER_IMAGE" > /tmp/prod-deploy.json
+            --template-file infra/main.local-deploy.bicep \
+            --parameters infra/params/prod.bicepparam \
+            --parameters \
+              deployApps=true \
+              keyVaultAdminObjectId="${{ vars.KEY_VAULT_ADMIN_OBJECT_ID }}" \
+              dashboardUrl="$APP_URL" \
+              dashboardImage="$DASHBOARD_IMAGE" \
+              serverImage="$SERVER_IMAGE" \
+              databaseUrl="${{ secrets.DATABASE_URL }}" \
+              betterAuthSecret="${{ secrets.BETTER_AUTH_SECRET }}" \
+              betterAuthApiKey="${{ secrets.BETTER_AUTH_API_KEY }}" \
+              googleClientId="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              googleClientSecret="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+              linkedinClientId="${{ secrets.LINKEDIN_CLIENT_ID }}" \
+              linkedinClientSecret="${{ secrets.LINKEDIN_CLIENT_SECRET }}" \
+              cloudinaryCloudName="${{ secrets.CLOUDINARY_CLOUD_NAME }}" \
+              cloudinaryApiKey="${{ secrets.CLOUDINARY_API_KEY }}" \
+              cloudinaryApiSecret="${{ secrets.CLOUDINARY_API_SECRET }}" \
+              resendApiKey="${{ secrets.RESEND_API_KEY }}" \
+              resendEmailFrom="${{ secrets.RESEND_EMAIL_FROM }}" \
+              resendEmailReplyTo="${{ secrets.RESEND_EMAIL_REPLY_TO }}" \
+              aiGatewayApiKey="${{ secrets.AI_GATEWAY_API_KEY }}" > /tmp/prod-deploy.json
 
           echo "App default URL: $(jq -r '.properties.outputs.appDefaultUrl.value' /tmp/prod-deploy.json)"
