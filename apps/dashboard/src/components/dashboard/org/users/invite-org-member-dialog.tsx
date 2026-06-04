@@ -215,12 +215,13 @@ export function InviteOrgMemberDialog() {
   const listInvitesKey = trpc.organization.listInvitations.queryKey();
   const listMembersKey = trpc.organization.listMembers.queryKey();
 
-  const fieldsQuery = useQuery({
+  const { data: studentFieldsData, refetch: refetchStudentFields } = useQuery({
     ...trpc.organization.getStudentProfileFields.queryOptions(),
     enabled: open,
+    staleTime: 0,
   });
 
-  const studentFields = fieldsQuery.data?.fields ?? [];
+  const studentFields = studentFieldsData?.fields ?? [];
   const requiredStudentFields = useMemo(
     () => studentFields.filter((f) => f.required),
     [studentFields],
@@ -252,9 +253,22 @@ export function InviteOrgMemberDialog() {
   }, [studentFields]);
 
   useEffect(() => {
-    if (open && studentFields.length > 0) {
-      setStudentProfileValues(emptyStudentProfileValues(studentFields.map((f) => f.id)));
+    if (open) {
+      void refetchStudentFields();
     }
+  }, [open, refetchStudentFields]);
+
+  useEffect(() => {
+    if (!open || studentFields.length === 0) return;
+    setStudentProfileValues((prev) => {
+      const next = emptyStudentProfileValues(studentFields.map((f) => f.id));
+      for (const field of studentFields) {
+        if (field.id in prev) {
+          next[field.id] = prev[field.id] ?? "";
+        }
+      }
+      return next;
+    });
   }, [open, studentFields]);
 
   const inviteMutation = useMutation({
@@ -364,8 +378,6 @@ export function InviteOrgMemberDialog() {
         if (!next) {
           form.reset({ email: "", name: "", role: "student" });
           setBulkText("");
-          resetStudentProfileState();
-        } else if (studentFields.length > 0) {
           resetStudentProfileState();
         }
       }}

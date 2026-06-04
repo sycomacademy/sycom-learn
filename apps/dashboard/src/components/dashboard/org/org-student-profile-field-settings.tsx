@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -22,8 +22,8 @@ import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/for
 import { Input } from "@sycom/ui/components/input";
 import {
   Select,
-  SelectContent,
   SelectItem,
+  SelectPopup,
   SelectTrigger,
   SelectValue,
 } from "@sycom/ui/components/select";
@@ -48,6 +48,11 @@ const settingsFormSchema = z.object({
 
 type SettingsFormInput = z.infer<typeof settingsFormSchema>;
 
+const fieldTypeItems = [
+  { value: "text" as const, label: "Text" },
+  { value: "number" as const, label: "Number" },
+];
+
 function studentProfileFieldIdFromLabel(label: string): string {
   const slug = slugify(label)
     .replace(/-/g, "_")
@@ -67,21 +72,37 @@ function uniqueFieldId(base: string, existingIds: Set<string>): string {
   return `${base}_${index}`;
 }
 
+function fieldsToFormRows(
+  fields: {
+    id: string;
+    label: string;
+    type: "text" | "number";
+    required?: boolean;
+    placeholder?: string | null;
+  }[],
+): SettingsFormInput["fields"] {
+  return fields.map((field) => ({
+    id: field.id,
+    label: field.label,
+    type: field.type,
+    required: field.required ?? false,
+    placeholder: field.placeholder ?? "",
+    idLocked: true,
+  }));
+}
+
 export function OrgStudentProfileFieldSettings() {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const studentFieldsQueryKey = trpc.organization.getStudentProfileFields.queryKey();
   const { data } = useSuspenseQuery(trpc.organization.getStudentProfileFields.queryOptions());
 
   const updateFields = useMutation(
     trpc.organization.updateStudentProfileFields.mutationOptions({
       onSuccess: (result) => {
-        form.reset({
-          fields: result.fields.map((field) => ({
-            ...field,
-            required: field.required ?? false,
-            placeholder: field.placeholder ?? "",
-            idLocked: true,
-          })),
-        });
+        queryClient.setQueryData(studentFieldsQueryKey, { fields: result.fields });
+        void queryClient.invalidateQueries({ queryKey: studentFieldsQueryKey });
+        form.reset({ fields: fieldsToFormRows(result.fields) });
         toastManager.add({ title: "Student profile fields saved", type: "success" });
       },
     }),
@@ -90,12 +111,7 @@ export function OrgStudentProfileFieldSettings() {
   const form = useForm<SettingsFormInput>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: {
-      fields: data.fields.map((field) => ({
-        ...field,
-        required: field.required ?? false,
-        placeholder: field.placeholder ?? "",
-        idLocked: true,
-      })),
+      fields: fieldsToFormRows(data.fields),
     },
   });
 
@@ -105,14 +121,7 @@ export function OrgStudentProfileFieldSettings() {
   });
 
   useEffect(() => {
-    form.reset({
-      fields: data.fields.map((field) => ({
-        ...field,
-        required: field.required ?? false,
-        placeholder: field.placeholder ?? "",
-        idLocked: true,
-      })),
-    });
+    form.reset({ fields: fieldsToFormRows(data.fields) });
   }, [data.fields, form]);
 
   const onSubmit = async (values: SettingsFormInput) => {
@@ -279,28 +288,33 @@ export function OrgStudentProfileFieldSettings() {
                   <FormField
                     control={form.control}
                     name={`fields.${index}.type`}
-                    render={({ field: typeField }) => (
+                    render={({ field: typeField, fieldState }) => (
                       <FormItem>
-                        <Field>
+                        <Field invalid={!!fieldState.error}>
                           <FieldLabel>Type</FieldLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              if (value === "text" || value === "number") {
-                                typeField.onChange(value);
-                              }
-                            }}
-                            value={typeField.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
+                          <FormControl>
+                            <Select
+                              items={fieldTypeItems}
+                              onValueChange={(value) => {
+                                if (value === "text" || value === "number") {
+                                  typeField.onChange(value);
+                                }
+                              }}
+                              value={typeField.value}
+                            >
+                              <SelectTrigger className="w-full">
                                 <SelectValue />
                               </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="text">Text</SelectItem>
-                              <SelectItem value="number">Number</SelectItem>
-                            </SelectContent>
-                          </Select>
+                              <SelectPopup>
+                                {fieldTypeItems.map((item) => (
+                                  <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectPopup>
+                            </Select>
+                          </FormControl>
+                          <FieldError reserveSpace>{fieldState.error?.message}</FieldError>
                         </Field>
                       </FormItem>
                     )}
