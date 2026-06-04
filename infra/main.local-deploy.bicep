@@ -85,7 +85,7 @@ param postgresSkuTier string = 'Burstable'
 param postgresStorageGb int = 32
 
 @description('PostgreSQL major version.')
-param postgresVersion string = '16'
+param postgresVersion string = '18'
 
 @secure()
 param betterAuthSecret string = ''
@@ -130,10 +130,7 @@ param aiGatewayApiKey string = ''
 param tags object = {}
 
 var mergedTags = union(tags, {
-  environment: environmentName
   project: projectName
-  managedBy: 'bicep'
-  deploymentMode: 'local-no-rbac'
 })
 
 var defaultCorsOrigins = empty(websiteUrl) ? [dashboardUrl] : [dashboardUrl, websiteUrl]

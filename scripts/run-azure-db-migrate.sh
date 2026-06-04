@@ -9,7 +9,7 @@
 #
 # Optional overrides:
 #   RESOURCE_GROUP   (default: sycomlearn-prod-rg)
-#   POSTGRES_SERVER  (default: sycomlearn-prod-pg01)
+#   POSTGRES_SERVER  (default: sycomlearn-prod-postgres)
 #   POSTGRES_DB      (default: sycom)
 #   POSTGRES_LOGIN   (default: sycomadmin)
 
@@ -18,7 +18,7 @@ set -euo pipefail
 : "${POSTGRES_ADMIN_PASSWORD:?set POSTGRES_ADMIN_PASSWORD}"
 
 RESOURCE_GROUP="${RESOURCE_GROUP:-sycomlearn-prod-rg}"
-POSTGRES_SERVER="${POSTGRES_SERVER:-sycomlearn-prod-pg01}"
+POSTGRES_SERVER="${POSTGRES_SERVER:-sycomlearn-prod-postgres}"
 POSTGRES_DB="${POSTGRES_DB:-sycom}"
 POSTGRES_LOGIN="${POSTGRES_LOGIN:-sycomadmin}"
 RULE_NAME="tmp-migrate-$(date +%s)"

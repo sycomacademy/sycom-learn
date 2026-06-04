@@ -96,12 +96,12 @@ Edited in `infra/params/prod.bicepparam`.
 | `websiteUrl`            | `https://sycomsolutions.com`      | Optional marketing site                        |
 | `corsOrigins`           | `['https://learn.sycom.academy']` | Browsers allowed to call the API               |
 | `debugPerformance`      | `'false'`                         |                                                |
-| `postgresServerName`    | `sycomlearn-prod-pg01`            | **Globally unique** flexible server name       |
+| `postgresServerName`    | `sycomlearn-prod-postgres`        | **Globally unique** flexible server name       |
 | `postgresDatabaseName`  | `sycom`                           | App database on the server                     |
 | `postgresAdminLogin`    | `sycomadmin`                      | Cannot be `azure_superuser` or `postgres`      |
 | `postgresSkuName`       | `Standard_B1ms`                   | Burstable tier                                 |
 | `postgresStorageGb`     | `32`                              |                                                |
-| `postgresVersion`       | `16`                              |                                                |
+| `postgresVersion`       | `18`                              | Match portal-created server                    |
 
 ### GitHub environment secrets (`production`)
 
@@ -213,14 +213,14 @@ Or manually:
 ```bash
 MY_IP=$(curl -fsS https://api.ipify.org)
 az postgres flexible-server firewall-rule create \
-  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-pg01 \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-postgres \
   --rule-name tmp-migrate --start-ip-address "$MY_IP" --end-ip-address "$MY_IP"
 
-DATABASE_URL='postgresql://sycomadmin:<password>@sycomlearn-prod-pg01.postgres.database.azure.com:5432/sycom?sslmode=require' \
+DATABASE_URL='postgresql://sycomadmin:<password>@sycomlearn-prod-postgres.postgres.database.azure.com:5432/sycom?sslmode=require' \
   bun run db:migrate
 
 az postgres flexible-server firewall-rule delete \
-  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-pg01 \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-postgres \
   --rule-name tmp-migrate --yes
 ```
 

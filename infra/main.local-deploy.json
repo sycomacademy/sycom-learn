@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "915342264783781489"
+      "templateHash": "358297687122151480"
     }
   },
   "parameters": {
@@ -189,7 +189,7 @@
     },
     "postgresVersion": {
       "type": "string",
-      "defaultValue": "16",
+      "defaultValue": "18",
       "metadata": {
         "description": "PostgreSQL major version."
       }
@@ -255,7 +255,7 @@
     }
   },
   "variables": {
-    "mergedTags": "[union(parameters('tags'), createObject('environment', parameters('environmentName'), 'project', parameters('projectName'), 'managedBy', 'bicep', 'deploymentMode', 'local-no-rbac'))]",
+    "mergedTags": "[union(parameters('tags'), createObject('project', parameters('projectName')))]",
     "defaultCorsOrigins": "[if(empty(parameters('websiteUrl')), createArray(parameters('dashboardUrl')), createArray(parameters('dashboardUrl'), parameters('websiteUrl')))]",
     "effectiveCorsOrigins": "[if(greater(length(parameters('corsOrigins')), 0), parameters('corsOrigins'), variables('defaultCorsOrigins'))]",
     "corsOriginValue": "[join(variables('effectiveCorsOrigins'), ',')]",
