@@ -177,6 +177,7 @@ export function OrgMemberStudentProfileSection({ member }: { member: OrgMemberDe
   const fields = fieldsQuery.data?.fields ?? [];
   const jsonData = useMemo(
     () => studentProfileForJsonViewer(fields, member.studentProfile),
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [fields, member.studentProfile],
   );
 

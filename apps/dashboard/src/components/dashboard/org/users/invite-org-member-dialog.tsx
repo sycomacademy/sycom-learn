@@ -224,6 +224,7 @@ export function InviteOrgMemberDialog() {
   const studentFields = studentFieldsData?.fields ?? [];
   const requiredStudentFields = useMemo(
     () => studentFields.filter((f) => f.required),
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [studentFields],
   );
   const requiredStudentFieldIds = useMemo(
@@ -238,6 +239,7 @@ export function InviteOrgMemberDialog() {
       return field?.type === "number" ? "2024" : "value";
     });
     return ["Jane Doe", "jane@school.edu", "student", ...studentExtras].join(",");
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [requiredStudentFieldIds, studentFields]);
 
   const form = useForm<SingleInviteInput>({
@@ -250,6 +252,7 @@ export function InviteOrgMemberDialog() {
   const resetStudentProfileState = useCallback(() => {
     setStudentProfileValues(emptyStudentProfileValues(studentFields.map((f) => f.id)));
     setStudentProfileErrors({});
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [studentFields]);
 
   useEffect(() => {
@@ -269,6 +272,7 @@ export function InviteOrgMemberDialog() {
       }
       return next;
     });
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [open, studentFields]);
 
   const inviteMutation = useMutation({
