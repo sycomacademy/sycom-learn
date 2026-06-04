@@ -1,9 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
+import type { AppRouterOutputs } from "server/trpc/routers/_app";
 
 import { LearnAccessPanel } from "@/components/learn/learn-access-panel";
 import { LearnShell } from "@/components/learn/learn-shell";
+import { usePrefetchLearnLessons } from "@/hooks/use-prefetch-learn-lessons";
 import { useTRPC } from "@/lib/trpc/client";
+
+type OkPlayerContext = Extract<AppRouterOutputs["learn"]["getPlayerContext"], { status: "ok" }>;
 
 export const Route = createFileRoute("/learn/$courseId")({
   loader: async ({ context, params }) => {
@@ -26,6 +30,12 @@ function LearnCourseLayout() {
       </div>
     );
   }
+
+  return <LearnCoursePlayer courseId={courseId} data={data} />;
+}
+
+function LearnCoursePlayer({ courseId, data }: { courseId: string; data: OkPlayerContext }) {
+  usePrefetchLearnLessons(courseId, data.sections);
 
   return (
     <LearnShell courseId={courseId} data={data}>

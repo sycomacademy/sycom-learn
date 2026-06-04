@@ -78,7 +78,9 @@ function NavButton({
   }
   return (
     <Button
-      render={<Link params={{ courseId, lessonId }} to="/learn/$courseId/$lessonId" />}
+      render={
+        <Link params={{ courseId, lessonId }} preload="intent" to="/learn/$courseId/$lessonId" />
+      }
       size="sm"
       variant="outline"
     >

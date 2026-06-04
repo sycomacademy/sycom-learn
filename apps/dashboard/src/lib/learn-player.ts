@@ -60,6 +60,14 @@ export function flattenLearnLessons(sections: Array<{ lessons: LessonRef[] }>): 
   return sections.flatMap((s) => s.lessons);
 }
 
+export function unlockedLearnLessonIds(
+  sections: Array<{ lessons: Array<{ id: string; locked: boolean }> }>,
+): string[] {
+  return flattenLearnLessons(sections)
+    .filter((l) => !l.locked)
+    .map((l) => l.id);
+}
+
 /** Nearest unlocked lesson at or before `attemptedIdx`, else first unlocked in the course. */
 export function lastAccessibleLessonId(flat: LessonRef[], attemptedIdx: number): string | null {
   for (let i = Math.min(attemptedIdx, flat.length - 1); i >= 0; i--) {

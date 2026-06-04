@@ -111,6 +111,7 @@ function LessonRow({
         isActive ? "bg-muted font-medium" : "hover:bg-muted/60",
       )}
       params={{ courseId, lessonId: lesson.id }}
+      preload="intent"
       to="/learn/$courseId/$lessonId"
     >
       <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
