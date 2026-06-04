@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 #
 # Create (or update) the Entra ID app registration GitHub Actions uses to
-# deploy to Azure via OIDC. Adds federated credentials for the `staging` and
-# `production` GitHub environments and grants the app Contributor on both
-# resource groups.
+# deploy to Azure via OIDC. Adds a federated credential for the `production`
+# GitHub environment and grants the app Owner on the production resource group.
 #
 # Run this once per Azure subscription. It is idempotent.
 #
@@ -11,7 +10,6 @@
 #   GITHUB_OWNER   GitHub org or user that owns the repo (e.g. sycom)
 #   GITHUB_REPO    Repo name (e.g. sycom)
 #   APP_NAME       Display name for the app registration (e.g. sycom-deploy)
-#   STAGING_RG     Staging resource group name
 #   PROD_RG        Production resource group name
 #
 # Outputs the values you need to paste into GitHub:
@@ -24,7 +22,6 @@ set -euo pipefail
 : "${GITHUB_OWNER:?set GITHUB_OWNER}"
 : "${GITHUB_REPO:?set GITHUB_REPO}"
 : "${APP_NAME:?set APP_NAME}"
-: "${STAGING_RG:?set STAGING_RG}"
 : "${PROD_RG:?set PROD_RG}"
 
 SUBSCRIPTION_ID="$(az account show --query id --output tsv)"
@@ -47,7 +44,7 @@ if ! az ad sp show --id "$APP_ID" >/dev/null 2>&1; then
   az ad sp create --id "$APP_ID" --output none
 fi
 
-# 2. Federated credentials per GitHub environment.
+# 2. Federated credential for the production GitHub environment.
 add_federated_credential() {
   local environment="$1"
   local cred_name="github-${environment}"
@@ -69,10 +66,9 @@ add_federated_credential() {
     --output none
 }
 
-add_federated_credential staging
 add_federated_credential production
 
-# 3. RBAC: Owner on both resource groups.
+# 3. RBAC: Owner on the production resource group.
 #
 # We need Owner (not just Contributor) because main.bicep creates role
 # assignments (AcrPull for both apps + Key Vault Secrets User for the
@@ -103,19 +99,15 @@ assign_role() {
     --output none
 }
 
-# Resource groups must exist before role assignment.
-az group show --name "$STAGING_RG" >/dev/null 2>&1 || az group create --name "$STAGING_RG" --location "$(az group show --name "$PROD_RG" --query location --output tsv 2>/dev/null || echo uksouth)" --output none
-az group show --name "$PROD_RG"    >/dev/null 2>&1 || az group create --name "$PROD_RG"    --location uksouth --output none
+az group show --name "$PROD_RG" >/dev/null 2>&1 || az group create --name "$PROD_RG" --location uksouth --output none
 
-for rg in "$STAGING_RG" "$PROD_RG"; do
-  for role in "${ROLES[@]}"; do
-    assign_role "$rg" "$role"
-  done
+for role in "${ROLES[@]}"; do
+  assign_role "$PROD_RG" "$role"
 done
 
 cat <<EOF
 
-Paste these into GitHub > Settings > Environments > {staging, production} > Secrets:
+Paste these into GitHub > Settings > Environments > production > Secrets:
 
   AZURE_CLIENT_ID        = $APP_ID
   AZURE_TENANT_ID        = $TENANT_ID

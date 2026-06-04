@@ -4,7 +4,7 @@
 
 - ci/cd
     - figure out the deployment platform
-    - how to connect staging and production safely and switch context easily
+    - how to connect dev and production safely and switch context easily
     - make logs readable and searchable
 
 - security

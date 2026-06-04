@@ -11,7 +11,7 @@ param location string = resourceGroup().location
 @description('Project name prefix used in resource naming.')
 param projectName string = 'sycom'
 
-@description('Environment name, usually staging or prod.')
+@description('Environment name, usually prod.')
 param environmentName string
 
 @description('Deploy only the shared infrastructure when false, or infrastructure plus the app when true.')

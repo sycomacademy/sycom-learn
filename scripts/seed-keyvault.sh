@@ -10,7 +10,7 @@
 # used in infra/main.bicep -> keyVaultSecretNames).
 #
 # Example:
-#   scripts/seed-keyvault.sh sycom-staging-ukwest-kv infra/secrets/staging.env
+#   scripts/seed-keyvault.sh sycomlearnprodkv01 infra/secrets/prod.env
 #
 # The script is idempotent: re-running it just creates a new secret version.
 

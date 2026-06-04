@@ -7,7 +7,7 @@
 # Usage:
 #   scripts/get-deployed-urls.sh <resource-group> [<environment-name>]
 #
-# Environment-name defaults to "prod"; pass "staging" for the staging RG.
+# Environment-name defaults to "prod".
 
 set -euo pipefail
 
