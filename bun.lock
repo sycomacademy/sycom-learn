@@ -108,9 +108,10 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@neondatabase/serverless": "^1.1.0",
         "@sycom/config": "workspace:*",
         "@types/bun": "catalog:",
+        "@types/pg": "^8.20.0",
+        "pg": "^8.20.0",
         "tsdown": "^0.21.10",
         "typescript": "^6.0.3",
       },
@@ -179,17 +180,16 @@
     "packages/db": {
       "name": "@sycom/db",
       "dependencies": {
-        "@neondatabase/serverless": "^1.1.0",
         "@sycom/env": "workspace:*",
         "dotenv": "catalog:",
         "drizzle-orm": "catalog:",
+        "pg": "^8.20.0",
         "zod": "catalog:",
       },
       "devDependencies": {
         "@sycom/config": "workspace:*",
         "@types/pg": "^8.20.0",
         "drizzle-kit": "^0.31.10",
-        "pg": "^8.20.0",
         "typescript": "^6.0.3",
       },
     },

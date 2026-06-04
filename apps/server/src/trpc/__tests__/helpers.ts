@@ -1,7 +1,8 @@
 import "./setup-env";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { poolOptions } from "@sycom/db/pool-config";
 import * as schema from "@sycom/db/schema/index";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 
 import { callerFactory } from "../init";
 import { appRouter } from "../routers/_app";
@@ -17,8 +18,10 @@ const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 
 export const dbEnabled = Boolean(testDatabaseUrl);
 
-export const testDb = testDatabaseUrl
-  ? drizzle(neon(testDatabaseUrl), { schema })
+const testPool = testDatabaseUrl ? new Pool(poolOptions(testDatabaseUrl)) : null;
+
+export const testDb = testPool
+  ? drizzle(testPool, { schema })
   : // Not used when dbEnabled is false; kept typed so callers don't have to
     // narrow. The schema-typed object is fine as a standin.
     (null as unknown as ReturnType<typeof drizzle<typeof schema>>);

@@ -15,12 +15,24 @@ The dashboard is a TanStack Start app whose Bun entry (`apps/dashboard/start.ts`
 
 The Bicep template ([`infra/main.local-deploy.bicep`](infra/main.local-deploy.bicep), used by CI) creates:
 
+- Azure Database for PostgreSQL Flexible Server (Burstable `Standard_B1ms`, UK South)
 - Azure Container Registry (ACR)
 - Azure Key Vault
 - Azure Log Analytics workspace
 - Azure Container Apps environment
 - One Container App with two containers (`dashboard` + `server`)
 - Role assignments: `AcrPull` on the registry, Key Vault access for deploy
+
+### Database: Neon (local) vs Azure Postgres (production)
+
+| Environment | `DATABASE_URL` source                         | Provider                                    |
+| ----------- | --------------------------------------------- | ------------------------------------------- |
+| Local dev   | `apps/server/.env`                            | Neon (your dev branch)                      |
+| Production  | Built by Bicep from `POSTGRES_ADMIN_PASSWORD` | Azure Postgres Flexible Server in `uksouth` |
+
+The app uses the standard `pg` driver (`drizzle-orm/node-postgres`) — no Neon-specific APIs. Point `DATABASE_URL` at either provider.
+
+Production connection string is assembled in Bicep and injected as the Container App `database-url` secret. You do **not** set `DATABASE_URL` in GitHub for production anymore.
 
 Production values live in [`infra/params/prod.bicepparam`](infra/params/prod.bicepparam).
 
@@ -40,6 +52,7 @@ infra/
 scripts/
   bootstrap-azure-oidc.sh   # one-shot: AAD app + federated cred + RBAC
   seed-keyvault.sh          # bulk-load secrets into a Key Vault
+  run-azure-db-migrate.sh   # drizzle migrate against Azure Postgres (temp firewall)
   get-deployed-urls.sh      # print Container App FQDN
 .github/workflows/
   deploy.yml                # CI/CD
@@ -83,18 +96,27 @@ Edited in `infra/params/prod.bicepparam`.
 | `websiteUrl`            | `https://sycomsolutions.com`      | Optional marketing site                        |
 | `corsOrigins`           | `['https://learn.sycom.academy']` | Browsers allowed to call the API               |
 | `debugPerformance`      | `'false'`                         |                                                |
+| `postgresServerName`    | `sycomlearn-prod-pg01`            | **Globally unique** flexible server name       |
+| `postgresDatabaseName`  | `sycom`                           | App database on the server                     |
+| `postgresAdminLogin`    | `sycomadmin`                      | Cannot be `azure_superuser` or `postgres`      |
+| `postgresSkuName`       | `Standard_B1ms`                   | Burstable tier                                 |
+| `postgresStorageGb`     | `32`                              |                                                |
+| `postgresVersion`       | `16`                              |                                                |
 
 ### GitHub environment secrets (`production`)
 
 OIDC handles auth — no client secrets to rotate.
 
-| Secret                  | Source                              |
-| ----------------------- | ----------------------------------- |
-| `AZURE_CLIENT_ID`       | Output of `bootstrap-azure-oidc.sh` |
-| `AZURE_TENANT_ID`       | Output of `bootstrap-azure-oidc.sh` |
-| `AZURE_SUBSCRIPTION_ID` | Output of `bootstrap-azure-oidc.sh` |
+| Secret                    | Source                                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------- |
+| `AZURE_CLIENT_ID`         | Output of `bootstrap-azure-oidc.sh`                                                                |
+| `AZURE_TENANT_ID`         | Output of `bootstrap-azure-oidc.sh`                                                                |
+| `AZURE_SUBSCRIPTION_ID`   | Output of `bootstrap-azure-oidc.sh`                                                                |
+| `POSTGRES_ADMIN_PASSWORD` | `openssl rand -base64 32` — **URL-safe** (letters, numbers); Bicep builds `DATABASE_URL` from this |
 
-Runtime app secrets are also stored as GitHub environment secrets and passed into Bicep at deploy time (see workflow).
+Runtime app secrets are also stored as GitHub environment secrets and passed into Bicep at deploy time (see workflow). Remove legacy `DATABASE_URL` from GitHub after cutover.
+
+**Restricted Azure access:** if your account cannot create Postgres, ask for these actions on `sycomlearn-prod-rg` only: `Microsoft.DBforPostgreSQL/flexibleServers/*`, `Microsoft.DBforPostgreSQL/flexibleServers/databases/*`, `Microsoft.DBforPostgreSQL/flexibleServers/firewallRules/*`, `Microsoft.Resources/deployments/*`.
 
 ### GitHub environment variables (`production`)
 
@@ -114,18 +136,18 @@ The workflow bakes `DASHBOARD_URL` into both `VITE_SERVER_URL` and `VITE_DASHBOA
 
 Passed from GitHub secrets into Bicep at deploy. Names match `infra/secrets/secrets.env.example` (for manual `seed-keyvault.sh` use).
 
-| Env var (runtime)        | Source                       |
-| ------------------------ | ---------------------------- |
-| `DATABASE_URL`           | Neon production connection   |
-| `BETTER_AUTH_SECRET`     | `openssl rand -base64 32`    |
-| `BETTER_AUTH_API_KEY`    | Better Auth dashboard        |
-| `GOOGLE_CLIENT_ID`       | Google Cloud Console → OAuth |
-| `GOOGLE_CLIENT_SECRET`   | Google Cloud Console → OAuth |
-| `LINKEDIN_CLIENT_ID`     | LinkedIn Developers → app    |
-| `LINKEDIN_CLIENT_SECRET` | LinkedIn Developers → app    |
-| `CLOUDINARY_*`           | Cloudinary dashboard         |
-| `RESEND_*`               | Resend dashboard             |
-| `AI_GATEWAY_API_KEY`     | Vercel AI Gateway            |
+| Env var (runtime)        | Source                                                                    |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Bicep-built Azure Postgres URL (prod); Neon in `apps/server/.env` (local) |
+| `BETTER_AUTH_SECRET`     | `openssl rand -base64 32`                                                 |
+| `BETTER_AUTH_API_KEY`    | Better Auth dashboard                                                     |
+| `GOOGLE_CLIENT_ID`       | Google Cloud Console → OAuth                                              |
+| `GOOGLE_CLIENT_SECRET`   | Google Cloud Console → OAuth                                              |
+| `LINKEDIN_CLIENT_ID`     | LinkedIn Developers → app                                                 |
+| `LINKEDIN_CLIENT_SECRET` | LinkedIn Developers → app                                                 |
+| `CLOUDINARY_*`           | Cloudinary dashboard                                                      |
+| `RESEND_*`               | Resend dashboard                                                          |
+| `AI_GATEWAY_API_KEY`     | Vercel AI Gateway                                                         |
 
 ## First-time deploy: step by step
 
@@ -165,6 +187,8 @@ gh variable set AZURE_LOCATION        --env production --body "uksouth"
 gh variable set DASHBOARD_URL         --env production --body "https://learn.sycom.academy"
 gh variable set WEBSITE_URL           --env production --body "https://sycomsolutions.com"
 gh variable set CLOUDINARY_CLOUD_NAME --env production --body "<your-cloud>"
+
+gh secret set POSTGRES_ADMIN_PASSWORD --env production --body "$(openssl rand -base64 32 | tr -d '/+=')"
 ```
 
 ### 4. Deploy
@@ -173,9 +197,36 @@ gh variable set CLOUDINARY_CLOUD_NAME --env production --body "<your-cloud>"
 git push origin main
 ```
 
-The workflow creates the resource group, bootstraps infra, builds images in ACR, and deploys the Container App.
+The workflow creates the resource group, bootstraps infra (including Postgres), builds images in ACR, and deploys the Container App.
 
-### 5. Read the Azure-generated FQDN (if needed)
+### 5. Apply schema to Azure Postgres (fresh database)
+
+After the first deploy creates the flexible server, run migrations from your machine:
+
+```bash
+chmod +x scripts/run-azure-db-migrate.sh
+POSTGRES_ADMIN_PASSWORD='<same as GitHub secret>' scripts/run-azure-db-migrate.sh
+```
+
+Or manually:
+
+```bash
+MY_IP=$(curl -fsS https://api.ipify.org)
+az postgres flexible-server firewall-rule create \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-pg01 \
+  --rule-name tmp-migrate --start-ip-address "$MY_IP" --end-ip-address "$MY_IP"
+
+DATABASE_URL='postgresql://sycomadmin:<password>@sycomlearn-prod-pg01.postgres.database.azure.com:5432/sycom?sslmode=require' \
+  bun run db:migrate
+
+az postgres flexible-server firewall-rule delete \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-pg01 \
+  --rule-name tmp-migrate --yes
+```
+
+Re-run after schema changes. Container Apps reach Postgres via the `AllowAllAzureServices` firewall rule (`0.0.0.0`).
+
+### 6. Read the Azure-generated FQDN (if needed)
 
 ```bash
 az containerapp show -g sycomlearn-prod-rg -n sycomlearn-prod-app \
@@ -248,13 +299,15 @@ Also remove manually in GitHub: Settings → Environments → delete the `stagin
 
 ## Troubleshooting
 
-| Symptom                                                          | Likely cause                                                                  |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Container exits with `Module not found .output/server/index.mjs` | Stale image. Rebuild from current `Dockerfile.dashboard`.                     |
-| Container App shows `ImagePullBackOff`                           | Managed identity missing `AcrPull`. Re-run the Bicep deploy.                  |
-| `/api/auth/*` returns 500                                        | Server container cold-start or crash. Check `server` container logs.          |
-| OAuth `redirect_uri_mismatch`                                    | Provider callbacks still point at an old FQDN; update to live `dashboardUrl`. |
-| Build job takes 25+ min                                          | Standalone `nitro()` plugin re-added; remove it.                              |
+| Symptom                                                          | Likely cause                                                                   |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Container exits with `Module not found .output/server/index.mjs` | Stale image. Rebuild from current `Dockerfile.dashboard`.                      |
+| Container App shows `ImagePullBackOff`                           | Managed identity missing `AcrPull`. Re-run the Bicep deploy.                   |
+| `/api/auth/*` returns 500                                        | Server container cold-start or crash. Check `server` container logs.           |
+| OAuth `redirect_uri_mismatch`                                    | Provider callbacks still point at an old FQDN; update to live `dashboardUrl`.  |
+| Build job takes 25+ min                                          | Standalone `nitro()` plugin re-added; remove it.                               |
+| Server cannot connect to database                                | Postgres not provisioned yet, migrations not run, or password mismatch.        |
+| `password authentication failed` for Postgres                    | `POSTGRES_ADMIN_PASSWORD` in GitHub does not match server; redeploy after fix. |
 
 ## Manual operations
 
@@ -266,7 +319,8 @@ az deployment group create \
   --resource-group sycomlearn-prod-rg \
   --template-file infra/main.local-deploy.bicep \
   --parameters infra/params/prod.bicepparam \
-  --parameters deployApps=false
+  --parameters deployApps=false \
+  postgresAdminPassword="$POSTGRES_ADMIN_PASSWORD"
 ```
 
 Stream logs:

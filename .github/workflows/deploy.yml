@@ -39,7 +39,9 @@ jobs:
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --template-file infra/main.local-deploy.bicep \
             --parameters infra/params/prod.bicepparam \
-            --parameters deployApps=false keyVaultAdminObjectId="${{ vars.KEY_VAULT_ADMIN_OBJECT_ID }}" > /tmp/prod-bootstrap.json
+            --parameters deployApps=false \
+              keyVaultAdminObjectId="${{ vars.KEY_VAULT_ADMIN_OBJECT_ID }}" \
+              postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" > /tmp/prod-bootstrap.json
 
           echo "ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' /tmp/prod-bootstrap.json)" >> "$GITHUB_ENV"
           echo "ACR_LOGIN_SERVER=$(jq -r '.properties.outputs.containerRegistryLoginServer.value' /tmp/prod-bootstrap.json)" >> "$GITHUB_ENV"
@@ -83,10 +85,10 @@ jobs:
             --parameters \
               deployApps=true \
               keyVaultAdminObjectId="${{ vars.KEY_VAULT_ADMIN_OBJECT_ID }}" \
+              postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
               dashboardUrl="$APP_URL" \
               dashboardImage="$DASHBOARD_IMAGE" \
               serverImage="$SERVER_IMAGE" \
-              databaseUrl="${{ secrets.DATABASE_URL }}" \
               betterAuthSecret="${{ secrets.BETTER_AUTH_SECRET }}" \
               betterAuthApiKey="${{ secrets.BETTER_AUTH_API_KEY }}" \
               googleClientId="${{ secrets.GOOGLE_CLIENT_ID }}" \

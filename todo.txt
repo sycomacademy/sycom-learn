@@ -3,8 +3,6 @@
     - look into writing tests for server
 
 - ci/cd
-    - figure out the deployment platform
-    - how to connect dev and production safely and switch context easily
     - make logs readable and searchable
 
 - security
@@ -21,6 +19,7 @@
     - tours
 
 - database
+    - azure postgres provisioned; run scripts/run-azure-db-migrate.sh after first deploy
     - optimize sql queries
     - add views
     - see if we can time the queries

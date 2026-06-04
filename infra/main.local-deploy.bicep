@@ -63,8 +63,29 @@ param keyVaultAdminObjectId string
 ])
 param debugPerformance string = 'false'
 
+@description('Globally unique PostgreSQL flexible server name.')
+param postgresServerName string
+
+@description('Application database name on the flexible server.')
+param postgresDatabaseName string = 'sycom'
+
+@description('PostgreSQL administrator login.')
+param postgresAdminLogin string
+
 @secure()
-param databaseUrl string = ''
+param postgresAdminPassword string
+
+@description('Flexible server SKU name.')
+param postgresSkuName string = 'Standard_B1ms'
+
+@description('Flexible server SKU tier.')
+param postgresSkuTier string = 'Burstable'
+
+@description('Storage size in GB.')
+param postgresStorageGb int = 32
+
+@description('PostgreSQL major version.')
+param postgresVersion string = '16'
 
 @secure()
 param betterAuthSecret string = ''
@@ -121,6 +142,7 @@ var corsOriginValue = join(effectiveCorsOrigins, ',')
 var internalServerUrl = 'http://localhost:${serverTargetPort}'
 var acrUsername = containerRegistry.listCredentials().username
 var acrPassword = containerRegistry.listCredentials().passwords[0].value
+var postgresDatabaseUrl = 'postgresql://${postgresAdminLogin}:${uriComponent(postgresAdminPassword)}@${postgres.properties.fullyQualifiedDomainName}:5432/${postgresDatabaseName}?sslmode=require'
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsWorkspaceName
@@ -187,6 +209,52 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   tags: mergedTags
 }
 
+resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
+  name: postgresServerName
+  location: location
+  sku: {
+    name: postgresSkuName
+    tier: postgresSkuTier
+  }
+  properties: {
+    version: postgresVersion
+    administratorLogin: postgresAdminLogin
+    administratorLoginPassword: postgresAdminPassword
+    storage: {
+      storageSizeGB: postgresStorageGb
+    }
+    backup: {
+      backupRetentionDays: 7
+      geoRedundantBackup: 'Disabled'
+    }
+    network: {
+      publicNetworkAccess: 'Enabled'
+    }
+    highAvailability: {
+      mode: 'Disabled'
+    }
+  }
+  tags: mergedTags
+}
+
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
+  parent: postgres
+  name: postgresDatabaseName
+  properties: {
+    charset: 'UTF8'
+    collation: 'en_US.utf8'
+  }
+}
+
+resource postgresFirewallAllowAzure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+  parent: postgres
+  name: 'AllowAllAzureServices'
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '0.0.0.0'
+  }
+}
+
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: containerAppsEnvironmentName
   location: location
@@ -235,7 +303,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
         }
         {
           name: 'database-url'
-          value: databaseUrl
+          value: postgresDatabaseUrl
         }
         {
           name: 'better-auth-secret'
@@ -462,6 +530,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
       }
     }
   }
+  dependsOn: [
+    postgresDatabase
+    postgresFirewallAllowAzure
+  ]
   tags: mergedTags
 }
 
@@ -472,3 +544,4 @@ output containerAppsEnvironmentId string = containerAppsEnvironment.id
 output containerAppsEnvironmentDefaultDomain string = containerAppsEnvironment.properties.defaultDomain
 output appContainerAppName string = appName
 output appDefaultUrl string = deployApps ? 'https://${app!.properties.configuration.ingress.fqdn}' : ''
+output postgresFqdn string = postgres.properties.fullyQualifiedDomainName

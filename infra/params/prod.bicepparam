@@ -12,6 +12,15 @@ param containerAppsEnvironmentName = 'sycomlearn-prod-cae'
 param appName = 'sycomlearn-prod-app'
 param keyVaultAdminObjectId = 'edee4978-903c-44c1-8ff4-590a926e1d82'
 
+// Azure Database for PostgreSQL Flexible Server (production).
+param postgresServerName = 'sycomlearn-prod-pg01'
+param postgresDatabaseName = 'sycom'
+param postgresAdminLogin = 'sycomadmin'
+param postgresSkuName = 'Standard_B1ms'
+param postgresSkuTier = 'Burstable'
+param postgresStorageGb = 32
+param postgresVersion = '16'
+
 // Single public URL — both UI and /api/auth, /trpc traffic come in here.
 param dashboardUrl = 'https://learn.sycom.academy'
 param websiteUrl = 'https://sycomsolutions.com'

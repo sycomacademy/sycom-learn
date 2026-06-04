@@ -760,8 +760,7 @@ export async function insertGeneratedCourseTree(
 // ---------------------------------------------------------------------------
 // Seeding (platform → org fork)
 // ---------------------------------------------------------------------------
-// Note: neon-http driver does not support multi-statement transactions, so we
-// sequence inserts and best-effort clean up the new course on failure
+// Sequence inserts and best-effort clean up the new course on failure
 // (cascades drop child rows).
 
 export type SeedCourseResult = { organizationId: string; newCourseId: string };

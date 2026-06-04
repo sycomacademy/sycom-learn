@@ -97,7 +97,7 @@ flowchart LR
 
 ### Packages
 
-- **`@sycom/db`** - Drizzle ORM setup with Neon serverless driver. Contains schema definitions and database query modules.
+- **`@sycom/db`** - Drizzle ORM with `node-postgres` (`pg`). Local dev uses Neon via `DATABASE_URL` in `apps/server/.env`; production uses Azure Postgres (connection string from Bicep). Schema and query modules live here.
 - **`@sycom/auth`** - Better Auth configuration. Imported only by the Hono server for HTTP auth routes and tRPC context.
 - **`@sycom/env`** - Type-safe environment variable validation via `@t3-oss/env-core`.
 - **`@sycom/ui`** - Shared shadcn/ui components (`base-lyra` style).
