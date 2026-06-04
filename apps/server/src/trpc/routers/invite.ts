@@ -6,6 +6,7 @@ import {
   getPlatformUserByEmail,
   insertOrganizationMember,
   insertOrganizationOwnerMember,
+  memberMetadataFromInvitationMetadata,
   markOrganizationInvitationAccepted,
   markOrganizationInvitationRejected,
   markPlatformInvitationAccepted,
@@ -268,10 +269,15 @@ export const inviteRouter = router({
           });
 
           if (!existingMembership) {
+            const memberMetadata = memberMetadataFromInvitationMetadata(
+              invitation.role,
+              invitation.metadata,
+            );
             await insertOrganizationMember(ctx.db, {
               organizationId: invitation.organizationId,
               userId: existingUser.id,
               role: invitation.role,
+              metadata: memberMetadata,
             });
           }
 
@@ -348,10 +354,15 @@ export const inviteRouter = router({
           userId: createdUser.user.id,
         });
       } else {
+        const memberMetadata = memberMetadataFromInvitationMetadata(
+          invitation.role as NonNullable<typeof invitation.role>,
+          invitation.metadata,
+        );
         await insertOrganizationMember(ctx.db, {
           organizationId: invitation.organizationId,
           userId: createdUser.user.id,
           role: invitation.role as NonNullable<typeof invitation.role>,
+          metadata: memberMetadata,
         });
       }
 

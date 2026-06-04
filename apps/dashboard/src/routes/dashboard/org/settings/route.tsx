@@ -12,7 +12,6 @@ const orgSettingsPaths = {
   base: "/dashboard/org/settings/general" satisfies TRoutes,
   items: [
     { path: "/dashboard/org/settings/general", label: "General" },
-    { path: "/dashboard/org/settings/student-profile", label: "Student profile" },
     { path: "/dashboard/org/settings/security", label: "Security" },
     { path: "/dashboard/org/settings/preferences", label: "Preferences" },
   ],

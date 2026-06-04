@@ -23,6 +23,7 @@ import {
   type Invitation,
   type OrganizationRole,
 } from "../schema/auth";
+import type { InvitationMetadata, MemberMetadata } from "../schema/student-profile";
 
 export type ResolvedOrganizationInvitationStatus = "pending" | "accepted" | "rejected" | "expired";
 
@@ -42,6 +43,7 @@ export type OrganizationInvitationInviteeRow = {
   expiresAt: Date;
   role: Invitation["role"];
   inviterName: string | null;
+  metadata: InvitationMetadata;
 };
 
 export type OrganizationInvitationRow = {
@@ -127,6 +129,7 @@ export async function getOrganizationInvitationByTokenHash(
     expiresAt: row.invitation.expiresAt,
     role: row.invitation.role,
     inviterName: row.inviterName,
+    metadata: (row.invitation.metadata ?? {}) as InvitationMetadata,
   };
 }
 
@@ -158,7 +161,12 @@ export async function markOrganizationInvitationRejected(
 
 export async function insertOrganizationMember(
   database: Database,
-  input: { organizationId: string; userId: string; role: OrganizationRole },
+  input: {
+    organizationId: string;
+    userId: string;
+    role: OrganizationRole;
+    metadata?: MemberMetadata;
+  },
 ): Promise<{ id: string }> {
   const id = crypto.randomUUID();
   const [row] = await database
@@ -168,6 +176,7 @@ export async function insertOrganizationMember(
       organizationId: input.organizationId,
       userId: input.userId,
       role: input.role,
+      metadata: input.metadata ?? {},
     })
     .returning({ id: member.id });
 
@@ -240,6 +249,7 @@ export async function insertOrganizationMemberInviteRow(
     tokenHash: string;
     inviterId: string;
     expiresAt: Date;
+    metadata?: InvitationMetadata;
   },
 ): Promise<void> {
   await database.insert(invitation).values({
@@ -252,6 +262,7 @@ export async function insertOrganizationMemberInviteRow(
     expiresAt: input.expiresAt,
     inviterId: input.inviterId,
     tokenHash: input.tokenHash,
+    metadata: input.metadata ?? {},
   });
 }
 

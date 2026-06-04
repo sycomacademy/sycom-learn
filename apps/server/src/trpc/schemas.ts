@@ -209,10 +209,13 @@ export type ListActiveOrgInvitationsInput = z.infer<typeof listActiveOrgInvitati
 export const orgInvitableRoleSchema = z.enum(["admin", "teacher", "student"]);
 export type OrgInvitableRole = z.infer<typeof orgInvitableRoleSchema>;
 
+export const inviteStudentProfileInputSchema = z.record(z.string(), z.unknown()).optional();
+
 export const inviteOrgMemberSchema = z.object({
   email: z.email().transform((value) => value.trim().toLowerCase()),
   name: z.string().trim().min(1).max(120),
   role: orgInvitableRoleSchema,
+  studentProfile: inviteStudentProfileInputSchema,
 });
 export type InviteOrgMemberInput = z.infer<typeof inviteOrgMemberSchema>;
 
@@ -220,6 +223,7 @@ export const bulkInviteOrgMemberRowSchema = z.object({
   email: z.email().transform((value) => value.trim().toLowerCase()),
   name: z.string().trim().min(1).max(120),
   role: orgInvitableRoleSchema,
+  studentProfile: inviteStudentProfileInputSchema,
 });
 
 export const bulkInviteOrgMembersSchema = z.object({

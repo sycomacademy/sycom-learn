@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."invitation" ADD COLUMN "metadata" jsonb DEFAULT '{}'::jsonb;

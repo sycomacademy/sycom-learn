@@ -1,10 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp, Plus } from "lucide-react";
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 
+import {
+  buildStudentProfilePayload,
+  InviteStudentProfileFields,
+  type OrgStudentProfileField,
+  validateStudentProfileValuesClient,
+} from "@/components/dashboard/org/users/invite-student-profile-fields";
 import { ORG_INVITABLE_ROLE_OPTIONS } from "@/components/dashboard/org/users/org-members-schema";
 import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@sycom/ui/components/button";
@@ -52,6 +58,17 @@ const bulkRowSchema = z.object({
   role: orgInvitableRoleMini,
 });
 
+type BulkParsedRow = {
+  name: string;
+  email: string;
+  role: string;
+  studentProfile: Record<string, string>;
+};
+
+type BulkInviteRow = z.infer<typeof bulkRowSchema> & {
+  studentProfile?: Record<string, unknown>;
+};
+
 function parseCsvLine(line: string): string[] {
   const out: string[] = [];
   let current = "";
@@ -72,33 +89,70 @@ function parseCsvLine(line: string): string[] {
   return out.map((cell) => cell.replace(/^"|"$/g, ""));
 }
 
-function parseBulkInviteCsv(text: string): Array<{ name: string; email: string; role: string }> {
+function buildBulkCsvHeader(requiredStudentFieldIds: string[]): string {
+  return ["name", "email", "role", ...requiredStudentFieldIds].join(",");
+}
+
+function parseBulkInviteCsv(text: string, requiredStudentFieldIds: string[]): BulkParsedRow[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) {
-    throw new Error("Add a header row (name,email,role) and at least one data row.");
+    throw new Error(
+      `Add a header row (${buildBulkCsvHeader(requiredStudentFieldIds)}) and at least one data row.`,
+    );
   }
+
   const headerCells = parseCsvLine(lines[0] ?? "").map((c) => c.toLowerCase().trim());
   const nameI = headerCells.indexOf("name");
   const emailI = headerCells.indexOf("email");
   const roleI = headerCells.indexOf("role");
+
   if (nameI === -1 || emailI === -1 || roleI === -1) {
-    throw new Error("The first row must be headers: name,email,role");
+    throw new Error(
+      `The first row must include headers: ${buildBulkCsvHeader(requiredStudentFieldIds)}`,
+    );
   }
-  const rows: Array<{ name: string; email: string; role: string }> = [];
+
+  const allowed = new Set(["name", "email", "role", ...requiredStudentFieldIds]);
+  for (const header of headerCells) {
+    if (!allowed.has(header)) {
+      throw new Error(`Unknown column "${header}". Allowed: ${[...allowed].join(", ")}`);
+    }
+  }
+
+  for (const fieldId of requiredStudentFieldIds) {
+    if (!headerCells.includes(fieldId)) {
+      throw new Error(`Missing required student profile column: ${fieldId}`);
+    }
+  }
+
+  const fieldIndices = Object.fromEntries(
+    requiredStudentFieldIds.map((id) => [id, headerCells.indexOf(id)]),
+  ) as Record<string, number>;
+
+  const rows: BulkParsedRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cells = parseCsvLine(lines[i] ?? "");
     const name = (cells[nameI] ?? "").trim();
     const email = (cells[emailI] ?? "").trim();
     const role = (cells[roleI] ?? "").trim().toLowerCase();
     if (!name && !email && !role) continue;
-    rows.push({ name, email, role });
+
+    const studentProfile: Record<string, string> = {};
+    for (const fieldId of requiredStudentFieldIds) {
+      const idx = fieldIndices[fieldId];
+      studentProfile[fieldId] = (cells[idx] ?? "").trim();
+    }
+
+    rows.push({ name, email, role, studentProfile });
   }
   return rows;
 }
 
 function validateBulkRows(
-  raw: Array<{ name: string; email: string; role: string }>,
-): z.infer<typeof bulkRowSchema>[] {
+  raw: BulkParsedRow[],
+  requiredStudentFieldIds: string[],
+  requiredStudentFields: OrgStudentProfileField[],
+): BulkInviteRow[] {
   if (raw.length === 0) {
     throw new Error("No data rows found after the header.");
   }
@@ -106,7 +160,7 @@ function validateBulkRows(
     throw new Error("Maximum 200 rows per batch.");
   }
 
-  const parsed: z.infer<typeof bulkRowSchema>[] = [];
+  const parsed: BulkInviteRow[] = [];
   let rowNum = 1;
   for (const row of raw) {
     rowNum++;
@@ -116,9 +170,35 @@ function validateBulkRows(
         `Row ${rowNum}: check name, a valid email, and role (admin, teacher, student).`,
       );
     }
-    parsed.push(result.data);
+
+    const { role } = result.data;
+
+    if (role === "student") {
+      for (const fieldId of requiredStudentFieldIds) {
+        if (!(row.studentProfile[fieldId] ?? "").trim()) {
+          throw new Error(`Row ${rowNum}: student row missing required field "${fieldId}".`);
+        }
+      }
+      parsed.push({
+        ...result.data,
+        studentProfile: buildStudentProfilePayload(requiredStudentFields, row.studentProfile),
+      });
+    } else {
+      for (const fieldId of requiredStudentFieldIds) {
+        if ((row.studentProfile[fieldId] ?? "").trim()) {
+          throw new Error(
+            `Row ${rowNum}: student profile columns must be empty when role is not student.`,
+          );
+        }
+      }
+      parsed.push(result.data);
+    }
   }
   return parsed;
+}
+
+function emptyStudentProfileValues(fieldIds: string[]): Record<string, string> {
+  return Object.fromEntries(fieldIds.map((id) => [id, ""]));
 }
 
 export function InviteOrgMemberDialog() {
@@ -126,15 +206,56 @@ export function InviteOrgMemberDialog() {
   const [open, setOpen] = useState(false);
   const [bulkMode, setBulkMode] = useState<"paste" | "file">("paste");
   const [bulkText, setBulkText] = useState("");
+  const [studentProfileValues, setStudentProfileValues] = useState<Record<string, string>>({});
+  const [studentProfileErrors, setStudentProfileErrors] = useState<
+    Record<string, string | undefined>
+  >({});
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const listInvitesKey = trpc.organization.listInvitations.queryKey();
   const listMembersKey = trpc.organization.listMembers.queryKey();
 
+  const fieldsQuery = useQuery({
+    ...trpc.organization.getStudentProfileFields.queryOptions(),
+    enabled: open,
+  });
+
+  const studentFields = fieldsQuery.data?.fields ?? [];
+  const requiredStudentFields = useMemo(
+    () => studentFields.filter((f) => f.required),
+    [studentFields],
+  );
+  const requiredStudentFieldIds = useMemo(
+    () => requiredStudentFields.map((f) => f.id),
+    [requiredStudentFields],
+  );
+
+  const bulkCsvHeader = buildBulkCsvHeader(requiredStudentFieldIds);
+  const bulkCsvExampleRow = useMemo(() => {
+    const studentExtras = requiredStudentFieldIds.map((fieldId) => {
+      const field = studentFields.find((f) => f.id === fieldId);
+      return field?.type === "number" ? "2024" : "value";
+    });
+    return ["Jane Doe", "jane@school.edu", "student", ...studentExtras].join(",");
+  }, [requiredStudentFieldIds, studentFields]);
+
   const form = useForm<SingleInviteInput>({
     resolver: zodResolver(singleInviteSchema),
     defaultValues: { email: "", name: "", role: "student" },
   });
+
+  const selectedRole = form.watch("role");
+
+  const resetStudentProfileState = useCallback(() => {
+    setStudentProfileValues(emptyStudentProfileValues(studentFields.map((f) => f.id)));
+    setStudentProfileErrors({});
+  }, [studentFields]);
+
+  useEffect(() => {
+    if (open && studentFields.length > 0) {
+      setStudentProfileValues(emptyStudentProfileValues(studentFields.map((f) => f.id)));
+    }
+  }, [open, studentFields]);
 
   const inviteMutation = useMutation({
     ...trpc.organization.inviteMember.mutationOptions({
@@ -145,6 +266,7 @@ export function InviteOrgMemberDialog() {
           type: "success",
         });
         form.reset({ email: "", name: "", role: "student" });
+        resetStudentProfileState();
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: listInvitesKey }),
           queryClient.invalidateQueries({ queryKey: listMembersKey }),
@@ -189,8 +311,19 @@ export function InviteOrgMemberDialog() {
   });
 
   const onSubmitSingle = async (data: SingleInviteInput) => {
+    let studentProfile: Record<string, unknown> | undefined;
+    if (data.role === "student" && studentFields.length > 0) {
+      const errors = validateStudentProfileValuesClient(studentFields, studentProfileValues);
+      setStudentProfileErrors(errors);
+      if (Object.values(errors).some(Boolean)) return;
+      studentProfile = buildStudentProfilePayload(studentFields, studentProfileValues);
+    }
+
     try {
-      await inviteMutation.mutateAsync(data);
+      await inviteMutation.mutateAsync({
+        ...data,
+        studentProfile,
+      });
     } catch {
       // toast via onError
     }
@@ -199,8 +332,8 @@ export function InviteOrgMemberDialog() {
   const runBulk = useCallback(
     async (text: string) => {
       try {
-        const raw = parseBulkInviteCsv(text);
-        const rows = validateBulkRows(raw);
+        const raw = parseBulkInviteCsv(text, requiredStudentFieldIds);
+        const rows = validateBulkRows(raw, requiredStudentFieldIds, requiredStudentFields);
         await bulkMutation.mutateAsync({ rows });
       } catch (e) {
         toastManager.add({
@@ -210,7 +343,7 @@ export function InviteOrgMemberDialog() {
         });
       }
     },
-    [bulkMutation],
+    [bulkMutation, requiredStudentFieldIds, requiredStudentFields],
   );
 
   const onBulkFile = (fileList: FileList | null) => {
@@ -231,6 +364,9 @@ export function InviteOrgMemberDialog() {
         if (!next) {
           form.reset({ email: "", name: "", role: "student" });
           setBulkText("");
+          resetStudentProfileState();
+        } else if (studentFields.length > 0) {
+          resetStudentProfileState();
         }
       }}
       open={open}
@@ -317,6 +453,9 @@ export function InviteOrgMemberDialog() {
                               onValueChange={(value) => {
                                 if (value) {
                                   field.onChange(value);
+                                  if (value !== "student") {
+                                    setStudentProfileErrors({});
+                                  }
                                 }
                               }}
                               value={field.value}
@@ -340,6 +479,18 @@ export function InviteOrgMemberDialog() {
                       </FormItem>
                     )}
                   />
+
+                  {selectedRole === "student" ? (
+                    <InviteStudentProfileFields
+                      errors={studentProfileErrors}
+                      fields={studentFields}
+                      onChange={(fieldId, value) => {
+                        setStudentProfileValues((prev) => ({ ...prev, [fieldId]: value }));
+                        setStudentProfileErrors((prev) => ({ ...prev, [fieldId]: undefined }));
+                      }}
+                      values={studentProfileValues}
+                    />
+                  ) : null}
 
                   <DialogFooter variant="bare">
                     <DialogClose render={<Button type="button" variant="outline" />}>
@@ -375,13 +526,13 @@ export function InviteOrgMemberDialog() {
                     className="min-h-32 font-mono text-xs"
                     id={`${id}-bulk-csv`}
                     onChange={(e) => setBulkText(e.target.value)}
-                    placeholder={`name,email,role\nJane Doe,jane@school.edu,teacher`}
+                    placeholder={`${bulkCsvHeader}\n${bulkCsvExampleRow}`}
                     value={bulkText}
                   />
                   <p className="mt-2 text-xs text-muted-foreground">
-                    First row must be <code className="text-xs">name,email,role</code>. Roles:
-                    admin, teacher, or student. Rows that already have an account or membership are
-                    skipped.
+                    First row: <code className="text-xs">{bulkCsvHeader}</code>. Student rows must
+                    fill required profile columns; other roles leave those columns empty. Optional
+                    profile fields are not part of bulk upload.
                   </p>
                 </TabsPanel>
 

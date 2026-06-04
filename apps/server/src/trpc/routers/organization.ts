@@ -32,6 +32,7 @@ import {
   replaceOrgStudentProfileFields,
   StudentProfileValidationError,
   updateMemberStudentProfileValues,
+  validateStudentProfileForInvite,
   updateOrganizationBranding,
 } from "@sycom/db/queries/index";
 import { env } from "@sycom/env/server";
@@ -117,6 +118,7 @@ type OrgMemberInviteCoreInput = {
   email: string;
   name: string;
   role: "admin" | "teacher" | "student";
+  studentProfile?: Record<string, unknown>;
 };
 
 type CreateOrgMemberInviteResult =
@@ -156,6 +158,17 @@ async function createOrgMemberInvitationAndEmail(
     throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
   }
 
+  let inviteMetadata;
+  try {
+    inviteMetadata = await validateStudentProfileForInvite(ctx.db, {
+      organizationId: ctx.organizationId,
+      role: input.role,
+      values: input.studentProfile,
+    });
+  } catch (error) {
+    studentProfileError(error);
+  }
+
   const token = randomBytes(32).toString("base64url");
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + ORG_MEMBER_INVITE_TTL_MS);
@@ -170,6 +183,7 @@ async function createOrgMemberInvitationAndEmail(
     tokenHash,
     inviterId: ctx.session.user.id,
     expiresAt,
+    metadata: inviteMetadata,
   });
 
   try {

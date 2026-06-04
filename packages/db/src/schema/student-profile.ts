@@ -15,6 +15,11 @@ export type MemberMetadata = {
   studentProfile?: StudentProfileValues;
 };
 
+/** Pending org member invitation metadata (copied to member on accept). */
+export type InvitationMetadata = {
+  studentProfile?: StudentProfileValues;
+};
+
 export type OrganizationMetadataPayload = {
   accentHex?: string;
   studentProfileFields?: OrgStudentProfileField[];

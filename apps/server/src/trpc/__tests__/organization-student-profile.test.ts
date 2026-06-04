@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { and, eq, inArray } from "drizzle-orm";
-import { member, organization, user } from "@sycom/db/schema/auth";
+import { invitation, member, organization, user } from "@sycom/db/schema/auth";
 import {
+  memberMetadataFromInvitationMetadata,
   validateAndNormalizeStudentProfileValues,
   validateOrgStudentProfileFields,
 } from "@sycom/db/queries/student-profile-metadata";
@@ -41,6 +42,20 @@ describe("student profile metadata — validation", () => {
       /valid number/i,
     );
   });
+
+  test("memberMetadataFromInvitationMetadata copies student profile for students only", () => {
+    expect(
+      memberMetadataFromInvitationMetadata("student", {
+        studentProfile: { matric: "INV-42" },
+      }),
+    ).toEqual({ studentProfile: { matric: "INV-42" } });
+    expect(
+      memberMetadataFromInvitationMetadata("teacher", {
+        studentProfile: { matric: "INV-42" },
+      }),
+    ).toBeUndefined();
+    expect(memberMetadataFromInvitationMetadata("student", {})).toBeUndefined();
+  });
 });
 
 describe.skipIf(!dbEnabled)("organization student profile — DB integration", () => {
@@ -49,6 +64,7 @@ describe.skipIf(!dbEnabled)("organization student profile — DB integration", (
 
   afterEach(async () => {
     if (createdOrgIds.length) {
+      await testDb.delete(invitation).where(inArray(invitation.organizationId, createdOrgIds));
       await testDb.delete(member).where(inArray(member.organizationId, createdOrgIds));
       await testDb.delete(organization).where(inArray(organization.id, createdOrgIds));
       createdOrgIds.length = 0;
@@ -133,6 +149,51 @@ describe.skipIf(!dbEnabled)("organization student profile — DB integration", (
     const memberRow = await caller.organization.getMember({ memberId: studentMemberId });
     expect(memberRow.studentProfile).toEqual({ matric: "M-100", year: 2024 });
     expect(memberRow.userId).toBe(student.id);
+  });
+
+  test("invite student stores metadata on invitation for accept", async () => {
+    const { owner, orgId } = await seedOrgWithRoles();
+    const caller = makeCaller({ user: owner, activeOrganizationId: orgId });
+
+    await caller.organization.updateStudentProfileFields({
+      fields: [{ id: "matric", label: "Matric", type: "text", required: true, order: 0 }],
+    });
+
+    const inviteEmail = `invite-student-${crypto.randomUUID()}@test.local`;
+    await caller.organization.inviteMember({
+      email: inviteEmail,
+      name: "Invited Student",
+      role: "student",
+      studentProfile: { matric: "INV-42" },
+    });
+
+    const [inviteRow] = await testDb
+      .select({ metadata: invitation.metadata })
+      .from(invitation)
+      .where(and(eq(invitation.organizationId, orgId), eq(invitation.email, inviteEmail)))
+      .limit(1);
+
+    expect(inviteRow?.metadata).toMatchObject({
+      studentProfile: { matric: "INV-42" },
+    });
+  });
+
+  test("reject student profile on teacher invite", async () => {
+    const { owner, orgId } = await seedOrgWithRoles();
+    const caller = makeCaller({ user: owner, activeOrganizationId: orgId });
+
+    await caller.organization.updateStudentProfileFields({
+      fields: [{ id: "matric", label: "Matric", type: "text", required: true, order: 0 }],
+    });
+
+    await expect(
+      caller.organization.inviteMember({
+        email: `teacher-${crypto.randomUUID()}@test.local`,
+        name: "Invited Teacher",
+        role: "teacher",
+        studentProfile: { matric: "X" },
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
   test("cannot set student profile on non-student member", async () => {

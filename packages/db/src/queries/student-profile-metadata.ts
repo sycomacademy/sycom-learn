@@ -2,7 +2,9 @@ import { and, eq, sql } from "drizzle-orm";
 
 import type { Database } from "..";
 import { member, organization } from "../schema/auth";
+import type { OrganizationRole } from "../schema/auth";
 import type {
+  InvitationMetadata,
   MemberMetadata,
   OrgStudentProfileField,
   OrganizationMetadataPayload,
@@ -302,6 +304,55 @@ export async function updateMemberStudentProfileValues(
     .where(and(eq(member.id, input.memberId), eq(member.organizationId, input.organizationId)));
 
   return normalized;
+}
+
+export async function validateStudentProfileForInvite(
+  database: Database,
+  input: {
+    organizationId: string;
+    role: OrganizationRole;
+    values?: Record<string, unknown>;
+  },
+): Promise<InvitationMetadata> {
+  const raw = input.values ?? {};
+  const hasValues = Object.keys(raw).length > 0;
+
+  if (input.role !== "student") {
+    if (hasValues) {
+      throw new StudentProfileValidationError(
+        "Student profile metadata can only be set for student invites",
+      );
+    }
+    return {};
+  }
+
+  const fields = await getOrgStudentProfileFields(database, {
+    organizationId: input.organizationId,
+  });
+  if (fields.length === 0) {
+    if (hasValues) {
+      throw new StudentProfileValidationError(
+        "This organization has no student profile fields configured",
+      );
+    }
+    return {};
+  }
+
+  const studentProfile = validateAndNormalizeStudentProfileValues(fields, raw);
+  return { studentProfile };
+}
+
+/** Copy invitation student profile onto a new member row when applicable. */
+export function memberMetadataFromInvitationMetadata(
+  role: OrganizationRole,
+  metadata: InvitationMetadata | null | undefined,
+): MemberMetadata | undefined {
+  if (role !== "student") return undefined;
+  const studentProfile = metadata?.studentProfile;
+  if (!studentProfile || Object.keys(studentProfile).length === 0) {
+    return undefined;
+  }
+  return { studentProfile };
 }
 
 /** Resolve student profile values for a member row when field defs are already loaded. */

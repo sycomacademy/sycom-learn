@@ -12,7 +12,7 @@ import {
 
 import { createdAt, updatedAt } from "./_shared";
 import { profile } from "./profile";
-import type { MemberMetadata } from "./student-profile";
+import type { InvitationMetadata, MemberMetadata } from "./student-profile";
 
 const auth = pgSchema("auth");
 
@@ -199,6 +199,9 @@ export const invitation = auth.table(
     inviteeName: text("invitee_name"),
     status: text("status").default("pending").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
+    metadata: jsonb("metadata")
+      .$type<InvitationMetadata>()
+      .default(sql`'{}'::jsonb`),
     createdAt,
     inviterId: text("inviter_id")
       .notNull()

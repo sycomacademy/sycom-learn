@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PencilIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useTRPC } from "@/lib/trpc/client";
@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@sycom/ui/components/dialog";
+import { JsonViewer } from "@sycom/ui/components/elements/json-viewer";
 import { Field, FieldError, FieldLabel } from "@sycom/ui/components/field";
 import { Form, FormControl, FormField, FormItem } from "@sycom/ui/components/form";
 import { Input } from "@sycom/ui/components/input";
@@ -24,20 +25,16 @@ type OrgMemberDetails = AppRouterOutputs["organization"]["getMember"];
 type OrgStudentProfileField =
   AppRouterOutputs["organization"]["getStudentProfileFields"]["fields"][number];
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="grid gap-1 border-b py-3 last:border-b-0 sm:grid-cols-[9rem_1fr] sm:gap-4">
-      <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
-      <dd className="text-sm text-foreground">{value}</dd>
-    </div>
-  );
-}
-
-function formatStudentProfileValue(value: string | number | null | undefined): string {
-  if (value === null || value === undefined || value === "") {
-    return "—";
+function studentProfileForJsonViewer(
+  fields: OrgStudentProfileField[],
+  values: OrgMemberDetails["studentProfile"],
+): Record<string, string | number | null> {
+  const out: Record<string, string | number | null> = {};
+  for (const field of fields) {
+    const value = values[field.id];
+    out[field.label] = value === undefined ? null : value;
   }
-  return String(value);
+  return out;
 }
 
 type EditStudentProfileDialogProps = {
@@ -177,9 +174,13 @@ export function OrgMemberStudentProfileSection({ member }: { member: OrgMemberDe
     enabled: member.role === "student",
   });
 
-  if (member.role !== "student") return null;
-
   const fields = fieldsQuery.data?.fields ?? [];
+  const jsonData = useMemo(
+    () => studentProfileForJsonViewer(fields, member.studentProfile),
+    [fields, member.studentProfile],
+  );
+
+  if (member.role !== "student") return null;
   if (fields.length === 0) return null;
 
   return (
@@ -192,15 +193,13 @@ export function OrgMemberStudentProfileSection({ member }: { member: OrgMemberDe
             Edit
           </Button>
         </div>
-        <dl>
-          {fields.map((field) => (
-            <DetailRow
-              key={field.id}
-              label={field.label}
-              value={formatStudentProfileValue(member.studentProfile[field.id])}
-            />
-          ))}
-        </dl>
+        <JsonViewer
+          className="rounded-md border bg-muted/30 p-2"
+          collapsed={1}
+          copyPath
+          data={JSON.parse(JSON.stringify(jsonData))}
+          searchable
+        />
       </div>
 
       <EditStudentProfileDialog
