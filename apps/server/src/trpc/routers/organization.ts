@@ -24,10 +24,14 @@ import {
   listOrganizationCohorts,
   listOrganizationInvitations,
   listOrganizationMembers,
+  getOrgStudentProfileFields,
   listOrganizationMembershipsForUser,
   recordApplicationAuditEvent,
   removeCoursesFromCohort,
   removeMembersFromCohort,
+  replaceOrgStudentProfileFields,
+  StudentProfileValidationError,
+  updateMemberStudentProfileValues,
   updateOrganizationBranding,
 } from "@sycom/db/queries/index";
 import { env } from "@sycom/env/server";
@@ -60,8 +64,19 @@ import {
   organizationMembershipsOutputSchema,
   organizationWorkspaceContextOutputSchema,
   removeOrgMemberSchema,
+  orgStudentProfileFieldsOutputSchema,
+  updateMemberStudentProfileOutputSchema,
+  updateMemberStudentProfileSchema,
+  updateOrgStudentProfileFieldsSchema,
   updateOrganizationBrandingSchema,
 } from "../schemas";
+
+function studentProfileError(error: unknown): never {
+  if (error instanceof StudentProfileValidationError) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+  }
+  throw error;
+}
 
 const ORG_MEMBER_INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 const ORG_COHORT_READ_ROLES = new Set(["owner", "admin", "teacher"]);
@@ -532,6 +547,46 @@ export const organizationRouter = router({
     }
     return row;
   }),
+
+  getStudentProfileFields: orgAdminProcedure
+    .output(orgStudentProfileFieldsOutputSchema)
+    .query(async ({ ctx }) => {
+      const fields = await getOrgStudentProfileFields(ctx.db, {
+        organizationId: ctx.organizationId,
+      });
+      return { fields };
+    }),
+
+  updateStudentProfileFields: orgAdminProcedure
+    .input(updateOrgStudentProfileFieldsSchema)
+    .output(orgStudentProfileFieldsOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const fields = await replaceOrgStudentProfileFields(ctx.db, {
+          organizationId: ctx.organizationId,
+          fields: input.fields,
+        });
+        return { fields };
+      } catch (error) {
+        studentProfileError(error);
+      }
+    }),
+
+  updateMemberStudentProfile: orgAdminProcedure
+    .input(updateMemberStudentProfileSchema)
+    .output(updateMemberStudentProfileOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const studentProfile = await updateMemberStudentProfileValues(ctx.db, {
+          organizationId: ctx.organizationId,
+          memberId: input.memberId,
+          values: input.values,
+        });
+        return { studentProfile };
+      } catch (error) {
+        studentProfileError(error);
+      }
+    }),
 
   removeMember: orgAdminProcedure.input(removeOrgMemberSchema).mutation(async ({ ctx, input }) => {
     const target = await getOrganizationMemberById(ctx.db, {

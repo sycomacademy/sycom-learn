@@ -48,6 +48,7 @@ import {
   type OrgMemberDetails,
   type OrgMemberRow,
 } from "./org-members-schema";
+import { OrgMemberStudentProfileSection } from "./org-member-student-profile-section";
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -115,6 +116,7 @@ function MemberDetailsSheetContent({ member }: { member: OrgMemberDetails }) {
             }
           />
         </dl>
+        <OrgMemberStudentProfileSection member={member} />
       </SheetPanel>
 
       <SheetFooter variant="bare">

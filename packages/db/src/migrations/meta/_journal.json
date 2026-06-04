@@ -141,6 +141,13 @@
       "when": 1778078773174,
       "tag": "0019_odd_cammi",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1780565181238,
+      "tag": "0020_lonely_whistler",
+      "breakpoints": true
     }
   ]
 }

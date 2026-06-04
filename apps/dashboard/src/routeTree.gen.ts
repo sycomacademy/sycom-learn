@@ -79,6 +79,7 @@ import { Route as DashboardOrgUsersInvitesRouteImport } from "./routes/dashboard
 import { Route as DashboardOrgSupportReportIssueRouteImport } from "./routes/dashboard/org/support/report-issue";
 import { Route as DashboardOrgSupportFaqsRouteImport } from "./routes/dashboard/org/support/faqs";
 import { Route as DashboardOrgSupportContactRouteImport } from "./routes/dashboard/org/support/contact";
+import { Route as DashboardOrgSettingsStudentProfileRouteImport } from "./routes/dashboard/org/settings/student-profile";
 import { Route as DashboardOrgSettingsSecurityRouteImport } from "./routes/dashboard/org/settings/security";
 import { Route as DashboardOrgSettingsPreferencesRouteImport } from "./routes/dashboard/org/settings/preferences";
 import { Route as DashboardOrgSettingsGeneralRouteImport } from "./routes/dashboard/org/settings/general";
@@ -458,6 +459,12 @@ const DashboardOrgSupportContactRoute = DashboardOrgSupportContactRouteImport.up
   path: "/contact",
   getParentRoute: () => DashboardOrgSupportRouteRoute,
 } as any);
+const DashboardOrgSettingsStudentProfileRoute =
+  DashboardOrgSettingsStudentProfileRouteImport.update({
+    id: "/student-profile",
+    path: "/student-profile",
+    getParentRoute: () => DashboardOrgSettingsRouteRoute,
+  } as any);
 const DashboardOrgSettingsSecurityRoute = DashboardOrgSettingsSecurityRouteImport.update({
   id: "/security",
   path: "/security",
@@ -691,6 +698,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/org/settings/general": typeof DashboardOrgSettingsGeneralRoute;
   "/dashboard/org/settings/preferences": typeof DashboardOrgSettingsPreferencesRoute;
   "/dashboard/org/settings/security": typeof DashboardOrgSettingsSecurityRoute;
+  "/dashboard/org/settings/student-profile": typeof DashboardOrgSettingsStudentProfileRoute;
   "/dashboard/org/support/contact": typeof DashboardOrgSupportContactRoute;
   "/dashboard/org/support/faqs": typeof DashboardOrgSupportFaqsRoute;
   "/dashboard/org/support/report-issue": typeof DashboardOrgSupportReportIssueRoute;
@@ -770,6 +778,7 @@ export interface FileRoutesByTo {
   "/dashboard/org/settings/general": typeof DashboardOrgSettingsGeneralRoute;
   "/dashboard/org/settings/preferences": typeof DashboardOrgSettingsPreferencesRoute;
   "/dashboard/org/settings/security": typeof DashboardOrgSettingsSecurityRoute;
+  "/dashboard/org/settings/student-profile": typeof DashboardOrgSettingsStudentProfileRoute;
   "/dashboard/org/support/contact": typeof DashboardOrgSupportContactRoute;
   "/dashboard/org/support/faqs": typeof DashboardOrgSupportFaqsRoute;
   "/dashboard/org/support/report-issue": typeof DashboardOrgSupportReportIssueRoute;
@@ -872,6 +881,7 @@ export interface FileRoutesById {
   "/dashboard/org/settings/general": typeof DashboardOrgSettingsGeneralRoute;
   "/dashboard/org/settings/preferences": typeof DashboardOrgSettingsPreferencesRoute;
   "/dashboard/org/settings/security": typeof DashboardOrgSettingsSecurityRoute;
+  "/dashboard/org/settings/student-profile": typeof DashboardOrgSettingsStudentProfileRoute;
   "/dashboard/org/support/contact": typeof DashboardOrgSupportContactRoute;
   "/dashboard/org/support/faqs": typeof DashboardOrgSupportFaqsRoute;
   "/dashboard/org/support/report-issue": typeof DashboardOrgSupportReportIssueRoute;
@@ -974,6 +984,7 @@ export interface FileRouteTypes {
     | "/dashboard/org/settings/general"
     | "/dashboard/org/settings/preferences"
     | "/dashboard/org/settings/security"
+    | "/dashboard/org/settings/student-profile"
     | "/dashboard/org/support/contact"
     | "/dashboard/org/support/faqs"
     | "/dashboard/org/support/report-issue"
@@ -1053,6 +1064,7 @@ export interface FileRouteTypes {
     | "/dashboard/org/settings/general"
     | "/dashboard/org/settings/preferences"
     | "/dashboard/org/settings/security"
+    | "/dashboard/org/settings/student-profile"
     | "/dashboard/org/support/contact"
     | "/dashboard/org/support/faqs"
     | "/dashboard/org/support/report-issue"
@@ -1154,6 +1166,7 @@ export interface FileRouteTypes {
     | "/dashboard/org/settings/general"
     | "/dashboard/org/settings/preferences"
     | "/dashboard/org/settings/security"
+    | "/dashboard/org/settings/student-profile"
     | "/dashboard/org/support/contact"
     | "/dashboard/org/support/faqs"
     | "/dashboard/org/support/report-issue"
@@ -1688,6 +1701,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardOrgSupportContactRouteImport;
       parentRoute: typeof DashboardOrgSupportRouteRoute;
     };
+    "/dashboard/org/settings/student-profile": {
+      id: "/dashboard/org/settings/student-profile";
+      path: "/student-profile";
+      fullPath: "/dashboard/org/settings/student-profile";
+      preLoaderRoute: typeof DashboardOrgSettingsStudentProfileRouteImport;
+      parentRoute: typeof DashboardOrgSettingsRouteRoute;
+    };
     "/dashboard/org/settings/security": {
       id: "/dashboard/org/settings/security";
       path: "/security";
@@ -2115,6 +2135,7 @@ interface DashboardOrgSettingsRouteRouteChildren {
   DashboardOrgSettingsGeneralRoute: typeof DashboardOrgSettingsGeneralRoute;
   DashboardOrgSettingsPreferencesRoute: typeof DashboardOrgSettingsPreferencesRoute;
   DashboardOrgSettingsSecurityRoute: typeof DashboardOrgSettingsSecurityRoute;
+  DashboardOrgSettingsStudentProfileRoute: typeof DashboardOrgSettingsStudentProfileRoute;
   DashboardOrgSettingsIndexRoute: typeof DashboardOrgSettingsIndexRoute;
 }
 
@@ -2122,6 +2143,7 @@ const DashboardOrgSettingsRouteRouteChildren: DashboardOrgSettingsRouteRouteChil
   DashboardOrgSettingsGeneralRoute: DashboardOrgSettingsGeneralRoute,
   DashboardOrgSettingsPreferencesRoute: DashboardOrgSettingsPreferencesRoute,
   DashboardOrgSettingsSecurityRoute: DashboardOrgSettingsSecurityRoute,
+  DashboardOrgSettingsStudentProfileRoute: DashboardOrgSettingsStudentProfileRoute,
   DashboardOrgSettingsIndexRoute: DashboardOrgSettingsIndexRoute,
 };
 

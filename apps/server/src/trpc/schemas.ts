@@ -650,6 +650,50 @@ export const updateOrganizationBrandingSchema = z
   });
 export type UpdateOrganizationBrandingInput = z.infer<typeof updateOrganizationBrandingSchema>;
 
+const orgStudentProfileFieldIdSchema = z
+  .string()
+  .regex(/^[a-z][a-z0-9_]{0,63}$/, "Field id must be a lowercase slug");
+
+export const orgStudentProfileFieldSchema = z.object({
+  id: orgStudentProfileFieldIdSchema,
+  label: z.string().trim().min(1).max(120),
+  type: z.enum(["text", "number"]),
+  required: z.boolean().optional(),
+  placeholder: z.string().trim().max(200).optional(),
+  order: z.number().int().min(0),
+});
+export type OrgStudentProfileField = z.infer<typeof orgStudentProfileFieldSchema>;
+
+export const orgStudentProfileFieldsOutputSchema = z.object({
+  fields: z.array(orgStudentProfileFieldSchema),
+});
+export type OrgStudentProfileFieldsOutput = z.infer<typeof orgStudentProfileFieldsOutputSchema>;
+
+export const updateOrgStudentProfileFieldsSchema = z.object({
+  fields: z.array(orgStudentProfileFieldSchema).max(50),
+});
+export type UpdateOrgStudentProfileFieldsInput = z.infer<
+  typeof updateOrgStudentProfileFieldsSchema
+>;
+
+export const studentProfileValueSchema = z.union([z.string(), z.number(), z.null()]);
+
+export const studentProfileValuesSchema = z.record(z.string(), studentProfileValueSchema);
+export type StudentProfileValues = z.infer<typeof studentProfileValuesSchema>;
+
+export const updateMemberStudentProfileSchema = z.object({
+  memberId: z.string().min(1),
+  values: z.record(z.string(), z.unknown()),
+});
+export type UpdateMemberStudentProfileInput = z.infer<typeof updateMemberStudentProfileSchema>;
+
+export const updateMemberStudentProfileOutputSchema = z.object({
+  studentProfile: studentProfileValuesSchema,
+});
+export type UpdateMemberStudentProfileOutput = z.infer<
+  typeof updateMemberStudentProfileOutputSchema
+>;
+
 export const listOrganizationCohortsSchema = z.object({
   limit: z.number().int().min(1).max(100).default(20),
   offset: z.number().int().min(0).default(0),

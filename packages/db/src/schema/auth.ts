@@ -1,8 +1,9 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
   integer,
+  jsonb,
   pgSchema,
   text,
   timestamp,
@@ -11,6 +12,7 @@ import {
 
 import { createdAt, updatedAt } from "./_shared";
 import { profile } from "./profile";
+import type { MemberMetadata } from "./student-profile";
 
 const auth = pgSchema("auth");
 
@@ -169,6 +171,9 @@ export const member = auth.table(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     role: organizationRoleEnum("role").default("student").notNull(),
+    metadata: jsonb("metadata")
+      .$type<MemberMetadata>()
+      .default(sql`'{}'::jsonb`),
     createdAt,
   },
   (table) => [

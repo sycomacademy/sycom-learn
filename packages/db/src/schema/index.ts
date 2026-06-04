@@ -6,3 +6,4 @@ export * from "./enrollment";
 export * from "./feedback";
 export * from "./profile";
 export * from "./storage";
+export * from "./student-profile";

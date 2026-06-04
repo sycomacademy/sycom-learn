@@ -1,15 +1,15 @@
 # Deployment
 
-End-to-end guide for standing up Sycom on Azure. Following it top-to-bottom in a fresh subscription will produce a working staging *and* production deployment.
+End-to-end guide for standing up Sycom on Azure. Following it top-to-bottom in a fresh subscription will produce a working staging _and_ production deployment.
 
 ## Architecture at a glance
 
 A single Container App with two containers sharing a network namespace:
 
-| Container   | Port | Reachable from   | Image                 |
-| ----------- | ---- | ---------------- | --------------------- |
-| `dashboard` | 3000 | Public ingress   | `Dockerfile.dashboard` |
-| `server`    | 3001 | Loopback only    | `Dockerfile.server`    |
+| Container   | Port | Reachable from | Image                  |
+| ----------- | ---- | -------------- | ---------------------- |
+| `dashboard` | 3000 | Public ingress | `Dockerfile.dashboard` |
+| `server`    | 3001 | Loopback only  | `Dockerfile.server`    |
 
 The dashboard is a TanStack Start app whose Bun entry (`apps/dashboard/start.ts`) reverse-proxies `/api/auth/*` and `/trpc/*` to `http://localhost:3001` (the server container in the same pod). Browsers see only one URL — the dashboard's. This sidesteps Azure Container Apps' env-internal hairpin/TLS quirks that make two-app intra-env communication unreliable on the Consumption tier.
 
@@ -29,6 +29,7 @@ Two Bicep parameter files drive it:
 - [`infra/params/prod.bicepparam`](infra/params/prod.bicepparam) — production stack
 
 The GitHub Actions workflow ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) deploys on push:
+
 - Push to `staging` → staging environment
 - Push to `main` → production environment
 
@@ -57,15 +58,18 @@ Dockerfile.server
 ## Prerequisites
 
 On the operator's machine:
+
 - Azure CLI ≥ 2.60 (`az --version`)
 - `jq` (`brew install jq` / `apt install jq`)
 - `bash` ≥ 4
 - `gh` if you want to set GitHub secrets/vars from the terminal (optional)
 
 In Azure:
+
 - An empty subscription, or one where you have **Owner** at the subscription scope (needed to create role assignments).
 
 In GitHub:
+
 - Repository admin to create Environments and add secrets/variables.
 
 ## Required configuration values
@@ -73,28 +77,29 @@ In GitHub:
 You will need values for everything in this table before starting. Put placeholders for any URL columns — they get rewritten in the bootstrap pass.
 
 ### Per-environment Bicep parameters
+
 Edited in `infra/params/<env>.bicepparam`.
 
-| Parameter               | Example                            | Notes                                      |
-| ----------------------- | ---------------------------------- | ------------------------------------------ |
-| `location`              | `uksouth`                          | Any Azure region                           |
-| `projectName`           | `sycom`                            | Drives default resource names              |
-| `environmentName`       | `staging` / `prod`                 |                                            |
-| `containerRegistryName` | `sycomprodacr`                     | **Globally unique**, alphanumeric, 5-50 ch |
-| `keyVaultName`          | `sycom-prod-uks-kv`                | **Globally unique**, 3-24 ch               |
-| `appName`               | `sycom-prod-app`                   | Container App name (single app)            |
-| `appIdentityName`       | `sycom-prod-app-id`                | Shared managed identity                    |
-| `dashboardUrl`          | `https://app.sycom.com`            | Single public URL — UI + `/api/auth` + `/trpc` |
-| `websiteUrl`            | `https://sycom.com`                | Optional marketing site                    |
-| `corsOrigins`           | `['https://app.sycom.com']`        | Browsers allowed to call the API           |
-| `debugPerformance`      | `'false'`                          | `'true'` only in staging                   |
+| Parameter               | Example                     | Notes                                          |
+| ----------------------- | --------------------------- | ---------------------------------------------- |
+| `location`              | `uksouth`                   | Any Azure region                               |
+| `projectName`           | `sycom`                     | Drives default resource names                  |
+| `environmentName`       | `staging` / `prod`          |                                                |
+| `containerRegistryName` | `sycomprodacr`              | **Globally unique**, alphanumeric, 5-50 ch     |
+| `keyVaultName`          | `sycom-prod-uks-kv`         | **Globally unique**, 3-24 ch                   |
+| `appName`               | `sycom-prod-app`            | Container App name (single app)                |
+| `appIdentityName`       | `sycom-prod-app-id`         | Shared managed identity                        |
+| `dashboardUrl`          | `https://app.sycom.com`     | Single public URL — UI + `/api/auth` + `/trpc` |
+| `websiteUrl`            | `https://sycom.com`         | Optional marketing site                        |
+| `corsOrigins`           | `['https://app.sycom.com']` | Browsers allowed to call the API               |
+| `debugPerformance`      | `'false'`                   | `'true'` only in staging                       |
 
 ### GitHub environment secrets (per environment)
 
 OIDC handles auth — no client secrets to rotate.
 
-| Secret                  | Source                            |
-| ----------------------- | --------------------------------- |
+| Secret                  | Source                              |
+| ----------------------- | ----------------------------------- |
 | `AZURE_CLIENT_ID`       | Output of `bootstrap-azure-oidc.sh` |
 | `AZURE_TENANT_ID`       | Output of `bootstrap-azure-oidc.sh` |
 | `AZURE_SUBSCRIPTION_ID` | Output of `bootstrap-azure-oidc.sh` |
@@ -103,13 +108,13 @@ OIDC handles auth — no client secrets to rotate.
 
 These are **not secret** — they're public URLs and resource names baked into the dashboard image at build time.
 
-| Variable                | Example                          |
-| ----------------------- | -------------------------------- |
-| `AZURE_RESOURCE_GROUP`  | `sycom-prod-rg`                  |
-| `AZURE_LOCATION`        | `uksouth`                        |
-| `DASHBOARD_URL`         | `https://app.sycom.com`          |
-| `WEBSITE_URL`           | `https://sycom.com`              |
-| `CLOUDINARY_CLOUD_NAME` | `sycom`                          |
+| Variable                | Example                 |
+| ----------------------- | ----------------------- |
+| `AZURE_RESOURCE_GROUP`  | `sycom-prod-rg`         |
+| `AZURE_LOCATION`        | `uksouth`               |
+| `DASHBOARD_URL`         | `https://app.sycom.com` |
+| `WEBSITE_URL`           | `https://sycom.com`     |
+| `CLOUDINARY_CLOUD_NAME` | `sycom`                 |
 
 `SERVER_URL` is no longer needed — the workflow bakes the dashboard URL into both `VITE_SERVER_URL` and `VITE_DASHBOARD_URL` because the browser only ever hits the dashboard ingress.
 
@@ -117,22 +122,22 @@ These are **not secret** — they're public URLs and resource names baked into t
 
 The server reads these from Key Vault. Names below match `keyVaultSecretNames` in `infra/main.bicep` and the keys in `infra/secrets/secrets.env.example`.
 
-| Env var (runtime)         | Key Vault secret name     | Source                                       |
-| ------------------------- | ------------------------- | -------------------------------------------- |
-| `DATABASE_URL`            | `database-url`            | Neon connection string (use staging branch for staging) |
-| `BETTER_AUTH_SECRET`      | `better-auth-secret`      | `openssl rand -base64 32`                    |
-| `BETTER_AUTH_API_KEY`     | `better-auth-api-key`     | Better Auth dashboard                        |
-| `GOOGLE_CLIENT_ID`        | `google-client-id`        | Google Cloud Console → OAuth                 |
-| `GOOGLE_CLIENT_SECRET`    | `google-client-secret`    | Google Cloud Console → OAuth                 |
-| `LINKEDIN_CLIENT_ID`      | `linkedin-client-id`      | LinkedIn Developers → app                    |
-| `LINKEDIN_CLIENT_SECRET`  | `linkedin-client-secret`  | LinkedIn Developers → app                    |
-| `CLOUDINARY_CLOUD_NAME`   | `cloudinary-cloud-name`   | Cloudinary dashboard                         |
-| `CLOUDINARY_API_KEY`      | `cloudinary-api-key`      | Cloudinary dashboard                         |
-| `CLOUDINARY_API_SECRET`   | `cloudinary-api-secret`   | Cloudinary dashboard                         |
-| `RESEND_API_KEY`          | `resend-api-key`          | Resend dashboard                             |
-| `RESEND_EMAIL_FROM`       | `resend-email-from`       | e.g. `Sycom <noreply@sycom.com>`             |
-| `RESEND_EMAIL_REPLY_TO`   | `resend-email-reply-to`   | e.g. `support@sycom.com`                     |
-| `AI_GATEWAY_API_KEY`      | `ai-gateway-api-key`      | Vercel AI Gateway                            |
+| Env var (runtime)        | Key Vault secret name    | Source                                                  |
+| ------------------------ | ------------------------ | ------------------------------------------------------- |
+| `DATABASE_URL`           | `database-url`           | Neon connection string (use staging branch for staging) |
+| `BETTER_AUTH_SECRET`     | `better-auth-secret`     | `openssl rand -base64 32`                               |
+| `BETTER_AUTH_API_KEY`    | `better-auth-api-key`    | Better Auth dashboard                                   |
+| `GOOGLE_CLIENT_ID`       | `google-client-id`       | Google Cloud Console → OAuth                            |
+| `GOOGLE_CLIENT_SECRET`   | `google-client-secret`   | Google Cloud Console → OAuth                            |
+| `LINKEDIN_CLIENT_ID`     | `linkedin-client-id`     | LinkedIn Developers → app                               |
+| `LINKEDIN_CLIENT_SECRET` | `linkedin-client-secret` | LinkedIn Developers → app                               |
+| `CLOUDINARY_CLOUD_NAME`  | `cloudinary-cloud-name`  | Cloudinary dashboard                                    |
+| `CLOUDINARY_API_KEY`     | `cloudinary-api-key`     | Cloudinary dashboard                                    |
+| `CLOUDINARY_API_SECRET`  | `cloudinary-api-secret`  | Cloudinary dashboard                                    |
+| `RESEND_API_KEY`         | `resend-api-key`         | Resend dashboard                                        |
+| `RESEND_EMAIL_FROM`      | `resend-email-from`      | e.g. `Sycom <noreply@sycom.com>`                        |
+| `RESEND_EMAIL_REPLY_TO`  | `resend-email-reply-to`  | e.g. `support@sycom.com`                                |
+| `AI_GATEWAY_API_KEY`     | `ai-gateway-api-key`     | Vercel AI Gateway                                       |
 
 ## First-time deploy: step by step
 
@@ -141,6 +146,7 @@ The first deploy is **two passes**: pass 1 brings the apps up on Azure-generated
 ### 1. Edit the Bicep param files
 
 Open `infra/params/staging.bicepparam` and `infra/params/prod.bicepparam`. Replace placeholder names. For the URL params you have two choices:
+
 - Use throwaway placeholders like `https://bootstrap.example.com` for now — pass 2 will rewrite them. Pick this if you don't yet know the Azure FQDNs.
 - Use your final domains right away. Pick this if DNS is already prepared.
 
@@ -206,6 +212,7 @@ git push origin staging
 ```
 
 The workflow:
+
 1. `az group create` — idempotent
 2. Deploys `main.bicep` with `deployApps=false` → creates ACR, Key Vault, Container Apps environment, identities, RBAC
 3. (Now run step 4 above to populate the new vault, then re-trigger by pushing again or rerunning the workflow.)
@@ -232,6 +239,7 @@ serverUrl    = https://sycom-staging-server.orangeflower-123.uksouth.azurecontai
 Decide whether to point at the Azure FQDNs (instant) or your real domains (requires DNS first — see next section).
 
 Update the values in two places:
+
 - `infra/params/<env>.bicepparam` (`dashboardUrl`, `serverUrl`, `corsOrigins`)
 - GitHub environment variables (`DASHBOARD_URL`, `SERVER_URL`, `WEBSITE_URL`)
 
@@ -282,11 +290,11 @@ After domains are settled, update each provider's allowed callback / redirect UR
 
 ## Branch & deploy behavior
 
-| Push to    | Triggers                       |
-| ---------- | ------------------------------ |
-| `staging`  | `deploy-staging` job           |
-| `main`     | `deploy-production` job        |
-| any other  | nothing                        |
+| Push to   | Triggers                |
+| --------- | ----------------------- |
+| `staging` | `deploy-staging` job    |
+| `main`    | `deploy-production` job |
+| any other | nothing                 |
 
 Each deployment is image-tagged with `${GITHUB_SHA}`, so every revision in Container Apps maps to a single git commit.
 
@@ -343,16 +351,16 @@ Same path as the first-time deploy:
 
 ## Troubleshooting
 
-| Symptom                                          | Likely cause                                                                                        |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `staging` deploy job shows "Skipped"             | You pushed to `main`, not `staging`. The `if: github.ref_name == 'staging'` guard is by design.    |
-| Container exits with `Module not found .output/server/index.mjs` | Stale image. Rebuild — the dashboard now serves from `start.ts`.                       |
-| Container App shows `ImagePullBackOff`           | Managed identity missing `AcrPull` on the registry. Re-run the Bicep deploy.                       |
-| `/api/auth/*` returns 500 immediately            | Server container hasn't started yet (cold-start race) or crashed. Check logs for the `server` container in the same Container App. |
-| `/api/auth/*` returns 502 from ingress           | Server container not listening on `127.0.0.1:3001`. Confirm `PORT=3001` and `HOST=127.0.0.1` env vars (set by Bicep).         |
-| Dashboard hits CORS errors against `/api/auth`   | Should never happen now (same origin). If it does, check that `VITE_SERVER_URL` was built with the **dashboard** URL, not a separate API URL. |
-| OAuth redirect loops or "redirect_uri_mismatch"  | Provider allowed-callbacks list still points at the old Azure FQDN; update it to the live domain.  |
-| Build job takes 25+ min                          | Someone re-added the standalone `nitro()` plugin. Remove it; TanStack Start already bundles Nitro. |
+| Symptom                                                          | Likely cause                                                                                                                                  |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `staging` deploy job shows "Skipped"                             | You pushed to `main`, not `staging`. The `if: github.ref_name == 'staging'` guard is by design.                                               |
+| Container exits with `Module not found .output/server/index.mjs` | Stale image. Rebuild — the dashboard now serves from `start.ts`.                                                                              |
+| Container App shows `ImagePullBackOff`                           | Managed identity missing `AcrPull` on the registry. Re-run the Bicep deploy.                                                                  |
+| `/api/auth/*` returns 500 immediately                            | Server container hasn't started yet (cold-start race) or crashed. Check logs for the `server` container in the same Container App.            |
+| `/api/auth/*` returns 502 from ingress                           | Server container not listening on `127.0.0.1:3001`. Confirm `PORT=3001` and `HOST=127.0.0.1` env vars (set by Bicep).                         |
+| Dashboard hits CORS errors against `/api/auth`                   | Should never happen now (same origin). If it does, check that `VITE_SERVER_URL` was built with the **dashboard** URL, not a separate API URL. |
+| OAuth redirect loops or "redirect_uri_mismatch"                  | Provider allowed-callbacks list still points at the old Azure FQDN; update it to the live domain.                                             |
+| Build job takes 25+ min                                          | Someone re-added the standalone `nitro()` plugin. Remove it; TanStack Start already bundles Nitro.                                            |
 
 ## Manual operations
 

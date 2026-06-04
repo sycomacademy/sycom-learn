@@ -2,6 +2,11 @@ import { and, asc, count, desc, eq, ilike, inArray, or, sql, type SQL } from "dr
 
 import type { Database } from "..";
 import { cohort, cohort_member, member, user, type OrganizationRole } from "../schema/auth";
+import type { MemberMetadata, StudentProfileValues } from "../schema/student-profile";
+import {
+  getOrgStudentProfileFields,
+  resolveStudentProfileForMember,
+} from "./student-profile-metadata";
 
 export type OrgMemberStatus = "verified" | "unverified" | "banned";
 
@@ -42,6 +47,7 @@ export type ListOrgMembersResult = {
 
 export type OrgMemberDetails = OrgMemberRow & {
   organizationId: string;
+  studentProfile: StudentProfileValues;
 };
 
 const MEMBER_SORT_COLUMNS = {
@@ -179,6 +185,7 @@ export async function getOrganizationMemberById(
       banned: sql<boolean>`coalesce(${user.banned}, false)`,
       twoFactorEnabled: sql<boolean>`coalesce(${user.twoFactorEnabled}, false)`,
       joinedAt: member.createdAt,
+      metadata: member.metadata,
     })
     .from(member)
     .innerJoin(user, eq(user.id, member.userId))
@@ -187,11 +194,20 @@ export async function getOrganizationMemberById(
 
   if (!row) return null;
 
-  const cohortsByUser = await fetchCohortsByUser(database, input.organizationId, [row.userId]);
+  const [cohortsByUser, fieldDefs] = await Promise.all([
+    fetchCohortsByUser(database, input.organizationId, [row.userId]),
+    getOrgStudentProfileFields(database, { organizationId: input.organizationId }),
+  ]);
+
+  const { metadata: memberMetadata, ...memberRow } = row;
 
   return {
-    ...row,
+    ...memberRow,
     organizationId: input.organizationId,
     cohorts: cohortsByUser.get(row.userId) ?? [],
+    studentProfile: resolveStudentProfileForMember(
+      fieldDefs,
+      (memberMetadata ?? {}) as MemberMetadata,
+    ),
   };
 }
