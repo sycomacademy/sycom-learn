@@ -25,6 +25,7 @@ import { useTRPC } from "@/lib/trpc/client";
 import type { OrganizationRole } from "@sycom/db/schema/auth";
 
 export const Route = createFileRoute("/dashboard/org/users/")({
+  pendingMs: Number.POSITIVE_INFINITY,
   head: () => ({
     meta: [{ title: "Members | Users | Organization | Sycom LMS" }],
   }),

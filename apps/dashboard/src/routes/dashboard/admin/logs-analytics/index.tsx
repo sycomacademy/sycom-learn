@@ -33,6 +33,7 @@ const SORT_FIELD_MAP: Record<string, AuditLogSortField> = {
 };
 
 export const Route = createFileRoute("/dashboard/admin/logs-analytics/")({
+  pendingMs: Number.POSITIVE_INFINITY,
   validateSearch: listAuditLogSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {

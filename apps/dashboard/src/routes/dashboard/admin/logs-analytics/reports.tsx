@@ -24,6 +24,7 @@ import { DataTable } from "@/components/dashboard/data-table";
 import { useTRPC } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/admin/logs-analytics/reports")({
+  pendingMs: Number.POSITIVE_INFINITY,
   validateSearch: listAdminReportsSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {

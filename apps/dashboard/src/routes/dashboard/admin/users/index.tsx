@@ -25,6 +25,7 @@ import { useTRPC } from "@/lib/trpc/client";
 import type { UserRole } from "@sycom/db/schema/auth";
 
 export const Route = createFileRoute("/dashboard/admin/users/")({
+  pendingMs: Number.POSITIVE_INFINITY,
   validateSearch: listAdminUsersSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
