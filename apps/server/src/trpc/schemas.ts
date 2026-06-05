@@ -814,7 +814,7 @@ export type StorageSaveAssetInput = z.infer<typeof saveAssetInputSchema>;
 
 export const signedUrlInputSchema = z.object({
   publicId: z.string().min(1),
-  expireIn: z.number().int().positive(),
+  expireIn: z.number().int().positive().max(300),
   download: z.boolean().optional(),
   resourceType: z.enum(storageResourceTypeEnum.enumValues).optional(),
 });

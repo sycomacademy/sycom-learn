@@ -17,9 +17,28 @@ import { formatDateTime } from "@sycom/ui/lib/date";
 import { Avatar, AvatarFallback } from "@sycom/ui/components/avatar";
 import { getInitials } from "@sycom/ui/lib/string";
 import { timeAgo, type AuditLogRow } from "./audit-log-schema";
-import { JsonViewer } from "@sycom/ui/components/elements/json-viewer";
+import { JsonViewer, type JsonValue } from "@sycom/ui/components/elements/json-viewer";
 
 export type AuditLogDetailRow = AuditLogRow;
+
+const SENSITIVE_METADATA_KEY = /token/i;
+
+function redactAuditMetadata(value: JsonValue): JsonValue {
+  if (Array.isArray(value)) {
+    return value.map(redactAuditMetadata);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        SENSITIVE_METADATA_KEY.test(key) ? "[REDACTED]" : redactAuditMetadata(nestedValue),
+      ]),
+    );
+  }
+
+  return value;
+}
 
 type DetailRowProps = { label: string; value: ReactNode };
 
@@ -101,7 +120,10 @@ function AuditLogSheetContent({ row }: { row: AuditLogDetailRow }): ReactNode {
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Event Data
             </p>
-            <JsonViewer data={JSON.parse(JSON.stringify(row.metadata))} className="border p-2" />
+            <JsonViewer
+              data={redactAuditMetadata(JSON.parse(JSON.stringify(row.metadata)) as JsonValue)}
+              className="border p-2"
+            />
           </div>
         ) : null}
       </SheetPanel>

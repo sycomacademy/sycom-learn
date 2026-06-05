@@ -24,6 +24,20 @@ const transport = isPretty
 const baseLogger = pino(
   {
     level: process.env.LOG_LEVEL || "info",
+    redact: {
+      paths: [
+        "url",
+        "req.url",
+        "req.headers.cookie",
+        "req.headers.authorization",
+        "*.token",
+        "*.password",
+        "*.revokedSessionToken",
+        "revokedSessionToken",
+        "revokedSessionTokenHash",
+      ],
+      censor: "[REDACTED]",
+    },
     serializers: {
       req: pino.stdSerializers.req,
       res: pino.stdSerializers.res,

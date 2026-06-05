@@ -243,7 +243,12 @@ export async function markPlatformInvitationAccepted(
       acceptedUserId: input.acceptedUserId,
       updatedAt: new Date(),
     })
-    .where(eq(platform_invitation.id, input.invitationId))
+    .where(
+      and(
+        eq(platform_invitation.id, input.invitationId),
+        eq(platform_invitation.status, "pending"),
+      ),
+    )
     .returning();
 
   return row ? mapInvitation(row) : null;
@@ -260,7 +265,12 @@ export async function markPlatformInvitationRejected(
       rejectedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(platform_invitation.id, input.invitationId))
+    .where(
+      and(
+        eq(platform_invitation.id, input.invitationId),
+        eq(platform_invitation.status, "pending"),
+      ),
+    )
     .returning();
 
   return row ? mapInvitation(row) : null;
@@ -277,7 +287,12 @@ export async function markPlatformInvitationRevoked(
       revokedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(platform_invitation.id, input.invitationId))
+    .where(
+      and(
+        eq(platform_invitation.id, input.invitationId),
+        eq(platform_invitation.status, "pending"),
+      ),
+    )
     .returning();
 
   return row ? mapInvitation(row) : null;

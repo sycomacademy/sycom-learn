@@ -98,10 +98,17 @@ export const inviteRouter = router({
       },
     });
 
-    await markPlatformInvitationAccepted(ctx.db, {
+    const accepted = await markPlatformInvitationAccepted(ctx.db, {
       invitationId: invitation.id,
       acceptedUserId: createdUser.user.id,
     });
+
+    if (!accepted) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Invitation is no longer pending",
+      });
+    }
 
     // Application audit only: public invites are Sycom `platform_invitation` + tRPC, not Better Auth HTTP.
     // (Platform accounts are still created via `auth.api.createUser`, which the plugin may log separately as `user_signed_up`.)
@@ -163,9 +170,16 @@ export const inviteRouter = router({
       throw new TRPCError({ code: "BAD_REQUEST", message: "This invitation has expired." });
     }
 
-    await markPlatformInvitationRejected(ctx.db, {
+    const rejected = await markPlatformInvitationRejected(ctx.db, {
       invitationId: invitation.id,
     });
+
+    if (!rejected) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Invitation is no longer pending",
+      });
+    }
 
     // Application audit only: token-based decline has no Better Auth session; same custom invite pipeline as accept.
     {

@@ -1,5 +1,6 @@
 import { createAuthMiddleware, getIp } from "better-auth/api";
 import type { BetterAuthPlugin } from "better-auth";
+import { createHash } from "node:crypto";
 import * as z from "zod";
 import { db } from "@sycom/db";
 import { recordAuditEvent } from "@sycom/db/queries/index";
@@ -424,7 +425,10 @@ export const auditPlugin = () =>
             const payload = {
               userId: session.user.id,
               userName: session.user.name,
-              revokedSessionToken: body.success ? body.data.token : undefined,
+              revokedSessionTokenHash:
+                body.success && body.data.token
+                  ? createHash("sha256").update(body.data.token).digest("hex")
+                  : undefined,
             };
             await write({
               event: AUDIT_EVENTS.SESSION_REVOKED,

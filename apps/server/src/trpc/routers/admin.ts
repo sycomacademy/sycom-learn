@@ -333,7 +333,16 @@ export const adminRouter = router({
         });
       }
 
-      await markPlatformInvitationRevoked(ctx.db, { invitationId: invitation.id });
+      const revoked = await markPlatformInvitationRevoked(ctx.db, {
+        invitationId: invitation.id,
+      });
+
+      if (!revoked) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Invitation is no longer pending",
+        });
+      }
 
       return { success: true };
     }),

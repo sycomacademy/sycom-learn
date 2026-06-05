@@ -2,9 +2,6 @@ import {
   createMediaAsset,
   deleteMediaAssetByPublicId,
   findMediaAssetByPublicId,
-  getCourseById,
-  getLessonWithCourseId,
-  getMemberRole,
 } from "@sycom/db/queries/index";
 import {
   CLOUD_ROOT,
@@ -16,8 +13,11 @@ import {
 import { TRPCError } from "@trpc/server";
 
 import { protectedProcedure, router } from "../init";
-import type { Context } from "../context";
-import { assertCanUpdatePublicCourse } from "../lib/public-course-access";
+import {
+  assertCanOverwriteExistingAsset,
+  assertCanReadStorageEntity,
+  assertCanWriteStorageEntity,
+} from "../lib/storage-access";
 import {
   deleteAssetInputSchema,
   saveAssetInputSchema,
@@ -29,73 +29,13 @@ import {
   type StorageSignedUrlInput,
 } from "../schemas";
 
-async function assertCanManageStorageEntity(
-  ctx: Context,
-  input: { entityType: string; entityId: string; folder?: string },
-) {
-  if (input.entityType === "course") {
-    const detail = await getCourseById(ctx.db, { courseId: input.entityId });
-    if (!detail || detail.organizationId !== null) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
-    }
-    assertCanUpdatePublicCourse(ctx.session, detail);
-    return;
-  }
-
-  if (input.entityType === "lesson") {
-    const lesson = await getLessonWithCourseId(ctx.db, input.entityId);
-    if (!lesson) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
-    }
-    const detail = await getCourseById(ctx.db, { courseId: lesson.courseId });
-    if (!detail || detail.organizationId !== null) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
-    }
-    assertCanUpdatePublicCourse(ctx.session, detail);
-    return;
-  }
-
-  if (input.entityType === "organization") {
-    if (input.folder !== "organization_logos") {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Organization uploads must use the organization_logos folder",
-      });
-    }
-
-    const session = ctx.session;
-    if (!session) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: "Authentication required" });
-    }
-
-    const activeOrganizationId = session.session.activeOrganizationId;
-    if (!activeOrganizationId || activeOrganizationId !== input.entityId) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Select this organization before uploading its logo",
-      });
-    }
-
-    const role = await getMemberRole(ctx.db, {
-      organizationId: input.entityId,
-      userId: session.user.id,
-    });
-
-    if (role !== "owner") {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Only an organization owner can upload its logo",
-      });
-    }
-    return;
-  }
-}
+const MAX_SIGNED_URL_EXPIRE_SECONDS = 300;
 
 export const storageRouter = router({
   signUpload: protectedProcedure.input(signUploadInputSchema).mutation(async ({ ctx, input }) => {
     const mutationInput: StorageSignUploadInput = input;
 
-    await assertCanManageStorageEntity(ctx, mutationInput);
+    await assertCanWriteStorageEntity(ctx, mutationInput);
 
     return signUploadParams({
       folder: mutationInput.folder,
@@ -110,13 +50,25 @@ export const storageRouter = router({
     const mutationInput: StorageSaveAssetInput = input;
     const expectedPrefix = `${buildAssetFolder(mutationInput.folder, mutationInput.entityId)}/`;
 
-    await assertCanManageStorageEntity(ctx, mutationInput);
+    await assertCanWriteStorageEntity(ctx, mutationInput);
 
     if (!mutationInput.publicId.startsWith(expectedPrefix)) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: `publicId must live under ${CLOUD_ROOT}/${mutationInput.folder}/${mutationInput.entityId}/`,
       });
+    }
+
+    const existing = await findMediaAssetByPublicId(ctx.db, {
+      publicId: mutationInput.publicId,
+    });
+    if (existing) {
+      await assertCanWriteStorageEntity(ctx, {
+        entityType: existing.entityType,
+        entityId: existing.entityId,
+        folder: existing.folder,
+      });
+      assertCanOverwriteExistingAsset(ctx, existing);
     }
 
     const row = await createMediaAsset(ctx.db, {
@@ -146,14 +98,31 @@ export const storageRouter = router({
     return row;
   }),
 
-  getSignedDownloadUrl: protectedProcedure.input(signedUrlInputSchema).query(({ input }) => {
-    const queryInput: StorageSignedUrlInput = input;
-    const url = getSignedUrl(queryInput.publicId, queryInput.expireIn, {
-      download: queryInput.download,
-      resourceType: queryInput.resourceType,
-    });
-    return { url, expiresIn: queryInput.expireIn };
-  }),
+  getSignedDownloadUrl: protectedProcedure
+    .input(signedUrlInputSchema)
+    .query(async ({ ctx, input }) => {
+      const queryInput: StorageSignedUrlInput = input;
+      const asset = await findMediaAssetByPublicId(ctx.db, {
+        publicId: queryInput.publicId,
+      });
+
+      if (!asset) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Asset record not found",
+        });
+      }
+
+      await assertCanReadStorageEntity(ctx, asset);
+
+      const expiresIn = Math.min(queryInput.expireIn, MAX_SIGNED_URL_EXPIRE_SECONDS);
+      const url = getSignedUrl(asset.publicId, expiresIn, {
+        download: queryInput.download,
+        resourceType: asset.resourceType,
+      });
+
+      return { url, expiresIn };
+    }),
 
   delete: protectedProcedure.input(deleteAssetInputSchema).mutation(async ({ ctx, input }) => {
     const mutationInput: StorageDeleteAssetInput = input;
@@ -165,14 +134,14 @@ export const storageRouter = router({
       });
     }
 
-    await assertCanManageStorageEntity(ctx, {
+    await assertCanWriteStorageEntity(ctx, {
       entityType: asset.entityType,
       entityId: asset.entityId,
       folder: asset.folder,
     });
 
-    await removeAsset(mutationInput.publicId, {
-      resourceType: mutationInput.resourceType,
+    await removeAsset(asset.publicId, {
+      resourceType: mutationInput.resourceType ?? asset.resourceType,
       invalidate: true,
     });
 
