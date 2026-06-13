@@ -27,6 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPanel,
   DialogPopup,
   DialogTitle,
   DialogTrigger,
@@ -144,7 +145,7 @@ function AddMembersDialog({ cohortId }: { cohortId: string }): ReactNode {
           <DialogDescription>Select available organization members to add.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 px-6 py-4">
+        <DialogPanel className="space-y-3">
           <InputGroup className="w-full max-w-md">
             <InputGroupAddon align="inline-start">
               <Search className="size-4 opacity-60" />
@@ -158,7 +159,7 @@ function AddMembersDialog({ cohortId }: { cohortId: string }): ReactNode {
           </InputGroup>
 
           <DataTable emptyMessage="No available members." table={table} />
-        </div>
+        </DialogPanel>
 
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
