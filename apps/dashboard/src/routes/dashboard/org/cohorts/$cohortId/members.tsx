@@ -139,7 +139,7 @@ function AddMembersDialog({ cohortId }: { cohortId: string }): ReactNode {
           </Button>
         }
       />
-      <DialogPopup className="sm:max-w-3xl">
+      <DialogPopup className="max-h-[calc(100dvh-2rem)] sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Add members to cohort</DialogTitle>
           <DialogDescription>Select available organization members to add.</DialogDescription>
@@ -158,7 +158,9 @@ function AddMembersDialog({ cohortId }: { cohortId: string }): ReactNode {
             />
           </InputGroup>
 
-          <DataTable emptyMessage="No available members." table={table} />
+          <div className="max-h-[min(24rem,50dvh)] overflow-y-auto rounded-lg">
+            <DataTable emptyMessage="No available members." table={table} />
+          </div>
         </DialogPanel>
 
         <DialogFooter>
