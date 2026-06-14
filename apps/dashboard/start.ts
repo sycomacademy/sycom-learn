@@ -52,6 +52,12 @@ export default {
   hostname: process.env.HOST ?? "0.0.0.0",
   async fetch(req: Request) {
     const { pathname } = new URL(req.url);
+    // Liveness/startup probes hit /health. Answer here with a plain, immediately
+    // closing response — the SSR /health route streams its body and never
+    // terminates within the probe timeout, leaving replicas Unhealthy.
+    if (pathname === "/health") {
+      return new Response("ok", { headers: { "content-type": "text/plain" } });
+    }
     if (shouldProxy(pathname)) return proxy(req);
     if (shouldServeStatic(pathname)) {
       const res = await serveStatic(pathname);
