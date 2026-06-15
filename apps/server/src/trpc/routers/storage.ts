@@ -42,7 +42,6 @@ export const storageRouter = router({
       folder: mutationInput.folder,
       entityType: mutationInput.entityType,
       entityId: mutationInput.entityId,
-      resourceType: mutationInput.resourceType,
       uploaderId: ctx.session.user.id,
       uploaderEmail: ctx.session.user.email,
     });
