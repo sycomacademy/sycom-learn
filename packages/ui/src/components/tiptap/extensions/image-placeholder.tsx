@@ -169,6 +169,8 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
               <FileUploader
                 className="text-sm"
                 accept="image/*"
+                // keep in sync with MEDIA_LIMITS.image in @sycom/storage
+                maxSize={10 * 1024 * 1024}
                 maxFileCount={1}
                 multiple={false}
                 disabled={!canEdit}

@@ -184,6 +184,8 @@ function AudioPlaceholderComponent(props: NodeViewProps) {
               <FileUploader
                 className="text-sm"
                 accept="audio/*"
+                // keep in sync with MEDIA_LIMITS.audio in @sycom/storage
+                maxSize={50 * 1024 * 1024}
                 maxFileCount={1}
                 multiple={false}
                 disabled={!canEdit}

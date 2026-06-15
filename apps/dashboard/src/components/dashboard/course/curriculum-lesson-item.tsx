@@ -1,4 +1,5 @@
 import { uploadFile } from "@sycom/storage/client";
+import { MEDIA_LIMITS, resourceKindFromMime } from "@sycom/storage/limits";
 import type { JSONContent } from "@tiptap/core";
 import { Button } from "@sycom/ui/components/button";
 import { Collapsible, CollapsibleContent } from "@sycom/ui/components/collapsible";
@@ -23,6 +24,7 @@ import {
   SelectValue,
 } from "@sycom/ui/components/select";
 import { Spinner } from "@sycom/ui/components/spinner";
+import { toastManager } from "@sycom/ui/components/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@sycom/ui/components/tooltip";
 import { cn } from "@sycom/ui/lib/utils";
 import {
@@ -68,6 +70,17 @@ function useLessonEditorUpload(lessonId: string) {
 
   return useCallback(
     async (file: File) => {
+      const resourceType = resourceKindFromMime(file.type);
+      if (file.size > MEDIA_LIMITS[resourceType]) {
+        const limitMb = Math.round(MEDIA_LIMITS[resourceType] / (1024 * 1024));
+        toastManager.add({
+          title: "File too large",
+          description: `This ${resourceType} exceeds the ${limitMb} MB limit.`,
+          type: "error",
+        });
+        throw new Error(`File exceeds the ${limitMb} MB ${resourceType} limit`);
+      }
+
       const signedParams = await trpcClient.storage.signUpload.mutate({
         folder: "lesson_artifacts",
         entityType: "lesson",

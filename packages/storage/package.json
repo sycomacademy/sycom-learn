@@ -11,6 +11,9 @@
     "./client": {
       "default": "./src/upload.ts"
     },
+    "./limits": {
+      "default": "./src/limits.ts"
+    },
     "./schemas": {
       "default": "./src/schemas.ts"
     }

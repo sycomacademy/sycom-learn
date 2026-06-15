@@ -10,6 +10,7 @@ import {
   removeAsset,
   signUploadParams,
 } from "@sycom/storage/server";
+import { MEDIA_LIMITS } from "@sycom/storage/limits";
 import { TRPCError } from "@trpc/server";
 
 import { protectedProcedure, router } from "../init";
@@ -56,6 +57,22 @@ export const storageRouter = router({
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: `publicId must live under ${CLOUD_ROOT}/${mutationInput.folder}/${mutationInput.entityId}/`,
+      });
+    }
+
+    // Authoritative per-type size limit. The file already landed in Cloudinary
+    // (direct signed upload), so on violation we remove it and refuse to record
+    // it — an asset with no DB row is never referenced by the app. This is the
+    // server-side enforcement; `max_file_size` can't be signed on direct uploads.
+    const sizeLimit = MEDIA_LIMITS[mutationInput.resourceType];
+    if (mutationInput.bytes > sizeLimit) {
+      await removeAsset(mutationInput.publicId, {
+        resourceType: mutationInput.resourceType,
+        invalidate: true,
+      });
+      throw new TRPCError({
+        code: "PAYLOAD_TOO_LARGE",
+        message: `This ${mutationInput.resourceType} exceeds the ${Math.round(sizeLimit / (1024 * 1024))} MB limit.`,
       });
     }
 

@@ -63,7 +63,9 @@ export function signUploadParams(input: {
     uploaderId: input.uploaderId,
     uploaderEmail: input.uploaderEmail,
   }).join(",");
-
+  // NOTE: `max_file_size` cannot be signed — Cloudinary excludes it from the
+  // upload signature, so including it here yields "Invalid Signature". The size
+  // ceiling is enforced server-side in `storage.saveAsset` instead.
   const signature = cloudinary.utils.api_sign_request(
     { asset_folder: assetFolder, public_id: publicId, tags, timestamp },
     env.CLOUDINARY_API_SECRET,
