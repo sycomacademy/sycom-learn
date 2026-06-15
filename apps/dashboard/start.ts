@@ -98,6 +98,10 @@ async function serveStatic(pathname: string): Promise<Response | null> {
 export default {
   port: Number(process.env.PORT ?? 3000),
   hostname: process.env.HOST ?? "0.0.0.0",
+  // SSR responses stream; Bun's default 10s idleTimeout can abort a stream
+  // mid-flight before the trailing hydration script is flushed, leaving the
+  // page un-hydrated. Give streamed responses room to finish.
+  idleTimeout: 120,
   async fetch(req: Request) {
     const { pathname } = new URL(req.url);
     // Liveness/startup probes hit /health. Answer here with a plain, immediately
