@@ -267,6 +267,8 @@ function VideoPlaceholderComponent(props: NodeViewProps) {
               <FileUploader
                 className="text-sm"
                 accept="video/*"
+                // keep in sync with MEDIA_LIMITS.video in @sycom/storage
+                maxSize={100 * 1024 * 1024}
                 maxFileCount={1}
                 multiple={false}
                 disabled={!canEdit}

@@ -52,6 +52,7 @@ export function uploadFile({
     formData.append("public_id", signedParams.publicId);
     formData.append("asset_folder", signedParams.assetFolder);
     formData.append("tags", signedParams.tags);
+    formData.append("max_file_size", String(signedParams.maxFileSize));
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", signedParams.uploadUrl, true);

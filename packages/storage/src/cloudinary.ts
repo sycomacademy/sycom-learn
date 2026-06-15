@@ -6,6 +6,8 @@ import type {
 import { env } from "@sycom/env/server";
 import { v2 as cloudinary } from "cloudinary";
 
+import { MEDIA_LIMITS } from "./limits";
+
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME,
   api_key: env.CLOUDINARY_API_KEY,
@@ -53,6 +55,7 @@ export function signUploadParams(input: {
   entityId: string;
   uploaderId: string;
   uploaderEmail: string;
+  resourceType?: StorageResourceType;
 }) {
   const publicId = buildPublicId(input.folder, input.entityId);
   const assetFolder = buildAssetFolder(input.folder, input.entityId);
@@ -63,9 +66,13 @@ export function signUploadParams(input: {
     uploaderId: input.uploaderId,
     uploaderEmail: input.uploaderEmail,
   }).join(",");
+  // Cloudinary enforces this signed ceiling regardless of what the client sends,
+  // so the limit can't be tampered with. Default to the image limit — every
+  // non-editor caller (avatars, covers, logos) uploads images.
+  const maxFileSize = MEDIA_LIMITS[input.resourceType ?? "image"];
 
   const signature = cloudinary.utils.api_sign_request(
-    { asset_folder: assetFolder, public_id: publicId, tags, timestamp },
+    { asset_folder: assetFolder, max_file_size: maxFileSize, public_id: publicId, tags, timestamp },
     env.CLOUDINARY_API_SECRET,
   );
 
@@ -78,6 +85,7 @@ export function signUploadParams(input: {
     publicId,
     assetFolder,
     tags,
+    maxFileSize,
   };
 }
 

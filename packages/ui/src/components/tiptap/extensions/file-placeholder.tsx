@@ -151,6 +151,8 @@ function FilePlaceholderComponent(props: NodeViewProps) {
               application/x-gzip
             "
             className="text-sm"
+            // keep in sync with MEDIA_LIMITS.file in @sycom/storage
+            maxSize={50 * 1024 * 1024}
             maxFileCount={1}
             multiple={false}
             disabled={!canEdit}
