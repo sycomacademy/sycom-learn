@@ -41,6 +41,7 @@ function useEditorUpload(lessonId: string) {
         folder: "lesson_artifacts",
         entityType: "lesson",
         entityId: lessonId,
+        resourceType,
       });
 
       const result = await uploadFile({ file, signedParams });

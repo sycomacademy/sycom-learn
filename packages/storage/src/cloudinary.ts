@@ -53,6 +53,7 @@ export function signUploadParams(input: {
   entityId: string;
   uploaderId: string;
   uploaderEmail: string;
+  resourceType?: StorageResourceType;
 }) {
   const publicId = buildPublicId(input.folder, input.entityId);
   const assetFolder = buildAssetFolder(input.folder, input.entityId);

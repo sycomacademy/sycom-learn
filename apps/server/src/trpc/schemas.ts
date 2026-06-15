@@ -793,6 +793,7 @@ export const signUploadInputSchema = z.object({
   folder: z.enum(storageFolderEnum.enumValues),
   entityType: z.enum(storageEntityTypeEnum.enumValues),
   entityId: z.string().min(1),
+  resourceType: z.enum(storageResourceTypeEnum.enumValues).optional(),
 });
 export type StorageSignUploadInput = z.infer<typeof signUploadInputSchema>;
 
