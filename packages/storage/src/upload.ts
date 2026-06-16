@@ -23,6 +23,13 @@ export type UploadResult = {
   resourceType: NewStorage["resourceType"];
 };
 
+function extensionFromName(file: Blob): string {
+  const name = file instanceof File ? file.name : "";
+  const dot = name.lastIndexOf(".");
+  if (dot <= 0 || dot === name.length - 1) return "bin";
+  return name.slice(dot + 1).toLowerCase();
+}
+
 function mapResourceType(type: string | undefined): StorageResourceType {
   switch (type) {
     case "image":
@@ -72,7 +79,10 @@ export function uploadFile({
           resolve({
             secureUrl: data.secure_url,
             publicId: data.public_id,
-            format: data.format ?? "",
+            // Cloudinary omits `format` for raw/generic files; fall back to the
+            // file's extension so we never persist an empty string (saveAsset
+            // requires a non-empty format and the DB column is NOT NULL).
+            format: data.format || extensionFromName(file),
             bytes: data.bytes ?? 0,
             width: data.width,
             height: data.height,
