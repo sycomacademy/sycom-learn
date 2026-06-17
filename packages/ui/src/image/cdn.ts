@@ -71,3 +71,32 @@ export function buildRawFileUrl(publicId: string): string {
   const urlConfig = { analytics: false, secure: true };
   return new CloudinaryFile(id, cloudConfig, urlConfig).setAssetType("raw").toURL();
 }
+
+/** Storage resource kinds, mirrors `StorageResourceType` in `@sycom/db`. */
+export type MediaResourceType = "image" | "video" | "audio" | "file";
+
+/**
+ * Delivery URL for an arbitrary uploaded asset, using its real Cloudinary
+ * resource type to pick the URL path. Cloudinary serves each kind from a
+ * different segment (`/image/`, `/video/`, `/raw/`) and audio is delivered as
+ * video; a single hardcoded path 404s for everything stored elsewhere. For raw
+ * files the format extension is part of the addressable id, so it's appended
+ * when the public id doesn't already carry it.
+ */
+export function buildDownloadUrl(
+  publicId: string,
+  resourceType: MediaResourceType,
+  format?: string,
+): string {
+  const passthrough = passthroughDeliveryUrl(publicId);
+  if (passthrough) return passthrough;
+  let id = publicId.replace(/^\/+/, "");
+  const assetType =
+    resourceType === "file" ? "raw" : resourceType === "audio" ? "video" : resourceType;
+  if (assetType === "raw" && format && !id.toLowerCase().endsWith(`.${format.toLowerCase()}`)) {
+    id = `${id}.${format}`;
+  }
+  const cloudConfig = { cloudName: getCloudName() };
+  const urlConfig = { analytics: false, secure: true };
+  return new CloudinaryFile(id, cloudConfig, urlConfig).setAssetType(assetType).toURL();
+}

@@ -19,7 +19,7 @@ import {
 import { useEditorEditable } from "@sycom/components/tiptap/use-editor-editable";
 import { Button, buttonVariants } from "@sycom/components/ui/button";
 import { formatFileSize } from "@sycom/lib/tiptap-utils";
-import { buildRawFileUrl } from "@sycom/ui/image/cdn";
+import { buildDownloadUrl, type MediaResourceType } from "@sycom/ui/image/cdn";
 import { cn } from "@sycom/ui/lib/utils";
 
 export type FileAttachmentAttrs = {
@@ -27,7 +27,17 @@ export type FileAttachmentAttrs = {
   name: string;
   mimeType: string;
   size: number;
+  resourceType: MediaResourceType;
+  format: string | null;
 };
+
+/** Falls back to a resource kind derived from the MIME type for legacy nodes. */
+function resourceTypeFromMime(mimeType: string): MediaResourceType {
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("audio/")) return "audio";
+  return "file";
+}
 
 function FileGlyph({ mimeType }: { mimeType: string }) {
   const cls = "size-10 shrink-0 rounded-md border bg-muted p-2 text-muted-foreground";
@@ -65,6 +75,8 @@ export const FileAttachment = Node.create({
       name: { default: "file" },
       mimeType: { default: "application/octet-stream" },
       size: { default: 0 },
+      resourceType: { default: "file" },
+      format: { default: null },
     };
   },
 
@@ -76,11 +88,16 @@ export const FileAttachment = Node.create({
           if (typeof element === "string") return false;
           const el = element as HTMLElement;
           const sizeRaw = el.getAttribute("data-size");
+          const mimeType = el.getAttribute("data-mime") ?? "application/octet-stream";
+          const resourceTypeRaw = el.getAttribute("data-resource-type");
           return {
             src: el.getAttribute("data-src"),
             name: el.getAttribute("data-name") ?? "file",
-            mimeType: el.getAttribute("data-mime") ?? "application/octet-stream",
+            mimeType,
             size: sizeRaw ? Number(sizeRaw) : 0,
+            resourceType:
+              (resourceTypeRaw as MediaResourceType | null) ?? resourceTypeFromMime(mimeType),
+            format: el.getAttribute("data-format"),
           };
         },
       },
@@ -88,22 +105,29 @@ export const FileAttachment = Node.create({
   },
 
   renderHTML({ node, HTMLAttributes }) {
+    const src = node.attrs.src as string | null;
+    const resourceType =
+      (node.attrs.resourceType as MediaResourceType | null) ??
+      resourceTypeFromMime(node.attrs.mimeType as string);
+    const format = (node.attrs.format as string | null) ?? undefined;
     return [
       "div",
       mergeAttributes(
         {
           "data-tiptap-file": "",
-          "data-src": node.attrs.src ?? "",
+          "data-src": src ?? "",
           "data-name": node.attrs.name as string,
           "data-mime": node.attrs.mimeType as string,
           "data-size": String(node.attrs.size as number),
+          "data-resource-type": resourceType,
+          "data-format": format ?? "",
         },
         HTMLAttributes,
       ),
       [
         "a",
         {
-          href: node.attrs.src ?? "#",
+          href: src ? buildDownloadUrl(src, resourceType, format) : "#",
           download: node.attrs.name as string,
         },
         node.attrs.name as string,
@@ -127,6 +151,8 @@ export const FileAttachment = Node.create({
               name: attrs.name ?? "file",
               mimeType: attrs.mimeType ?? "application/octet-stream",
               size: attrs.size ?? 0,
+              resourceType: attrs.resourceType ?? "file",
+              format: attrs.format ?? null,
             },
           });
         },
@@ -141,6 +167,9 @@ function TiptapFileAttachment(props: NodeViewProps) {
   const name = (node.attrs.name as string) || "file";
   const mimeType = (node.attrs.mimeType as string) || "application/octet-stream";
   const size = Number(node.attrs.size) || 0;
+  const resourceType =
+    (node.attrs.resourceType as MediaResourceType | null) ?? resourceTypeFromMime(mimeType);
+  const format = (node.attrs.format as string | null) ?? undefined;
 
   return (
     <NodeViewWrapper
@@ -158,7 +187,7 @@ function TiptapFileAttachment(props: NodeViewProps) {
                 aria-label="Download file"
                 className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-7")}
                 download={name}
-                href={src ? buildRawFileUrl(src) : "#"}
+                href={src ? buildDownloadUrl(src, resourceType, format) : "#"}
               >
                 <Download className="size-4" />
               </a>

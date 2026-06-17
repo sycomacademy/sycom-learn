@@ -60,7 +60,7 @@ function useEditorUpload(lessonId: string) {
         tags: ["lesson-artifact"],
       });
 
-      return { src: result.publicId };
+      return { src: result.publicId, resourceType: result.resourceType, format: result.format };
     },
     [lessonId, trpcClient],
   );

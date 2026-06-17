@@ -99,9 +99,13 @@ function FilePlaceholderComponent(props: NodeViewProps) {
     if (typeof pos !== "number") return;
 
     let src: string;
+    let resourceType: "image" | "video" | "audio" | "file" = "file";
+    let format: string | null = null;
     if (onUpload) {
       const result = await onUpload(file);
       src = result.src;
+      if (result.resourceType) resourceType = result.resourceType;
+      format = result.format ?? null;
     } else if (pickedFile.preview) {
       src = pickedFile.preview;
     } else {
@@ -113,6 +117,8 @@ function FilePlaceholderComponent(props: NodeViewProps) {
       name,
       mimeType: mime,
       size,
+      resourceType,
+      format,
     });
     setPickedFile(null);
   };
