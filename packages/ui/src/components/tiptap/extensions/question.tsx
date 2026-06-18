@@ -17,7 +17,7 @@ import {
   mergeAttributes,
   useEditorState,
 } from "@tiptap/react";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { NodeSelection, Plugin, PluginKey } from "@tiptap/pm/state";
 import { hasQuestionFence, parseQuestionPaste } from "./question-paste";
 import { CheckCircle2, CircleHelp, Plus, Trash2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -123,14 +123,28 @@ export const LessonQuestion = Node.create<LessonQuestionOptions>({
             const parts = parseQuestionPaste(text);
             if (!parts.some((p) => p.kind === "question")) return false;
 
-            let chain = editor.chain().focus().deleteSelection();
+            // Insert each part as its own transaction at the current selection
+            // end. A single chain of `insertContent` calls would leave each
+            // inserted atom node-selected, so the next insert replaces it —
+            // collapsing every question down to the last. Re-reading
+            // `selection.to` after each command and using `insertContentAt`
+            // (position-based, never replaces a selection) appends cleanly.
+            editor.commands.focus();
+            editor.commands.deleteSelection();
             for (const part of parts) {
-              chain =
-                part.kind === "question"
-                  ? chain.insertContent({ type: "question", attrs: part.attrs })
-                  : chain.insertContent(part.text, { contentType: "markdown" });
+              const at = editor.state.selection.to;
+              if (part.kind === "question") {
+                editor.commands.insertContentAt(at, { type: "question", attrs: part.attrs });
+              } else {
+                editor.commands.insertContentAt(at, part.text, { contentType: "markdown" });
+              }
             }
-            chain.run();
+            // The final insert can leave the last question node-selected, which
+            // blocks typing into its prompt input. Collapse to a text cursor.
+            const { selection } = editor.state;
+            if (selection instanceof NodeSelection) {
+              editor.commands.setTextSelection(selection.to);
+            }
             return true;
           },
         },

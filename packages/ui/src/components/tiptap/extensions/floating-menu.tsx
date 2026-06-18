@@ -20,6 +20,7 @@ import {
   Video,
 } from "lucide-react";
 import type { Editor } from "@tiptap/core";
+import { NodeSelection } from "@tiptap/pm/state";
 import { FloatingMenu } from "@tiptap/react/menus";
 import {
   Command,
@@ -355,6 +356,14 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
 
       editor.chain().focus().deleteRange(currentSlashCommandState.range).run();
       command(editor);
+      // Deleting the slash text leaves an empty paragraph, so inserting an atom
+      // block (e.g. a question) lands it node-selected. A focused, node-selected
+      // atom steals focus from its own node-view inputs — you can't type in the
+      // prompt. Collapsing to a text cursor after the node releases that grip.
+      const { selection } = editor.state;
+      if (selection instanceof NodeSelection) {
+        editor.commands.setTextSelection(selection.to);
+      }
       syncSlashCommandState(editor);
       selectedIndexRef.current = -1;
       setSelectedIndex(-1);
