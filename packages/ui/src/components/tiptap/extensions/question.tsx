@@ -17,6 +17,8 @@ import {
   mergeAttributes,
   useEditorState,
 } from "@tiptap/react";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { hasQuestionFence, parseQuestionPaste } from "./question-paste";
 import { CheckCircle2, CircleHelp, Plus, Trash2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -105,6 +107,35 @@ export const LessonQuestion = Node.create<LessonQuestionOptions>({
     return ReactNodeViewRenderer(QuestionNodeView, {
       className: "question-node-view-root",
     });
+  },
+
+  addProseMirrorPlugins() {
+    const editor = this.editor;
+    return [
+      new Plugin({
+        key: new PluginKey("lessonQuestionPaste"),
+        props: {
+          handlePaste: (_view, event) => {
+            if (!editor.isEditable) return false;
+            const text = event.clipboardData?.getData("text/plain");
+            if (!text || !hasQuestionFence(text)) return false;
+
+            const parts = parseQuestionPaste(text);
+            if (!parts.some((p) => p.kind === "question")) return false;
+
+            let chain = editor.chain().focus().deleteSelection();
+            for (const part of parts) {
+              chain =
+                part.kind === "question"
+                  ? chain.insertContent({ type: "question", attrs: part.attrs })
+                  : chain.insertContent(part.text, { contentType: "markdown" });
+            }
+            chain.run();
+            return true;
+          },
+        },
+      }),
+    ];
   },
 
   addCommands() {
