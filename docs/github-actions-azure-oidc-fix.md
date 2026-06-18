@@ -184,3 +184,146 @@ gh secret set AZURE_SUBSCRIPTION_ID --env production --repo sycomacademy/sycom-l
   or the app has no role on that subscription. Recheck B step 2 and A3.
 - **`AuthorizationFailed` later in the run** → the app authenticated but lacks rights for an action;
   widen the role scope to the subscription (A3) or add the specific role.
+
+---
+
+## Database migrations (production)
+
+**CI does not run migrations.** The `Deploy Azure` workflow only builds and deploys the app images —
+it never touches the schema. After any schema change you must run Drizzle migrations against Azure
+Postgres yourself, **after** the new app image is live (or alongside it for additive changes).
+
+Per repo rule, schema changes use **generate + migrate**, never `db:push` against production.
+
+| Thing           | Value                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| Resource group  | `sycomlearn-prod-rg`                                                                             |
+| Postgres server | `sycomlearn-prod-postgres`                                                                       |
+| Database        | `sycom`                                                                                          |
+| Admin login     | `sycomadmin`                                                                                     |
+| Admin password  | GitHub `production` secret `POSTGRES_ADMIN_PASSWORD` (the value Bicep used to create the server) |
+
+The production server has **no standing public firewall opening**. Container Apps reach it via the
+`AllowAllAzureServices` (`0.0.0.0`) rule; your laptop does not. The helper script opens a temporary
+rule for your current public IP, migrates, then removes it on exit.
+
+### 1. Generate the migration (in the repo, before deploying)
+
+```bash
+bun run db:generate     # writes SQL into packages/db/drizzle — commit these files
+```
+
+### 2. Apply it against production (recommended: helper script)
+
+```bash
+POSTGRES_ADMIN_PASSWORD='<prod POSTGRES_ADMIN_PASSWORD secret>' \
+  scripts/run-azure-db-migrate.sh
+```
+
+The script ([`scripts/run-azure-db-migrate.sh`](../scripts/run-azure-db-migrate.sh)) resolves the
+server FQDN, opens a temp firewall rule for your IP, builds a URL-encoded `DATABASE_URL`, runs
+`bun run db:migrate`, and **always** removes the firewall rule via a cleanup trap — even on failure.
+Overridable via `RESOURCE_GROUP` / `POSTGRES_SERVER` / `POSTGRES_DB` / `POSTGRES_LOGIN` env vars.
+
+### Manual equivalent
+
+```bash
+MY_IP=$(curl -fsS https://api.ipify.org)
+az postgres flexible-server firewall-rule create \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-postgres \
+  --rule-name tmp-migrate --start-ip-address "$MY_IP" --end-ip-address "$MY_IP"
+
+DATABASE_URL='postgresql://sycomadmin:<url-encoded-password>@sycomlearn-prod-postgres.postgres.database.azure.com:5432/sycom?sslmode=require' \
+  bun run db:migrate
+
+az postgres flexible-server firewall-rule delete \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-postgres \
+  --rule-name tmp-migrate --yes
+```
+
+> URL-encode the password (e.g. `python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1],safe=''))" '<pw>'`)
+> — the script does this for you.
+
+**Take a backup before destructive migrations** (drops/renames/type changes) — see below.
+
+---
+
+## Database backups & restore
+
+### Automated backups (Azure-managed, default)
+
+Azure Database for PostgreSQL Flexible Server takes continuous backups with **point-in-time restore
+(PITR)**. Current production settings:
+
+| Setting              | Value                                                |
+| -------------------- | ---------------------------------------------------- |
+| Retention            | **7 days**                                           |
+| Geo-redundant backup | **Disabled** (region-local only)                     |
+| Earliest restore     | rolling — `backup.earliestRestoreDate` on the server |
+
+Check live settings:
+
+```bash
+az postgres flexible-server show -g sycomlearn-prod-rg -n sycomlearn-prod-postgres \
+  --query "{retentionDays:backup.backupRetentionDays, geo:backup.geoRedundantBackup, earliest:backup.earliestRestoreDate}" -o json
+```
+
+Change retention (1–35 days):
+
+```bash
+az postgres flexible-server update -g sycomlearn-prod-rg -n sycomlearn-prod-postgres \
+  --backup-retention 14
+```
+
+**PITR never overwrites the live server** — it provisions a _new_ server from the chosen point. Use
+it to recover from a bad migration or data loss:
+
+```bash
+az postgres flexible-server restore \
+  --resource-group sycomlearn-prod-rg \
+  --name sycomlearn-prod-postgres-restored \
+  --source-server sycomlearn-prod-postgres \
+  --restore-time "2026-06-16T09:00:00Z"
+```
+
+Verify the restored server, then cut over by repointing the app at it (the production `DATABASE_URL`
+is assembled by Bicep from `postgresServerName`; update `infra/params/prod.bicepparam` and redeploy,
+or temporarily override the Container App `database-url` secret and force a new revision).
+
+### Manual logical backup (`pg_dump`)
+
+Take an on-demand snapshot before risky changes, or to move data between environments. Same
+temp-firewall pattern as migrations; dump the three app schemas (`auth`, `public`, `storage`) the way
+[`scripts/promote-dev-to-prod.sh`](../scripts/promote-dev-to-prod.sh) does:
+
+```bash
+MY_IP=$(curl -fsS https://api.ipify.org)
+az postgres flexible-server firewall-rule create \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-postgres \
+  --rule-name tmp-backup --start-ip-address "$MY_IP" --end-ip-address "$MY_IP"
+
+DATABASE_URL='postgresql://sycomadmin:<url-encoded-password>@sycomlearn-prod-postgres.postgres.database.azure.com:5432/sycom?sslmode=require'
+
+pg_dump "$DATABASE_URL" \
+  --no-owner --no-privileges \
+  -n auth -n public -n storage \
+  -Fc -f "sycom-prod-$(date +%Y%m%d%H%M%S).dump"   # -Fc = compressed custom format
+
+az postgres flexible-server firewall-rule delete \
+  --resource-group sycomlearn-prod-rg --name sycomlearn-prod-postgres \
+  --rule-name tmp-backup --yes
+```
+
+### Restore a logical dump
+
+`pg_restore --clean --if-exists` **drops existing objects** before recreating them. Always restore
+into a scratch database/server and verify before pointing the app at it.
+
+```bash
+pg_restore --no-owner --no-privileges --clean --if-exists \
+  -d 'postgresql://sycomadmin:<pw>@<target-server>.postgres.database.azure.com:5432/sycom?sslmode=require' \
+  sycom-prod-<timestamp>.dump
+```
+
+For a full cross-environment copy (dev → prod) inside a single transaction, use
+[`scripts/promote-dev-to-prod.sh`](../scripts/promote-dev-to-prod.sh).
