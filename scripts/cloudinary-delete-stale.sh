@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 set -a; source "$ROOT/apps/server/.env"; set +a
 CLOUD="$CLOUDINARY_CLOUD_NAME"; KEY="$CLOUDINARY_API_KEY"; SECRET="$CLOUDINARY_API_SECRET"
 
-echo "Deleting 17 image asset(s)…"
+echo "Deleting 14 image asset(s)…"
 curl -s -u "$KEY:$SECRET" -X DELETE \
   "https://api.cloudinary.com/v1_1/$CLOUD/resources/image/upload" \
   --data-urlencode 'invalidate=true' \
@@ -15,13 +15,10 @@ curl -s -u "$KEY:$SECRET" -X DELETE \
   --data-urlencode 'public_ids[]=sycom-lms/course_thumbnails/crs_ac83bf69-d4a6-4058-a421-6adc29ee2400/30ac4aa1-f732-41ed-b31b-4d021f852285' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/045afe62-9fa1-436a-8d18-73a173250dbb' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/4e984599-8ee4-45ed-9742-2c37ee083df8' \
-  --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/718a106c-4907-42fb-83b2-2cc5ca20e9e5' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/7b2ce51b-332c-43c7-bb1c-660f383299c0' \
-  --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/b43aada2-597e-438d-8586-86c1cc495ab1' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/b4f56fcb-5f84-4051-9d7e-1177e8e2762a' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/dc30309b-9eab-46ab-8b0a-3c8eb05a84c7' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/e91d69ae-784e-4121-9fd5-289e3735f163' \
-  --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/eac462be-39b0-4f34-a89d-9ef79cf933c8' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_0fc4e6d0-353b-4c13-aa6a-715cde2fd63f/f4189caf-96fd-4725-9048-78e29ce87535' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_ef2a681a-ea59-46bd-bc26-a2dff091ffab/5372c9dc-2963-4490-a8d3-1f7eb8855242' \
   --data-urlencode 'public_ids[]=sycom-lms/lesson_artifacts/lsn_ef2a681a-ea59-46bd-bc26-a2dff091ffab/57852005-2b39-4d32-bfd7-16253f3c6716' \
