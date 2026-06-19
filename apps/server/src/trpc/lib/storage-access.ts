@@ -1,11 +1,22 @@
-import { getLessonWithCourseId, getMemberRole } from "@sycom/db/queries/index";
+import {
+  type CourseDetail,
+  getCourseById,
+  getEnrollmentForUserCourse,
+  getLessonWithCourseId,
+  getMemberRole,
+} from "@sycom/db/queries/index";
 import type { Storage } from "@sycom/db/schema/storage";
 import type { StorageFolder } from "@sycom/db/schema/storage";
 import { TRPCError } from "@trpc/server";
 
 import type { Context } from "../context";
-import { hasPlatformPermission } from "../middleware/permissions";
-import { assertPlatformOrOrgCourseRead, assertPlatformOrOrgCourseWrite } from "./org-course-access";
+import { hasPlatformPermission, assertPlatformPermission } from "../middleware/permissions";
+import { assertCanReadPublicCourse, canReadCatalogCourse } from "./public-course-access";
+import {
+  assertOrgCourseStaffForDetail,
+  assertPlatformOrOrgCourseRead,
+  assertPlatformOrOrgCourseWrite,
+} from "./org-course-access";
 
 type StorageEntityInput = {
   entityType: string;
@@ -102,6 +113,72 @@ export async function assertCanWriteStorageEntity(
   });
 }
 
+function courseAccessPick(
+  detail: Pick<CourseDetail, "organizationId" | "createdBy" | "instructors">,
+) {
+  return {
+    organizationId: detail.organizationId,
+    createdBy: detail.createdBy,
+    instructors: detail.instructors,
+  };
+}
+
+/** Course staff (authors) or enrolled learners on a published course. */
+async function assertCanReadLessonCourseMedia(ctx: Context, courseId: string): Promise<void> {
+  const session = requireSession(ctx.session);
+
+  if (session.user.role === "platform_admin") {
+    return;
+  }
+
+  const detail = await getCourseById(ctx.db, { courseId });
+  if (!detail) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+  }
+
+  if (detail.organizationId === null) {
+    try {
+      assertPlatformPermission(ctx.session, { course: ["read"] });
+      assertCanReadPublicCourse(ctx.session, detail);
+      return;
+    } catch {
+      // Fall through to enrollment check for learners previewing catalog courses.
+    }
+  } else {
+    try {
+      await assertOrgCourseStaffForDetail(ctx, detail);
+      return;
+    } catch {
+      // Fall through to enrollment check for org learners.
+    }
+  }
+
+  if (detail.status !== "published") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not authorized to access this asset",
+    });
+  }
+
+  if (!canReadCatalogCourse(ctx.session, courseAccessPick(detail))) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not authorized to access this asset",
+    });
+  }
+
+  const enrollment = await getEnrollmentForUserCourse(ctx.db, {
+    courseId,
+    userId: session.user.id,
+  });
+  if (!enrollment || enrollment.status === "dropped") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You are not authorized to access this asset",
+    });
+  }
+}
+
 export async function assertCanReadStorageEntity(
   ctx: Context,
   asset: Pick<Storage, "entityType" | "entityId" | "folder" | "uploadedBy">,
@@ -132,7 +209,7 @@ export async function assertCanReadStorageEntity(
     if (!lesson) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Lesson not found" });
     }
-    await assertPlatformOrOrgCourseRead(ctx, lesson.courseId);
+    await assertCanReadLessonCourseMedia(ctx, lesson.courseId);
     return;
   }
 

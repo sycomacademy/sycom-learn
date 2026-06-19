@@ -16,6 +16,7 @@ import { fireCelebrationConfetti } from "@sycom/ui/components/elements/confetti"
 import { toastManager } from "@sycom/ui/components/toast";
 
 import { LearnFooter } from "@/components/learn/learn-footer";
+import { useLessonSignedMediaResolver } from "@/hooks/use-lesson-signed-media";
 import {
   useExamIntegritySession,
   type ExamIntegrityFlagKind,
@@ -130,6 +131,9 @@ function LearnLessonBody({
   const nextLessonId = findUnlockedNeighbor(flat, idx, "next");
   const assessmentCompleted =
     findLessonMetaInSections(player.sections, lessonId)?.progressStatus === "completed";
+  const resolveMediaUrl = useLessonSignedMediaResolver(
+    (lesson.content ?? null) as JSONContent | null,
+  );
 
   const { mutate: fireMarkStarted } = useMutation(
     trpc.enrollment.markLessonStarted.mutationOptions(),
@@ -295,6 +299,7 @@ function LearnLessonBody({
               editable={false}
               learnQuestionLock={lesson.type === "article" ? "onCorrect" : "onAttempt"}
               mode="full"
+              resolveMediaUrl={resolveMediaUrl}
               onCheckAnswer={async (args) => {
                 const result = await trpcClient.learn.checkAnswer.mutate({
                   courseId,

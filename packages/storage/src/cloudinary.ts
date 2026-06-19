@@ -113,3 +113,51 @@ export function getSignedUrl(
     expires_at: Math.round(Date.now() / 1000) + expireIn,
   });
 }
+
+function cloudinaryDeliveryResourceType(
+  resourceType: StorageResourceType,
+): "image" | "video" | "raw" {
+  if (resourceType === "file") return "raw";
+  if (resourceType === "audio") return "video";
+  return resourceType;
+}
+
+function withFormatExtension(publicId: string, format?: string): string {
+  if (!format) return publicId;
+  const ext = format.toLowerCase();
+  if (publicId.toLowerCase().endsWith(`.${ext}`)) return publicId;
+  return `${publicId}.${ext}`;
+}
+
+/** Signed URL for inline delivery (`<img>`, `<video>`, `<audio>`) or attachment download. */
+export function getSignedDeliveryUrl(
+  publicId: string,
+  expireIn: number,
+  options?: {
+    download?: boolean;
+    resourceType?: StorageResourceType;
+    format?: string;
+  },
+): string {
+  const resourceType = options?.resourceType ?? "image";
+
+  if (options?.download) {
+    return getSignedUrl(publicId, expireIn, {
+      download: true,
+      resourceType,
+    });
+  }
+
+  const deliveryType = cloudinaryDeliveryResourceType(resourceType);
+  let id = publicId.replace(/^\/+/, "");
+  if (deliveryType === "raw" || (resourceType === "image" && options?.format)) {
+    id = withFormatExtension(id, options?.format);
+  }
+
+  return cloudinary.url(id, {
+    resource_type: deliveryType,
+    secure: true,
+    sign_url: true,
+    expires_at: Math.round(Date.now() / 1000) + expireIn,
+  });
+}

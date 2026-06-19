@@ -30,8 +30,8 @@ import {
 import { Input } from "@sycom/components/ui/input";
 import { Separator } from "@sycom/components/ui/separator";
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
-import { buildImageUrl } from "@sycom/ui/image/cdn";
 import { cn } from "@sycom/ui/lib/utils";
+import { useMediaDeliveryUrl } from "@sycom/components/tiptap/use-media-delivery-url";
 
 function fileBaseName(entry: FileWithPreview): string {
   const f = entry.file;
@@ -91,6 +91,7 @@ function TiptapImage(props: NodeViewProps) {
   const [replaceUploadKey, setReplaceUploadKey] = useState(0);
 
   const canEdit = useEditorEditable(editor);
+  const imageSrc = useMediaDeliveryUrl(node.attrs.src as string | null, "image");
 
   const handleReplaceFromUpload = () => {
     if (!pickedReplaceFile?.preview) return;
@@ -240,7 +241,7 @@ function TiptapImage(props: NodeViewProps) {
         <figure className="relative m-0">
           <img
             ref={imageRef}
-            src={node.attrs.src ? buildImageUrl(node.attrs.src) : undefined}
+            src={imageSrc}
             alt={node.attrs.alt}
             title={node.attrs.title}
             className="rounded-lg transition-shadow duration-200 hover:shadow-lg"

@@ -41,6 +41,7 @@ import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 
 
 import { AutoSaveStatus } from "@/components/dashboard/course/auto-save-status";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import { useLessonSignedMediaResolver } from "@/hooks/use-lesson-signed-media";
 import { useTRPCClient } from "@/lib/trpc/client";
 
 import {
@@ -157,6 +158,7 @@ function CurriculumLessonItemImpl({
   const [draftType, setDraftType] = useState<CurriculumLesson["type"]>(lesson.type);
   const [draftOpenAt, setDraftOpenAt] = useState<Date | null>(lesson.openAt);
   const [draftDueAt, setDraftDueAt] = useState<Date | null>(lesson.dueAt);
+  const resolveMediaUrl = useLessonSignedMediaResolver(content);
 
   useEffect(() => {
     if (expanded) {
@@ -377,6 +379,7 @@ function CurriculumLessonItemImpl({
                 mode="full"
                 onChange={setContent}
                 onUpload={onUpload}
+                resolveMediaUrl={resolveMediaUrl}
                 variant="embedded"
               />
             </Suspense>

@@ -25,7 +25,7 @@ import { FileUploader } from "@sycom/components/ui/file-uploader";
 import { Input } from "@sycom/components/ui/input";
 import type { FileWithPreview } from "@sycom/hooks/use-file-upload";
 import { isValidUrl } from "@sycom/lib/tiptap-utils";
-import { buildImageUrl, buildVideoUrl } from "@sycom/ui/image/cdn";
+import { useMediaDeliveryUrl } from "@sycom/components/tiptap/use-media-delivery-url";
 import {
   VideoPlayer,
   VideoPlayerContent,
@@ -272,6 +272,8 @@ function TiptapVideo(props: NodeViewProps) {
   const src = node.attrs.src as string | null;
   const embedUrl = getYouTubeEmbedUrl(src);
   const aspectRatio = Number(node.attrs.aspectRatio) || 16 / 9;
+  const videoSrc = useMediaDeliveryUrl(embedUrl ? null : src, "video");
+  const posterSrc = useMediaDeliveryUrl(node.attrs.poster as string | null, "image");
 
   const handleCaptionBlur = () => {
     updateAttributes({ caption });
@@ -348,12 +350,8 @@ function TiptapVideo(props: NodeViewProps) {
         ) : (
           <VideoPlayer className="w-full">
             <VideoPlayerContent
-              src={src ? buildVideoUrl(src) : undefined}
-              poster={
-                (node.attrs.poster as string | null)
-                  ? buildImageUrl(node.attrs.poster as string)
-                  : undefined
-              }
+              src={videoSrc}
+              poster={posterSrc}
               playsInline
               preload="metadata"
               onLoadedMetadata={(e) => {

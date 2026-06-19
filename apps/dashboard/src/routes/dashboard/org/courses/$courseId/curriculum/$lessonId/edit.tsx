@@ -11,6 +11,7 @@ import { toastManager } from "@sycom/ui/components/toast";
 
 import { AutoSaveStatus } from "@/components/dashboard/course/auto-save-status";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import { useLessonSignedMediaResolver } from "@/hooks/use-lesson-signed-media";
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
 
 export const Route = createFileRoute("/dashboard/org/courses/$courseId/curriculum/$lessonId/edit")({
@@ -76,6 +77,7 @@ function LessonEditPage() {
   const [content, setContent] = useState<JSONContent | null>(
     () => (lesson.content ?? null) as JSONContent | null,
   );
+  const resolveMediaUrl = useLessonSignedMediaResolver(content);
 
   useEffect(() => {
     setContent((lesson.content ?? null) as JSONContent | null);
@@ -147,6 +149,7 @@ function LessonEditPage() {
             mode="full"
             onChange={setContent}
             onUpload={onUpload}
+            resolveMediaUrl={resolveMediaUrl}
           />
         </CardPanel>
       </Card>

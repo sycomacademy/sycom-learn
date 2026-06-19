@@ -2,11 +2,12 @@ import {
   createMediaAsset,
   deleteMediaAssetByPublicId,
   findMediaAssetByPublicId,
+  findMediaAssetsByPublicIds,
 } from "@sycom/db/queries/index";
 import {
   CLOUD_ROOT,
   buildAssetFolder,
-  getSignedUrl,
+  getSignedDeliveryUrl,
   removeAsset,
   signUploadParams,
 } from "@sycom/storage/server";
@@ -22,15 +23,21 @@ import {
 import {
   deleteAssetInputSchema,
   saveAssetInputSchema,
+  signedMediaUrlsInputSchema,
   signedUrlInputSchema,
   signUploadInputSchema,
   type StorageDeleteAssetInput,
   type StorageSaveAssetInput,
+  type StorageSignedMediaUrlsInput,
   type StorageSignUploadInput,
   type StorageSignedUrlInput,
 } from "../schemas";
 
 const MAX_SIGNED_URL_EXPIRE_SECONDS = 300;
+
+function signedMediaUrlKey(publicId: string, download?: boolean): string {
+  return `${publicId}::${download ? "dl" : "inline"}`;
+}
 
 export const storageRouter = router({
   signUpload: protectedProcedure.input(signUploadInputSchema).mutation(async ({ ctx, input }) => {
@@ -133,12 +140,52 @@ export const storageRouter = router({
       await assertCanReadStorageEntity(ctx, asset);
 
       const expiresIn = Math.min(queryInput.expireIn, MAX_SIGNED_URL_EXPIRE_SECONDS);
-      const url = getSignedUrl(asset.publicId, expiresIn, {
+      const url = getSignedDeliveryUrl(asset.publicId, expiresIn, {
         download: queryInput.download,
         resourceType: asset.resourceType,
+        format: asset.format,
       });
 
       return { url, expiresIn };
+    }),
+
+  getSignedMediaUrls: protectedProcedure
+    .input(signedMediaUrlsInputSchema)
+    .query(async ({ ctx, input }) => {
+      const queryInput: StorageSignedMediaUrlsInput = input;
+      const expiresIn = Math.min(
+        queryInput.expireIn ?? MAX_SIGNED_URL_EXPIRE_SECONDS,
+        MAX_SIGNED_URL_EXPIRE_SECONDS,
+      );
+
+      const uniquePublicIds = [...new Set(queryInput.items.map((item) => item.publicId))];
+      const assets = await findMediaAssetsByPublicIds(ctx.db, { publicIds: uniquePublicIds });
+      const assetByPublicId = new Map(assets.map((asset) => [asset.publicId, asset]));
+
+      const urls: Record<string, string> = {};
+
+      for (const item of queryInput.items) {
+        const asset = assetByPublicId.get(item.publicId);
+        if (!asset) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Asset record not found: ${item.publicId}`,
+          });
+        }
+
+        await assertCanReadStorageEntity(ctx, asset);
+
+        const resourceType = item.resourceType ?? asset.resourceType;
+        const format = item.format ?? asset.format;
+        const key = signedMediaUrlKey(item.publicId, item.download);
+        urls[key] = getSignedDeliveryUrl(asset.publicId, expiresIn, {
+          download: item.download,
+          resourceType,
+          format,
+        });
+      }
+
+      return { urls, expiresIn };
     }),
 
   delete: protectedProcedure.input(deleteAssetInputSchema).mutation(async ({ ctx, input }) => {

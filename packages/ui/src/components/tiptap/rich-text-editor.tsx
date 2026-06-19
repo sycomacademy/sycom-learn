@@ -16,6 +16,11 @@ import type { Content, Editor, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  SignedMediaUrlContext,
+  type ResolveMediaUrl,
+} from "@sycom/components/tiptap/signed-media-url-context";
+
 import { EditorToolbar } from "./toolbars/editor-toolbar";
 import { LightweightEditorToolbar } from "./toolbars/lightweight-toolbar";
 
@@ -39,6 +44,8 @@ export type RichTextEditorProps = {
   showAdvancedChrome?: boolean;
   /** Called once when the TipTap editor instance is ready (stable for the lifetime of the component). */
   onEditorReady?: (editor: Editor) => void;
+  /** When set, lesson media nodes resolve Cloudinary public ids through signed URLs. */
+  resolveMediaUrl?: ResolveMediaUrl;
 };
 
 export function RichTextEditor({
@@ -55,6 +62,7 @@ export function RichTextEditor({
   editorContentClassName,
   showAdvancedChrome = true,
   onEditorReady,
+  resolveMediaUrl,
 }: RichTextEditorProps) {
   const [viewOnly, setViewOnly] = useState(false);
   const editorEditable = editable && !viewOnly;
@@ -144,7 +152,7 @@ export function RichTextEditor({
 
   if (!editor) return null;
 
-  return (
+  const editorBody = (
     <div
       data-editor-mode={mode}
       data-editor-variant={variant}
@@ -191,6 +199,10 @@ export function RichTextEditor({
       />
     </div>
   );
+
+  if (!resolveMediaUrl) return editorBody;
+
+  return <SignedMediaUrlContext value={resolveMediaUrl}>{editorBody}</SignedMediaUrlContext>;
 }
 
 export function RichTextEditorDemo({ className }: { className?: string }) {

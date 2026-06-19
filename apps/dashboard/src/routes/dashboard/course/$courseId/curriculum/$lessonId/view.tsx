@@ -11,6 +11,7 @@ import {
 } from "@sycom/ui/components/tiptap/rich-text-editor";
 
 import { useTRPC, useTRPCClient } from "@/lib/trpc/client";
+import { useLessonSignedMediaResolver } from "@/hooks/use-lesson-signed-media";
 
 export const Route = createFileRoute("/dashboard/course/$courseId/curriculum/$lessonId/view")({
   loader: async ({ context, params }) => {
@@ -65,6 +66,9 @@ function LessonViewPage() {
   const trpcClient = useTRPCClient();
   const { data: lesson } = useSuspenseQuery(trpc.lesson.get.queryOptions({ lessonId }));
   const [editor, setEditor] = useState<Editor | null>(null);
+  const resolveMediaUrl = useLessonSignedMediaResolver(
+    (lesson.content ?? null) as JSONContent | null,
+  );
 
   useEffect(() => {
     setEditor(null);
@@ -87,6 +91,7 @@ function LessonViewPage() {
               content={(lesson.content ?? null) as JSONContent | null}
               editable={false}
               mode="full"
+              resolveMediaUrl={resolveMediaUrl}
               onCheckAnswer={async (args: { questionId: string; selected: string[] }) => {
                 const result = await trpcClient.lesson.checkAnswer.mutate({
                   lessonId,

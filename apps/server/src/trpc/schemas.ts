@@ -820,6 +820,20 @@ export const signedUrlInputSchema = z.object({
 });
 export type StorageSignedUrlInput = z.infer<typeof signedUrlInputSchema>;
 
+export const signedMediaUrlItemSchema = z.object({
+  publicId: z.string().min(1),
+  resourceType: z.enum(storageResourceTypeEnum.enumValues).optional(),
+  format: z.string().optional(),
+  download: z.boolean().optional(),
+});
+export type StorageSignedMediaUrlItem = z.infer<typeof signedMediaUrlItemSchema>;
+
+export const signedMediaUrlsInputSchema = z.object({
+  items: z.array(signedMediaUrlItemSchema).min(1).max(100),
+  expireIn: z.number().int().positive().max(300).optional(),
+});
+export type StorageSignedMediaUrlsInput = z.infer<typeof signedMediaUrlsInputSchema>;
+
 export const deleteAssetInputSchema = z.object({
   publicId: z.string().min(1),
   resourceType: z.enum(storageResourceTypeEnum.enumValues).optional(),

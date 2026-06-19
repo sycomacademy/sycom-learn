@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "..";
 import { storage, type NewStorage, type StorageEntityType } from "../schema/storage";
@@ -47,4 +47,12 @@ export async function findMediaAssetsByEntity(
     .select()
     .from(storage)
     .where(and(eq(storage.entityType, input.entityType), eq(storage.entityId, input.entityId)));
+}
+
+export async function findMediaAssetsByPublicIds(
+  database: Database,
+  input: { publicIds: string[] },
+) {
+  if (input.publicIds.length === 0) return [];
+  return database.select().from(storage).where(inArray(storage.publicId, input.publicIds));
 }

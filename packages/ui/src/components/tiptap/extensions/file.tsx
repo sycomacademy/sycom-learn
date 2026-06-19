@@ -21,6 +21,7 @@ import { Button, buttonVariants } from "@sycom/components/ui/button";
 import { formatFileSize } from "@sycom/lib/tiptap-utils";
 import { buildDownloadUrl, type MediaResourceType } from "@sycom/ui/image/cdn";
 import { cn } from "@sycom/ui/lib/utils";
+import { useMediaDeliveryUrl } from "@sycom/components/tiptap/use-media-delivery-url";
 
 export type FileAttachmentAttrs = {
   src: string | null;
@@ -170,6 +171,7 @@ function TiptapFileAttachment(props: NodeViewProps) {
   const resourceType =
     (node.attrs.resourceType as MediaResourceType | null) ?? resourceTypeFromMime(mimeType);
   const format = (node.attrs.format as string | null) ?? undefined;
+  const downloadHref = useMediaDeliveryUrl(src, resourceType, { format, download: true });
 
   return (
     <NodeViewWrapper
@@ -182,12 +184,12 @@ function TiptapFileAttachment(props: NodeViewProps) {
       <div className="group relative overflow-hidden rounded-lg border bg-card p-3 shadow-sm">
         {canEdit || src ? (
           <div className="absolute top-4 right-4 flex items-center gap-1 rounded-md border bg-background/80 p-1 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
-            {src ? (
+            {downloadHref ? (
               <a
                 aria-label="Download file"
                 className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-7")}
                 download={name}
-                href={src ? buildDownloadUrl(src, resourceType, format) : "#"}
+                href={downloadHref}
               >
                 <Download className="size-4" />
               </a>
