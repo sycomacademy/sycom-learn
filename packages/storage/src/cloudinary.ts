@@ -140,16 +140,29 @@ export function getSignedDeliveryUrl(
   },
 ): string {
   const resourceType = options?.resourceType ?? "image";
+  const deliveryType = cloudinaryDeliveryResourceType(resourceType);
+  let id = publicId.replace(/^\/+/, "");
+  const expiresAt = Math.round(Date.now() / 1000) + expireIn;
 
   if (options?.download) {
-    return getSignedUrl(publicId, expireIn, {
-      download: true,
-      resourceType,
+    // private_download_url only works for raw assets; PDFs uploaded as image need signed delivery + attachment
+    if (deliveryType === "raw") {
+      return getSignedUrl(publicId, expireIn, {
+        download: true,
+        resourceType,
+      });
+    }
+
+    id = withFormatExtension(id, options?.format);
+    return cloudinary.url(id, {
+      resource_type: deliveryType,
+      secure: true,
+      sign_url: true,
+      expires_at: expiresAt,
+      flags: "attachment",
     });
   }
 
-  const deliveryType = cloudinaryDeliveryResourceType(resourceType);
-  let id = publicId.replace(/^\/+/, "");
   if (deliveryType === "raw" || (resourceType === "image" && options?.format)) {
     id = withFormatExtension(id, options?.format);
   }
@@ -158,6 +171,6 @@ export function getSignedDeliveryUrl(
     resource_type: deliveryType,
     secure: true,
     sign_url: true,
-    expires_at: Math.round(Date.now() / 1000) + expireIn,
+    expires_at: expiresAt,
   });
 }
