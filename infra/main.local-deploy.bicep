@@ -63,17 +63,24 @@ param keyVaultAdminObjectId string
 ])
 param debugPerformance string = 'false'
 
+@description('Provision Azure Database for PostgreSQL Flexible Server. Set false for Neon or other external Postgres.')
+param deployPostgres bool = true
+
+@description('External Postgres connection string when deployPostgres is false (e.g. Neon). Stored in Key Vault as database-url.')
+@secure()
+param databaseUrl string = ''
+
 @description('Globally unique PostgreSQL flexible server name.')
-param postgresServerName string
+param postgresServerName string = ''
 
 @description('Application database name on the flexible server.')
 param postgresDatabaseName string = 'sycom'
 
 @description('PostgreSQL administrator login.')
-param postgresAdminLogin string
+param postgresAdminLogin string = ''
 
 @secure()
-param postgresAdminPassword string
+param postgresAdminPassword string = ''
 
 @description('Flexible server SKU name.')
 param postgresSkuName string = 'Standard_B1ms'
@@ -139,7 +146,9 @@ var corsOriginValue = join(effectiveCorsOrigins, ',')
 var internalServerUrl = 'http://localhost:${serverTargetPort}'
 var acrUsername = containerRegistry.listCredentials().username
 var acrPassword = containerRegistry.listCredentials().passwords[0].value
-var postgresDatabaseUrl = 'postgresql://${postgresAdminLogin}:${uriComponent(postgresAdminPassword)}@${postgres.properties.fullyQualifiedDomainName}:5432/${postgresDatabaseName}?sslmode=require'
+var effectiveDatabaseUrl = deployPostgres
+  ? 'postgresql://${postgresAdminLogin}:${uriComponent(postgresAdminPassword)}@${postgres!.properties.fullyQualifiedDomainName}:5432/${postgresDatabaseName}?sslmode=require'
+  : databaseUrl
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsWorkspaceName
@@ -206,7 +215,15 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   tags: mergedTags
 }
 
-resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
+resource databaseUrlSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = if (!deployPostgres && !empty(databaseUrl)) {
+  parent: keyVault
+  name: 'database-url'
+  properties: {
+    value: databaseUrl
+  }
+}
+
+resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = if (deployPostgres) {
   name: postgresServerName
   location: location
   sku: {
@@ -234,7 +251,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   tags: mergedTags
 }
 
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = if (deployPostgres) {
   parent: postgres
   name: postgresDatabaseName
   properties: {
@@ -243,7 +260,7 @@ resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2
   }
 }
 
-resource postgresFirewallAllowAzure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+resource postgresFirewallAllowAzure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = if (deployPostgres) {
   parent: postgres
   name: 'AllowAllAzureServices'
   properties: {
@@ -300,7 +317,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
         }
         {
           name: 'database-url'
-          value: postgresDatabaseUrl
+          value: effectiveDatabaseUrl
         }
         {
           name: 'better-auth-secret'
@@ -527,9 +544,11 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
       }
     }
   }
-  dependsOn: [
+  dependsOn: deployPostgres ? [
     postgresDatabase
     postgresFirewallAllowAzure
+  ] : [
+    databaseUrlSecret
   ]
   tags: mergedTags
 }
@@ -541,4 +560,4 @@ output containerAppsEnvironmentId string = containerAppsEnvironment.id
 output containerAppsEnvironmentDefaultDomain string = containerAppsEnvironment.properties.defaultDomain
 output appContainerAppName string = appName
 output appDefaultUrl string = deployApps ? 'https://${app!.properties.configuration.ingress.fqdn}' : ''
-output postgresFqdn string = postgres.properties.fullyQualifiedDomainName
+output postgresFqdn string = deployPostgres ? postgres!.properties.fullyQualifiedDomainName : ''

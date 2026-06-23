@@ -32,8 +32,9 @@ import {
   replaceOrgStudentProfileFields,
   StudentProfileValidationError,
   updateMemberStudentProfileValues,
-  validateStudentProfileForInvite,
   updateOrganizationBranding,
+  updateOrganizationCohort,
+  validateStudentProfileForInvite,
 } from "@sycom/db/queries/index";
 import { env } from "@sycom/env/server";
 import { TRPCError } from "@trpc/server";
@@ -48,6 +49,7 @@ import {
   bulkInviteOrgMembersSchema,
   createOrganizationCohortSchema,
   deleteOrganizationCohortSchema,
+  updateOrganizationCohortSchema,
   getOrganizationCohortSchema,
   getOrgMemberSchema,
   inviteOrgMemberSchema,
@@ -365,6 +367,46 @@ export const organizationRouter = router({
           name: input.name,
         });
       } catch (error) {
+        const errorCode =
+          typeof error === "object" && error !== null && "code" in error
+            ? String((error as { code?: string }).code)
+            : null;
+        if (errorCode === "23505") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "A cohort with that name already exists.",
+          });
+        }
+
+        throw error;
+      }
+    }),
+
+  updateCohort: protectedProcedure
+    .input(updateOrganizationCohortSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId, role } = await getOrganizationRoleOrThrow(ctx);
+      if (!ORG_COHORT_WRITE_ROLES.has(role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+
+      try {
+        const row = await updateOrganizationCohort(ctx.db, {
+          organizationId,
+          cohortId: input.cohortId,
+          name: input.name,
+        });
+
+        if (!row) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Cohort not found" });
+        }
+
+        return row;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         const errorCode =
           typeof error === "object" && error !== null && "code" in error
             ? String((error as { code?: string }).code)

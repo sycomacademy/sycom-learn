@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { MoreHorizontalIcon, SettingsIcon, Trash2Icon } from "lucide-react";
+import { MoreHorizontalIcon, PencilIcon, SettingsIcon, Trash2Icon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { useTRPC } from "@/lib/trpc/client";
@@ -26,6 +26,7 @@ import { toastManager } from "@sycom/ui/components/toast";
 import { formatDate } from "@sycom/ui/lib/date";
 
 import type { OrgCohortRow } from "./org-cohorts-schema";
+import { RenameOrgCohortDialog } from "./rename-org-cohort-dialog";
 
 export function OrgCohortListItem({ cohort }: { cohort: OrgCohortRow }): ReactNode {
   const trpc = useTRPC();
@@ -35,8 +36,9 @@ export function OrgCohortListItem({ cohort }: { cohort: OrgCohortRow }): ReactNo
     trpc.organization.workspaceContext.queryOptions(),
   );
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
 
-  const canDelete =
+  const canManage =
     workspaceContext.memberRole === "owner" || workspaceContext.memberRole === "admin";
 
   const deleteMutation = useMutation({
@@ -100,9 +102,13 @@ export function OrgCohortListItem({ cohort }: { cohort: OrgCohortRow }): ReactNo
                 <SettingsIcon />
                 Manage cohort
               </DropdownMenuItem>
-              {canDelete ? (
+              {canManage ? (
                 <>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+                    <PencilIcon />
+                    Rename cohort
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setDeleteOpen(true)} variant="destructive">
                     <Trash2Icon />
                     Delete cohort
@@ -114,28 +120,31 @@ export function OrgCohortListItem({ cohort }: { cohort: OrgCohortRow }): ReactNo
         </div>
       </div>
 
-      {canDelete ? (
-        <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete cohort</AlertDialogTitle>
-              <AlertDialogDescription>
-                This permanently deletes <strong>{cohort.name}</strong> and removes all cohort
-                memberships.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
-              <Button
-                loading={deleteMutation.isPending}
-                onClick={() => deleteMutation.mutate({ cohortId: cohort.id })}
-                variant="destructive"
-              >
-                Delete cohort
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      {canManage ? (
+        <>
+          <RenameOrgCohortDialog cohort={cohort} onOpenChange={setRenameOpen} open={renameOpen} />
+          <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete cohort</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes <strong>{cohort.name}</strong> and removes all cohort
+                  memberships.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
+                <Button
+                  loading={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate({ cohortId: cohort.id })}
+                  variant="destructive"
+                >
+                  Delete cohort
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
       ) : null}
     </>
   );

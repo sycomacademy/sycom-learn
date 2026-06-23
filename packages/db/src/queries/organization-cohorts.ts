@@ -145,6 +145,26 @@ export async function getOrganizationCohortById(
   return row ?? null;
 }
 
+export async function updateOrganizationCohort(
+  database: Database,
+  input: { organizationId: string; cohortId: string; name: string },
+): Promise<OrganizationCohortRow | null> {
+  const [updated] = await database
+    .update(cohort)
+    .set({ name: input.name })
+    .where(and(eq(cohort.organizationId, input.organizationId), eq(cohort.id, input.cohortId)))
+    .returning({ id: cohort.id });
+
+  if (!updated) {
+    return null;
+  }
+
+  return getOrganizationCohortById(database, {
+    organizationId: input.organizationId,
+    cohortId: input.cohortId,
+  });
+}
+
 export async function deleteOrganizationCohort(
   database: Database,
   input: { organizationId: string; cohortId: string },

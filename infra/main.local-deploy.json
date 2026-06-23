@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "358297687122151480"
+      "templateHash": "1557857462332872643"
     }
   },
   "parameters": {
@@ -144,8 +144,23 @@
       "defaultValue": "false",
       "allowedValues": ["true", "false"]
     },
+    "deployPostgres": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Provision Azure Database for PostgreSQL Flexible Server. Set false for Neon or other external Postgres."
+      }
+    },
+    "databaseUrl": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "External Postgres connection string when deployPostgres is false (e.g. Neon). Stored in Key Vault as database-url."
+      }
+    },
     "postgresServerName": {
       "type": "string",
+      "defaultValue": "",
       "metadata": {
         "description": "Globally unique PostgreSQL flexible server name."
       }
@@ -159,12 +174,14 @@
     },
     "postgresAdminLogin": {
       "type": "string",
+      "defaultValue": "",
       "metadata": {
         "description": "PostgreSQL administrator login."
       }
     },
     "postgresAdminPassword": {
-      "type": "securestring"
+      "type": "securestring",
+      "defaultValue": ""
     },
     "postgresSkuName": {
       "type": "string",
@@ -323,6 +340,17 @@
       "tags": "[variables('mergedTags')]"
     },
     {
+      "condition": "[and(not(parameters('deployPostgres')), not(empty(parameters('databaseUrl'))))]",
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-02-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'database-url')]",
+      "properties": {
+        "value": "[parameters('databaseUrl')]"
+      },
+      "dependsOn": ["[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"]
+    },
+    {
+      "condition": "[parameters('deployPostgres')]",
       "type": "Microsoft.DBforPostgreSQL/flexibleServers",
       "apiVersion": "2024-08-01",
       "name": "[parameters('postgresServerName')]",
@@ -352,6 +380,7 @@
       "tags": "[variables('mergedTags')]"
     },
     {
+      "condition": "[parameters('deployPostgres')]",
       "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
       "apiVersion": "2024-08-01",
       "name": "[format('{0}/{1}', parameters('postgresServerName'), parameters('postgresDatabaseName'))]",
@@ -364,6 +393,7 @@
       ]
     },
     {
+      "condition": "[parameters('deployPostgres')]",
       "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
       "apiVersion": "2024-08-01",
       "name": "[format('{0}/{1}', parameters('postgresServerName'), 'AllowAllAzureServices')]",
@@ -430,7 +460,7 @@
             },
             {
               "name": "database-url",
-              "value": "[format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', parameters('postgresAdminLogin'), uriComponent(parameters('postgresAdminPassword')), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName')), '2024-08-01').fullyQualifiedDomainName, parameters('postgresDatabaseName'))]"
+              "value": "[if(parameters('deployPostgres'), format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', parameters('postgresAdminLogin'), uriComponent(parameters('postgresAdminPassword')), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName')), '2024-08-01').fullyQualifiedDomainName, parameters('postgresDatabaseName')), parameters('databaseUrl'))]"
             },
             {
               "name": "better-auth-secret",
@@ -661,6 +691,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppsEnvironmentName'))]",
         "[resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), 'database-url')]",
         "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName'))]",
         "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/databases', parameters('postgresServerName'), parameters('postgresDatabaseName'))]",
         "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/firewallRules', parameters('postgresServerName'), 'AllowAllAzureServices')]"
@@ -698,7 +729,7 @@
     },
     "postgresFqdn": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName')), '2024-08-01').fullyQualifiedDomainName]"
+      "value": "[if(parameters('deployPostgres'), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresServerName')), '2024-08-01').fullyQualifiedDomainName, '')]"
     }
   }
 }

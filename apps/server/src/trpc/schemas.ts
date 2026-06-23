@@ -722,6 +722,12 @@ export const createOrganizationCohortSchema = z.object({
 });
 export type CreateOrganizationCohortInput = z.infer<typeof createOrganizationCohortSchema>;
 
+export const updateOrganizationCohortSchema = z.object({
+  cohortId: z.string().min(1),
+  name: z.string().trim().min(1, "Cohort name is required").max(120),
+});
+export type UpdateOrganizationCohortInput = z.infer<typeof updateOrganizationCohortSchema>;
+
 export const listOrganizationCohortMembersSchema = z.object({
   cohortId: z.string().min(1),
   limit: z.number().int().min(1).max(100).default(20),
