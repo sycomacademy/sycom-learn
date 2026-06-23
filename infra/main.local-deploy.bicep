@@ -544,12 +544,6 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = if (deployApps) {
       }
     }
   }
-  dependsOn: deployPostgres ? [
-    postgresDatabase
-    postgresFirewallAllowAzure
-  ] : [
-    databaseUrlSecret
-  ]
   tags: mergedTags
 }
 

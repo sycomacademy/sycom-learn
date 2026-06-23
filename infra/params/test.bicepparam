@@ -12,8 +12,9 @@ param containerAppsEnvironmentName = 'sycomlearn-test-cae'
 param appName = 'sycomlearn-test-app'
 param keyVaultAdminObjectId = 'edee4978-903c-44c1-8ff4-590a926e1d82'
 
-// Neon Postgres — no Azure flexible server in test.
+// Neon Postgres — no Azure flexible server in test (placeholder name satisfies ARM if()-branch validation).
 param deployPostgres = false
+param postgresServerName = 'sycomlearn-test-postgres-unused'
 
 // Public URL — Azure-generated FQDN until a custom domain is bound.
 param dashboardUrl = 'https://sycomlearn-test-app.ambitiousdesert-b93b7668.uksouth.azurecontainerapps.io'
